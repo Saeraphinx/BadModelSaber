@@ -36,5 +36,28 @@ export class GetAssetRoutes {
                 res.status(500).json({ error: `Error fetching assets: ${parseErrorMessage(err)}` });
             });
         });
+
+        router.get(`/assets/:id`, auth(`any`, true), (req, res) => {
+            const { responded, data: id } = validate(req, res, `params`, Validator.zAssetID);
+            if (responded) {
+                return;
+            }
+
+            Asset.findByPk(id).then(asset => {
+                if (!asset) {
+                    res.status(404).json({ error: `Asset not found` });
+                    return;
+                }
+
+                if (!asset.canView(req.auth.user)) {
+                    res.status(403).json({ error: `You are not allowed to view this asset` });
+                    return;
+                }
+                
+                res.json(asset.getApiResponse());
+            }).catch(err => {
+                res.status(500).json({ error: `Error fetching asset: ${parseErrorMessage(err)}` });
+            });
+        });
     }
 }

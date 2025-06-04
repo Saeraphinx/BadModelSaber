@@ -3,6 +3,7 @@ import { User, UserRole } from "../../Database.ts";
 import { AssetPublicAPI, DatabaseHelper, UserPublicAPI } from "../DBExtras.ts";
 import { z } from "zod/v4";
 import { id } from "zod/v4/locales";
+import { Validator } from "src/shared/Validator.ts";
 
 // #region Asset Enums
 export enum AssetType {
@@ -96,7 +97,7 @@ export enum SystemTags {
 
 export type AssetInfer = InferAttributes<Asset>;
 export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes<Asset>> {
-    declare readonly id: CreationOptional<string>;
+    declare readonly id: CreationOptional<number>;
     declare oldId: CreationOptional<string | null>; // id from modelsaber, if applicable
     declare linkedIds: CreationOptional<LinkedAsset[]>; // models that are linked to this asset, e.g. a pc .saber may have a linked .wacker, or a model may have a newer version that is linked to it
 
@@ -131,7 +132,7 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
 
     public static validator = z.object({
         // unique by db
-        id: z.string(),
+        id: Validator.zAssetID,
         // unique by db
         oldId: z.string().nullable(),
         linkedIds: z.array(z.object({
@@ -179,7 +180,7 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
         return await Asset.findByPk(id, {attributes: ['id']}) ? true : false;
     }
 
-    public canView(user: User | null): boolean {
+    public canView(user: User | undefined): boolean {
         if (!user) {
             return this.status === Status.Approved || this.status === Status.Pending;
         }
@@ -265,12 +266,7 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
         let authorApi: UserPublicAPI;
 
         if (!author) {
-            authorApi = {
-                id: 'unknown',
-                username: 'Unknown',
-                displayName: `John Model`,
-                bio: null,
-                sponsorUrl: null
+            authorApi = {         
             } as User; // Fallback to a default user if not found
         } else {
             authorApi = author.getApiResponse();

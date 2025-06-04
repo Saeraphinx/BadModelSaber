@@ -3,11 +3,12 @@ import { EnvConfig } from "./shared/EnvConfig.ts";
 import express from "express";
 import cors from "cors";
 import { Logger } from "./shared/Logger.ts";
+import 'dotenv/config'
 
 function init() {
+    EnvConfig.load();
     Logger.init();
     let db = new DatabaseManager();
-    EnvConfig.load();
 
     const app = express();
     app.use(cors({

@@ -63,6 +63,38 @@ export class EnvConfig {
     }
 
     public static load(): void {
-        
+        EnvConfig.auth = {
+            discord: {
+                clientId: process.env.DISCORD_CLIENT_ID || DEFAULT_CONFIG.auth.discord.clientId,
+                clientSecret: process.env.DISCORD_CLIENT_SECRET || DEFAULT_CONFIG.auth.discord.clientSecret,
+            },
+        };
+
+        EnvConfig.server = {
+            port: parseInt(process.env.PORT || `${DEFAULT_CONFIG.server.port}`),
+            baseUrl: process.env.BASE_URL || DEFAULT_CONFIG.server.baseUrl,
+            corsOrigin: process.env.CORS_ORIGIN?.split(`,`) || DEFAULT_CONFIG.server.corsOrigin,
+            corsAllowCredentials: process.env.CORS_ALLOW_CREDENTIALS === `true` || DEFAULT_CONFIG.server.corsAllowCredentials,
+            apiRoute: process.env.API_ROUTE || DEFAULT_CONFIG.server.apiRoute,
+            fileRoute: process.env.FILE_ROUTE || DEFAULT_CONFIG.server.fileRoute,
+            trustProxy: process.env.TRUST_PROXY === `true` || DEFAULT_CONFIG.server.trustProxy,
+            storeSessions: process.env.STORE_SESSIONS === `true` || DEFAULT_CONFIG.server.storeSessions,
+            storedSessionTimeout: parseInt(process.env.STORED_SESSION_TIMEOUT || `${DEFAULT_CONFIG.server.storedSessionTimeout}`),
+            sessionCookieName: process.env.SESSION_COOKIE_NAME || DEFAULT_CONFIG.server.sessionCookieName,
+            sessionSecret: process.env.SESSION_SECRET || DEFAULT_CONFIG.server.sessionSecret,
+        };
+
+        EnvConfig.storage = {
+            uploads: process.env.STORAGE_UPLOADS || DEFAULT_CONFIG.storage.uploads,
+            icons: process.env.STORAGE_ICONS || DEFAULT_CONFIG.storage.icons,
+            sqlite_db: process.env.STORAGE_SQLITE_DB || DEFAULT_CONFIG.storage.sqlite_db,
+            logs: process.env.STORAGE_LOGS || DEFAULT_CONFIG.storage.logs,
+            sessions: process.env.STORAGE_SESSIONS || DEFAULT_CONFIG.storage.sessions,
+        };
+
+        EnvConfig.database = {
+            dialect: process.env.DB_DIALECT || DEFAULT_CONFIG.database.dialect,
+            connectionString: process.env.DB_CONNECTION_STRING || DEFAULT_CONFIG.database.connectionString,
+        };
     }
 }

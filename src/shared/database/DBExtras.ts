@@ -10,7 +10,7 @@ export type UserPublicAPI = {
 }
 
 export type AssetPublicAPI = {
-    id: string;
+    id: number;
     oldId: string | null;
     linkedIds: LinkedAsset[]; // Array of linked asset IDs
     type: AssetType;

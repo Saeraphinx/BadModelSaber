@@ -4,12 +4,14 @@ import fileUpload from "express-fileupload";
 
 export { z } from "zod/v4";
 
+const ZodAssetID = z.number().int().positive();
 const ZodAssetType = z.enum(AssetType);
 const ZodAssetFileFormat = z.enum(AssetFileFormat);
 const ZodAssetStatus = z.enum(Status);
 
 export class Validator {
     public static z = z;
+    public static zAssetID = ZodAssetID;
     public static zAssetType = ZodAssetType;
     public static zAssetFileFormat = ZodAssetFileFormat;
     public static zAssetStatus = ZodAssetStatus;

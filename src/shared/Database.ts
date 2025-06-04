@@ -99,7 +99,7 @@ export class DatabaseManager {
 
         this.Users = User.init({
             id: {
-                type: DataTypes.STRING,
+                type: DataTypes.NUMBER,
                 primaryKey: true,
                 allowNull: false,
                 unique: true
