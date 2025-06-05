@@ -9,15 +9,9 @@ import { User } from '../../shared/Database.ts';
 
 
 export class AuthRoutes {
-    private router: Router;
-    private validStates: {stateId: string, ip: string, redirectUrl: URL, userId: number|null}[] = [];
+    private static validStates: {stateId: string, ip: string, redirectUrl: URL, userId: number|null}[] = [];
 
-    constructor(router: Router) {
-        this.router = router;
-        this.loadRoutes();
-    }
-
-    private async loadRoutes() {
+    public static loadRoutes(router: Router) {
         passport.use(new DiscordStrategy({
             clientID: EnvConfig.auth.discord.clientId,
             clientSecret: EnvConfig.auth.discord.clientSecret,
@@ -59,7 +53,7 @@ export class AuthRoutes {
             return done(null, false);
         }));
 
-        this.router.get(`/auth/discord`, async (req, res, next) => {
+        router.get(`/auth/discord`, async (req, res, next) => {
             let state = this.prepAuth(req);
             if (!state) {
                 res.status(400).send({ error: `Invalid parameters.` });
@@ -68,7 +62,7 @@ export class AuthRoutes {
             passport.authenticate(`discord`, { state: state, session: false })(req, res, next);
         });
 
-        this.router.get(`/auth/discord/callback`, passport.authenticate(`discord`, { failureRedirect: `/`, session: false }), async (req, res) => {
+        router.get(`/auth/discord/callback`, passport.authenticate(`discord`, { failureRedirect: `/`, session: false }), async (req, res) => {
             let state = req.query[`state`];
             if (!state) {
                 res.status(400).send({ error: `Invalid parameters.` });
@@ -100,7 +94,7 @@ export class AuthRoutes {
         });
 
         
-        this.router.get(`/auth/logout`, async (req, res) => {
+        router.get(`/auth/logout`, async (req, res) => {
             let redirect = Validator.z.url().default(EnvConfig.server.baseUrl).safeParse(req.query[`redirect`]);
             if (!redirect.success) {
                 res.status(400).send({ error: `Invalid parameters.` });
@@ -117,19 +111,19 @@ export class AuthRoutes {
         });
     }
     
-    private prepAuth(req: any, userId?: number, minsToTimeout = 5): string|null {
+    private static prepAuth(req: any, userId?: number, minsToTimeout = 5): string|null {
         let redirect = Validator.z.url().default("https://google.com").safeParse(req.query[`redirect`]);
         if (!redirect.success) {
             return null;
         }
         let state = createRandomString(32);
         if (userId) {
-            this.validStates.push({stateId: state, ip: req.ip, redirectUrl: new URL(redirect.data), userId});
+            AuthRoutes.validStates.push({stateId: state, ip: req.ip, redirectUrl: new URL(redirect.data), userId});
         } else {
-            this.validStates.push({stateId: state, ip: req.ip, redirectUrl: new URL(redirect.data), userId: null});
+            AuthRoutes.validStates.push({stateId: state, ip: req.ip, redirectUrl: new URL(redirect.data), userId: null});
         }
         setTimeout(() => {
-            this.validStates = this.validStates.filter((s) => s.stateId !== state);
+            AuthRoutes.validStates = this.validStates.filter((s) => s.stateId !== state);
         }, 1000 * 60 * minsToTimeout);
         return state;
     }

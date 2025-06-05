@@ -9,8 +9,8 @@ import path from "node:path";
 import { EnvConfig } from "../../shared/EnvConfig.ts";
 
 export class UploadRoutes {
-    public loadRoutes(router: Router): void {
-        router.post(`/upload`, auth(`loggedIn`, false), file(), (req, res) => {
+    public static loadRoutes(router: Router): void {
+        router.post(`/assets/upload`, auth(`loggedIn`, false), file(), (req, res) => {
             const files = req.files;
             const { responded, data: body } = validate(req, res, `body`, Validator.zCreateAsset);
             if (responded || req.auth.isAuthed === false) {

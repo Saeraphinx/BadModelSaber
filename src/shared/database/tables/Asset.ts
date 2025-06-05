@@ -2,8 +2,7 @@ import { InferAttributes, Model, InferCreationAttributes, NonAttribute, Creation
 import { User, UserRole } from "../../Database.ts";
 import { AssetPublicAPI, DatabaseHelper, UserPublicAPI } from "../DBExtras.ts";
 import { z } from "zod/v4";
-import { id } from "zod/v4/locales";
-import { Validator } from "src/shared/Validator.ts";
+import { Validator } from "../../Validator.ts";
 
 // #region Asset Enums
 export enum AssetType {

@@ -36,6 +36,13 @@ export class Validator {
         limit: z.number().int().min(1).max(100).default(20),
     });
 
+    public static zApprovalObj = z.object({
+        status: ZodAssetStatus,
+        reason: z.string().max(320).optional().default(`No reason provided.`),
+    });
+
+    public static zAssetIdArray = z.array(ZodAssetID);
+
     public static validateThumbnail(file: fileUpload.UploadedFile) {
         let isAcceptableImage =
             ((file.mimetype === `image/png` && file.name.endsWith(`.png`)) ||

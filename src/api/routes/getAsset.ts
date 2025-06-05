@@ -4,9 +4,10 @@ import { Validator } from "../../shared/Validator.ts";
 import { Asset } from "../../shared/Database.ts";
 import { Op } from "sequelize";
 import { parseErrorMessage } from "../../shared/Tools.ts";
+import { AssetPublicAPI } from "../../shared/database/DBExtras.ts";
 
 export class GetAssetRoutes {
-    public loadRoutes(router: Router): void {
+    public static loadRoutes(router: Router): void {
         router.get(`/assets`, auth(`any`, true), (req, res) => {
             const { responded, data: query } = validate(req, res, `query`, Validator.zFilterAsset);
             if (responded) {
@@ -57,6 +58,29 @@ export class GetAssetRoutes {
                 res.json(asset.getApiResponse());
             }).catch(err => {
                 res.status(500).json({ error: `Error fetching asset: ${parseErrorMessage(err)}` });
+            });
+        });
+
+        router.get(`/multi/assets`, auth(`any`, true), (req, res) => {
+            const { responded, data: ids } = validate(req, res, `query`, Validator.zAssetIdArray.max(50));
+            if (responded) {
+                return;
+            }
+
+            Asset.findAll({
+                where: {
+                    id: ids,
+                    status: Asset.allowedToViewRoles(req.auth.user)
+                }
+            }).then(async assets => {
+                let response: {[key:number]: AssetPublicAPI} = {};
+                for (let asset of assets) {
+                    response[asset.id] = await asset.getApiResponse();
+                }
+                res.status(200).json(response);
+                return;
+            }).catch(err => {
+                res.status(500).json({ error: `Error fetching assets: ${parseErrorMessage(err)}` });
             });
         });
     }
