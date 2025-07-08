@@ -88,7 +88,7 @@ export class UploadRoutes {
                 fileAsset.mv(path.join(EnvConfig.storage.uploads, asset.fileName), (err) => {
                     if (err) {
                         Logger.error(`Error moving asset file: ${err.message}`);
-                        res.status(500).json({ error: `Failed to save asset file. Please contact a site administrator.` });
+                        res.status(500).json({ message: `Failed to save asset file. Please contact a site administrator.` });
                         asset.destroy();
                         return;
                     }

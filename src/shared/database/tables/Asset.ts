@@ -18,6 +18,7 @@ export enum AssetType {
     ChromaEnvironment = 'chroma-environment',
     Camera2Config = 'camera2-config',
     CountersPlusConfig = 'counters-plus-config',
+    HSVConfig = 'hitscorevisualizer-config',
 }
 
 export enum AssetFileFormat {

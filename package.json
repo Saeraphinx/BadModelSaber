@@ -7,11 +7,8 @@
     "build": "rimraf ./build && tsc"
   },
   "dependencies": {
-    "@types/passport": "^1.0.17",
-    "@types/passport-discord": "^0.1.14",
     "cors": "^2.8.5",
     "discord.js": "^14.19.3",
-    "dotenv": "^16.5.0",
     "express": "^5.1.0",
     "express-fileupload": "^1.5.1",
     "express-session": "^1.18.1",
@@ -30,6 +27,8 @@
     "@types/express-fileupload": "^1.5.1",
     "@types/express-session": "^1.18.1",
     "@types/node": "^22.15.26",
+    "@types/passport": "^1.0.17",
+    "@types/passport-discord": "^0.1.14",
     "rimraf": "^6.0.1",
     "typescript": "^5.8.3"
   },

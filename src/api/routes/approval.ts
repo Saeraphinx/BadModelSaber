@@ -6,7 +6,7 @@ import { parseErrorMessage } from "../../shared/Tools.ts";
 
 export class ApprovalRoutes {
     public static loadRoutes(router: Router): void {
-        router.get(`/approvals/assets/{id}`, auth([UserRole.Moderator]), (req, res) => {
+        router.post(`/approvals/assets/{id}`, auth([UserRole.Moderator]), (req, res) => {
             const { responded: pResponded, data: id } = validate(req, res, `params`, Validator.zAssetID);
             const { responded: dResponded, data: body } = validate(req, res, `body`, Validator.zApprovalObj);
             if (pResponded || dResponded || req.auth.isAuthed === false) {

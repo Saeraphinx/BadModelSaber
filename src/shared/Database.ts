@@ -16,7 +16,7 @@ export class DatabaseManager {
     public Users: ModelStatic<User>;
     public Assets: ModelStatic<Asset>;
 
-    constructor() {
+    constructor(overridePath?: string) {
         Logger.log(`Creating DatabaseManager...`);
 
         let storagePath:string|undefined = undefined;
@@ -32,7 +32,7 @@ export class DatabaseManager {
             Logger.log(`Using SQLite database at ${storagePath}`);
             this.sequelize = new Sequelize({
                 dialect: EnvConfig.database.dialect,
-                storage: storagePath
+                storage: overridePath ? overridePath : storagePath,
             });
         } else if (EnvConfig.database.dialect === `postgres`) {
             Logger.log(`Using PostgreSQL database`);
@@ -145,7 +145,7 @@ export class DatabaseManager {
         
         this.Assets = Asset.init({
             id: {
-                type: DataTypes.STRING,
+                type: DataTypes.NUMBER,
                 primaryKey: true,
                 allowNull: false,
                 unique: true
@@ -253,13 +253,13 @@ export class DatabaseManager {
     public async loadHooks() {
         Logger.log(`Loading hooks...`);
 
-        /*this.Assets.beforeCreate(`generateId`, (asset, options) => {
+        this.Assets.beforeCreate(`generateId`, (asset, options) => {
             // Set the asset ID to a unique identifier if not provided
             if (!asset.id) {
                 let id = new Date().getTime();
-                asset.setDataValue('id', );
+                asset.setDataValue('id', id);
             }
-        });*/
+        });
 
         this.Assets.afterValidate(`checkValidator`,(asset, options) => {
             // throws if invalid
