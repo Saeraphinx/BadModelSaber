@@ -32,7 +32,7 @@ export class GetAssetRoutes {
                 order: [[`createdAt`, `DESC`]]
             }).then(assets => {
                 let response = assets.map(asset => asset.getApiResponse());
-                res.json(response);
+                res.status(200).json(response);
             }).catch(err => {
                 res.status(500).json({ error: `Error fetching assets: ${parseErrorMessage(err)}` });
             });
@@ -55,7 +55,7 @@ export class GetAssetRoutes {
                     return;
                 }
                 
-                res.json(asset.getApiResponse());
+                res.status(200).json(asset.getApiResponse());
             }).catch(err => {
                 res.status(500).json({ error: `Error fetching asset: ${parseErrorMessage(err)}` });
             });
