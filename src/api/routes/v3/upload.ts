@@ -1,18 +1,18 @@
 import { Router, RequestHandler, NextFunction } from "express";
 import fileUpload from "express-fileupload";
-import { auth, MiddlewareFunction, validate } from "../RequestUtils.ts";
-import { Logger, LogLevel } from "../../shared/Logger.ts";
-import { Validator, z } from "../../shared/Validator.ts";
-import { parseErrorMessage } from "../../shared/Tools.ts";
-import { Asset, Status } from "../../shared/Database.ts";
+import { auth, MiddlewareFunction, validate } from "../../RequestUtils.ts";
+import { Logger, LogLevel } from "../../../shared/Logger.ts";
+import { Validator, z } from "../../../shared/Validator.ts";
+import { parseErrorMessage } from "../../../shared/Tools.ts";
+import { Asset, Status } from "../../../shared/Database.ts";
 import path from "node:path";
-import { EnvConfig } from "../../shared/EnvConfig.ts";
+import { EnvConfig } from "../../../shared/EnvConfig.ts";
 
-export class UploadRoutes {
+export class UploadRoutesV3 {
     public static loadRoutes(router: Router): void {
         router.post(`/assets/upload`, auth(`loggedIn`, false), file(), (req, res) => {
             const files = req.files;
-            const { responded, data: body } = validate(req, res, `body`, Validator.zCreateAsset);
+            const { responded, data: body } = validate(req, res, `multipart`, Validator.zCreateAsset);
             if (responded || req.auth.isAuthed === false) {
                 return;
             }
@@ -21,7 +21,7 @@ export class UploadRoutes {
                 return;
             }
 
-            if (files.uploadedFiles.length !== 2) {
+            if (files.uploadedFiles.length !== 2 || !files.asset || !files.icon_1) {
                 res.status(400).json({ message: `Must have icon and asset file.` });
                 return;
             }
@@ -128,7 +128,8 @@ function file(limit = 250 * 1024 * 1024): MiddlewareFunction {
     return fileUpload({
         limits: {
             files: 6,
-            fileSize: limit
+            fileSize: limit,
+            fields: 1
         },
         preserveExtension: true,
         abortOnLimit: true,

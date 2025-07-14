@@ -32,8 +32,15 @@ export class Validator {
         fileFormat: ZodAssetFileFormat.optional(),
         status: ZodAssetStatus.optional(),
         tags: z.array(z.string()).optional(),
-        page: z.number().int().min(1).default(1),
-        limit: z.number().int().min(1).max(100).default(20),
+        page: z.number().int().min(1).optional(),
+        limit: z.number().int().min(1).max(250).optional(),
+    }).refine((data) => {
+        if (data.page || data.limit) {
+            if (!data.page || !data.limit) {
+                return false; // If one is provided, both must be provided
+            }
+        }
+        return true; // Valid if both are provided or neither is provided
     });
 
     public static zApprovalObj = z.object({

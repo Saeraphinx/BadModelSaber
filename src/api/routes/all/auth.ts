@@ -1,11 +1,11 @@
 import { Router } from 'express';
 import passport from 'passport';
 import { Strategy as DiscordStrategy } from 'passport-discord';
-import { Logger } from '../../shared/Logger.ts';
-import { Validator } from '../../shared/Validator.ts';
-import { createRandomString, parseErrorMessage } from '../../shared/Tools.ts';
-import { EnvConfig } from '../../shared/EnvConfig.ts';
-import { User } from '../../shared/Database.ts';
+import { Logger } from '../../../shared/Logger.ts';
+import { Validator } from '../../../shared/Validator.ts';
+import { createRandomString, parseErrorMessage } from '../../../shared/Tools.ts';
+import { EnvConfig } from '../../../shared/EnvConfig.ts';
+import { User } from '../../../shared/Database.ts';
 
 
 export class AuthRoutes {

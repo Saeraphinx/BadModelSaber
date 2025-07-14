@@ -4,10 +4,10 @@ import express from "express";
 import cors from "cors";
 import { Logger } from "./shared/Logger.ts";
 import 'dotenv/config'
-import { AuthRoutes } from "./api/routes/auth.ts";
-import { GetAssetRoutes } from "./api/routes/getAsset.ts";
-import { ApprovalRoutes } from "./api/routes/approval.ts";
-import { UploadRoutes } from "./api/routes/upload.ts";
+import { AuthRoutes } from "./api/routes/all/auth.ts";
+import { GetAssetRoutesV3 } from "./api/routes/v3/getAsset.ts";
+import { ApprovalRoutesV3 } from "./api/routes/v3/approval.ts";
+import { UploadRoutesV3 } from "./api/routes/v3/upload.ts";
 
 function init() {
     EnvConfig.load();
@@ -25,11 +25,20 @@ function init() {
     const apiRouter = express.Router();
     const fileRouter = express.Router();
 
+    const v1Router = express.Router();
+    const v2Router = express.Router();
+    const v3Router = express.Router();
+
     // Load API routes
     AuthRoutes.loadRoutes(apiRouter);
-    UploadRoutes.loadRoutes(apiRouter);
-    GetAssetRoutes.loadRoutes(apiRouter);
-    ApprovalRoutes.loadRoutes(apiRouter);
+    UploadRoutesV3.loadRoutes(v3Router);
+    GetAssetRoutesV3.loadRoutes(v3Router);
+    ApprovalRoutesV3.loadRoutes(v3Router);
+
+    apiRouter.use(`/v1`, v1Router);
+    apiRouter.use(`/v2`, v2Router);
+    apiRouter.use(`/v3`, v3Router);
+
 
     app.listen(EnvConfig.server.port, () => {
         console.log(`Server is running on ${EnvConfig.server.baseUrl}`);

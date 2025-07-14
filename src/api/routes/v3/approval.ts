@@ -1,10 +1,10 @@
 import { Router } from "express";
-import { auth, validate } from "../RequestUtils.ts";
-import { Asset, UserRole } from "../../shared/Database.ts";
-import { Validator } from "../../shared/Validator.ts";
-import { parseErrorMessage } from "../../shared/Tools.ts";
+import { auth, validate } from "../../RequestUtils.ts";
+import { Asset, UserRole } from "../../../shared/Database.ts";
+import { Validator } from "../../../shared/Validator.ts";
+import { parseErrorMessage } from "../../../shared/Tools.ts";
 
-export class ApprovalRoutes {
+export class ApprovalRoutesV3 {
     public static loadRoutes(router: Router): void {
         router.post(`/approvals/assets/{id}`, auth([UserRole.Moderator]), (req, res) => {
             const { responded: pResponded, data: id } = validate(req, res, `params`, Validator.zAssetID);
