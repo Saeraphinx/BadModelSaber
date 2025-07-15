@@ -5,9 +5,14 @@ import { ModelStatic, Sequelize, DataType, DataTypes } from "sequelize";
 import { Umzug, SequelizeStorage } from "umzug";
 import { User } from "./database/tables/User.ts";
 import { Asset, AssetType, Status, AssetFileFormat } from "./database/tables/Asset.ts";
+import { Alert } from "./database/tables/Alert.ts";
+import { AssetRequest } from "./database/tables/AssetRequest.ts";
 
 export * from "./database/tables/User.ts";
 export * from "./database/tables/Asset.ts";
+export * from "./database/tables/Alert.ts";
+export * from "./database/tables/AssetRequest.ts";
+export * from "./database/DBExtras.ts";
 
 export class DatabaseManager {
     private sequelize: Sequelize;
@@ -15,6 +20,8 @@ export class DatabaseManager {
 
     public Users: ModelStatic<User>;
     public Assets: ModelStatic<Asset>;
+    public Alerts: ModelStatic<Alert>;
+    public AssetRequests: ModelStatic<AssetRequest>;
 
     constructor(overridePath?: string) {
         Logger.log(`Creating DatabaseManager...`);
@@ -81,17 +88,21 @@ export class DatabaseManager {
         });
     }
 
-    public init() {
+    public async init() {
         Logger.log(`Initializing DatabaseManager...`);
 
-        this.connect();
-        this.migrate();
-        this.sequelize.sync().then(() => {
+        await this.connect();
+        await this.migrate();
+        this.loadTables();
+        this.loadHooks();
+        try {
+            await this.sequelize.sync();
             Logger.log(`Database synced successfully.`);
-        }).catch((error) => {
+            return this;
+        } catch (error: any) {
             Logger.error(`Failed to sync database: ${error.message}`);
             process.exit(1);
-        });
+        }
     }
 
     public loadTables() {
@@ -248,9 +259,99 @@ export class DatabaseManager {
             timestamps: true,
             paranoid: true
         });
+
+        this.Alerts = Alert.init({
+            id: {
+                type: DataTypes.NUMBER,
+                primaryKey: true,
+                autoIncrement: true,
+                allowNull: false
+            },
+            type: {
+                type: DataTypes.STRING,
+                allowNull: false,
+            },
+            userId: {
+                type: DataTypes.STRING,
+                allowNull: false,
+            },
+            assetId: {
+                type: DataTypes.NUMBER,
+                allowNull: true,
+            },
+            requestId: {
+                type: DataTypes.NUMBER,
+                allowNull: true,
+            },
+            message: {
+                type: DataTypes.STRING,
+                allowNull: false,
+            },
+            read: {
+                type: DataTypes.BOOLEAN,
+                allowNull: false,
+                defaultValue: false
+            },
+            discordMessageSent: {
+                type: DataTypes.BOOLEAN,
+                allowNull: false,
+                defaultValue: false
+            },
+            createdAt: DataTypes.DATE,
+            updatedAt: DataTypes.DATE,
+            deletedAt: DataTypes.DATE
+        }, {
+            sequelize: this.sequelize,
+            modelName: `Alert`,
+            tableName: `alerts`,
+            timestamps: true,
+            paranoid: true
+        });
+
+        this.AssetRequests = AssetRequest.init({
+            id: {
+                type: DataTypes.NUMBER,
+                primaryKey: true,
+                autoIncrement: true,
+                allowNull: false
+            },
+            refrencedAsset: {
+                type: DataTypes.NUMBER,
+                allowNull: false
+            },
+            requesterId: {
+                type: DataTypes.STRING,
+                allowNull: false
+            },
+            requestResponseBy: {
+                type: DataTypes.STRING,
+                allowNull: true
+            },
+            requestType: {
+                type: DataTypes.STRING,
+                allowNull: false,
+            },
+            reason: {
+                type: DataTypes.STRING,
+                allowNull: false
+            },
+            accepted: {
+                type: DataTypes.BOOLEAN,
+                allowNull: true,
+                defaultValue: null
+            },
+            createdAt: DataTypes.DATE,
+            updatedAt: DataTypes.DATE,
+            deletedAt: DataTypes.DATE
+        }, {
+            sequelize: this.sequelize,
+            modelName: `AssetRequest`,
+            tableName: `asset_requests`,
+            timestamps: true,
+        });
     }
 
-    public async loadHooks() {
+    public loadHooks() {
         Logger.log(`Loading hooks...`);
 
         this.Assets.beforeCreate(`generateId`, (asset, options) => {
@@ -261,9 +362,19 @@ export class DatabaseManager {
             }
         });
 
-        this.Assets.afterValidate(`checkValidator`,(asset, options) => {
+        this.Assets.afterValidate(`checkAssetValidator`, async (asset, options) => {
             // throws if invalid
-            Asset.validator.parse(asset);
+            await Asset.validator.parseAsync(asset);
+        });
+
+        this.Alerts.afterValidate(`checkAlertValidator`, async (alert, options) => {
+            // throws if invalid
+            await Alert.validator.parseAsync(alert);
+        });
+
+        this.AssetRequests.afterValidate(`checkAssetRequestValidator`, async (request, options) => {
+            // throws if invalid
+            await AssetRequest.validator.parseAsync(request);
         });
     }
 }

@@ -4,11 +4,11 @@ import { Asset, UserRole } from "../../../shared/Database.ts";
 import { Validator } from "../../../shared/Validator.ts";
 import { parseErrorMessage } from "../../../shared/Tools.ts";
 
-export class ApprovalRoutesV3 {
+export class ApprovalRoutes {
     public static loadRoutes(router: Router): void {
         router.post(`/approvals/assets/{id}`, auth([UserRole.Moderator]), (req, res) => {
-            const { responded: pResponded, data: id } = validate(req, res, `params`, Validator.zAssetID);
-            const { responded: dResponded, data: body } = validate(req, res, `body`, Validator.zApprovalObj);
+            const { responded: pResponded, data: id } = validate(req, res, `params`, Validator.zNumberID);
+            const { responded: dResponded, data: body } = validate(req, res, `body`, Validator.zApprovalObjv3);
             if (pResponded || dResponded || req.auth.isAuthed === false) {
                 return;
             }
@@ -22,7 +22,7 @@ export class ApprovalRoutesV3 {
                 asset.setStatus(body.status, body.reason, req.auth.user!.id).then((asset) => {
                     res.status(200).json({
                         message: `Asset status updated successfully`,
-                        asset: asset.getApiResponse()
+                        asset: asset.getApiV3Response()
                     });
                 }).catch(err => {
                     res.status(500).json({ error: `Error updating asset status: ${parseErrorMessage(err)}` });

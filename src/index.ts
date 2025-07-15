@@ -4,10 +4,10 @@ import express from "express";
 import cors from "cors";
 import { Logger } from "./shared/Logger.ts";
 import 'dotenv/config'
-import { AuthRoutes } from "./api/routes/all/auth.ts";
-import { GetAssetRoutesV3 } from "./api/routes/v3/getAsset.ts";
-import { ApprovalRoutesV3 } from "./api/routes/v3/approval.ts";
-import { UploadRoutesV3 } from "./api/routes/v3/upload.ts";
+import { AuthRoutes } from "./api/routes/public/all/auth.ts";
+import { GetAssetRoutesV3 } from "./api/routes/public/v3/getAsset.ts";
+import { ApprovalRoutes } from "./api/routes/private/approval.ts";
+import { UploadRoutesV3 } from "./api/routes/public/v3/upload.ts";
 
 function init() {
     EnvConfig.load();
@@ -33,7 +33,7 @@ function init() {
     AuthRoutes.loadRoutes(apiRouter);
     UploadRoutesV3.loadRoutes(v3Router);
     GetAssetRoutesV3.loadRoutes(v3Router);
-    ApprovalRoutesV3.loadRoutes(v3Router);
+    ApprovalRoutes.loadRoutes(v3Router);
 
     apiRouter.use(`/v1`, v1Router);
     apiRouter.use(`/v2`, v2Router);

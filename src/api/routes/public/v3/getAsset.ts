@@ -1,15 +1,15 @@
 import { Router } from "express";
-import { auth, validate } from "../../RequestUtils.ts";
-import { Validator } from "../../../shared/Validator.ts";
-import { Asset } from "../../../shared/Database.ts";
+import { auth, validate } from "../../../RequestUtils.ts";
+import { Validator } from "../../../../shared/Validator.ts";
+import { Asset } from "../../../../shared/Database.ts";
 import { Op } from "sequelize";
-import { parseErrorMessage } from "../../../shared/Tools.ts";
-import { AssetPublicAPI } from "../../../shared/database/DBExtras.ts";
+import { parseErrorMessage } from "../../../../shared/Tools.ts";
+import { AssetPublicAPIv3 } from "../../../../shared/database/DBExtras.ts";
 
 export class GetAssetRoutesV3 {
     public static loadRoutes(router: Router): void {
         router.get(`/assets`, auth(`any`, true), (req, res) => {
-            const { responded, data: query } = validate(req, res, `query`, Validator.zFilterAsset);
+            const { responded, data: query } = validate(req, res, `query`, Validator.zFilterAssetv3);
             if (responded) {
                 return;
             }
@@ -26,13 +26,13 @@ export class GetAssetRoutesV3 {
                     fileFormat: query.fileFormat,
                     status: query.status ? query.status : allowedStatuses,
                     tags: query.tags ? { [Op.contains]: query.tags } : undefined
-                    
+
                 },
                 limit: query.limit ?? undefined,
                 offset: query.page && query.limit ? ((query.page - 1) * query.limit) : undefined,
                 order: [[`createdAt`, `DESC`]]
             }).then(assets => {
-                let response = assets.map(asset => asset.getApiResponse());
+                let response = assets.map(asset => asset.getApiV3Response());
                 res.status(200).json({ assets: response, total: assets.length, page: query.page ?? null});
             }).catch(err => {
                 res.status(500).json({ error: `Error fetching assets: ${parseErrorMessage(err)}` });
@@ -40,7 +40,7 @@ export class GetAssetRoutesV3 {
         });
 
         router.get(`/assets/:id`, auth(`any`, true), (req, res) => {
-            const { responded, data: id } = validate(req, res, `params`, Validator.zAssetID);
+            const { responded, data: id } = validate(req, res, `params`, Validator.zNumberID);
             if (responded) {
                 return;
             }
@@ -56,7 +56,7 @@ export class GetAssetRoutesV3 {
                     return;
                 }
                 
-                res.status(200).json(asset.getApiResponse());
+                res.status(200).json(asset.getApiV3Response());
             }).catch(err => {
                 res.status(500).json({ error: `Error fetching asset: ${parseErrorMessage(err)}` });
             });
@@ -74,9 +74,9 @@ export class GetAssetRoutesV3 {
                     status: Asset.allowedToViewRoles(req.auth.user)
                 }
             }).then(async assets => {
-                let response: {[key:number]: AssetPublicAPI} = {};
+                let response: {[key:number]: AssetPublicAPIv3} = {};
                 for (let asset of assets) {
-                    response[asset.id] = await asset.getApiResponse();
+                    response[asset.id] = await asset.getApiV3Response();
                 }
                 res.status(200).json(response);
                 return;

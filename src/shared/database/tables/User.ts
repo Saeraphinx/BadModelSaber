@@ -1,5 +1,5 @@
 import { CreationOptional, InferAttributes, InferCreationAttributes, Model } from "sequelize";
-import { UserPublicAPI } from "../DBExtras.ts";
+import { UserPublicAPIv3 } from "../DBExtras.ts";
 
 export type UserInfer = InferAttributes<User>;
 export class User extends Model<InferAttributes<User>, InferCreationAttributes<User>>{
@@ -21,7 +21,7 @@ export class User extends Model<InferAttributes<User>, InferCreationAttributes<U
         return await User.findByPk(id, {attributes: ['id']}) ? true : false;
     }
 
-    public getApiResponse(): UserPublicAPI {
+    public getApiResponse(): UserPublicAPIv3 {
         return {
             id: this.id,
             username: this.username,

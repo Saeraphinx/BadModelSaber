@@ -4,19 +4,19 @@ import fileUpload from "express-fileupload";
 
 export { z } from "zod/v4";
 
-const ZodAssetID = z.number().int().positive();
+const ZodNumberID = z.number().int().positive();
 const ZodAssetType = z.enum(AssetType);
 const ZodAssetFileFormat = z.enum(AssetFileFormat);
 const ZodAssetStatus = z.enum(Status);
 
 export class Validator {
     public static z = z;
-    public static zAssetID = ZodAssetID;
+    public static zNumberID = ZodNumberID;
     public static zAssetType = ZodAssetType;
     public static zAssetFileFormat = ZodAssetFileFormat;
     public static zAssetStatus = ZodAssetStatus;
 
-    public static zCreateAsset = Asset.validator.pick({
+    public static zCreateAssetv3 = Asset.validator.pick({
         type: true,
         fileFormat: true,
         name: true,
@@ -27,7 +27,7 @@ export class Validator {
         tags: true,
     });
 
-    public static zFilterAsset = z.object({
+    public static zFilterAssetv3 = z.object({
         type: ZodAssetType.optional(),
         fileFormat: ZodAssetFileFormat.optional(),
         status: ZodAssetStatus.optional(),
@@ -43,12 +43,12 @@ export class Validator {
         return true; // Valid if both are provided or neither is provided
     });
 
-    public static zApprovalObj = z.object({
+    public static zApprovalObjv3 = z.object({
         status: ZodAssetStatus,
         reason: z.string().max(320).optional().default(`No reason provided.`),
     });
 
-    public static zAssetIdArray = z.array(ZodAssetID);
+    public static zAssetIdArray = z.array(ZodNumberID);
 
     public static validateThumbnail(file: fileUpload.UploadedFile) {
         let isAcceptableImage =
