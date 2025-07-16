@@ -4,9 +4,10 @@ import { Logger } from "./Logger.ts";
 import { ModelStatic, Sequelize, DataType, DataTypes } from "sequelize";
 import { Umzug, SequelizeStorage } from "umzug";
 import { User } from "./database/tables/User.ts";
-import { Asset, AssetType, Status, AssetFileFormat } from "./database/tables/Asset.ts";
+import { Asset } from "./database/tables/Asset.ts";
 import { Alert } from "./database/tables/Alert.ts";
 import { AssetRequest } from "./database/tables/AssetRequest.ts";
+import { Status } from "./database/DBExtras.ts";
 
 export * from "./database/tables/User.ts";
 export * from "./database/tables/Asset.ts";
@@ -40,11 +41,13 @@ export class DatabaseManager {
             this.sequelize = new Sequelize({
                 dialect: EnvConfig.database.dialect,
                 storage: overridePath ? overridePath : storagePath,
+                logging: false
             });
         } else if (EnvConfig.database.dialect === `postgres`) {
             Logger.log(`Using PostgreSQL database`);
             this.sequelize = new Sequelize(EnvConfig.database.connectionString, {
                 dialect: EnvConfig.database.dialect,
+                logging: false,
             });
         } else {
             process.exit(1); // unsupported database dialect
@@ -106,11 +109,11 @@ export class DatabaseManager {
     }
 
     public loadTables() {
-        Logger.log(`Loading tables...`);
+        Logger.debug(`Loading tables...`);
 
         this.Users = User.init({
             id: {
-                type: DataTypes.NUMBER,
+                type: DataTypes.STRING,
                 primaryKey: true,
                 allowNull: false,
                 unique: true
@@ -125,7 +128,7 @@ export class DatabaseManager {
                 defaultValue: ``
             },
             bio: {
-                type: DataTypes.STRING,
+                type: DataTypes.TEXT,
                 allowNull: false,
                 defaultValue: ``
             },
@@ -156,9 +159,10 @@ export class DatabaseManager {
         
         this.Assets = Asset.init({
             id: {
-                type: DataTypes.NUMBER,
+                type: DataTypes.INTEGER,
                 primaryKey: true,
                 allowNull: false,
+                autoIncrement: true,
                 unique: true
             },
             oldId: {
@@ -170,23 +174,14 @@ export class DatabaseManager {
                 type: DataTypes.JSON,
                 allowNull: false,
                 defaultValue: [],
-                validate: {
-                    isArray: true,
-                }
             },
             type: {
                 type: DataTypes.STRING,
                 allowNull: false,
-                validate: {
-                    isIn: [Object.values(AssetType)]
-                }
             },
             fileFormat: {
                 type: DataTypes.STRING,
                 allowNull: false,
-                validate: {
-                    isIn: [Object.values(AssetFileFormat)]
-                }
             },
             uploaderId: {
                 type: DataTypes.STRING,
@@ -235,9 +230,6 @@ export class DatabaseManager {
                 type: DataTypes.STRING,
                 allowNull: false,
                 defaultValue: Status.Private,
-                validate: {
-                    isIn: [Object.values(Status)]
-                }
             },
             statusHistory: {
                 type: DataTypes.JSON,
@@ -262,7 +254,7 @@ export class DatabaseManager {
 
         this.Alerts = Alert.init({
             id: {
-                type: DataTypes.NUMBER,
+                type: DataTypes.INTEGER,
                 primaryKey: true,
                 autoIncrement: true,
                 allowNull: false
@@ -276,12 +268,16 @@ export class DatabaseManager {
                 allowNull: false,
             },
             assetId: {
-                type: DataTypes.NUMBER,
+                type: DataTypes.INTEGER,
                 allowNull: true,
             },
             requestId: {
-                type: DataTypes.NUMBER,
+                type: DataTypes.INTEGER,
                 allowNull: true,
+            },
+            header: {
+                type: DataTypes.STRING,
+                allowNull: false,
             },
             message: {
                 type: DataTypes.STRING,
@@ -310,13 +306,13 @@ export class DatabaseManager {
 
         this.AssetRequests = AssetRequest.init({
             id: {
-                type: DataTypes.NUMBER,
+                type: DataTypes.INTEGER,
                 primaryKey: true,
                 autoIncrement: true,
                 allowNull: false
             },
             refrencedAsset: {
-                type: DataTypes.NUMBER,
+                type: DataTypes.INTEGER,
                 allowNull: false
             },
             requesterId: {
@@ -340,9 +336,14 @@ export class DatabaseManager {
                 allowNull: true,
                 defaultValue: null
             },
+            acceptReason: {
+                type: DataTypes.STRING,
+                allowNull: true,
+                defaultValue: null
+            },
             createdAt: DataTypes.DATE,
             updatedAt: DataTypes.DATE,
-            deletedAt: DataTypes.DATE
+            deletedAt: DataTypes.DATE,
         }, {
             sequelize: this.sequelize,
             modelName: `AssetRequest`,
@@ -352,29 +353,50 @@ export class DatabaseManager {
     }
 
     public loadHooks() {
-        Logger.log(`Loading hooks...`);
-
-        this.Assets.beforeCreate(`generateId`, (asset, options) => {
-            // Set the asset ID to a unique identifier if not provided
-            if (!asset.id) {
-                let id = new Date().getTime();
-                asset.setDataValue('id', id);
-            }
-        });
+        Logger.debug(`Loading hooks...`);
 
         this.Assets.afterValidate(`checkAssetValidator`, async (asset, options) => {
             // throws if invalid
-            await Asset.validator.parseAsync(asset);
+            if (asset.isNewRecord) {
+                await Asset.createValidator.parseAsync(asset);
+            } else {
+                await Asset.validator.parseAsync(asset);
+            }
         });
 
         this.Alerts.afterValidate(`checkAlertValidator`, async (alert, options) => {
             // throws if invalid
-            await Alert.validator.parseAsync(alert);
+            if (alert.isNewRecord) {
+                await Alert.createValidator.parseAsync(alert);
+            } else {
+                await Alert.validator.parseAsync(alert);
+            }
         });
 
         this.AssetRequests.afterValidate(`checkAssetRequestValidator`, async (request, options) => {
             // throws if invalid
-            await AssetRequest.validator.parseAsync(request);
+            if (request.isNewRecord) {
+                await AssetRequest.createValidator.parseAsync(request);
+            } else {
+                await AssetRequest.validator.parseAsync(request);
+            }
         });
+    }
+
+    public async export() {
+        let data: {
+            [key: string]: any[];
+        } = {};
+        for (const model in this.sequelize.models) {
+            const table = this.sequelize.models[model];
+            await table.findAll().then((rows) => {
+                console.log(`Exporting table ${table.name}:`);
+                data[table.name] = rows.map(row => row.toJSON());
+                console.log(`Exported ${rows.length} rows.`);
+            }).catch((error) => {
+                Logger.error(`Failed to export table ${table.name}: ${error.message}`);
+            });   
+        }
+        return data;
     }
 }

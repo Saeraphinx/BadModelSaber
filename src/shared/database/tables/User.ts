@@ -1,5 +1,5 @@
 import { CreationOptional, InferAttributes, InferCreationAttributes, Model } from "sequelize";
-import { UserPublicAPIv3 } from "../DBExtras.ts";
+import { UserPublicAPIv3, UserRole } from "../DBExtras.ts";
 
 export type UserInfer = InferAttributes<User>;
 export class User extends Model<InferAttributes<User>, InferCreationAttributes<User>>{
@@ -32,13 +32,3 @@ export class User extends Model<InferAttributes<User>, InferCreationAttributes<U
         };
     }
 }
-
-export enum UserRole {
-    Admin = "admin", // Admins have permission to manage users & potentially other sensitive operations
-    Developer = "developer", // Developers are able to view everything for development purposes.
-    Moderator = "moderator", // Moderators can approve & delete assets
-    Trusted = "trusted", // This role has no special permissions at this point in time.
-    BSMG = "bsmg", // This role is for BSMG staff, and has no special permissions at this point in time.
-    Banned = "banned", // Banned users cannot create assets, comment, or upload files. 
-}
-

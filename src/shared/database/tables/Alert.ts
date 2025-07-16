@@ -1,15 +1,8 @@
 import { InferAttributes, Model, InferCreationAttributes, CreationOptional } from "sequelize";
-import { Validator, z } from "../../Validator.ts";
+import { z } from "zod/v4";
 import { User } from "./User.ts";
 import { Asset } from "./Asset.ts";
-
-export enum AlertType {
-    AssetApproved = "asset_approved", // Alert when an asset is approved
-    AssetRejected = "asset_rejected", // Alert when an asset is rejected
-    AssetRemoval = "asset_removal", // Alert when an asset is removed
-
-    Request = "request", // Alert for asset requests
-}
+import { AlertType } from "../DBExtras.ts";
 
 export type AlertInfer = InferAttributes<Alert>;
 export class Alert extends Model<InferAttributes<Alert>, InferCreationAttributes<Alert>> {
@@ -18,8 +11,8 @@ export class Alert extends Model<InferAttributes<Alert>, InferCreationAttributes
     declare type: AlertType; // Type of alert, e.g. "new_asset", "asset_approved", etc.
     declare userId: string; // User ID of the person who should receive the alert
 
-    declare assetId: number | null; // Asset ID related to the alert, null if not applicable
-    declare requestId: number | null; // Request ID related to the alert, null if not applicable
+    declare assetId: CreationOptional<number | null>; // Asset ID related to the alert, null if not applicable
+    declare requestId: CreationOptional<number | null>; // Request ID related to the alert, null if not applicable
 
     declare header: string; // Header of the alert, e.g. "New Asset Approved"
     declare message: string; // Message content of the alert
@@ -30,9 +23,10 @@ export class Alert extends Model<InferAttributes<Alert>, InferCreationAttributes
     declare updatedAt: CreationOptional<Date>; // Timestamp of when the alert was last updated
     declare deletedAt: CreationOptional<Date | null>; // Timestamp of when the alert was deleted, null
 
+    // #region Validators
     public static validator = z.object({
         // unique by db
-        id: Validator.zNumberID,
+        id: z.number().int().positive(),
         type: z.enum(AlertType),
         userId: z.string().refine(async (id) => await User.checkIfExists(id)),
         assetId: z.number().int().refine(async (id) => await Asset.checkIfExists(id)).nullable(),
@@ -51,6 +45,25 @@ export class Alert extends Model<InferAttributes<Alert>, InferCreationAttributes
         }
         return true;
     });
+
+    public static createValidator = z.object({
+        ...Alert.validator.shape,
+        id: Alert.validator.shape.id.nullish(), // id is optional when creating a new alert
+        read: Alert.validator.shape.read.nullish(),
+        assetId: Alert.validator.shape.assetId.nullish(),
+        requestId: Alert.validator.shape.requestId.nullish(),
+        discordMessageSent: Alert.validator.shape.discordMessageSent.nullish(),
+        createdAt: Alert.validator.shape.createdAt.nullish(),
+        updatedAt: Alert.validator.shape.updatedAt.nullish(),
+        deletedAt: Alert.validator.shape.deletedAt.nullish(),
+    }).refine((data) => {
+        // Ensure that either assetId or requestId is provided, but not both
+        if ((data.assetId === null && data.requestId === null) || (data.assetId !== null && data.requestId !== null)) {
+            throw new Error("Either assetId or requestId must be provided, but not both.");
+        }
+        return true;
+    });
+    // #endregion Validators
 
     public toAPIResponse() {
         return {

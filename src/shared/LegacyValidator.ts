@@ -1,4 +1,4 @@
-import { z } from "./Validator.ts"
+import { z } from "zod/v4";
 
 export class LegacyValidator {
     public static readonly zFilterTypes = z.enum([`author`, `name`, `tag`, `hash`, `discordid`, `id`]);

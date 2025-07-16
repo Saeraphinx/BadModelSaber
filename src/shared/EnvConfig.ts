@@ -1,4 +1,4 @@
-const DEFAULT_CONFIG = {
+export const DEFAULT_CONFIG = {
     auth: {
         discord: {
             clientId: ``,

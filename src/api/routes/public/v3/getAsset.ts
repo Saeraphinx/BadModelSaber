@@ -1,8 +1,8 @@
 import { Router } from "express";
 import { auth, validate } from "../../../RequestUtils.ts";
 import { Validator } from "../../../../shared/Validator.ts";
-import { Asset } from "../../../../shared/Database.ts";
-import { Op } from "sequelize";
+import { Asset, AssetInfer } from "../../../../shared/Database.ts";
+import { Op, WhereOptions } from "sequelize";
 import { parseErrorMessage } from "../../../../shared/Tools.ts";
 import { AssetPublicAPIv3 } from "../../../../shared/database/DBExtras.ts";
 
@@ -20,14 +20,20 @@ export class GetAssetRoutesV3 {
                 return;
             }
 
-            Asset.findAll({
-                where: {
-                    type: query.type,
-                    fileFormat: query.fileFormat,
-                    status: query.status ? query.status : allowedStatuses,
-                    tags: query.tags ? { [Op.contains]: query.tags } : undefined
+            let whereOptions: WhereOptions<AssetInfer> = {};
+            whereOptions.status = query.status ? query.status : allowedStatuses;
+            if (query.type) {
+                whereOptions.type = query.type;
+            }
+            if (query.fileFormat) {
+                whereOptions.fileFormat = query.fileFormat;
+            }
+            if (query.tags) {
+                whereOptions.tags = { [Op.contains]: query.tags };
+            }
 
-                },
+            Asset.findAll({
+                where: whereOptions,
                 limit: query.limit ?? undefined,
                 offset: query.page && query.limit ? ((query.page - 1) * query.limit) : undefined,
                 order: [[`createdAt`, `DESC`]]
@@ -35,7 +41,7 @@ export class GetAssetRoutesV3 {
                 let response = assets.map(asset => asset.getApiV3Response());
                 res.status(200).json({ assets: response, total: assets.length, page: query.page ?? null});
             }).catch(err => {
-                res.status(500).json({ error: `Error fetching assets: ${parseErrorMessage(err)}` });
+                res.status(500).json({ message: `Error fetching assets: ${parseErrorMessage(err)}` });
             });
         });
 

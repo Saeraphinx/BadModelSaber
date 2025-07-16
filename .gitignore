@@ -2,3 +2,6 @@
 /build
 /node_modules
 /storage
+/test/test.sqlite
+/test/testData.json
+.env

@@ -1,11 +1,6 @@
 import { InferAttributes, Model, InferCreationAttributes, CreationOptional } from "sequelize";
-import { Validator, z } from "../../../shared/Validator.ts";
-
-export enum RequestType {
-    Credit = "credit", // Request to credit the user for an asset
-    Link = "link", // Request to add an asset to linkedIds that the author is not the uploader of
-    Report = "report", // Request to report an asset for a specific reason
-}
+import { z } from "zod/v4";
+import { RequestType } from "../DBExtras.ts";
 
 export type AssetRequestInfer = InferAttributes<AssetRequest>;
 export class AssetRequest extends Model<InferAttributes<AssetRequest>, InferCreationAttributes<AssetRequest>> {
@@ -24,14 +19,16 @@ export class AssetRequest extends Model<InferAttributes<AssetRequest>, InferCrea
     declare updatedAt: CreationOptional<Date>; // Timestamp of when the request was last updated
     declare deletedAt: CreationOptional<Date | null>; // Timestamp of when the request was deleted, null if not deleted
 
+    // #region Validators
     public static validator = z.object({
-        id: Validator.zNumberID,
+        id: z.number().int().positive(),
         refrencedAsset: z.number().int().min(1),
         requesterId: z.string().min(1).max(100),
         requestResponseBy: z.string().min(1).max(100).nullable(),
         requestType: z.enum(RequestType),
         reason: z.string().min(1).max(4096),
         accepted: z.boolean().nullable(),
+        acceptReason: z.string().max(320).nullable().default(`No reason provided.`),
         createdAt: z.date(),
         updatedAt: z.date(),
         deletedAt: z.date().nullable(),
@@ -46,6 +43,18 @@ export class AssetRequest extends Model<InferAttributes<AssetRequest>, InferCrea
         }
         return true;
     });
+
+    public static createValidator = z.object({
+        ...AssetRequest.validator.shape,
+        id: AssetRequest.validator.shape.id.nullable(), // id is optional when creating a new request
+        accepted: AssetRequest.validator.shape.accepted.nullable(),
+        acceptReason: AssetRequest.validator.shape.acceptReason.nullable(),
+        createdAt: AssetRequest.validator.shape.createdAt.nullable(),
+        updatedAt: AssetRequest.validator.shape.updatedAt.nullable(),
+        deletedAt: AssetRequest.validator.shape.deletedAt.nullable(),
+    });
+
+    // #endregion Validators
 
     public accept(reason: string): void {
         this.accepted = true;

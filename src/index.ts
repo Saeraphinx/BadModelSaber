@@ -3,16 +3,18 @@ import { EnvConfig } from "./shared/EnvConfig.ts";
 import express from "express";
 import cors from "cors";
 import { Logger } from "./shared/Logger.ts";
-import 'dotenv/config'
 import { AuthRoutes } from "./api/routes/public/all/auth.ts";
 import { GetAssetRoutesV3 } from "./api/routes/public/v3/getAsset.ts";
 import { ApprovalRoutes } from "./api/routes/private/approval.ts";
 import { UploadRoutesV3 } from "./api/routes/public/v3/upload.ts";
+import { AlertRoutes } from "./api/routes/private/alerts.ts";
+import { GetV2 } from "./api/routes/public/v2/get.ts";
 
-function init() {
+export async function init() {
     EnvConfig.load();
     Logger.init();
     const db = new DatabaseManager();
+    await db.init();
 
     const app = express();
     app.use(cors({
@@ -31,17 +33,23 @@ function init() {
 
     // Load API routes
     AuthRoutes.loadRoutes(apiRouter);
+    AlertRoutes.loadRoutes(apiRouter);
+    ApprovalRoutes.loadRoutes(apiRouter);
+    GetV2.loadRoutes(v2Router);
     UploadRoutesV3.loadRoutes(v3Router);
     GetAssetRoutesV3.loadRoutes(v3Router);
-    ApprovalRoutes.loadRoutes(v3Router);
 
     apiRouter.use(`/v1`, v1Router);
     apiRouter.use(`/v2`, v2Router);
     apiRouter.use(`/v3`, v3Router);
 
+    app.use(`${EnvConfig.server.apiRoute}`, apiRouter);
+    app.use(`${EnvConfig.server.fileRoute}/files`, fileRouter);
 
-    app.listen(EnvConfig.server.port, () => {
-        console.log(`Server is running on ${EnvConfig.server.baseUrl}`);
+    let server = app.listen(EnvConfig.server.port, () => {
+        Logger.log(`Server is running on ${EnvConfig.server.baseUrl}`);
     });
+
+    return { app, server, db };
 }
 init();

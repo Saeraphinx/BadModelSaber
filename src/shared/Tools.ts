@@ -3,18 +3,25 @@ import { Validator } from "./Validator.ts";
 import { fromZodError, isZodErrorLike } from "zod-validation-error";
 import * as fs from "fs";
 import { randomBytes } from "crypto";
+import { ca } from "zod/v4/locales";
 
 export function parseErrorMessage(err: unknown): string {
-    if (err instanceof ValidationError || err instanceof UniqueConstraintError) {
-        return `${err.message} ${err.errors.map(e => e.message).join(`, `)}`;
-    } else if (isZodErrorLike(err)) {
-        return fromZodError(err).toString();
-    } else if (err instanceof Error) {
-        return `${err.message}`;
-    } else if (typeof err === `string`) {
-        return err;
-    } else {
-        return JSON.stringify(err);
+    try {
+        if (err instanceof ValidationError || err instanceof UniqueConstraintError) {
+            return `${err.message} ${err.errors.map(e => e.message).join(`, `)}`;
+        } else if (isZodErrorLike(err)) {
+            console.error(`Zod error detected:`, JSON.stringify(err, null, 2));
+            return fromZodError(err).toString();
+        } else if (err instanceof Error) {
+            return `${err.message}`;
+        } else if (typeof err === `string`) {
+            return err;
+        } else {
+            return JSON.stringify(err);
+        }
+    } catch (e) {
+        console.error(`Error parsing error message: ${e}`);
+        return `Unknown error`;
     }
 }
 

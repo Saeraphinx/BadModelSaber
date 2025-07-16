@@ -1,111 +1,8 @@
 import { InferAttributes, Model, InferCreationAttributes, NonAttribute, CreationOptional } from "sequelize";
 import { User, UserRole } from "../../Database.ts";
-import { AssetPublicAPIv1, AssetPublicAPIv2, AssetPublicAPIv3, DatabaseHelper, UserPublicAPIv3 } from "../DBExtras.ts";
+import { AssetFileFormat, AssetPublicAPIv1, AssetPublicAPIv2, AssetPublicAPIv3, AssetType, Credit, License, LinkedAsset, Status, StatusHistory, UserPublicAPIv3 } from "../DBExtras.ts";
 import { z } from "zod/v4";
-import { Validator } from "../../Validator.ts";
 import { EnvConfig } from "../../../shared/EnvConfig.ts";
-
-// #region Asset Enums
-export enum AssetType {
-    Avatar = 'avatar',
-    Saber = 'saber',
-    Platform = 'platform',
-    Note = 'note',
-    Wall = 'wall',
-    HealthBar = 'health-bar',
-    Sound = 'sound',
-    Banner = 'banner',
-
-    ChromaEnvironment = 'chroma-environment',
-    Camera2Config = 'camera2-config',
-    CountersPlusConfig = 'counters-plus-config',
-    HSVConfig = 'hitscorevisualizer-config',
-}
-
-export enum AssetFileFormat {
-    // sabers
-    Saber_Wacker = 'saber_wacker',
-    Saber_Saber = 'saber_saber',
-
-    Avatar_Avatar = 'avatar_avatar',
-
-    Platform_Plat = 'platform_plat',
-
-    Note_Bloq = 'note_bloq',
-    Note_Cyoob = 'note_cyoob',
-
-    Wall_Pixie = 'wall_pixie',
-    Wall_Box = 'wall_box',
-
-    HealthBar_Energy = 'health-bar_energy',
-
-    Sound_Ogg = 'sound_ogg',
-    Sound_Mp3 = 'sound_mp3',
-
-    Banner_Png = 'banner_png',
-
-    JSON = 'json_json',
-}
-    
-export enum Status {
-    Private = 'private',
-    Pending = 'pending',
-    Approved = 'approved',
-    Rejected = 'rejected',
-}
-
-export enum License {
-    CC0 = "cc0-1.0",
-    CC40_BY = "cc4.0-by",
-    CC40_BY_SA = "cc4.0-by-sa",
-    CC40_BY_ND = "cc4.0-by-nd",
-    CC40_BY_NC = "cc4.0-by-nc",
-    CC40_BY_NC_SA = "cc4.0-by-nc-sa",
-    CC40_BY_NC_ND = "cc4.0-by-nc-nd",
-    Custom = "custom"
-}
-
-export type StatusHistory = {
-    status: Status;
-    reason: string;
-    timestamp: Date;
-    userId: string; // User ID of the person who changed the status
-};
-
-export interface LinkedAsset {
-    id: number;
-    linkType: LinkedAssetLinkType;
-}
-
-export enum LinkedAssetLinkType {
-    Older = 'older', // e.g. a newer version of the asset
-    Newer = 'newer', // e.g. an older version of the asset
-    AltFormat = 'altFormat', // e.g. a different format of the same asset (e.g. .saber and .wacker)
-    Alternate = 'alternate', // e.g. an alternate version of the asset (e.g. a different color scheme)
-}
-
-export interface Credit { // ${workDone} by ${userId.username}
-    userId: string; // User ID of the person credited
-    workDone: string; // Description of the work done by the user
-}
-
-export enum SystemTags {
-    CustomColors = 'custom-colors',
-    CustomTrails = 'custom-trails',
-    CustomBombs = 'custom-bombs',
-    CustomArrows = 'custom-arrows',
-    Reactive = 'reactive',
-    AudioLink = 'AudioLink',
-    Thin = 'thin',
-    FBT = 'fbt',
-    Cloth = 'cloth',
-    DynamicBones = 'dynamic-bones',
-    EQ = 'eq',
-    FirstPersonCompatible = 'first-person-compatible',
-    ShaderReplacement = 'shader-replacement',
-    NSFW = 'nsfw',
-}
-// #endregion Asset Enums
 
 export type AssetInfer = InferAttributes<Asset>;
 export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes<Asset>> {
@@ -135,16 +32,17 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
     declare readonly deletedAt: CreationOptional<Date | null>;
 
     get uploader(): NonAttribute<Promise<User | null>> {
-        return DatabaseHelper.db.Users.findByPk(this.uploaderId); // This should be replaced with a User object in the actual implementation
+        return User.findByPk(this.uploaderId); // This should be replaced with a User object in the actual implementation
     }
 
     get fileName(): NonAttribute<string> {
         return `${this.fileHash}.${this.fileFormat.split('_')[1]}`; // e.g. ".saber"
     }
 
+    // #region Validators
     public static validator = z.object({
         // unique by db
-        id: Validator.zNumberID,
+        id: z.number().int().positive(),
         // unique by db
         oldId: z.string().nullable(),
         linkedIds: z.array(z.object({
@@ -188,6 +86,20 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
         message: "If license is 'custom', licenseUrl must be provided.",
     });
 
+    // This validator is used for creating new assets, it omits the id and timestamps and other fields that are marked as CreationOptional
+    public static createValidator = z.object({
+        ...Asset.validator.shape,
+        id: Asset.validator.shape.id.nullable(),
+        linkedIds: Asset.validator.shape.linkedIds.nullable(),
+        credits: Asset.validator.shape.credits.nullable(),
+        licenseUrl: Asset.validator.shape.licenseUrl.nullable(),
+        sourceUrl: Asset.validator.shape.sourceUrl.nullable(),
+        createdAt: Asset.validator.shape.createdAt.nullable(),
+        updatedAt: Asset.validator.shape.updatedAt.nullable(),
+        deletedAt: Asset.validator.shape.deletedAt.nullable(),
+    })
+    // #endregion
+
     public static async checkIfExists(id: number): Promise<boolean> {
         return await Asset.findByPk(id, {attributes: ['id']}) ? true : false;
     }
@@ -209,7 +121,7 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
         return this.status === Status.Approved || this.status === Status.Pending;
     }
 
-    public static allowedToViewRoles(user: User|undefined): Status[] {
+    public static allowedToViewRoles(user: User|undefined|null): Status[] {
         if (!user) {
             return [Status.Approved, Status.Pending]
         }

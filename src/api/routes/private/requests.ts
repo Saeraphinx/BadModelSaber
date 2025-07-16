@@ -33,7 +33,7 @@ export class RequestRoutes {
 
         router.post(`/requests/:id/decline`, auth(`loggedIn`, true), (req, res) => {
             const { responded: queryResponse, data: id } = validate(req, res, `params`, Validator.zNumberID);
-            if (!req.auth.isAuthed || responded) {
+            if (!req.auth.isAuthed || queryResponse) {
                 return;
             }
 

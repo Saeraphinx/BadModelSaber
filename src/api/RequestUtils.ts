@@ -2,7 +2,7 @@ import { Logger, LogLevel } from "../shared/Logger.ts";
 import { User, UserRole } from "../shared/Database.ts";
 import { NextFunction, Request, Response } from "express";
 import fileUpload from 'express-fileupload';
-import { z } from "../shared/Validator.ts";
+import { z } from "zod/v4";
 import { parseErrorMessage } from "../shared/Tools.ts";
 import { Snowflake } from "discord.js";
 
@@ -40,7 +40,7 @@ export function auth(requiredRole: UserRole[] | `loggedIn` | `any`, allowBanned 
         }
 
         if (requiredRole === `any`) {
-            if (req.session.userId) {
+            if (req.session?.userId) {
                 User.findByPk(req.session.userId).then(user => {
                     if (user) {
                         req.auth = {
@@ -51,10 +51,10 @@ export function auth(requiredRole: UserRole[] | `loggedIn` | `any`, allowBanned 
                 }).catch(err => {
                     Logger.error(`Error fetching user from session: ${err.message}`);
                 });
-                return next();
             }
+            return next();
         } else {
-            if (!req.session.userId) {
+            if (!req.session?.userId) {
                 return res.status(401).json({ error: "Unauthorized" });
             }
 

@@ -2,7 +2,7 @@ import * as Winston from "winston";
 import { EnvConfig } from "./EnvConfig.ts";
 
 export class Logger {
-    private static winston: Winston.Logger;
+    private static winston: Winston.Logger | undefined;
 
     public static init() {
         let transports: Winston.transport[] = [];
@@ -17,7 +17,7 @@ export class Logger {
         transports.push(new Winston.transports.Console({
             forceConsole: true,
             level: consoleLevel,
-            //silent: process.env.NODE_ENV == `test`,
+            silent: EnvConfig.isTestMode,
             consoleWarnLevels: [`consoleWarn`, `warn`, `error`, `debugWarn`],
             format: Winston.format.combine(
                 Winston.format.timestamp({ format: `MM/DD/YY HH:mm:ss` }),
@@ -31,7 +31,7 @@ export class Logger {
             //filename: `storage/logs/${new Date(Date.now()).toLocaleDateString(`en-US`, { year: `numeric`, month: `numeric`, day: `numeric`}).replaceAll(`/`, `-`)}.log`,
             zippedArchive: true,
             maxsize: 20 * 1024 * 1024,
-            silent: process.env.NODE_ENV == `test`,
+            silent: EnvConfig.isTestMode,
             maxFiles: 14,
             level: EnvConfig.isDevMode ? `debug` : `info`,
             format: Winston.format.combine(
@@ -58,24 +58,28 @@ export class Logger {
         Logger.log(`Logger initialized.`);
     }
 
-    public static log(message: string, level = LogLevel.Info): void {
-        Logger.winston.log(level, message);
+    public static log(message: any, level: LogLevel = LogLevel.Info): void {
+        if (Logger.winston) {
+            Logger.winston.log(level, typeof message === 'string' ? message : JSON.stringify(message));
+        } else {
+            console.log(`[BBM ${level.toUpperCase()}]`, message);
+        }
     }
 
     public static debug(message: any): void {
-        Logger.winston.log(LogLevel.Debug, message);
+        Logger.log(message, LogLevel.Debug);
     }
 
     public static info(message: any): void {
-        Logger.winston.log(LogLevel.Info, message);
+        Logger.log(message, LogLevel.Info);
     }
 
     public static warn(message: any): void {
-        Logger.winston.log(LogLevel.Warn, message);
+        Logger.log(message, LogLevel.Warn);
     }
 
     public static error(message: any): void {
-        Logger.winston.log(LogLevel.Error, message);
+        Logger.log(message, LogLevel.Error);
     }
 }
 

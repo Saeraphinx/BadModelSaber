@@ -2,7 +2,7 @@ import { Router, RequestHandler, NextFunction } from "express";
 import fileUpload from "express-fileupload";
 import { auth, MiddlewareFunction, validate } from "../../../RequestUtils.ts";
 import { Logger, LogLevel } from "../../../../shared/Logger.ts";
-import { Validator, z } from "../../../../shared/Validator.ts";
+import { Validator } from "../../../../shared/Validator.ts";
 import { parseErrorMessage } from "../../../../shared/Tools.ts";
 import { Asset, Status } from "../../../../shared/Database.ts";
 import path from "node:path";
