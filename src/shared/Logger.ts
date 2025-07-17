@@ -17,7 +17,6 @@ export class Logger {
         transports.push(new Winston.transports.Console({
             forceConsole: true,
             level: consoleLevel,
-            silent: EnvConfig.isTestMode,
             consoleWarnLevels: [`consoleWarn`, `warn`, `error`, `debugWarn`],
             format: Winston.format.combine(
                 Winston.format.timestamp({ format: `MM/DD/YY HH:mm:ss` }),

@@ -1,11 +1,10 @@
-
 import * as fs from 'fs';
 
 import { AlertType, Asset, AssetFileFormat, AssetType, DatabaseManager, License, Status, User, UserRole } from '../src/shared/Database.ts';
 import { faker } from '@faker-js/faker';
 
 export async function generateFakeData() {
-    let db = new DatabaseManager(`./test/test.sqlite`);
+    let db = new DatabaseManager();
     await db.init();
 
     const testIcons = [
@@ -89,10 +88,18 @@ export async function generateFakeData() {
             });
         }
     }
-    if (fs.existsSync(`./test/testData.json`)) {
-        fs.unlinkSync(`./test/testData.json`);
-    }
+
     console.log(`Generated fake data for ${users.length} users, ${await db.Assets.count()} assets, and ${await db.Alerts.count()} alerts.`);
+
+    let data = await db.export();
+
+    if (fs.existsSync(`./storage/fakeData.json`)) {
+        fs.unlinkSync(`./storage/fakeData.json`);
+    }
+
+    fs.writeFileSync(`./storage/fakeData.json`, JSON.stringify(data, null, 0));
+    console.log(`Fake data written to ../storage/fakeData.json`);
+
     await db.closeConnenction();
     return true;
 }

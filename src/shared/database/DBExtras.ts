@@ -1,4 +1,6 @@
+import { Op, WhereOptions } from "sequelize";
 import { DatabaseManager } from "../Database.ts";
+import { EnvConfig } from "../EnvConfig.ts";
 
 export type UserPublicAPIv3 = {
     id: string;

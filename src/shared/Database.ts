@@ -1,4 +1,4 @@
-import path from "node:path";
+import path, { parse } from "node:path";
 import { EnvConfig } from "./EnvConfig.ts";
 import { Logger } from "./Logger.ts";
 import { ModelStatic, Sequelize, DataType, DataTypes } from "sequelize";
@@ -8,6 +8,8 @@ import { Asset } from "./database/tables/Asset.ts";
 import { Alert } from "./database/tables/Alert.ts";
 import { AssetRequest } from "./database/tables/AssetRequest.ts";
 import { Status } from "./database/DBExtras.ts";
+import fs from "node:fs";
+import { parseErrorMessage } from "./Tools.ts";
 
 export * from "./database/tables/User.ts";
 export * from "./database/tables/Asset.ts";
@@ -15,50 +17,31 @@ export * from "./database/tables/Alert.ts";
 export * from "./database/tables/AssetRequest.ts";
 export * from "./database/DBExtras.ts";
 
+export type Migration = typeof DatabaseManager.prototype.umzug._types.migration;
+
 export class DatabaseManager {
-    private sequelize: Sequelize;
-    private umzug: Umzug<Sequelize>;
+    public sequelize: Sequelize;
+    public umzug: Umzug<this>;
 
     public Users: ModelStatic<User>;
     public Assets: ModelStatic<Asset>;
     public Alerts: ModelStatic<Alert>;
     public AssetRequests: ModelStatic<AssetRequest>;
 
-    constructor(overridePath?: string) {
+    constructor() {
         Logger.log(`Creating DatabaseManager...`);
+        this.sequelize = new Sequelize(EnvConfig.database.connectionString, {
+            dialect: `postgres`,
+            logging: false
+        });
 
-        let storagePath:string|undefined = undefined;
-        if (EnvConfig.database.dialect === `sqlite`) {
-            if (EnvConfig.database.connectionString !== `:memory:`) {
-                storagePath = path.resolve(EnvConfig.storage.sqlite_db);
-            } else {
-                storagePath = `:memory:`;
-            }
-        }
-
-        if (EnvConfig.database.dialect === `sqlite`) {
-            Logger.log(`Using SQLite database at ${storagePath}`);
-            this.sequelize = new Sequelize({
-                dialect: EnvConfig.database.dialect,
-                storage: overridePath ? overridePath : storagePath,
-                logging: false
-            });
-        } else if (EnvConfig.database.dialect === `postgres`) {
-            Logger.log(`Using PostgreSQL database`);
-            this.sequelize = new Sequelize(EnvConfig.database.connectionString, {
-                dialect: EnvConfig.database.dialect,
-                logging: false,
-            });
-        } else {
-            process.exit(1); // unsupported database dialect
-        }
-
+        let globPath = `./build/shared/database/migrations/*.js`;
         this.umzug = new Umzug({
             migrations: {
-                glob: `./build/shared/migrations/*.js`, // have to use the built versions because the source is not present in the final build
+                glob: globPath,
             },
             storage: new SequelizeStorage({sequelize: this.sequelize}),
-            context: this.sequelize,
+            context: this,
             logger: Logger
         });
     }
@@ -103,7 +86,7 @@ export class DatabaseManager {
             Logger.log(`Database synced successfully.`);
             return this;
         } catch (error: any) {
-            Logger.error(`Failed to sync database: ${error.message}`);
+            Logger.error(`Failed to sync database: ${parseErrorMessage(error)}`);
             process.exit(1);
         }
     }
@@ -142,7 +125,7 @@ export class DatabaseManager {
                 defaultValue: `https://cdn.discordapp.com/embed/avatars/0.png`
             },
             roles: {
-                type: DataTypes.JSON,
+                type: DataTypes.ARRAY(DataTypes.STRING),
                 allowNull: false,
                 defaultValue: []
             },
@@ -188,7 +171,7 @@ export class DatabaseManager {
                 allowNull: false
             },
             credits: {
-                type: DataTypes.JSON,
+                type: DataTypes.JSONB,
                 allowNull: false,
                 defaultValue: []
             },
@@ -222,7 +205,7 @@ export class DatabaseManager {
                 allowNull: false
             },
             iconNames: {
-                type: DataTypes.JSON,
+                type: DataTypes.JSONB,
                 allowNull: false,
                 defaultValue: []
             },
@@ -232,12 +215,12 @@ export class DatabaseManager {
                 defaultValue: Status.Private,
             },
             statusHistory: {
-                type: DataTypes.JSON,
+                type: DataTypes.JSONB,
                 allowNull: false,
                 defaultValue: []
             },
             tags: {
-                type: DataTypes.JSON,
+                type: DataTypes.JSONB,
                 allowNull: false,
                 defaultValue: []
             },
@@ -381,6 +364,31 @@ export class DatabaseManager {
                 await AssetRequest.validator.parseAsync(request);
             }
         });
+    }
+
+    public async importFakeData() {
+        Logger.log(`Importing database...`);
+        let data = JSON.parse(fs.readFileSync(`./storage/fakeData.json`, `utf-8`));
+        if (!data || typeof data !== `object`) {
+            throw new Error(`Invalid fake data format`);
+        }
+
+        for (const model in data) {
+            if (model.toLowerCase().includes(`sequalize`)) {
+                Logger.warn(`Skipping Sequelize internal model: ${model}`);
+                continue; // Skip Sequelize internal models
+            }
+            const table = this.sequelize.models[model];
+            if (!table) {
+                Logger.error(`Table ${model} does not exist in the database.`);
+                continue;
+            }
+            await table.bulkCreate(data[model], { ignoreDuplicates: true, validate: true }).then(() => {
+                Logger.log(`Imported ${data[model].length} rows into table ${table.name}.`);
+            }).catch((error) => {
+                Logger.error(`Failed to import data into table ${table.name}: ${error.message}`);
+            });
+        }
     }
 
     public async export() {

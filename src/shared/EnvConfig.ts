@@ -21,13 +21,11 @@ export const DEFAULT_CONFIG = {
     storage: {
         uploads: `./storage/uploads`, // the directory where uploads are stored
         icons: `./storage/icons`, // the directory where icons are stored
-        sqlite_db: `./storage/database.sqlite`, // the path to the sqlite database file (if using sqlite)
         logs: `./storage/logs`, // the directory where logs are stored
         sessions: `./storage/sessions.sqlite`, // the directory where sessions are stored
     },
     database: {
-        dialect: `sqlite`, 
-        connectionString: `./storage/database.sqlite`, // the connection string for the database
+        connectionString: ``, // the connection string for the database
     }
 }
 
@@ -87,13 +85,11 @@ export class EnvConfig {
         EnvConfig.storage = {
             uploads: process.env.STORAGE_UPLOADS || DEFAULT_CONFIG.storage.uploads,
             icons: process.env.STORAGE_ICONS || DEFAULT_CONFIG.storage.icons,
-            sqlite_db: process.env.STORAGE_SQLITE_DB || DEFAULT_CONFIG.storage.sqlite_db,
             logs: process.env.STORAGE_LOGS || DEFAULT_CONFIG.storage.logs,
             sessions: process.env.STORAGE_SESSIONS || DEFAULT_CONFIG.storage.sessions,
         };
 
         EnvConfig.database = {
-            dialect: process.env.DB_DIALECT || DEFAULT_CONFIG.database.dialect,
             connectionString: process.env.DB_CONNECTION_STRING || DEFAULT_CONFIG.database.connectionString,
         };
     }
