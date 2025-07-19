@@ -10,10 +10,10 @@ import { UploadRoutesV3 } from "./api/routes/public/v3/upload.ts";
 import { AlertRoutes } from "./api/routes/private/alerts.ts";
 import { GetV2 } from "./api/routes/public/v2/get.ts";
 
-export async function init() {
+export async function init(overrideDbName?: string) {
     EnvConfig.load();
     Logger.init();
-    const db = new DatabaseManager();
+    const db = new DatabaseManager(overrideDbName);
     await db.init();
 
     const app = express();

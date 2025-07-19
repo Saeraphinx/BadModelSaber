@@ -12,6 +12,11 @@ export class AuthRoutes {
     private static validStates: {stateId: string, ip: string, redirectUrl: URL, userId: number|null}[] = [];
 
     public static loadRoutes(router: Router) {
+        if (!EnvConfig.auth.discord.clientSecret || !EnvConfig.auth.discord.clientId) {
+            Logger.warn(`Discord authentication is not configured. Skipping Discord auth routes.`);
+            return;
+        }
+
         passport.use(new DiscordStrategy({
             clientID: EnvConfig.auth.discord.clientId,
             clientSecret: EnvConfig.auth.discord.clientSecret,

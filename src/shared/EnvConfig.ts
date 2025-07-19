@@ -1,3 +1,5 @@
+import dotenv from 'dotenv';
+
 export const DEFAULT_CONFIG = {
     auth: {
         discord: {
@@ -61,6 +63,14 @@ export class EnvConfig {
     }
 
     public static load(): void {
+        let envExtension = ``;
+        if (EnvConfig.isTestMode) {
+            envExtension = `.test`;
+        } else if (EnvConfig.isDevMode) {
+            envExtension = `.dev`;
+        }
+        dotenv.config({ path: `.env${envExtension}` });
+
         EnvConfig.auth = {
             discord: {
                 clientId: process.env.DISCORD_CLIENT_ID || DEFAULT_CONFIG.auth.discord.clientId,

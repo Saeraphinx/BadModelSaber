@@ -22,17 +22,24 @@ export type Migration = typeof DatabaseManager.prototype.umzug._types.migration;
 export class DatabaseManager {
     public sequelize: Sequelize;
     public umzug: Umzug<this>;
+    public schemaName: string;
 
     public Users: ModelStatic<User>;
     public Assets: ModelStatic<Asset>;
     public Alerts: ModelStatic<Alert>;
     public AssetRequests: ModelStatic<AssetRequest>;
 
-    constructor() {
+    constructor(useAltSchema?: string) {
         Logger.log(`Creating DatabaseManager...`);
+        if (!EnvConfig.database.connectionString) {
+            throw new Error(`Database connection string is not set in environment variables.`);
+        }
+        this.schemaName = useAltSchema || `public`;
         this.sequelize = new Sequelize(EnvConfig.database.connectionString, {
             dialect: `postgres`,
-            logging: false
+            //logging: (msg) => fs.writeFileSync(`test.log`, msg.replaceAll(`\n`, `\\n`).replaceAll(`Executing (default): `, ``) + `\n`, { flag: `a` }),
+            logging: false,
+            schema: this.schemaName,
         });
 
         let globPath = `./build/shared/database/migrations/*.js`;
@@ -77,7 +84,9 @@ export class DatabaseManager {
     public async init() {
         Logger.log(`Initializing DatabaseManager...`);
 
+        // initialize everything for usage. should resolve once the database is ready.
         await this.connect();
+        await this.sequelize.query(`CREATE SCHEMA IF NOT EXISTS ${this.schemaName}`);
         await this.migrate();
         this.loadTables();
         this.loadHooks();
@@ -89,6 +98,24 @@ export class DatabaseManager {
             Logger.error(`Failed to sync database: ${parseErrorMessage(error)}`);
             process.exit(1);
         }
+    }
+
+    public async dropSchema() {
+        if (!this.schemaName) {
+            throw new Error(`Schema name is not set. Cannot drop schema.`);
+        }
+
+        if (this.schemaName === `public`) {
+            throw new Error(`Cannot drop the public schema. Please use a different schema name.`);
+        }
+
+        Logger.log(`Dropping schema ${this.schemaName}...`);
+        return await this.sequelize.query(`DROP SCHEMA IF EXISTS ${this.schemaName} CASCADE`).then(() => {
+            Logger.log(`Schema ${this.schemaName} dropped successfully.`);
+        }).catch((error) => {
+            Logger.error(`Failed to drop schema ${this.schemaName}: ${error.message}`);
+            throw error;
+        });
     }
 
     public loadTables() {

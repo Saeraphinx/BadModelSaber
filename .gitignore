@@ -5,3 +5,4 @@
 /test/test.sqlite
 /test/testData.json
 .env
+.env.*

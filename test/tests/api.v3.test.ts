@@ -6,7 +6,6 @@ import { AssetFileFormat, AssetType, Status, User, UserInfer, UserRole } from ".
 import { auth } from "../../src/api/RequestUtils.ts";
 import { NextFunction, Request } from "express";
 import { Op } from "sequelize";
-import { PostgreSqlContainer, StartedPostgreSqlContainer } from "@testcontainers/postgresql";
 
 let api_v3 = supertest(`http://localhost:8491/api/v3`);
 let user: User | undefined = undefined;
@@ -36,15 +35,12 @@ vi.mock(`../../src/api/RequestUtils.ts`, async () => {
 
 describe(`API v3`, () => {
     let server: Awaited<ReturnType<typeof init>>;
-    let postgresContainer: StartedPostgreSqlContainer;
     beforeAll(async () => {
-        postgresContainer = await new PostgreSqlContainer("postgres:16-alpine").start();
 
-        EnvConfig.database.connectionString = postgresContainer.getConnectionUri();
-        server = await init();
+        server = await init(`test_bms_apiv3`);
         await server.db.importFakeData();
-        let allUsers = await server.db.Users.findAll();
-        console.log(allUsers.map(u => u.toJSON()));
+        //let allUsers = await server.db.Users.findAll();
+        //console.log(allUsers.map(u => u.toJSON()));
         await server.db.Users.findOne({
             where: {
                 roles: { [Op.contains]: [UserRole.Admin] }
@@ -62,11 +58,8 @@ describe(`API v3`, () => {
         if (server.server.listening) {
             server.server.close();
         }
-
-        server.db.closeConnenction();
-        if (postgresContainer) {
-            await postgresContainer.stop();
-        }
+        await server.db.dropSchema();
+        await server.db.closeConnenction();
     });
 
     test(`should initialize server`, () => {
@@ -75,34 +68,34 @@ describe(`API v3`, () => {
         }
     });
 
-    // test.each(generateAssetFilterTestCases())('/assets filter (%s, %s, %s, %s', async (type, fileFormat, status, tags) => {
+    test.each(generateAssetFilterTestCases())('/assets filter (%s, %s, %s, %s', async (type, fileFormat, status, tags) => {
 
-    //     let res = await api_v3.get(`/assets`)
-    //         .query({
-    //             type: type,
-    //             fileFormat: fileFormat,
-    //             status: status,
-    //             tags: tags,
-    //         });
-    //     expect(res.statusCode, res.body.message).toBe(200);
-    //     expect(res.body).toHaveProperty(`assets`);
-    //     expect(res.body.assets).toBeInstanceOf(Array);
-    //     for (let asset of res.body.assets) {
-    //         expect(asset).toHaveProperty(`id`);
-    //         expect(asset).toHaveProperty(`type`);
-    //         expect(asset).toHaveProperty(`fileFormat`);
-    //         expect(asset).toHaveProperty(`status`);
-    //         if (type) {
-    //             expect(asset.type).toBe(type);
-    //         }
-    //         if (fileFormat) {
-    //             expect(asset.fileFormat).toBe(fileFormat);
-    //         }
-    //         if (status) {
-    //             expect(asset.status).toBe(status);
-    //         }
-    //     }
-    // });
+        let res = await api_v3.get(`/assets`)
+            .query({
+                type: type,
+                fileFormat: fileFormat,
+                status: status,
+                tags: tags,
+            });
+        expect(res.statusCode, res.body.message).toBe(200);
+        expect(res.body).toHaveProperty(`assets`);
+        expect(res.body.assets).toBeInstanceOf(Array);
+        for (let asset of res.body.assets) {
+            expect(asset).toHaveProperty(`id`);
+            expect(asset).toHaveProperty(`type`);
+            expect(asset).toHaveProperty(`fileFormat`);
+            expect(asset).toHaveProperty(`status`);
+            if (type) {
+                expect(asset.type).toBe(type);
+            }
+            if (fileFormat) {
+                expect(asset.fileFormat).toBe(fileFormat);
+            }
+            if (status) {
+                expect(asset.status).toBe(status);
+            }
+        }
+    });
 });
 
 function generateAssetFilterTestCases() {
