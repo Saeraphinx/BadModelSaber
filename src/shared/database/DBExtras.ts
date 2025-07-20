@@ -50,6 +50,7 @@ export type AssetPublicAPIv3 = {
     fileSize: number;
     status: Status;
     statusHistory: StatusHistory[];
+    credits: Credit[];
     tags: string[];
     createdAt: Date;
     updatedAt: Date;

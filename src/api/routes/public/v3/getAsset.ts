@@ -37,8 +37,8 @@ export class GetAssetRoutesV3 {
                 limit: query.limit ?? undefined,
                 offset: query.page && query.limit ? ((query.page - 1) * query.limit) : undefined,
                 order: [[`createdAt`, `DESC`]]
-            }).then(assets => {
-                let response = assets.map(asset => asset.getApiV3Response());
+            }).then(async assets => {
+                let response = await Promise.all(assets.map(asset => asset.getApiV3Response()));
                 res.status(200).json({ assets: response, total: assets.length, page: query.page ?? null});
             }).catch(err => {
                 res.status(500).json({ message: `Error fetching assets: ${parseErrorMessage(err)}` });

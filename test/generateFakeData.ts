@@ -4,7 +4,7 @@ import { AlertType, Asset, AssetFileFormat, AssetType, DatabaseManager, License,
 import { faker } from '@faker-js/faker';
 
 export async function generateFakeData() {
-    let db = new DatabaseManager();
+    let db = new DatabaseManager(`generateFakeData`);
     await db.init();
 
     const testIcons = [
@@ -100,6 +100,7 @@ export async function generateFakeData() {
     fs.writeFileSync(`./storage/fakeData.json`, JSON.stringify(data, null, 0));
     console.log(`Fake data written to ../storage/fakeData.json`);
 
+    await db.dropSchema();
     await db.closeConnenction();
     return true;
 }

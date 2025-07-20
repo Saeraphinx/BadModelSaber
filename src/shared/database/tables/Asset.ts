@@ -212,6 +212,7 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
             fileSize: this.fileSize,
             status: this.status,
             statusHistory: this.statusHistory,
+            credits: this.credits,
             tags: this.tags,
             createdAt: this.createdAt,
             updatedAt: this.updatedAt

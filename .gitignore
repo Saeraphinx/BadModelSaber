@@ -5,4 +5,5 @@
 /test/test.sqlite
 /test/testData.json
 .env
-.env.*
+.*.env
+!.default.env

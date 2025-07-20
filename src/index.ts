@@ -9,8 +9,10 @@ import { ApprovalRoutes } from "./api/routes/private/approval.ts";
 import { UploadRoutesV3 } from "./api/routes/public/v3/upload.ts";
 import { AlertRoutes } from "./api/routes/private/alerts.ts";
 import { GetV2 } from "./api/routes/public/v2/get.ts";
+import { GetUserRoutesV3 } from "./api/routes/public/v3/getUser.ts";
 
 export async function init(overrideDbName?: string) {
+    console.log(`Initializing BadModelSaber...`);
     EnvConfig.load();
     Logger.init();
     const db = new DatabaseManager(overrideDbName);
@@ -38,10 +40,12 @@ export async function init(overrideDbName?: string) {
     GetV2.loadRoutes(v2Router);
     UploadRoutesV3.loadRoutes(v3Router);
     GetAssetRoutesV3.loadRoutes(v3Router);
+    GetUserRoutesV3.loadRoutes(v3Router);
 
     apiRouter.use(`/v1`, v1Router);
     apiRouter.use(`/v2`, v2Router);
     apiRouter.use(`/v3`, v3Router);
+    apiRouter.use(v3Router);
 
     app.use(`${EnvConfig.server.apiRoute}`, apiRouter);
     app.use(`${EnvConfig.server.fileRoute}/files`, fileRouter);

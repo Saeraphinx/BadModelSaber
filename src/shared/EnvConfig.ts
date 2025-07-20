@@ -54,6 +54,10 @@ export class EnvConfig {
     public static storage: typeof DEFAULT_CONFIG.storage = DEFAULT_CONFIG.storage;
     public static database: typeof DEFAULT_CONFIG.database = DEFAULT_CONFIG.database;
 
+    public static get isProduction(): boolean {
+        return process.env.NODE_ENV === `production` || process.env.NODE_ENV === `prod`;
+    }
+
     public static get isDevMode(): boolean {
         return process.env.NODE_ENV === `development` || process.env.NODE_ENV === `dev`;
     }
@@ -66,10 +70,9 @@ export class EnvConfig {
         let envExtension = ``;
         if (EnvConfig.isTestMode) {
             envExtension = `.test`;
-        } else if (EnvConfig.isDevMode) {
-            envExtension = `.dev`;
         }
-        dotenv.config({ path: `.env${envExtension}` });
+        console.log(`Loading environment configuration from ${envExtension}.env`);
+        dotenv.config({ path: `${envExtension}.env`, quiet: true });
 
         EnvConfig.auth = {
             discord: {

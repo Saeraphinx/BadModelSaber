@@ -7,6 +7,7 @@ import { Asset } from "./database/tables/Asset.ts";
 export class Validator {
     public static z = z;
     public static zNumberID = z.number().int().positive();
+    public static zStringID = z.string().min(1).max(64);
     public static zAssetType =  z.enum(AssetType);
     public static zAssetFileFormat = z.enum(AssetFileFormat);
     public static zAssetStatus = z.enum(Status);
@@ -44,6 +45,7 @@ export class Validator {
     });
 
     public static zAssetIdArray = z.array(Validator.zNumberID);
+
 
     public static validateThumbnail(file: fileUpload.UploadedFile) {
         let isAcceptableImage =
