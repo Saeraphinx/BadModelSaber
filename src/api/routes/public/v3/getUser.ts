@@ -38,10 +38,14 @@ export class GetUserRoutesV3 {
         });
 
         router.get(`/users/:id/assets`, auth(`any`, true), (req, res) => {
-            const { responded, data: params } = validate(req, res, `params`, Validator.z.object({
+            const { responded: pResponded, data: params } = validate(req, res, `params`, Validator.z.object({
                 id: Validator.zStringID
             }));
-            if (responded) {
+            const { responded: qResponded, data: query } = validate(req, res, `query`, Validator.zFilterAssetv3.pick({
+                page: true,
+                limit: true
+            }));
+            if (pResponded || qResponded) {
                 return;
             }
 
@@ -56,7 +60,6 @@ export class GetUserRoutesV3 {
                         status: Asset.allowedToViewRoles(req.auth.user),
                         [Op.or]: [
                             { uploaderId: user.id },
-                            // Query credits array to find assets where the user is credited
                             {
                                 credits: {
                                     [Op.contains]: [{ userId: user.id, workDone: {[Op.not]: null} }] as any
@@ -64,10 +67,12 @@ export class GetUserRoutesV3 {
                             }
                         ]
                     },
+                    limit: query.limit ?? undefined,
+                    offset: query.page && query.limit ? ((query.page - 1) * query.limit) : undefined,
                     order: [["createdAt", "DESC"]]
                 }).then(async assets => {
                     const response = await Promise.all(assets.map(asset => asset.getApiV3Response()));
-                    res.status(200).json({ user: user.getApiResponse(), assets: response });
+                    res.status(200).json({ assets: response, total: assets.length, page: query.page ?? null} );
                 }).catch(err => {
                     res.status(500).json({ message: `Error fetching assets: ${parseErrorMessage(err)}` });
                 });

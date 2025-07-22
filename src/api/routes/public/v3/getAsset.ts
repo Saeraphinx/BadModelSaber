@@ -46,12 +46,14 @@ export class GetAssetRoutesV3 {
         });
 
         router.get(`/assets/:id`, auth(`any`, true), (req, res) => {
-            const { responded, data: id } = validate(req, res, `params`, Validator.zNumberID);
+            const { responded, data: params } = validate(req, res, `params`, Validator.z.object({
+                id: Validator.zNumberID
+            }));
             if (responded) {
                 return;
             }
 
-            Asset.findByPk(id).then(asset => {
+            Asset.findByPk(params.id).then(async asset => {
                 if (!asset) {
                     res.status(404).json({ error: `Asset not found` });
                     return;
@@ -62,7 +64,7 @@ export class GetAssetRoutesV3 {
                     return;
                 }
                 
-                res.status(200).json(asset.getApiV3Response());
+                res.status(200).json(await asset.getApiV3Response());
             }).catch(err => {
                 res.status(500).json({ error: `Error fetching asset: ${parseErrorMessage(err)}` });
             });

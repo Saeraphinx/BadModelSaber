@@ -40,7 +40,8 @@ export type AssetPublicAPIv3 = {
     linkedIds: LinkedAsset[]; // Array of linked asset IDs
     type: AssetType;
     fileFormat: AssetFileFormat;
-    author: UserPublicAPIv3;
+    uploader: UserPublicAPIv3;
+    icons: string[]; // Array of icon names
     name: string;
     description: string;
     license: string; // e.g. CC-BY, CC0, etc. or 'custom'

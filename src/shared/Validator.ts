@@ -6,7 +6,18 @@ import { Asset } from "./database/tables/Asset.ts";
 
 export class Validator {
     public static z = z;
-    public static zNumberID = z.number().int().positive();
+    public static zNumberID = z.transform((input, ctx) => {
+        const num = Number(input);
+        if (Number.isNaN(num) || !Number.isInteger(num) || num <= 0) {
+            ctx.issues.push({
+                input,
+                code: `custom`,
+                message: `Invalid ID: must be a positive integer.`,
+            });
+            return z.NEVER;
+        }
+        return num;
+    });
     public static zStringID = z.string().min(1).max(64);
     public static zAssetType =  z.enum(AssetType);
     public static zAssetFileFormat = z.enum(AssetFileFormat);

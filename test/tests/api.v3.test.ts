@@ -36,6 +36,8 @@ vi.mock(`../../src/api/RequestUtils.ts`, async () => {
 describe(`API v3`, () => {
     let server: Awaited<ReturnType<typeof init>>;
     beforeAll(async () => {
+        process.env.PORT = `8491`;
+        process.env.BASE_URL = `http://localhost:8491`;
         server = await init(`test_bms_apiv3`);
         await server.db.importFakeData();
         await server.db.Users.findOne({
@@ -121,9 +123,9 @@ describe(`API v3`, () => {
         expect(res.body).toHaveProperty(`assets`);
         expect(res.body.assets).toBeInstanceOf(Array);
         for (let asset of res.body.assets) {
-            let isUploader = asset.uploaderId === user.id;
+            let isUploader = asset.uploader.id === user.id;
             let isCredited = asset.credits.some((credit: any) => credit.userId === user?.id);
-            expect(isUploader || isCredited, `Asset ${asset.id} should be uploaded by (${isUploader}) or credited to the user (${isCredited})`).toBe(true, );
+            expect(isUploader || isCredited, `Asset ${asset.id} should be uploaded by ${user.id} or credited to the user`).toBe(true, );
         }
     });
 });

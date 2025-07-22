@@ -1,4 +1,6 @@
 import dotenv from 'dotenv';
+import * as fs from 'fs';
+import path from 'path';
 
 export const DEFAULT_CONFIG = {
     auth: {
@@ -66,13 +68,22 @@ export class EnvConfig {
         return process.env.NODE_ENV === `test`;
     }
 
+    public static get storagePath(): string {
+        return path.resolve(`./storage`);
+    }
+
     public static load(): void {
         let envExtension = ``;
         if (EnvConfig.isTestMode) {
             envExtension = `.test`;
         }
         console.log(`Loading environment configuration from ${envExtension}.env`);
-        dotenv.config({ path: `${envExtension}.env`, quiet: true });
+        if (fs.existsSync(`.env`)) {
+            dotenv.config({ path: `.env`, quiet: true });
+        }
+        if (fs.existsSync(`${envExtension}.env`)) {
+            dotenv.config({ path: `${envExtension}.env`, quiet: true });
+        }
 
         EnvConfig.auth = {
             discord: {
@@ -101,6 +112,13 @@ export class EnvConfig {
             logs: process.env.STORAGE_LOGS || DEFAULT_CONFIG.storage.logs,
             sessions: process.env.STORAGE_SESSIONS || DEFAULT_CONFIG.storage.sessions,
         };
+
+        if (!fs.existsSync(EnvConfig.storage.uploads)) {
+            fs.mkdirSync(EnvConfig.storage.uploads, { recursive: true });
+        }
+        if (!fs.existsSync(EnvConfig.storage.icons)) {
+            fs.mkdirSync(EnvConfig.storage.icons, { recursive: true });
+        }
 
         EnvConfig.database = {
             connectionString: process.env.DB_CONNECTION_STRING || DEFAULT_CONFIG.database.connectionString,

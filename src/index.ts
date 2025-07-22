@@ -10,6 +10,8 @@ import { UploadRoutesV3 } from "./api/routes/public/v3/upload.ts";
 import { AlertRoutes } from "./api/routes/private/alerts.ts";
 import { GetV2 } from "./api/routes/public/v2/get.ts";
 import { GetUserRoutesV3 } from "./api/routes/public/v3/getUser.ts";
+import { StatusRoutes } from "./api/routes/public/all/status.ts";
+import { FileRoutes } from "./api/routes/files/files.ts";
 
 export async function init(overrideDbName?: string) {
     console.log(`Initializing BadModelSaber...`);
@@ -35,6 +37,7 @@ export async function init(overrideDbName?: string) {
 
     // Load API routes
     AuthRoutes.loadRoutes(apiRouter);
+    StatusRoutes.loadRoutes(apiRouter);
     AlertRoutes.loadRoutes(apiRouter);
     ApprovalRoutes.loadRoutes(apiRouter);
     GetV2.loadRoutes(v2Router);
@@ -47,8 +50,10 @@ export async function init(overrideDbName?: string) {
     apiRouter.use(`/v3`, v3Router);
     apiRouter.use(v3Router);
 
+    FileRoutes.loadRoutes(fileRouter);
+
     app.use(`${EnvConfig.server.apiRoute}`, apiRouter);
-    app.use(`${EnvConfig.server.fileRoute}/files`, fileRouter);
+    app.use(`${EnvConfig.server.fileRoute}`, fileRouter);
 
     let server = app.listen(EnvConfig.server.port, () => {
         Logger.log(`Server is running on ${EnvConfig.server.baseUrl}`);
@@ -56,4 +61,11 @@ export async function init(overrideDbName?: string) {
 
     return { app, server, db };
 }
-init();
+
+// check if this file is being run directly
+if (process.argv[1] === import.meta.filename) {
+    init().catch((err) => {
+        Logger.error(`Failed to initialize BadModelSaber: ${err}`);
+        process.exit(1);
+    });
+}

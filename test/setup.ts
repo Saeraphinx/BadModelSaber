@@ -16,8 +16,6 @@ vi.mock(`../src/api/routes/public/all/auth.ts`, async (original) => {
 
 
 process.env.NODE_ENV = `test`;
-process.env.PORT = `8491`;
-process.env.BASE_URL = `http://localhost:8491`;
 
 if (!fs.existsSync(`./storage/fakeData.json`)) {
     console.log(`No test data found, generating fake data...`);
