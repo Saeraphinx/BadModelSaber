@@ -2,7 +2,7 @@ import { InferAttributes, Model, InferCreationAttributes, CreationOptional } fro
 import { z } from "zod/v4";
 import { User } from "./User.ts";
 import { Asset } from "./Asset.ts";
-import { AlertType } from "../DBExtras.ts";
+import { AlertPublicAPIv3, AlertType } from "../DBExtras.ts";
 
 export type AlertInfer = InferAttributes<Alert>;
 export class Alert extends Model<InferAttributes<Alert>, InferCreationAttributes<Alert>> {
@@ -65,7 +65,7 @@ export class Alert extends Model<InferAttributes<Alert>, InferCreationAttributes
     });
     // #endregion Validators
 
-    public toAPIResponse() {
+    public toAPIResponse(): AlertPublicAPIv3 {
         return {
             id: this.id,
             type: this.type,

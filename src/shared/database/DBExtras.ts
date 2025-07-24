@@ -7,9 +7,22 @@ export type UserPublicAPIv3 = {
     username: string;
     displayName: string | null;
     bio: string | null;
-    sponsorUrl: string | null;
+    sponsorUrl: string[] | null;
+    avatarUrl: string;
     roles: UserRole[];
 }
+
+export type AlertPublicAPIv3 = {
+    id: number;
+    type: AlertType;
+    assetId: number | null;
+    requestId: number | null;
+    header: string;
+    message: string;
+    read: boolean;
+    createdAt: Date;
+    updatedAt: Date;
+};
 
 export type AssetPublicAPIv2 = {
     tags: string[];

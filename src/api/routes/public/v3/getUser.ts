@@ -8,21 +8,16 @@ import { AssetPublicAPIv3 } from "../../../../shared/database/DBExtras.ts";
 
 export class GetUserRoutesV3 {
     public static loadRoutes(router: Router): void {
-        router.get(`/user`, auth(`loggedIn`, true), (req, res) => {
-            if (!req.auth.isAuthed) {
-                res.status(401).json({ error: "Unauthorized" });
-                return;
-            }
-
-            res.status(200).json(req.auth.user.getApiResponse());
-        });
-
-        router.get(`/users/:id`, (req, res) => {
+        router.get(`/users/:id`, auth(`any`, true), (req, res) => {
             const { responded, data: params } = validate(req, res, `params`, Validator.z.object({
-                id: Validator.zStringID
+                id: Validator.zUserID
             }));
             if (responded) {
                 return;
+            }
+
+            if (params.id === `me` && req.auth.isAuthed) {
+                params.id = req.auth.user.id;
             }
 
             User.findByPk(params.id).then(user => {
@@ -39,7 +34,7 @@ export class GetUserRoutesV3 {
 
         router.get(`/users/:id/assets`, auth(`any`, true), (req, res) => {
             const { responded: pResponded, data: params } = validate(req, res, `params`, Validator.z.object({
-                id: Validator.zStringID
+                id: Validator.zUserID
             }));
             const { responded: qResponded, data: query } = validate(req, res, `query`, Validator.zFilterAssetv3.pick({
                 page: true,
@@ -47,6 +42,10 @@ export class GetUserRoutesV3 {
             }));
             if (pResponded || qResponded) {
                 return;
+            }
+
+            if (params.id === `me` && req.auth.isAuthed) {
+                params.id = req.auth.user.id;
             }
 
             User.findByPk(params.id).then(user => {

@@ -7,7 +7,7 @@ import { parseErrorMessage } from "../../../shared/Tools.ts";
 export class AlertRoutes {
     public static loadRoutes(router: Router): void {
         router.get(`/alerts`, auth(`loggedIn`, true), (req, res) => {
-            const { responded, data } = validate(req, res, `query`, Validator.z.object({ read: Validator.z.boolean().default(false) }));
+            const { responded, data } = validate(req, res, `query`, Validator.z.object({ read: Validator.z.coerce.boolean().default(false) }));
             if (!req.auth.isAuthed || responded) {
                 return;
             }
@@ -20,7 +20,7 @@ export class AlertRoutes {
                 order: [[`createdAt`, `DESC`]]
             }).then(alerts => {
                 if (alerts.length === 0) {
-                    res.status(204).json({ message: `No alerts found` });
+                    res.status(204).send();
                     return;
                 }
 

@@ -32,7 +32,7 @@ export const up: Migration = async ({ context: db }) => {
             allowNull: true,
         },
         sponsorUrl: {
-            type: DataTypes.STRING,
+            type: DataTypes.ARRAY(DataTypes.STRING),
             allowNull: true,
         },
         roles: {

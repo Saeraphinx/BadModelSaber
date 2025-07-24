@@ -248,7 +248,7 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
             discord: author ? author.username : 'Unknown',
             discordId: author ? author.id : '-1',
             install_link: `modelsaber://${type}/${this.id}/${this.fileName}`,
-            download: `${EnvConfig.server.baseUrl}/${EnvConfig.server.fileRoute}/asset/${this.fileName}`,
+            download: `${EnvConfig.server.backendUrl}/${EnvConfig.server.fileRoute}/asset/${this.fileName}`,
             status: this.status,
             platform: `pc`,
             variationId: null,
@@ -268,7 +268,7 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
             hash: apiV2Response.hash,
             bsaber: apiV2Response.bsaber,
             download: apiV2Response.download,
-            image: `${EnvConfig.server.baseUrl}/${EnvConfig.server.fileRoute}/thumb/${this.iconNames[0]}`,
+            image: `${EnvConfig.server.backendUrl}/${EnvConfig.server.fileRoute}/thumb/${this.iconNames[0]}`,
             install_link: apiV2Response.install_link,
             date: apiV2Response.date,
         }

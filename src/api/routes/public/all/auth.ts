@@ -6,10 +6,18 @@ import { Validator } from '../../../../shared/Validator.ts';
 import { createRandomString, parseErrorMessage } from '../../../../shared/Tools.ts';
 import { EnvConfig } from '../../../../shared/EnvConfig.ts';
 import { User } from '../../../../shared/Database.ts';
-
+import { validate } from '../../../RequestUtils.ts';
 
 export class AuthRoutes {
-    private static validStates: {stateId: string, ip: string, redirectUrl: URL, userId: number|null}[] = [];
+    private static validStates: { stateId: string, ip: string, redirectUrl: URL, userId: number | null }[] = [];
+    private static frontendBaseUrl = new URL(EnvConfig.server.frontendUrl);
+    private static backendBaseUrl = new URL(EnvConfig.server.backendUrl);
+    private static redirectValidator = Validator.z.object({
+        redirect: Validator.z.url().default(EnvConfig.server.frontendUrl).refine((data) => {
+            let url = new URL(data);
+            return url.origin === AuthRoutes.frontendBaseUrl.origin || url.origin === AuthRoutes.backendBaseUrl.origin;
+        }, `Redirect URL must start with the server base URL.`)
+    })
 
     public static loadRoutes(router: Router) {
         if (!EnvConfig.auth.discord.clientSecret || !EnvConfig.auth.discord.clientId) {
@@ -20,9 +28,9 @@ export class AuthRoutes {
         passport.use(new DiscordStrategy({
             clientID: EnvConfig.auth.discord.clientId,
             clientSecret: EnvConfig.auth.discord.clientSecret,
-            callbackURL: `${EnvConfig.server.baseUrl}${EnvConfig.server.apiRoute}/auth/discord/callback`,
-            scope: [ `identify` ],
-        }, async function(accessToken, refreshToken, profile, done) {
+            callbackURL: `${EnvConfig.server.backendUrl}${EnvConfig.server.apiRoute}/auth/discord/callback`,
+            scope: [`identify`],
+        }, async function (accessToken, refreshToken, profile, done) {
             if (!profile) {
                 return done(null, false);
             }
@@ -59,7 +67,11 @@ export class AuthRoutes {
         }));
 
         router.get(`/auth/discord`, async (req, res, next) => {
-            let state = this.prepAuth(req);
+            let { responded, data: query } = validate(req, res, `query`, AuthRoutes.redirectValidator);
+            if (responded || !req.ip) {
+                return;
+            }
+            let state = this.prepAuth(req.ip, query?.redirect || this.frontendBaseUrl.href);
             if (!state) {
                 res.status(400).send({ error: `Invalid parameters.` });
                 return;
@@ -98,34 +110,30 @@ export class AuthRoutes {
             return;
         });
 
-        
+
         router.get(`/auth/logout`, async (req, res) => {
-            let redirect = Validator.z.url().default(EnvConfig.server.baseUrl).safeParse(req.query[`redirect`]);
-            if (!redirect.success) {
-                res.status(400).send({ error: `Invalid parameters.` });
+            let { responded, data: query } = validate(req, res, `query`, AuthRoutes.redirectValidator);
+            if (responded) {
                 return;
+            
             }
             req.session.destroy((err) => {
                 if (err) {
                     res.status(500).send({ error: `Internal server error.` });
                     return
                 }
-                res.status(200).send(`<head><meta http-equiv="refresh" content="0; url=${redirect.data}" /></head><body style="background-color: black;"><a style="color:white;" href="${redirect.data}">Click here if you are not redirected...</a></body>`);
+                res.status(200).send(`<head><meta http-equiv="refresh" content="0; url=${query?.redirect}" /></head><body style="background-color: black;"><a style="color:white;" href="${query?.redirect}">Click here if you are not redirected...</a></body>`);
                 return;
             });
         });
     }
-    
-    private static prepAuth(req: any, userId?: number, minsToTimeout = 5): string|null {
-        let redirect = Validator.z.url().default("https://google.com").safeParse(req.query[`redirect`]);
-        if (!redirect.success) {
-            return null;
-        }
+
+    private static prepAuth(ip: string, redirectUrl: string, userId?: number, minsToTimeout = 5): string | null {
         let state = createRandomString(32);
         if (userId) {
-            AuthRoutes.validStates.push({stateId: state, ip: req.ip, redirectUrl: new URL(redirect.data), userId});
+            AuthRoutes.validStates.push({ stateId: state, ip: ip, redirectUrl: new URL(redirectUrl), userId });
         } else {
-            AuthRoutes.validStates.push({stateId: state, ip: req.ip, redirectUrl: new URL(redirect.data), userId: null});
+            AuthRoutes.validStates.push({ stateId: state, ip: ip, redirectUrl: new URL(redirectUrl), userId: null });
         }
         setTimeout(() => {
             AuthRoutes.validStates = this.validStates.filter((s) => s.stateId !== state);

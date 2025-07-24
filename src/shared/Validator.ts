@@ -18,7 +18,9 @@ export class Validator {
         }
         return num;
     });
-    public static zStringID = z.string().min(1).max(64);
+    public static zUserID = z.string().min(1).max(64).regex(/^\d+$|^me$/, {
+        error: `ID must be a non-empty string of digits or the word "me".`,
+    });
     public static zAssetType =  z.enum(AssetType);
     public static zAssetFileFormat = z.enum(AssetFileFormat);
     public static zAssetStatus = z.enum(Status);

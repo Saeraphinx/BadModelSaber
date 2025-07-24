@@ -7,7 +7,7 @@ import { User } from "./database/tables/User.ts";
 import { Asset } from "./database/tables/Asset.ts";
 import { Alert } from "./database/tables/Alert.ts";
 import { AssetRequest } from "./database/tables/AssetRequest.ts";
-import { Status } from "./database/DBExtras.ts";
+import { Status, UserRole } from "./database/DBExtras.ts";
 import fs from "node:fs";
 import { parseErrorMessage } from "./Tools.ts";
 
@@ -93,6 +93,18 @@ export class DatabaseManager {
         try {
             await this.sequelize.sync();
             Logger.log(`Database synced successfully.`);
+            this.Users.findOrCreate({
+                where: { id: `5` },
+                defaults: {
+                    id: `5`,
+                    username: `system`,
+                    displayName: `System User`,
+                    bio: `hi :3\n\nThis user account is used for system operations and is not meant to be used by anyone.`,
+                    roles: Object.values(UserRole).filter(role => role !== UserRole.Banned),
+                    sponsorUrl: [`https://www.patreon.com/beatsabermods`],
+                    avatarUrl: `https://cdn.discordapp.com/embed/avatars/5.png`
+                }
+            });
             return this;
         } catch (error: any) {
             Logger.error(`Failed to sync database: ${parseErrorMessage(error)}`);
@@ -143,7 +155,7 @@ export class DatabaseManager {
                 defaultValue: ``
             },
             sponsorUrl: {
-                type: DataTypes.STRING,
+                type: DataTypes.ARRAY(DataTypes.STRING),
                 allowNull: true
             },
             avatarUrl: {

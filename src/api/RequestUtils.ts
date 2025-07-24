@@ -5,6 +5,7 @@ import fileUpload from 'express-fileupload';
 import { z } from "zod/v4";
 import { parseErrorMessage } from "../shared/Tools.ts";
 import { Snowflake } from "discord.js";
+import { EnvConfig } from "../shared/EnvConfig.ts";
 
 // eslint-disable-next-line quotes
 declare module 'express-session' {
@@ -31,7 +32,7 @@ type AuthInfo = {
 };
 
 export function auth(requiredRole: UserRole[] | `loggedIn` | `any`, allowBanned = false): MiddlewareFunction {
-    return (req, res, next) => {
+    return async (req, res, next) => {
         if (!req.auth) {
             req.auth = {
                 isAuthed: false,
@@ -39,9 +40,23 @@ export function auth(requiredRole: UserRole[] | `loggedIn` | `any`, allowBanned 
             };
         }
 
+        if (EnvConfig.server.authBypass) {
+            req.auth.isAuthed = true;
+            await User.findByPk('5').then(user => {
+                if (user) {
+                    req.auth.user = user;
+                } else {
+                    Logger.error(`Auth bypass is enabled but the system user does not exist.`);
+                }
+            }).catch(err => {
+                Logger.error(`Error fetching system user for auth bypass: ${err.message}`);
+            });
+            return next();
+        }
+
         if (requiredRole === `any`) {
             if (req.session?.userId) {
-                User.findByPk(req.session.userId).then(user => {
+                await User.findByPk(req.session.userId).then(user => {
                     if (user) {
                         req.auth = {
                             isAuthed: true,
@@ -58,7 +73,7 @@ export function auth(requiredRole: UserRole[] | `loggedIn` | `any`, allowBanned 
                 return res.status(401).json({ error: "Unauthorized" });
             }
 
-            User.findByPk(req.session.userId).then(user => {
+            await User.findByPk(req.session.userId).then(user => {
                 if (!user) {
                     return res.status(401).json({ error: "Unauthorized" });
                 }

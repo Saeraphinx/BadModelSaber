@@ -17,6 +17,7 @@ export async function init(overrideDbName?: string) {
     console.log(`Initializing BadModelSaber...`);
     EnvConfig.load();
     Logger.init();
+    EnvConfig.server.authBypass ? Logger.warn(`Auth bypass is enabled. This should only be used in development or testing environments.`) : null;
     const db = new DatabaseManager(overrideDbName);
     await db.init();
 
@@ -56,7 +57,7 @@ export async function init(overrideDbName?: string) {
     app.use(`${EnvConfig.server.fileRoute}`, fileRouter);
 
     let server = app.listen(EnvConfig.server.port, () => {
-        Logger.log(`Server is running on ${EnvConfig.server.baseUrl}`);
+        Logger.log(`Server is running on ${EnvConfig.server.backendUrl}`);
     });
 
     return { app, server, db };
