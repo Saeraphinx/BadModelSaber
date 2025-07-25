@@ -77,7 +77,6 @@ export class UploadRoutesV3 {
                 licenseUrl: body.licenseUrl,
                 sourceUrl: body.sourceUrl,
                 fileFormat: body.fileFormat,
-                type: body.type,
                 tags: body.tags,
                 uploaderId: req.auth.user.id,
                 fileHash: fileAsset.md5,
