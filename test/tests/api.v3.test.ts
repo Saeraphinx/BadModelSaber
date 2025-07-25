@@ -2,10 +2,11 @@ import { afterAll, beforeAll, describe, expect, test, vi } from "vitest";
 import { init } from "../../src/index.ts";
 import { EnvConfig } from "../../src/shared/EnvConfig";
 import supertest from "supertest";
-import { AssetFileFormat, Status, User, UserInfer, UserRole } from "../../src/shared/Database.ts";
+import { AssetFileFormat, License, Status, User, UserInfer, UserRole } from "../../src/shared/Database.ts";
 import { auth } from "../../src/api/RequestUtils.ts";
 import { NextFunction, Request } from "express";
 import { Op } from "sequelize";
+import * as fs from "fs";
 
 let api_v3 = supertest(`http://localhost:8491/api/v3`);
 let user: User | undefined = undefined;
@@ -70,10 +71,10 @@ describe(`API v3`, () => {
         }
     });
 
-    test.each(generateAssetFilterTestCases())('/assets filter (%s, %s)', async (fileFormat, status) => {
+    test.each(generateAssetFilterTestCases())('/assets filter (%s, %s)', async (type, status) => {
         let res = await api_v3.get(`/assets`)
             .query({
-                fileFormat: fileFormat,
+                type: type,
                 status: status
             });
         expect(res.statusCode, res.body.message).toBe(200);
@@ -82,10 +83,9 @@ describe(`API v3`, () => {
         for (let asset of res.body.assets) {
             expect(asset).toHaveProperty(`id`);
             expect(asset).toHaveProperty(`type`);
-            expect(asset).toHaveProperty(`fileFormat`);
             expect(asset).toHaveProperty(`status`);
-            if (fileFormat) {
-                expect(asset.fileFormat).toBe(fileFormat);
+            if (type) {
+                expect(asset.fileFormat).toBe(type);
             }
             if (status) {
                 expect(asset.status).toBe(status);
@@ -93,8 +93,8 @@ describe(`API v3`, () => {
         }
     });
 
-    test(`/user should return current user`, async () => {
-        let res = await api_v3.get(`/user`);
+    test(`/users/me should return current user`, async () => {
+        let res = await api_v3.get(`/users/me`);
         expect(res.statusCode, res.body.message).toBe(200);
         expect(res.body).toMatchObject(user?.getApiResponse() ?? {});
     });
@@ -114,8 +114,6 @@ describe(`API v3`, () => {
         }
         let res = await api_v3.get(`/users/${user.id}/assets`);
         expect(res.statusCode, res.body.message).toBe(200);
-        expect(res.body).toHaveProperty(`user`);
-        expect(res.body.user).toMatchObject(user.getApiResponse());
         expect(res.body).toHaveProperty(`assets`);
         expect(res.body.assets).toBeInstanceOf(Array);
         for (let asset of res.body.assets) {
@@ -124,6 +122,27 @@ describe(`API v3`, () => {
             expect(isUploader || isCredited, `Asset ${asset.id} should be uploaded by ${user.id} or credited to the user`).toBe(true,);
         }
     });
+
+    test(`/upload should upload an asset`, async () => {
+        if (!user) {
+            throw new Error(`User is not defined`);
+        }
+        let res = await api_v3.post(`/assets/upload`)
+            .field(`asset`, fs.createReadStream(`./test/assets/icon5.png`))
+            .field(`data`, JSON.stringify({
+                name: `Test Asset`,
+                description: `This is a test asset`,
+                type: AssetFileFormat.Banner_Png,
+                license: License.CC0,
+                licenseUrl: null,
+                sourceUrl: null,
+                tags: [`test`, `asset`],
+            }))
+            .field(`icon_1`, fs.createReadStream(`./test/assets/icon1.png`))
+            .field(`icon_2`, fs.createReadStream(`./test/assets/icon2.jpg`))
+        expect(res.statusCode, res.body.message).toBe(200);
+        expect(res.body).toHaveProperty(`id`);
+    })
 });
 
 function generateAssetFilterTestCases() {

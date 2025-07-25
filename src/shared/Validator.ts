@@ -25,7 +25,7 @@ export class Validator {
     public static zAssetStatus = z.enum(Status);
 
     public static zCreateAssetv3 = Asset.validator.pick({
-        fileFormat: true,
+        type: true,
         name: true,
         description: true,
         license: true,
@@ -35,7 +35,7 @@ export class Validator {
     });
 
     public static zFilterAssetv3 = z.object({
-        fileFormat: Validator.zAssetFileFormat.optional(),
+        type: Validator.zAssetFileFormat.optional(),
         status: Validator.zAssetStatus.optional(),
         tags: z.array(z.string()).optional(),
         page: z.coerce.number().int().min(1).optional(),

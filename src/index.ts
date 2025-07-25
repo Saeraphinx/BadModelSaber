@@ -43,7 +43,7 @@ export async function init(overrideDbName?: string) {
     AlertRoutes.loadRoutes(apiRouter);
     ApprovalRoutes.loadRoutes(apiRouter);
     GetV2.loadRoutes(v2Router);
-    UploadRoutesV3.loadRoutes(v3Router);
+    UploadRoutesV3.loadRoutes(v3Router); // must be before GetAssetRoutesV3
     GetAssetRoutesV3.loadRoutes(v3Router);
     GetUserRoutesV3.loadRoutes(v3Router);
 

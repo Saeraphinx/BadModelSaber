@@ -7,7 +7,7 @@ import { User } from "./database/tables/User.ts";
 import { Asset } from "./database/tables/Asset.ts";
 import { Alert } from "./database/tables/Alert.ts";
 import { AssetRequest } from "./database/tables/AssetRequest.ts";
-import { Status, UserRole } from "./database/DBExtras.ts";
+import { SponsorType, Status, UserRole } from "./database/DBExtras.ts";
 import fs from "node:fs";
 import { parseErrorMessage } from "./Tools.ts";
 
@@ -23,6 +23,7 @@ export class DatabaseManager {
     public sequelize: Sequelize;
     public umzug: Umzug<this>;
     public schemaName: string;
+    public adminUser: User | undefined;
 
     public Users: ModelStatic<User>;
     public Assets: ModelStatic<Asset>;
@@ -48,7 +49,7 @@ export class DatabaseManager {
             migrations: {
                 glob: globPath,
             },
-            storage: new SequelizeStorage({sequelize: this.sequelize}),
+            storage: new SequelizeStorage({ sequelize: this.sequelize }),
             context: this,
             logger: Logger
         });
@@ -94,7 +95,7 @@ export class DatabaseManager {
         try {
             await this.sequelize.sync();
             Logger.log(`Database synced successfully.`);
-            this.Users.findOrCreate({
+            this.adminUser = await this.Users.findOrCreate({
                 where: { id: `5` },
                 defaults: {
                     id: `5`,
@@ -102,9 +103,20 @@ export class DatabaseManager {
                     displayName: `System User`,
                     bio: `hi :3\n\nThis user account is used for system operations and is not meant to be used by anyone.`,
                     roles: Object.values(UserRole).filter(role => role !== UserRole.Banned),
-                    sponsorUrl: [`https://www.patreon.com/beatsabermods`],
+                    sponsorUrl: [{
+                        platform: SponsorType.Patreon,
+                        url: `https://www.patreon.com/beatsabermoddinggroup`
+                    }],
                     avatarUrl: `https://cdn.discordapp.com/embed/avatars/5.png`
                 }
+            }).then(([user, created]) => {
+                if (created) {
+                    Logger.info(`Admin user created: ${user.username} (${user.id})`)
+                }
+                return user
+            }).catch((err) => {
+                Logger.error(`Error creating admin user: ${err}`)
+                throw err
             });
             return this;
         } catch (error: any) {
@@ -156,7 +168,7 @@ export class DatabaseManager {
                 defaultValue: ``
             },
             sponsorUrl: {
-                type: DataTypes.ARRAY(DataTypes.STRING),
+                type: DataTypes.JSONB,
                 allowNull: true
             },
             avatarUrl: {
@@ -179,7 +191,7 @@ export class DatabaseManager {
             timestamps: true,
             paranoid: true
         });
-        
+
         this.Assets = Asset.init({
             id: {
                 type: DataTypes.INTEGER,
@@ -198,7 +210,7 @@ export class DatabaseManager {
                 allowNull: false,
                 defaultValue: [],
             },
-            fileFormat: {
+            type: {
                 type: DataTypes.STRING,
                 allowNull: false,
             },
@@ -439,7 +451,7 @@ export class DatabaseManager {
                 console.log(`Exported ${rows.length} rows.`);
             }).catch((error) => {
                 Logger.error(`Failed to export table ${table.name}: ${error.message}`);
-            });   
+            });
         }
         return data;
     }

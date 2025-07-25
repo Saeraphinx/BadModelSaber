@@ -2,12 +2,23 @@ import { Op, WhereOptions } from "sequelize";
 import { DatabaseManager } from "../Database.ts";
 import { EnvConfig } from "../EnvConfig.ts";
 
+export enum SponsorType {
+    GitHub = "github",
+    KoFi = "ko-fi",
+    Patreon = "patreon",
+}
+
+export type SponserUrl = {
+    platform: SponsorType;
+    url: string;
+}
+
 export type UserPublicAPIv3 = {
     id: string;
     username: string;
     displayName: string | null;
     bio: string | null;
-    sponsorUrl: string[] | null;
+    sponsorUrl: SponserUrl[] | null;
     avatarUrl: string;
     roles: UserRole[];
 }
@@ -51,7 +62,7 @@ export type AssetPublicAPIv3 = {
     id: number;
     oldId: string | null;
     linkedIds: LinkedAsset[]; // Array of linked asset IDs
-    fileFormat: AssetFileFormat;
+    type: AssetFileFormat;
     uploader: UserPublicAPIv3;
     icons: string[]; // Array of icon names
     name: string;

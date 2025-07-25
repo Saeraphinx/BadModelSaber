@@ -10,7 +10,7 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
     declare oldId: CreationOptional<string | null>; // id from modelsaber, if applicable
     declare linkedIds: CreationOptional<LinkedAsset[]>; // models that are linked to this asset, e.g. a pc .saber may have a linked .wacker, or a model may have a newer version that is linked to it
 
-    declare fileFormat: AssetFileFormat;
+    declare type: AssetFileFormat;
 
     declare uploaderId: string; // User ID of the uploader, this is not the author, but the person who uploaded the asset to the platform
     declare credits: CreationOptional<Credit[]>; // credits for the asset, e.g. "Model by John Doe, Textures by Jane Smith"
@@ -35,7 +35,7 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
     }
 
     get fileName(): NonAttribute<string> {
-        return `${this.fileHash}.${this.fileFormat.split('_')[1]}`; // e.g. ".saber"
+        return `${this.fileHash}.${this.type.split('_')[1]}`; // e.g. ".saber"
     }
 
     // #region Validators
@@ -48,7 +48,7 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
             id: z.number().refine(async (id) => await Asset.checkIfExists(id)),
             linkType: z.enum(['older', 'newer', 'altFormat']),
         })),
-        fileFormat: z.enum(AssetFileFormat),
+        type: z.enum(AssetFileFormat),
         uploaderId: z.string().refine(async (id) => await User.checkIfExists(id)),
         credits: z.array(z.object({
             userId: z.string().refine(async (id) => await User.checkIfExists(id)),
@@ -198,7 +198,7 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
             id: this.id,
             oldId: this.oldId,
             linkedIds: this.linkedIds,
-            fileFormat: this.fileFormat,
+            type: this.type,
             uploader: authorApi,
             name: this.name,
             description: this.description,
@@ -220,7 +220,7 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
     public async getApiV2Response(): Promise<AssetPublicAPIv2> {
         let author = await this.uploader;
         let type : `avatar` | `saber` | `platform` | `bloq` = `avatar`;
-        switch (this.fileFormat.split('_')[0]) {
+        switch (this.type.split('_')[0]) {
             case `avatar`:
                 type = 'avatar';
                 break;

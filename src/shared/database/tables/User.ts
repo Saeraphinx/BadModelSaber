@@ -1,5 +1,5 @@
 import { CreationOptional, InferAttributes, InferCreationAttributes, Model } from "sequelize";
-import { AlertType, UserPublicAPIv3, UserRole } from "../DBExtras.ts";
+import { AlertType, SponserUrl, UserPublicAPIv3, UserRole } from "../DBExtras.ts";
 import { Alert } from "./Alert.ts";
 
 export type UserInfer = InferAttributes<User>;
@@ -8,7 +8,7 @@ export class User extends Model<InferAttributes<User>, InferCreationAttributes<U
     declare username: string;
     declare displayName: string;
     declare bio: CreationOptional<string>;
-    declare sponsorUrl: CreationOptional<string[] | null>;
+    declare sponsorUrl: CreationOptional<SponserUrl[] | null>;
     declare avatarUrl: string;
 
     declare roles: CreationOptional<UserRole[]>;

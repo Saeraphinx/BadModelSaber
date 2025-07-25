@@ -17,7 +17,7 @@ export class UploadRoutesV3 {
                 return;
             }
             if (!files || !Array.isArray(files.uploadedFiles) || files.uploadedFiles.length === 0) {
-                res.status(400).json({ error: "No files uploaded" });
+                res.status(400).json({ message: "No files uploaded" });
                 return;
             }
 
@@ -28,7 +28,7 @@ export class UploadRoutesV3 {
 
             let fileAsset = files.asset as fileUpload.UploadedFile;
             if (fileAsset) {
-                if (!Validator.validateAssetFile(fileAsset, body.fileFormat)) {
+                if (!Validator.validateAssetFile(fileAsset, body.type)) {
                     res.status(400).json({ message: "Invalid file format for asset" });
                     return;
                 }
@@ -76,7 +76,7 @@ export class UploadRoutesV3 {
                 license: body.license,
                 licenseUrl: body.licenseUrl,
                 sourceUrl: body.sourceUrl,
-                fileFormat: body.fileFormat,
+                type: body.type,
                 tags: body.tags,
                 uploaderId: req.auth.user.id,
                 fileHash: fileAsset.md5,

@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 
-import { AlertType, Asset, AssetFileFormat, AssetType, DatabaseManager, License, Status, User, UserRole } from '../src/shared/Database.ts';
+import { AlertType, Asset, AssetFileFormat, DatabaseManager, License, SponserUrl, SponsorType, Status, User, UserRole } from '../src/shared/Database.ts';
 import { faker } from '@faker-js/faker';
 import { EnvConfig } from '../src/shared/EnvConfig.ts';
 
@@ -27,6 +27,11 @@ export async function generateFakeData() {
         testTags.push(faker.lorem.word());
     }
 
+    let sponserUrls: SponserUrl[] = [
+        { platform: SponsorType.Patreon, url: `https://www.patreon.com/beatsabermoddinggroup` },
+        { platform: SponsorType.KoFi, url: `https://ko-fi.com/BadModelSaber` },
+        { platform: SponsorType.GitHub, url: `https://github.com/Saeraphinx/support` },
+    ]
 
     for (let [index, role] of Object.values(UserRole).entries()) {
         let user = await db.Users.create({
@@ -35,10 +40,14 @@ export async function generateFakeData() {
             displayName: faker.internet.displayName({ firstName: `John`, lastName: role }),
             avatarUrl: `https://cdn.discordapp.com/embed/avatars/${index % 6}.png`,
             bio: faker.lorem.sentence(),
-            sponsorUrl: [faker.internet.url(), faker.internet.url(), faker.internet.url()],
+            sponsorUrl: faker.helpers.arrayElements(sponserUrls, { min: 0, max: 3 }),
             roles: [role],
         });
         users.push(user);
+    }
+
+    if (db.adminUser) {
+        users.push(db.adminUser);
     }
 
     console.log(`Created ${users.length} users with roles`);
@@ -48,34 +57,31 @@ export async function generateFakeData() {
         console.log(`Creating entries for user ${++userCount}/${users.length}`);
         let usersExcludingCurrent = users.filter(u => u.id !== user.id);
         for (let count of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]) {
-            for (let type of Object.values(AssetType)) {
-                for (let fileFormat of Object.values(AssetFileFormat)) {
-                    if (fileFormat.split('_')[0] !== type) {
-                        continue; // Skip mismatched type and file format
-                    }
-
-                    await db.Assets.create({
-                        oldId: count % 2 == 1 ? faker.string.numeric(10) : null, // Only set oldId for odd types
-                        linkedIds: [],
-                        type: type,
-                        fileFormat: fileFormat,
-                        uploaderId: user.id,
-                        credits: [{
-                            userId: faker.helpers.arrayElement(usersExcludingCurrent).id,
-                            workDone: faker.lorem.words({ min: 1, max: 3 }),
-                        }],
-                        name: `${faker.lorem.words(2)} ${type} ${fileFormat}`,
-                        description: `This is a test asset of type ${type} and format ${fileFormat}.\n${faker.lorem.paragraph()}`,
-                        license: License.CC0,
-                        licenseUrl: null,
-                        sourceUrl: null,
-                        fileHash: faker.git.commitSha(),
-                        fileSize: faker.number.int({ min: 1000, max: 1000000 }),
-                        iconNames: faker.helpers.arrayElements(testIcons, { min: 1, max: 5 }),
-                        status: faker.helpers.arrayElement(Object.values(Status)),
-                        tags: faker.helpers.arrayElements(testTags),
-                    })
+            for (let type of Object.values(AssetFileFormat)) {
+                if (type.split('_')[0] !== type) {
+                    continue; // Skip mismatched type and file format
                 }
+
+                await db.Assets.create({
+                    oldId: count % 2 == 1 ? faker.string.numeric(10) : null, // Only set oldId for odd types
+                    linkedIds: [],
+                    type: type,
+                    uploaderId: user.id,
+                    credits: [{
+                        userId: faker.helpers.arrayElement(usersExcludingCurrent).id,
+                        workDone: faker.lorem.words({ min: 1, max: 3 }),
+                    }],
+                    name: `${faker.lorem.words(2)} ${type} ${type}`,
+                    description: `This is a test asset of type ${type} and format ${type}.\n${faker.lorem.paragraph()}`,
+                    license: License.CC0,
+                    licenseUrl: null,
+                    sourceUrl: null,
+                    fileHash: faker.git.commitSha(),
+                    fileSize: faker.number.int({ min: 1000, max: 1000000 }),
+                    iconNames: faker.helpers.arrayElements(testIcons, { min: 1, max: 5 }),
+                    status: faker.helpers.arrayElement(Object.values(Status)),
+                    tags: faker.helpers.arrayElements(testTags, { min: 2, max: 5 }),
+                })
             }
         }
 
@@ -92,7 +98,6 @@ export async function generateFakeData() {
     }
 
     console.log(`Generated fake data for ${users.length} users, ${await db.Assets.count()} assets, and ${await db.Alerts.count()} alerts.`);
-
     let data = await db.export();
 
     if (fs.existsSync(`./storage/fakeData.json`)) {
