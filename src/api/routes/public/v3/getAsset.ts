@@ -22,9 +22,6 @@ export class GetAssetRoutesV3 {
 
             let whereOptions: WhereOptions<AssetInfer> = {};
             whereOptions.status = query.status ? query.status : allowedStatuses;
-            if (query.type) {
-                whereOptions.type = query.type;
-            }
             if (query.fileFormat) {
                 whereOptions.fileFormat = query.fileFormat;
             }
@@ -71,7 +68,9 @@ export class GetAssetRoutesV3 {
         });
 
         router.get(`/multi/assets`, auth(`any`, true), (req, res) => {
-            const { responded, data: ids } = validate(req, res, `query`, Validator.zAssetIdArray.max(50));
+            const { responded, data: ids } = validate(req, res, `query`, Validator.z.object({
+                id: Validator.zAssetIdArray
+            }));
             if (responded) {
                 return;
             }

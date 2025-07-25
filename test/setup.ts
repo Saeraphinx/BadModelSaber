@@ -14,7 +14,6 @@ vi.mock(`../src/api/routes/public/all/auth.ts`, async (original) => {
 });
 
 
-
 process.env.NODE_ENV = `test`;
 
 if (!fs.existsSync(`./storage/fakeData.json`)) {

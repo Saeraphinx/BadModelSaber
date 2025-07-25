@@ -20,6 +20,7 @@ export async function init(overrideDbName?: string) {
     EnvConfig.server.authBypass ? Logger.warn(`Auth bypass is enabled. This should only be used in development or testing environments.`) : null;
     const db = new DatabaseManager(overrideDbName);
     await db.init();
+    //await db.importFakeData();
 
     const app = express();
     app.use(cors({

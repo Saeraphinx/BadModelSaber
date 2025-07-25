@@ -35,6 +35,7 @@ export class DatabaseManager {
             throw new Error(`Database connection string is not set in environment variables.`);
         }
         this.schemaName = useAltSchema || `public`;
+        this.schemaName = this.schemaName.toLowerCase();
         this.sequelize = new Sequelize(EnvConfig.database.connectionString, {
             dialect: `postgres`,
             //logging: (msg) => fs.writeFileSync(`test.log`, msg.replaceAll(`\n`, `\\n`).replaceAll(`Executing (default): `, ``) + `\n`, { flag: `a` }),
@@ -196,10 +197,6 @@ export class DatabaseManager {
                 type: DataTypes.JSON,
                 allowNull: false,
                 defaultValue: [],
-            },
-            type: {
-                type: DataTypes.STRING,
-                allowNull: false,
             },
             fileFormat: {
                 type: DataTypes.STRING,

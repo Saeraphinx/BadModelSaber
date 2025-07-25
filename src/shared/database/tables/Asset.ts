@@ -1,6 +1,6 @@
 import { InferAttributes, Model, InferCreationAttributes, NonAttribute, CreationOptional } from "sequelize";
 import { User, UserRole } from "../../Database.ts";
-import { AssetFileFormat, AssetPublicAPIv1, AssetPublicAPIv2, AssetPublicAPIv3, AssetType, Credit, License, LinkedAsset, Status, StatusHistory, UserPublicAPIv3 } from "../DBExtras.ts";
+import { AssetFileFormat, AssetPublicAPIv1, AssetPublicAPIv2, AssetPublicAPIv3, Credit, License, LinkedAsset, Status, StatusHistory, UserPublicAPIv3 } from "../DBExtras.ts";
 import { z } from "zod/v4";
 import { EnvConfig } from "../../../shared/EnvConfig.ts";
 
@@ -10,7 +10,6 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
     declare oldId: CreationOptional<string | null>; // id from modelsaber, if applicable
     declare linkedIds: CreationOptional<LinkedAsset[]>; // models that are linked to this asset, e.g. a pc .saber may have a linked .wacker, or a model may have a newer version that is linked to it
 
-    declare type: AssetType;
     declare fileFormat: AssetFileFormat;
 
     declare uploaderId: string; // User ID of the uploader, this is not the author, but the person who uploaded the asset to the platform
@@ -49,7 +48,6 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
             id: z.number().refine(async (id) => await Asset.checkIfExists(id)),
             linkType: z.enum(['older', 'newer', 'altFormat']),
         })),
-        type: z.enum(AssetType),
         fileFormat: z.enum(AssetFileFormat),
         uploaderId: z.string().refine(async (id) => await User.checkIfExists(id)),
         credits: z.array(z.object({
@@ -200,7 +198,6 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
             id: this.id,
             oldId: this.oldId,
             linkedIds: this.linkedIds,
-            type: this.type,
             fileFormat: this.fileFormat,
             uploader: authorApi,
             name: this.name,
@@ -223,17 +220,17 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
     public async getApiV2Response(): Promise<AssetPublicAPIv2> {
         let author = await this.uploader;
         let type : `avatar` | `saber` | `platform` | `bloq` = `avatar`;
-        switch (this.type) {
-            case AssetType.Avatar:
+        switch (this.fileFormat.split('_')[0]) {
+            case `avatar`:
                 type = 'avatar';
                 break;
-            case AssetType.Saber:
+            case `saber`:
                 type = 'saber';
                 break;
-            case AssetType.Platform:
+            case `platform`:
                 type = 'platform';
                 break;
-            case AssetType.Note:
+            case `note`:
                 type = 'bloq';
                 break;
         }

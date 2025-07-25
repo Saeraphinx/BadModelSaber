@@ -51,7 +51,6 @@ export type AssetPublicAPIv3 = {
     id: number;
     oldId: string | null;
     linkedIds: LinkedAsset[]; // Array of linked asset IDs
-    type: AssetType;
     fileFormat: AssetFileFormat;
     uploader: UserPublicAPIv3;
     icons: string[]; // Array of icon names
@@ -71,22 +70,6 @@ export type AssetPublicAPIv3 = {
 }
 
 // #region Asset Enums
-export enum AssetType {
-    Avatar = 'avatar',
-    Saber = 'saber',
-    Platform = 'platform',
-    Note = 'note',
-    Wall = 'wall',
-    HealthBar = 'health-bar',
-    Sound = 'sound',
-    Banner = 'banner',
-
-    ChromaEnvironment = 'chroma-environment',
-    Camera2Config = 'camera2-config',
-    CountersPlusConfig = 'counters-plus-config',
-    HSVConfig = 'hitscorevisualizer-config',
-}
-
 export enum AssetFileFormat {
     // sabers
     Saber_Wacker = 'saber_wacker',

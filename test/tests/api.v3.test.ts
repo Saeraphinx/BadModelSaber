@@ -2,7 +2,7 @@ import { afterAll, beforeAll, describe, expect, test, vi } from "vitest";
 import { init } from "../../src/index.ts";
 import { EnvConfig } from "../../src/shared/EnvConfig";
 import supertest from "supertest";
-import { AssetFileFormat, AssetType, Status, User, UserInfer, UserRole } from "../../src/shared/Database.ts";
+import { AssetFileFormat, Status, User, UserInfer, UserRole } from "../../src/shared/Database.ts";
 import { auth } from "../../src/api/RequestUtils.ts";
 import { NextFunction, Request } from "express";
 import { Op } from "sequelize";
@@ -70,10 +70,9 @@ describe(`API v3`, () => {
         }
     });
 
-    test.each(generateAssetFilterTestCases())('/assets filter (%s, %s, %s)', async (type, fileFormat, status) => {
+    test.each(generateAssetFilterTestCases())('/assets filter (%s, %s)', async (fileFormat, status) => {
         let res = await api_v3.get(`/assets`)
             .query({
-                type: type,
                 fileFormat: fileFormat,
                 status: status
             });
@@ -85,9 +84,6 @@ describe(`API v3`, () => {
             expect(asset).toHaveProperty(`type`);
             expect(asset).toHaveProperty(`fileFormat`);
             expect(asset).toHaveProperty(`status`);
-            if (type) {
-                expect(asset.type).toBe(type);
-            }
             if (fileFormat) {
                 expect(asset.fileFormat).toBe(fileFormat);
             }
@@ -125,23 +121,18 @@ describe(`API v3`, () => {
         for (let asset of res.body.assets) {
             let isUploader = asset.uploader.id === user.id;
             let isCredited = asset.credits.some((credit: any) => credit.userId === user?.id);
-            expect(isUploader || isCredited, `Asset ${asset.id} should be uploaded by ${user.id} or credited to the user`).toBe(true, );
+            expect(isUploader || isCredited, `Asset ${asset.id} should be uploaded by ${user.id} or credited to the user`).toBe(true,);
         }
     });
 });
 
 function generateAssetFilterTestCases() {
     let arr: (string | undefined)[][] = [];
-    for (let type of Object.values(AssetType)) {
-        for (let fileFormat of Object.values(AssetFileFormat)) {
-            if (fileFormat.split(`_`)[0] !== type) {
-                continue; // Skip mismatched type and file format combinations
-            }
-
-            for (let status of Object.values(Status)) {
-                arr.push([type, fileFormat, status]);
-            }
+    for (let fileFormat of Object.values(AssetFileFormat)) {
+        for (let status of Object.values(Status)) {
+            arr.push([fileFormat, status]);
         }
     }
+
     return arr;
 }

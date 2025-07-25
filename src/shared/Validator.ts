@@ -1,7 +1,7 @@
 import { z } from "zod/v4";
 
 import fileUpload from "express-fileupload";
-import { AssetFileFormat, AssetType, Status } from "./database/DBExtras.ts";
+import { AssetFileFormat, Status } from "./database/DBExtras.ts";
 import { Asset } from "./database/tables/Asset.ts";
 
 export class Validator {
@@ -21,12 +21,10 @@ export class Validator {
     public static zUserID = z.string().min(1).max(64).regex(/^\d+$|^me$/, {
         error: `ID must be a non-empty string of digits or the word "me".`,
     });
-    public static zAssetType =  z.enum(AssetType);
     public static zAssetFileFormat = z.enum(AssetFileFormat);
     public static zAssetStatus = z.enum(Status);
 
     public static zCreateAssetv3 = Asset.validator.pick({
-        type: true,
         fileFormat: true,
         name: true,
         description: true,
@@ -37,7 +35,6 @@ export class Validator {
     });
 
     public static zFilterAssetv3 = z.object({
-        type: Validator.zAssetType.optional(),
         fileFormat: Validator.zAssetFileFormat.optional(),
         status: Validator.zAssetStatus.optional(),
         tags: z.array(z.string()).optional(),

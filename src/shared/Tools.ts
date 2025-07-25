@@ -10,7 +10,7 @@ export function parseErrorMessage(err: unknown): string {
         if (err instanceof ValidationError || err instanceof UniqueConstraintError) {
             return `${err.message} ${err.errors.map(e => e.message).join(`, `)}`;
         } else if (isZodErrorLike(err)) {
-            console.error(`Zod error detected:`, JSON.stringify(err, null, 2));
+            //console.error(`Zod error detected:`, JSON.stringify(err, null, 2));
             return fromZodError(err).toString();
         } else if (err instanceof Error) {
             return `${err.message}`;

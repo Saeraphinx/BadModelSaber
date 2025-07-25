@@ -2,8 +2,10 @@ import * as fs from 'fs';
 
 import { AlertType, Asset, AssetFileFormat, AssetType, DatabaseManager, License, Status, User, UserRole } from '../src/shared/Database.ts';
 import { faker } from '@faker-js/faker';
+import { EnvConfig } from '../src/shared/EnvConfig.ts';
 
 export async function generateFakeData() {
+    EnvConfig.load();
     let db = new DatabaseManager(`generateFakeData`);
     await db.init();
 
@@ -33,7 +35,7 @@ export async function generateFakeData() {
             displayName: faker.internet.displayName({ firstName: `John`, lastName: role }),
             avatarUrl: `https://cdn.discordapp.com/embed/avatars/${index % 6}.png`,
             bio: faker.lorem.sentence(),
-            sponsorUrl: faker.internet.url(),
+            sponsorUrl: [faker.internet.url(), faker.internet.url(), faker.internet.url()],
             roles: [role],
         });
         users.push(user);
@@ -103,4 +105,8 @@ export async function generateFakeData() {
     await db.dropSchema();
     await db.closeConnenction();
     return true;
+}
+
+if (process.argv[1] === import.meta.filename) {
+    generateFakeData()
 }
