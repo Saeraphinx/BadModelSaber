@@ -431,8 +431,9 @@ export class DatabaseManager {
                 Logger.error(`Table ${model} does not exist in the database.`);
                 continue;
             }
-            await table.bulkCreate(data[model], { ignoreDuplicates: true, validate: true }).then(() => {
+            await table.bulkCreate(data[model], { ignoreDuplicates: true, validate: true, }).then(async () => {
                 Logger.log(`Imported ${data[model].length} rows into table ${table.name}.`);
+                await this.sequelize.query(`SELECT setval('${this.schemaName}.${table.tableName}_id_seq', ${data[model].length}, true);`);
             }).catch((error) => {
                 Logger.error(`Failed to import data into table ${table.name}: ${error.message}`);
             });

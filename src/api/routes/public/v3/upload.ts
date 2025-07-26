@@ -6,27 +6,32 @@ import { Validator } from "../../../../shared/Validator.ts";
 import { parseErrorMessage } from "../../../../shared/Tools.ts";
 import { Asset, Status } from "../../../../shared/Database.ts";
 import path from "node:path";
+import fs from "node:fs";
 import { EnvConfig } from "../../../../shared/EnvConfig.ts";
 
 export class UploadRoutesV3 {
     public static loadRoutes(router: Router): void {
-        router.post(`/assets/upload`, auth(`loggedIn`, false), file(), (req, res) => {
+        router.post(`/assets/upload`, auth(`loggedIn`, false), file(), async (req, res) => {
             const files = req.files;
             const { responded, data: body } = validate(req, res, `multipart`, Validator.zCreateAssetv3);
             if (responded || req.auth.isAuthed === false) {
                 return;
             }
-            if (!files || !Array.isArray(files.uploadedFiles) || files.uploadedFiles.length === 0) {
+
+            if (!files) {
                 res.status(400).json({ message: "No files uploaded" });
+                return;
+            } else if (Object.keys(files).every((key) => Array.isArray(files[key]))) {
+                res.status(400).json({ message: "Invalid files." });
                 return;
             }
 
-            if (files.uploadedFiles.length !== 2 || !files.asset || !files.icon_1) {
+            if (Object.keys(files).length <= 1 || !files[`asset`] || !files[`icon_1`]) {
                 res.status(400).json({ message: `Must have icon and asset file.` });
                 return;
             }
 
-            let fileAsset = files.asset as fileUpload.UploadedFile;
+            let fileAsset = files[`asset`] as fileUpload.UploadedFile;
             if (fileAsset) {
                 if (!Validator.validateAssetFile(fileAsset, body.type)) {
                     res.status(400).json({ message: "Invalid file format for asset" });
@@ -59,18 +64,18 @@ export class UploadRoutesV3 {
 
             let iconNames = fileIcons.map(icon => {
                 let extName = path.extname(icon.name);
-                if (extName.length > 0) {
+                if (extName.length < 1) {
                     return null;
                 }
                 return `${icon.md5}${extName}`;
             });
 
             if (iconNames.includes(null)) {
-                res.status(400).json({ error: `One or more icons have no extension.` });
+                res.status(400).json({ message: `One or more icons have no extension.` });
                 return;
             }
 
-            Asset.create({
+            await Asset.create({
                 name: body.name,
                 description: body.description,
                 license: body.license,
@@ -83,35 +88,35 @@ export class UploadRoutesV3 {
                 fileSize: fileAsset.size,
                 iconNames: iconNames as string[],
                 status: Status.Private,
-            }).then((asset) => {
-                fileAsset.mv(path.join(EnvConfig.storage.uploads, asset.fileName), (err) => {
-                    if (err) {
-                        Logger.error(`Error moving asset file: ${err.message}`);
-                        res.status(500).json({ message: `Failed to save asset file. Please contact a site administrator.` });
-                        asset.destroy();
-                        return;
-                    }
+            }).then(async (asset) => {
+                Logger.debug(`Asset upload started for user ${req.auth.user?.id} with asset ID ${asset.id}`);
+                await fileAsset.mv(path.join(EnvConfig.storage.uploads, asset.fileName)).catch((err) => {
+                    Logger.error(`Error moving asset file: ${err.message}`)
+                    res.status(500).json({ message: `Failed to save asset file. Please contact a site administrator.` })
+                    asset.destroy();
+                    return;
                 });
 
                 for (let fileIcon of fileIcons) {
+                    Logger.debug(`Moving icon file ${fileIcon.name} for asset ID ${asset.id}`);
                     let extName = path.extname(fileIcon.name);
-                    if (extName.length > 0) {
+                    if (extName.length <= 1) {
                         return null;
                     }
-                    fileIcon.mv(path.join(EnvConfig.storage.icons, `${fileIcon.md5}${extName}`), (err) => {
-                        if (err) {
-                            Logger.error(`Error moving icon file: ${err.message}`);
-                            res.status(500).json({ error: `Failed to save icon file. Please contact a site administrator.` });
-                            asset.destroy();
-                            return;
-                        }
+                    await fileIcon.mv(path.join(EnvConfig.storage.icons, `${fileIcon.md5}${extName}`)).catch((err) => {
+                        Logger.error(`Error moving icon file: ${err.message}`)
+                        res.status(500).json({ message: `Failed to save icon file. Please contact a site administrator.` })
+                        fs.unlinkSync(path.join(EnvConfig.storage.uploads, asset.fileName));
+                        asset.destroy();
+                        return;
                     });
                 }
-
+                Logger.debug(`Asset upload completed for user ${req.auth.user?.id} with asset ID ${asset.id}`);
                 res.status(201).json({
-                    message: `Asset created successfully`,
-                    asset: asset.getApiV3Response(),
+                    message: `Asset created successfully.`,
+                    asset: await asset.getApiV3Response(),
                 });
+                console.log(`Asset upload completed for user`);
                 return;
             }).catch((err) => {
                 Logger.debug(`Error creating asset: ${parseErrorMessage(err)}`);

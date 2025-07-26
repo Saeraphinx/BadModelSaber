@@ -29,7 +29,6 @@ export const DEFAULT_CONFIG = {
         uploads: `./storage/uploads`, // the directory where uploads are stored
         icons: `./storage/icons`, // the directory where icons are stored
         logs: `./storage/logs`, // the directory where logs are stored
-        sessions: `./storage/sessions.sqlite`, // the directory where sessions are stored
     },
     database: {
         connectionString: ``, // the connection string for the database
@@ -130,7 +129,6 @@ export class EnvConfig {
             uploads: process.env.STORAGE_UPLOADS || DEFAULT_CONFIG.storage.uploads,
             icons: process.env.STORAGE_ICONS || DEFAULT_CONFIG.storage.icons,
             logs: process.env.STORAGE_LOGS || DEFAULT_CONFIG.storage.logs,
-            sessions: process.env.STORAGE_SESSIONS || DEFAULT_CONFIG.storage.sessions,
         };
 
         if (!fs.existsSync(EnvConfig.storage.uploads)) {

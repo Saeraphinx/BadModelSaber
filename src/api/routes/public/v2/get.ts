@@ -1,7 +1,7 @@
 import { validate } from "../../../RequestUtils.ts";
 import { LegacyValidator } from "../../../../shared/LegacyValidator.ts";
 import { Router } from "express";
-import { Asset, AssetFileFormat, AssetInfer, AssetType, Status } from "../../../../shared/Database.ts";
+import { Asset, AssetFileFormat, AssetInfer, Status } from "../../../../shared/Database.ts";
 import { z } from "zod/v4";
 import { Op, WhereOptions } from "sequelize";
 
@@ -38,8 +38,7 @@ export class GetV2 {
             Asset.findAll({
                 where: {
                     id: { [Op.gte]: query.start, [Op.lte]: query.end ?? Number.MAX_SAFE_INTEGER },
-                    type: convertedType.type,
-                    fileFormat: convertedType.fileFormat,
+                    type: convertedType,
                     status: Status.Approved,
                     ...filterOptions,
                 },
@@ -51,34 +50,19 @@ export class GetV2 {
     }
 }
 
-function convertAssetType(type: string): { type: AssetType[], fileFormat: AssetFileFormat[] } {
+function convertAssetType(type: string): AssetFileFormat[] {
     switch (type) {
         case `saber`:
-            return {
-                type: [AssetType.Saber],
-                fileFormat: [AssetFileFormat.Saber_Saber]
-            };
+            return [AssetFileFormat.Saber_Saber];
         case `platform`:
-            return {
-                type: [AssetType.Platform],
-                fileFormat: [AssetFileFormat.Platform_Plat]
-            };
+            return [AssetFileFormat.Platform_Plat];
         case `avatar`:
-            return {
-                type: [AssetType.Avatar],
-                fileFormat: [AssetFileFormat.Avatar_Avatar]
-            };
+            return [AssetFileFormat.Avatar_Avatar];
         case `bloq`:
-            return {
-                type: [AssetType.Note],
-                fileFormat: [AssetFileFormat.Note_Bloq]
-            };
+            return [AssetFileFormat.Note_Bloq];
         case `all`:
         default:
-            return {
-                type: [AssetType.Saber, AssetType.Platform, AssetType.Avatar, AssetType.Note],
-                fileFormat: [AssetFileFormat.Saber_Saber, AssetFileFormat.Platform_Plat, AssetFileFormat.Avatar_Avatar, AssetFileFormat.Note_Bloq]
-            }
+            return  [AssetFileFormat.Saber_Saber, AssetFileFormat.Platform_Plat, AssetFileFormat.Avatar_Avatar, AssetFileFormat.Note_Bloq];
     }
 }
 

@@ -1,6 +1,8 @@
 import { DatabaseManager } from "./shared/Database.ts";
 import { EnvConfig } from "./shared/EnvConfig.ts";
 import express from "express";
+import session, { SessionOptions } from 'express-session';
+import SequelizeStore from 'connect-session-sequelize'
 import cors from "cors";
 import { Logger } from "./shared/Logger.ts";
 import { AuthRoutes } from "./api/routes/public/all/auth.ts";
@@ -12,6 +14,7 @@ import { GetV2 } from "./api/routes/public/v2/get.ts";
 import { GetUserRoutesV3 } from "./api/routes/public/v3/getUser.ts";
 import { StatusRoutes } from "./api/routes/public/all/status.ts";
 import { FileRoutes } from "./api/routes/files/files.ts";
+import { Sequelize } from "sequelize";
 
 export async function init(overrideDbName?: string) {
     console.log(`Initializing BadModelSaber...`);
@@ -29,7 +32,40 @@ export async function init(overrideDbName?: string) {
     }))
     app.use(express.json());
     app.use(express.urlencoded({ extended: true }));
+    app.set(`trust proxy`, EnvConfig.server.trustProxy);
 
+    // #region Session management
+    let sessionOptions: SessionOptions = {
+        secret: EnvConfig.server.sessionSecret,
+        resave: false,
+        saveUninitialized: false,
+        unset: `destroy`,
+        rolling: true,
+        name: EnvConfig.server.sessionCookieName,
+        cookie: {
+            secure: `auto`,
+            maxAge: EnvConfig.server.storedSessionTimeout,
+        }
+    };
+    let sequelizeSessionStore: any | undefined = undefined;
+    let sessionSequelize: Sequelize | undefined = undefined;
+    if (EnvConfig.server.storeSessions) {
+        const SequelizeStoreConstructor = SequelizeStore(session.Store);
+        sessionSequelize = new Sequelize(EnvConfig.database.connectionString, {
+            logging: false,
+            schema: `sessions`,
+        });
+        await sessionSequelize.query(`CREATE SCHEMA IF NOT EXISTS sessions;`);
+        sequelizeSessionStore = new SequelizeStoreConstructor({
+            db: sessionSequelize,
+        })
+        sessionOptions.store = sequelizeSessionStore;
+        await sequelizeSessionStore.sync();
+    }
+    app.use(session(sessionOptions));
+    // #endregion
+
+    // #region Register routes
     const apiRouter = express.Router();
     const fileRouter = express.Router();
 
@@ -37,7 +73,6 @@ export async function init(overrideDbName?: string) {
     const v2Router = express.Router();
     const v3Router = express.Router();
 
-    // Load API routes
     AuthRoutes.loadRoutes(apiRouter);
     StatusRoutes.loadRoutes(apiRouter);
     AlertRoutes.loadRoutes(apiRouter);
@@ -56,18 +91,34 @@ export async function init(overrideDbName?: string) {
 
     app.use(`${EnvConfig.server.apiRoute}`, apiRouter);
     app.use(`${EnvConfig.server.fileRoute}`, fileRouter);
+    // #endregion
 
     let server = app.listen(EnvConfig.server.port, () => {
         Logger.log(`Server is running on ${EnvConfig.server.backendUrl}`);
     });
 
-    return { app, server, db };
+    return {
+        app, server, db, stop: async () => {
+            if (server.listening) {
+                server.close();
+            }
+            await db.closeConnenction();
+            if (sessionSequelize) {
+                await sessionSequelize.close();
+            }
+            Logger.log(`Server stopped.`);
+        }
+    };
 }
 
 // check if this file is being run directly
 if (process.argv[1] === import.meta.filename) {
-    init().catch((err) => {
+    const { stop } = await init().catch((err) => {
         Logger.error(`Failed to initialize BadModelSaber: ${err}`);
         process.exit(1);
+    });
+
+    process.on('SIGINT', async () => {
+        await stop();
     });
 }

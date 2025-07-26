@@ -1,9 +1,7 @@
 import { UniqueConstraintError, ValidationError } from "sequelize";
-import { Validator } from "./Validator.ts";
 import { fromZodError, isZodErrorLike } from "zod-validation-error";
 import * as fs from "fs";
 import { randomBytes } from "crypto";
-import { ca } from "zod/v4/locales";
 
 export function parseErrorMessage(err: unknown): string {
     try {

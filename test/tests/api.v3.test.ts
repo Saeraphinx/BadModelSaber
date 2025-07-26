@@ -58,11 +58,8 @@ describe(`API v3`, () => {
         if (!server) {
             throw new Error(`Server was not initialized`);
         }
-        if (server.server.listening) {
-            server.server.close();
-        }
         await server.db.dropSchema();
-        await server.db.closeConnenction();
+        await server.stop();
     });
 
     test(`should initialize server`, () => {
@@ -85,7 +82,7 @@ describe(`API v3`, () => {
             expect(asset).toHaveProperty(`type`);
             expect(asset).toHaveProperty(`status`);
             if (type) {
-                expect(asset.fileFormat).toBe(type);
+                expect(asset.type).toBe(type);
             }
             if (status) {
                 expect(asset.status).toBe(status);
@@ -128,7 +125,7 @@ describe(`API v3`, () => {
             throw new Error(`User is not defined`);
         }
         let res = await api_v3.post(`/assets/upload`)
-            .field(`asset`, fs.createReadStream(`./test/assets/icon5.png`))
+            .attach(`asset`, `./test/assets/icon5.png`)
             .field(`data`, JSON.stringify({
                 name: `Test Asset`,
                 description: `This is a test asset`,
@@ -138,10 +135,17 @@ describe(`API v3`, () => {
                 sourceUrl: null,
                 tags: [`test`, `asset`],
             }))
-            .field(`icon_1`, fs.createReadStream(`./test/assets/icon1.png`))
-            .field(`icon_2`, fs.createReadStream(`./test/assets/icon2.jpg`))
-        expect(res.statusCode, res.body.message).toBe(200);
-        expect(res.body).toHaveProperty(`id`);
+            .attach(`icon_1`, `./test/assets/icon1.png`)
+            .attach(`icon_2`, `./test/assets/icon2.jpg`)
+        //console.log(res);
+        expect(res.statusCode, res.body.message).toBe(201);
+        expect(res.body).toHaveProperty(`message`, `Asset created successfully.`);
+        expect(res.body).toHaveProperty(`asset`);
+        expect(res.body.asset).toHaveProperty(`id`);
+        expect(res.body.asset).toHaveProperty(`name`, `Test Asset`);
+        expect(res.body.asset).toHaveProperty(`type`, AssetFileFormat.Banner_Png);
+        expect(res.body.asset).toHaveProperty(`uploader`);
+        expect(res.body.asset.uploader).toHaveProperty(`id`, user.id);
     })
 });
 

@@ -8,11 +8,11 @@ export class Logger {
         let transports: Winston.transport[] = [];
 
         let consoleLevel = `consoleInfo`;
-        // if (process.env.NODE_ENV == `test`) {
-        //    consoleLevel = `warn`;
-        // } else if (EnvConfig.isDevMode) {
-        //    consoleLevel = `http`;
-        // }
+        if (process.env.NODE_ENV == `test`) {
+           consoleLevel = `warn`;
+        } else if (EnvConfig.isDevMode) {
+           consoleLevel = `http`;
+        }
 
         transports.push(new Winston.transports.Console({
             forceConsole: true,

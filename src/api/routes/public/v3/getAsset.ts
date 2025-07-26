@@ -22,8 +22,8 @@ export class GetAssetRoutesV3 {
 
             let whereOptions: WhereOptions<AssetInfer> = {};
             whereOptions.status = query.status ? query.status : allowedStatuses;
-            if (query.fileFormat) {
-                whereOptions.fileFormat = query.fileFormat;
+            if (query.type) {
+                whereOptions.type = query.type;
             }
             if (query.tags) {
                 whereOptions.tags = { [Op.contains]: query.tags };

@@ -9,6 +9,7 @@
     "build": "tsc"
   },
   "dependencies": {
+    "connect-session-sequelize": "^8.0.2",
     "cors": "^2.8.5",
     "discord.js": "^14.19.3",
     "dotenv": "^17.2.0",

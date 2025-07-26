@@ -87,14 +87,15 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
     // This validator is used for creating new assets, it omits the id and timestamps and other fields that are marked as CreationOptional
     public static createValidator = z.object({
         ...Asset.validator.shape,
-        id: Asset.validator.shape.id.nullable(),
-        linkedIds: Asset.validator.shape.linkedIds.nullable(),
-        credits: Asset.validator.shape.credits.nullable(),
-        licenseUrl: Asset.validator.shape.licenseUrl.nullable(),
-        sourceUrl: Asset.validator.shape.sourceUrl.nullable(),
-        createdAt: Asset.validator.shape.createdAt.nullable(),
-        updatedAt: Asset.validator.shape.updatedAt.nullable(),
-        deletedAt: Asset.validator.shape.deletedAt.nullable(),
+        id: Asset.validator.shape.id.nullish(),
+        oldId: Asset.validator.shape.oldId.nullish(),
+        linkedIds: Asset.validator.shape.linkedIds.nullish(),
+        credits: Asset.validator.shape.credits.nullish(),
+        licenseUrl: Asset.validator.shape.licenseUrl.nullish(),
+        sourceUrl: Asset.validator.shape.sourceUrl.nullish(),
+        createdAt: Asset.validator.shape.createdAt.nullish(),
+        updatedAt: Asset.validator.shape.updatedAt.nullish(),
+        deletedAt: Asset.validator.shape.deletedAt.nullish(),
     })
     // #endregion
 
