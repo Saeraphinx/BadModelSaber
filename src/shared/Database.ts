@@ -218,8 +218,8 @@ export class DatabaseManager {
                 type: DataTypes.STRING,
                 allowNull: false
             },
-            credits: {
-                type: DataTypes.JSONB,
+            collaborators: {
+                type: DataTypes.ARRAY(DataTypes.STRING),
                 allowNull: false,
                 defaultValue: []
             },
@@ -342,7 +342,7 @@ export class DatabaseManager {
                 autoIncrement: true,
                 allowNull: false
             },
-            refrencedAsset: {
+            refrencedAssetId: {
                 type: DataTypes.INTEGER,
                 allowNull: false
             },
@@ -354,23 +354,29 @@ export class DatabaseManager {
                 type: DataTypes.STRING,
                 allowNull: true
             },
+            objectToAdd: {
+                type: DataTypes.JSONB,
+                allowNull: true,
+                defaultValue: null
+            },
+            resolvedBy: {
+                type: DataTypes.STRING,
+                allowNull: true,
+                defaultValue: null
+            },
             requestType: {
                 type: DataTypes.STRING,
                 allowNull: false,
-            },
-            reason: {
-                type: DataTypes.STRING,
-                allowNull: false
             },
             accepted: {
                 type: DataTypes.BOOLEAN,
                 allowNull: true,
                 defaultValue: null
             },
-            acceptReason: {
-                type: DataTypes.STRING,
-                allowNull: true,
-                defaultValue: null
+            messages: {
+                type: DataTypes.JSONB,
+                allowNull: false,
+                defaultValue: []
             },
             createdAt: DataTypes.DATE,
             updatedAt: DataTypes.DATE,

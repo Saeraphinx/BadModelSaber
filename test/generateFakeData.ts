@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 
-import { AlertType, Asset, AssetFileFormat, DatabaseManager, License, SponserUrl, SponsorType, Status, User, UserRole } from '../src/shared/Database.ts';
+import { AlertType, Asset, AssetFileFormat, DatabaseManager, License, SponserUrl, SponsorType, Status, Tags, User, UserRole } from '../src/shared/Database.ts';
 import { faker } from '@faker-js/faker';
 import { EnvConfig } from '../src/shared/EnvConfig.ts';
 
@@ -21,11 +21,6 @@ export async function generateFakeData() {
     ];
 
     let users: User[] = []
-
-    let testTags: string[] = [];
-    for (let i = 0; i < 50; i++) {
-        testTags.push(faker.lorem.word());
-    }
 
     let sponserUrls: SponserUrl[] = [
         { platform: SponsorType.Patreon, url: `https://www.patreon.com/beatsabermoddinggroup` },
@@ -58,10 +53,6 @@ export async function generateFakeData() {
         let usersExcludingCurrent = users.filter(u => u.id !== user.id);
         for (let count of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]) {
             for (let type of Object.values(AssetFileFormat)) {
-                if (type.split('_')[0] !== type) {
-                    continue; // Skip mismatched type and file format
-                }
-
                 await db.Assets.create({
                     oldId: count % 2 == 1 ? faker.string.numeric(10) : null, // Only set oldId for odd types
                     linkedIds: [],
@@ -80,7 +71,7 @@ export async function generateFakeData() {
                     fileSize: faker.number.int({ min: 1000, max: 1000000 }),
                     iconNames: faker.helpers.arrayElements(testIcons, { min: 1, max: 5 }),
                     status: faker.helpers.arrayElement(Object.values(Status)),
-                    tags: faker.helpers.arrayElements(testTags, { min: 2, max: 5 }),
+                    tags: faker.helpers.arrayElements(Object.values(Tags), { min: 0, max: 5 }),
                 })
             }
         }

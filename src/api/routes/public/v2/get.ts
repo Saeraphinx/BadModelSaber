@@ -159,15 +159,15 @@ function convertToWhereOptions(filterType: string, value: {
             if (isBoth) {
                 return {
                     [Op.or]: [
-                        { tags: { [Op.contains]: includeMerge } },
-                        { tags: { [Op.not]: { [Op.contains]: excludeMerge } } }
+                        { tags: { [Op.contains]: includeMerge as any } },
+                        { tags: { [Op.not]: { [Op.contains]: excludeMerge as any } } }
                     ]
                 };
             }
             else if (isInclude) {
-                return { tags: { [Op.contains]: includeMerge } };
+                return { tags: { [Op.contains]: includeMerge as any } };
             } else if (isExclude) {
-                return { tags: { [Op.not]: { [Op.contains]: excludeMerge } } };
+                return { tags: { [Op.not]: { [Op.contains]: excludeMerge as any } } };
             }
             break;
         case `author`:

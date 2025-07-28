@@ -1,19 +1,21 @@
 import { InferAttributes, Model, InferCreationAttributes, CreationOptional } from "sequelize";
 import { z } from "zod/v4";
-import { RequestType } from "../DBExtras.ts";
+import { LinkedAsset, RequestMessage, RequestType, UserRole } from "../DBExtras.ts";
+import { User } from "./User.ts";
 
 export type AssetRequestInfer = InferAttributes<AssetRequest>;
 export class AssetRequest extends Model<InferAttributes<AssetRequest>, InferCreationAttributes<AssetRequest>> {
     declare id: CreationOptional<number>;
-    declare refrencedAsset: number; // Asset ID that this request is for
+    declare refrencedAssetId: number; // Asset ID that this request is for
     declare requesterId: string; // User ID of the person who made the request
     declare requestResponseBy: string | null; // User ID of the person who has been asked to respond to the request. null if this isn't for a specific user
+    declare objectToAdd: string | LinkedAsset | null;
 
     declare requestType: RequestType;
-    declare reason: string; // Reason for the request, e.g. "I want to credit this user for this asset" 
 
     declare accepted: CreationOptional<boolean | null>; // Whether the request has been accepted or not
-    declare acceptReason: CreationOptional<string | null>; // Reason for accepting the request, if applicable
+    declare resolvedBy: CreationOptional<string | null>; // User ID of the person who resolved the request, null if not resolved
+    declare messages: CreationOptional<RequestMessage[]>; // Array of messages related to the request
 
     declare createdAt: CreationOptional<Date>; // Timestamp of when the request was created
     declare updatedAt: CreationOptional<Date>; // Timestamp of when the request was last updated
@@ -55,25 +57,55 @@ export class AssetRequest extends Model<InferAttributes<AssetRequest>, InferCrea
     });
 
     // #endregion Validators
-
-    public accept(reason: string): void {
-        this.accepted = true;
-        this.acceptReason = reason;
+    public allowedToMessage(user: User): boolean {
+        if (this.requestType === RequestType.Report) {
+            return this.requesterId === user.id || user.roles.includes(UserRole.Admin) || user.roles.includes(UserRole.Moderator);
+        } else {
+            return false; // Non-report requests should not allow messaging
+        }
     }
 
-    public decline(reason: string): void {
+
+    public allowedToAccept(user: User): boolean {
+        if (this.requestType === RequestType.Report) {
+            return user.roles.includes(UserRole.Admin) || user.roles.includes(UserRole.Moderator);
+        } else {
+            return user.id === this.requestResponseBy || user.roles.includes(UserRole.Admin) || user.roles.includes(UserRole.Moderator);
+        }
+    }
+
+    public addMessage(user: User, message: string): Promise<this> {
+        this.messages = [
+            ...this.messages,
+            {
+                userId: user.id,
+                message: message,
+                timestamp: new Date(Date.now()),
+            }
+        ]
+        return this.save();
+    }
+
+    public accept(userId: string) {
+        this.accepted = true;
+        this.resolvedBy = userId;
+        return this.save();
+    }
+
+    public decline(userId: string) {
         this.accepted = false;
-        this.acceptReason = reason;
+        this.resolvedBy = userId;
+        return this.save();
     }
 
     public toAPIResponse() {
         return {
             id: this.id,
-            refrencedAsset: this.refrencedAsset,
+            refrencedAssetId: this.refrencedAssetId,
             requesterId: this.requesterId,
             requestResponseBy: this.requestResponseBy,
             requestType: this.requestType,
-            reason: this.reason,
+            messages: this.messages,
             accepted: this.accepted,
             createdAt: this.createdAt,
             updatedAt: this.updatedAt,

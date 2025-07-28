@@ -60,8 +60,8 @@ export class GetUserRoutesV3 {
                         [Op.or]: [
                             { uploaderId: user.id },
                             {
-                                credits: {
-                                    [Op.contains]: [{ userId: user.id, workDone: {[Op.not]: null} }] as any
+                                collaborators: {
+                                    [Op.contains]: [user.id]
                                 },
                             }
                         ]

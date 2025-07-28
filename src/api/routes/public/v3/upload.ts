@@ -140,6 +140,6 @@ function file(limit = 250 * 1024 * 1024): MiddlewareFunction {
         limitHandler: (req, res, next) => {
             res.status(413).json({ error: "File size limit exceeded" });
         },
-        hashAlgorithm: `sha256`,
+        hashAlgorithm: `md5`,
     });
 }

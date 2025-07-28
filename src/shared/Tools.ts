@@ -3,6 +3,8 @@ import { fromZodError, isZodErrorLike } from "zod-validation-error";
 import * as fs from "fs";
 import { randomBytes } from "crypto";
 
+export type If<Value extends boolean, TrueResult, FalseResult = null> = Value extends true ? TrueResult : Value extends false  ? FalseResult  : TrueResult | FalseResult;
+
 export function parseErrorMessage(err: unknown): string {
     try {
         if (err instanceof ValidationError || err instanceof UniqueConstraintError) {

@@ -2,7 +2,7 @@ import { afterAll, beforeAll, describe, expect, test, vi } from "vitest";
 import { init } from "../../src/index.ts";
 import { EnvConfig } from "../../src/shared/EnvConfig";
 import supertest from "supertest";
-import { AssetFileFormat, License, Status, User, UserInfer, UserRole } from "../../src/shared/Database.ts";
+import { AssetFileFormat, License, Status, Tags, User, UserInfer, UserRole } from "../../src/shared/Database.ts";
 import { auth } from "../../src/api/RequestUtils.ts";
 import { NextFunction, Request } from "express";
 import { Op } from "sequelize";
@@ -39,6 +39,9 @@ describe(`API v3`, () => {
     beforeAll(async () => {
         process.env.PORT = `8491`;
         process.env.BASE_URL = `http://localhost:8491`;
+        process.env.STORAGE_UPLOADS="./test/temp/uploads"
+        process.env.STORAGE_ICONS="./test/temp/icons"
+        process.env.STORAGE_LOGS="./test/temp/logs"
         server = await init(`test_bms_apiv3`);
         await server.db.importFakeData();
         await server.db.Users.findOne({
@@ -60,6 +63,9 @@ describe(`API v3`, () => {
         }
         await server.db.dropSchema();
         await server.stop();
+        if (fs.existsSync(`./test/temp`)) {
+            fs.rmSync(`./test/temp`, { recursive: true, force: true });
+        }
     });
 
     test(`should initialize server`, () => {
@@ -133,19 +139,21 @@ describe(`API v3`, () => {
                 license: License.CC0,
                 licenseUrl: null,
                 sourceUrl: null,
-                tags: [`test`, `asset`],
+                tags: [Tags.Pride, Tags.Contest],
             }))
             .attach(`icon_1`, `./test/assets/icon1.png`)
             .attach(`icon_2`, `./test/assets/icon2.jpg`)
         //console.log(res);
         expect(res.statusCode, res.body.message).toBe(201);
         expect(res.body).toHaveProperty(`message`, `Asset created successfully.`);
-        expect(res.body).toHaveProperty(`asset`);
-        expect(res.body.asset).toHaveProperty(`id`);
         expect(res.body.asset).toHaveProperty(`name`, `Test Asset`);
-        expect(res.body.asset).toHaveProperty(`type`, AssetFileFormat.Banner_Png);
-        expect(res.body.asset).toHaveProperty(`uploader`);
-        expect(res.body.asset.uploader).toHaveProperty(`id`, user.id);
+        let asset = await server.db.Assets.findByPk(res.body.asset.id);
+        expect(asset).toBeDefined();
+        expect(res.body.asset).toMatchObject(convertDatesToStrings(await asset?.getApiV3Response()) ?? {});
+        expect(fs.existsSync(`./test/temp/uploads/${asset?.fileName}`)).toBe(true);
+        expect(fs.existsSync(`./test/temp/icons/${asset?.iconNames[0]}`)).toBe(true);
+        expect(fs.existsSync(`./test/temp/icons/${asset?.iconNames[1]}`)).toBe(true);
+        expect(asset?.status).toBe(Status.Private);
     })
 });
 
@@ -158,4 +166,19 @@ function generateAssetFilterTestCases() {
     }
 
     return arr;
+}
+
+function convertDatesToStrings(obj?: { [key: string]: any } & { createdAt?: Date, updatedAt?: Date, deletedAt?: Date|null }): { [key: string]: any } {
+    if (!obj) return {};
+    let newObj: { [key: string]: any } = {};
+    for (let key in obj) {
+        if (obj[key] instanceof Date) {
+            newObj[key] = obj[key].toISOString();
+        } else if (typeof obj[key] === `object`) {
+            newObj[key] = convertDatesToStrings(obj[key]);
+        } else {
+            newObj[key] = obj[key];
+        }
+    }
+    return newObj;
 }

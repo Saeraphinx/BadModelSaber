@@ -1,6 +1,4 @@
-import { Op, WhereOptions } from "sequelize";
 import { DatabaseManager } from "../Database.ts";
-import { EnvConfig } from "../EnvConfig.ts";
 
 export enum SponsorType {
     GitHub = "github",
@@ -74,7 +72,7 @@ export type AssetPublicAPIv3 = {
     fileSize: number;
     status: Status;
     statusHistory: StatusHistory[];
-    credits: Credit[];
+    collaborators: string[];
     tags: string[];
     createdAt: Date;
     updatedAt: Date;
@@ -146,26 +144,44 @@ export enum LinkedAssetLinkType {
     Alternate = 'alternate', // e.g. an alternate version of the asset (e.g. a different color scheme)
 }
 
-export interface Credit { // ${workDone} by ${userId.username}
-    userId: string; // User ID of the person credited
-    workDone: string; // Description of the work done by the user
-}
+export enum Tags {
+    // features
+    CustomColors = 'Custom Colors', // all really
+    CustomTrails = 'Custom Trails', //sabers
+    CustomBombs = 'Custom Bombs', // notes
+    CustomArrows = 'Custom Arrows', // notes
 
-export enum SystemTags {
-    CustomColors = 'custom-colors',
-    CustomTrails = 'custom-trails',
-    CustomBombs = 'custom-bombs',
-    CustomArrows = 'custom-arrows',
-    Reactive = 'reactive',
-    AudioLink = 'AudioLink',
-    Thin = 'thin',
-    FBT = 'fbt',
-    Cloth = 'cloth',
-    DynamicBones = 'dynamic-bones',
-    EQ = 'eq',
-    FirstPersonCompatible = 'first-person-compatible',
-    ShaderReplacement = 'shader-replacement',
-    NSFW = 'nsfw',
+    AudioLink = 'AudioLink', // sabers
+    Reactive = 'Reactive', // sabers/platforms
+
+    FBT = 'FBT', // asset
+    Cloth = 'Cloth',
+    DynamicBones = 'Dynamic Bones',
+    FirstPersonCompatible = 'First-Person Compatible',
+    Shaders = 'Shader Replacement',
+    NSFW = 'NSFW',
+
+    // types
+    Meme = 'Meme',
+    Thin = 'Thin', // sabers
+    Large = 'Large', // sabers
+    Acc = 'Acc',
+    Particles = 'Particles', // sabers
+    Sword = 'Sword', // sabers
+    Simple = 'Simple', // sabers
+    VideoGame = 'Video Game',
+    Pride = 'Pride',
+    Animated = 'Animated',
+    Pro = 'Pro', // avatars
+    Underswing = 'underswing', // hsv
+    TimeDependence = 'Time Dependence', // hsv
+    Hitsound = 'Hitsound', // sounds
+    BadHitsound = 'BadCut Hitsound', // sounds
+    MenuClick = 'Menu Click', // sounds
+    FirstPerson = 'First Person', // camera2
+    ThirdPerson = 'Third Person', // camera2
+
+    Contest = 'Contest',
 }
 // #endregion Asset Enums
 
@@ -191,6 +207,13 @@ export enum RequestType {
     Report = "report", // Request to report an asset for a specific reason
 }
 // #endregion Alert Enums
+
+export interface RequestMessage {
+    userId: string; // User ID of the person who sent the message
+    message: string; // The message content
+    timestamp: Date; // Timestamp of when the message was sent
+}
+
 export class DatabaseHelper {
     public static db: DatabaseManager;
 

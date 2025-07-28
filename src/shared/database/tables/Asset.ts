@@ -1,8 +1,9 @@
 import { InferAttributes, Model, InferCreationAttributes, NonAttribute, CreationOptional } from "sequelize";
-import { User, UserRole } from "../../Database.ts";
-import { AssetFileFormat, AssetPublicAPIv1, AssetPublicAPIv2, AssetPublicAPIv3, Credit, License, LinkedAsset, Status, StatusHistory, UserPublicAPIv3 } from "../DBExtras.ts";
+import { AssetRequest, User, UserRole } from "../../Database.ts";
+import { AssetFileFormat, AssetPublicAPIv1, AssetPublicAPIv2, AssetPublicAPIv3, License, LinkedAsset, LinkedAssetLinkType, RequestType, Status, StatusHistory, Tags, UserPublicAPIv3 } from "../DBExtras.ts";
 import { z } from "zod/v4";
 import { EnvConfig } from "../../../shared/EnvConfig.ts";
+import { ca } from "zod/v4/locales";
 
 export type AssetInfer = InferAttributes<Asset>;
 export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes<Asset>> {
@@ -13,7 +14,7 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
     declare type: AssetFileFormat;
 
     declare uploaderId: string; // User ID of the uploader, this is not the author, but the person who uploaded the asset to the platform
-    declare credits: CreationOptional<Credit[]>; // credits for the asset, e.g. "Model by John Doe, Textures by Jane Smith"
+    declare collaborators: CreationOptional<string[]>; // credits for the asset, e.g. "Model by John Doe, Textures by Jane Smith"
     declare name: string;
     declare description: string;
     declare license: License; // e.g. CC-BY, CC0, etc. or 'custom'
@@ -24,7 +25,7 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
     declare iconNames: string[]; // names of the icons associated with the asset, e.g. ["icon1.png", "icon2.png"]
     declare status: CreationOptional<Status>;
     declare statusHistory: CreationOptional<StatusHistory[]>;
-    declare tags: CreationOptional<string[]>; // system defined tags
+    declare tags: CreationOptional<Tags[]>; // system defined tags
 
     declare readonly createdAt: CreationOptional<Date>;
     declare readonly updatedAt: CreationOptional<Date>;
@@ -69,7 +70,7 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
             timestamp: z.date(),
             userId: z.string().refine(async (id) => await User.checkIfExists(id)), // User ID of the person who changed the status
         })),
-        tags: z.array(z.string().min(1).max(50)),
+        tags: z.array(z.enum(Tags)).max(5).default([]),
         createdAt: z.date(),
         updatedAt: z.date(),
         deletedAt: z.date().nullable().optional(),
@@ -103,23 +104,6 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
         return await Asset.findByPk(id, {attributes: ['id']}) ? true : false;
     }
 
-    public canView(user: User | undefined): boolean {
-        if (!user) {
-            return this.status === Status.Approved || this.status === Status.Pending;
-        }
-
-        if (this.status === Status.Private || this.status === Status.Rejected) {
-            // If the asset is private, only the uploader can view it
-            return user.id === this.uploaderId || 
-            user.roles.includes(UserRole.Admin) || 
-            user.roles.includes(UserRole.Moderator) || 
-            user.roles.includes(UserRole.Developer);
-        }
-
-        // If the user is logged in, they can view all assets
-        return this.status === Status.Approved || this.status === Status.Pending;
-    }
-
     public static allowedToViewRoles(user: User|undefined|null): Status[] {
         if (!user) {
             return [Status.Approved, Status.Pending]
@@ -134,6 +118,15 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
         // If the user is logged in, they can view all approved and pending assets (same as unlogged-in users)
         return [Status.Approved, Status.Pending];
     }
+
+    public canView(user: User | undefined): boolean {
+        if (!user) {
+            return this.status === Status.Approved || this.status === Status.Pending;
+        }
+
+        let allowedStatuses = Asset.allowedToViewRoles(user);
+        return allowedStatuses.includes(this.status) || this.uploaderId === user.id;
+    }
         
 
     public canEdit(user: User | null): boolean {
@@ -145,6 +138,178 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
         return user.id === this.uploaderId || 
             user.roles.includes(UserRole.Admin) || 
             user.roles.includes(UserRole.Moderator);
+    }
+
+    public updateAsset(data: Partial<Pick<AssetInfer, 'name' | 'description'>>): Promise<Asset> {
+        if (data.name) {
+            this.name = data.name;
+        }
+        if (data.description) {
+            this.description = data.description;
+        }
+
+        return this.save();
+    }
+
+    public async requestCredit(reqBy: User, userToCredit: User): Promise<AssetRequest> {
+        if (this.uploaderId === userToCredit.id || this.collaborators.includes(userToCredit.id)) {
+            throw new Error(`This user is already credited for this asset.`);
+        }
+
+        let existingRequests = await AssetRequest.findAll({
+            where: {
+                requestResponseBy: userToCredit.id,
+                refrencedAssetId: this.id,
+                requestType: RequestType.Credit
+            }
+        });
+
+        if (existingRequests.some(req => req.accepted === false)) {
+            throw new Error(`This user has previously declined a credit request for this asset.`);
+        }
+
+        if (existingRequests.some(req => req.accepted === null)) {
+            throw new Error(`This user has an open credit request for this asset.`);
+        }
+
+        return await AssetRequest.create({
+            refrencedAssetId: this.id,
+            requesterId: reqBy.id,
+            requestResponseBy: userToCredit.id,
+            requestType: RequestType.Credit,
+            objectToAdd: userToCredit.id,
+        });
+    }
+
+    public async requestLink(reqBy: User, assetToLink: Asset, type: LinkedAssetLinkType) {
+        if (this.id === assetToLink.id) {
+            throw new Error(`You cannot link an asset to itself.`);
+        }
+
+        if (this.linkedIds.some(link => link.id === assetToLink.id)) {
+            throw new Error(`This asset is already linked to the requested asset.`);
+        }
+
+        if (assetToLink.linkedIds.some(link => link.id === this.id)) {
+            throw new Error(`This asset is already linked to the requested asset.`);
+        }
+
+        if (this.uploaderId !== assetToLink.uploaderId) {
+            let existingRequests = await AssetRequest.findAll({
+                where: {
+                    requestResponseBy: assetToLink.uploaderId,
+                    refrencedAssetId: this.id,
+                    requestType: RequestType.Link
+                }
+            });
+            if (existingRequests.some(req => req.accepted === false)) {
+                throw new Error(`This user has previously declined a link request for this asset.`);
+            }
+            if (existingRequests.some(req => req.accepted === null)) {
+                throw new Error(`This user has an open link request for this asset.`);
+            }
+            return await AssetRequest.create({
+                refrencedAssetId: this.id,
+                requesterId: reqBy.id,
+                requestResponseBy: assetToLink.uploaderId,
+                requestType: RequestType.Link,
+                objectToAdd: {
+                    id: assetToLink.id,
+                    linkType: type
+                }
+            });
+        } else {
+            return this.addLink(assetToLink, type);
+        }
+    }
+
+    public async addLink(otherAsset: Asset, type: LinkedAssetLinkType): Promise<Asset> {
+        if (this.linkedIds.some(link => link.id === otherAsset.id)) {
+            throw new Error(`This asset is already linked to the requested asset.`);
+        }
+
+        if (this.id === otherAsset.id) {
+            throw new Error(`You cannot link an asset to itself.`);
+        }
+
+        if (otherAsset.linkedIds.some(link => link.id === this.id)) {
+            throw new Error(`This asset is already linked to the requested asset.`);
+        }
+
+        switch (type) {
+            // Link to an older version of the asset
+            case LinkedAssetLinkType.Older:
+                this.linkedIds = [
+                    ...this.linkedIds,
+                    {
+                        id: otherAsset.id,
+                        linkType: LinkedAssetLinkType.Older
+                    }
+                ];
+                otherAsset.linkedIds = [
+                    ...otherAsset.linkedIds,
+                    {
+                        id: this.id,
+                        linkType: LinkedAssetLinkType.Newer
+                    }
+                ];
+                break;
+            // Link to a newer version of the asset (e.g. this is older than the other asset)
+            case LinkedAssetLinkType.Newer:
+                this.linkedIds = [
+                    ...this.linkedIds,
+                    {
+                        id: otherAsset.id,
+                        linkType: LinkedAssetLinkType.Newer
+                    }
+                ];
+                otherAsset.linkedIds = [
+                    ...otherAsset.linkedIds,
+                    {
+                        id: this.id,
+                        linkType: LinkedAssetLinkType.Older
+                    }
+                ];
+            case LinkedAssetLinkType.AltFormat:
+                this.linkedIds = [
+                    ...this.linkedIds,
+                    {
+                        id: otherAsset.id,
+                        linkType: LinkedAssetLinkType.AltFormat
+                    }
+                ];
+                otherAsset.linkedIds = [
+                    ...otherAsset.linkedIds,
+                    {
+                        id: this.id,
+                        linkType: LinkedAssetLinkType.AltFormat
+                    }
+                ];
+                break;
+            case LinkedAssetLinkType.Alternate:
+                this.linkedIds = [
+                    ...this.linkedIds,
+                    {
+                        id: otherAsset.id,
+                        linkType: LinkedAssetLinkType.Alternate
+                    }
+                ];
+                otherAsset.linkedIds = [
+                    ...otherAsset.linkedIds,
+                    {
+                        id: this.id,
+                        linkType: LinkedAssetLinkType.Alternate
+                    }
+                ];
+                break;
+            default:
+                throw new Error(`Invalid link type: ${type}`);
+                break;
+        }
+        // Save both assets
+        await this.save();
+        await otherAsset.save();
+        return this;
     }
 
     public async setStatus(newStatus: Status, reason: string, userId: string): Promise<Asset> {
@@ -211,7 +376,7 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
             fileSize: this.fileSize,
             status: this.status,
             statusHistory: this.statusHistory,
-            credits: this.credits,
+            collaborators: this.collaborators,
             tags: this.tags,
             createdAt: this.createdAt,
             updatedAt: this.updatedAt

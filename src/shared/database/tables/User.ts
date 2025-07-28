@@ -33,7 +33,7 @@ export class User extends Model<InferAttributes<User>, InferCreationAttributes<U
             header: options.header,
             message: options.message,
             read: false,
-            discordMessageSent: false
+            discordMessageSent: true
         });
     }
 

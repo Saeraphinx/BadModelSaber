@@ -1,7 +1,7 @@
 import { z } from "zod/v4";
 
 import fileUpload from "express-fileupload";
-import { AssetFileFormat, Status } from "./database/DBExtras.ts";
+import { AssetFileFormat, Status, Tags } from "./database/DBExtras.ts";
 import { Asset } from "./database/tables/Asset.ts";
 
 export class Validator {
@@ -37,7 +37,7 @@ export class Validator {
     public static zFilterAssetv3 = z.object({
         type: Validator.zAssetFileFormat.optional(),
         status: Validator.zAssetStatus.optional(),
-        tags: z.array(z.string()).optional(),
+        tags: z.array(z.enum(Tags)).optional(),
         page: z.coerce.number().int().min(1).optional(),
         limit: z.coerce.number().int().min(1).max(250).optional(),
     }).refine((data) => {
