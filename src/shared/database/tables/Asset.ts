@@ -1,6 +1,6 @@
 import { InferAttributes, Model, InferCreationAttributes, NonAttribute, CreationOptional } from "sequelize";
-import { AssetRequest, User, UserRole } from "../../Database.ts";
-import { AssetFileFormat, AssetPublicAPIv1, AssetPublicAPIv2, AssetPublicAPIv3, License, LinkedAsset, LinkedAssetLinkType, RequestType, Status, StatusHistory, Tags, UserPublicAPIv3 } from "../DBExtras.ts";
+import { Alert, AssetRequest, User, UserRole } from "../../Database.ts";
+import { AlertType, AssetFileFormat, AssetPublicAPIv1, AssetPublicAPIv2, AssetPublicAPIv3, License, LinkedAsset, LinkedAssetLinkType, RequestType, Status, StatusHistory, Tags, UserPublicAPIv3 } from "../DBExtras.ts";
 import { z } from "zod/v4";
 import { EnvConfig } from "../../../shared/EnvConfig.ts";
 import { ca } from "zod/v4/locales";
@@ -101,16 +101,17 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
     // #endregion
 
     public static async checkIfExists(id: number): Promise<boolean> {
-        return await Asset.findByPk(id, {attributes: ['id']}) ? true : false;
+        return await Asset.findByPk(id, { attributes: ['id'] }) ? true : false;
     }
 
-    public static allowedToViewRoles(user: User|undefined|null): Status[] {
+    // #region Allowed to XYZ
+    public static allowedToViewRoles(user: User | undefined | null): Status[] {
         if (!user) {
             return [Status.Approved, Status.Pending]
         }
 
-        if (user.roles.includes(UserRole.Admin) || 
-            user.roles.includes(UserRole.Moderator) || 
+        if (user.roles.includes(UserRole.Admin) ||
+            user.roles.includes(UserRole.Moderator) ||
             user.roles.includes(UserRole.Developer)) {
             return [Status.Approved, Status.Pending, Status.Private, Status.Rejected];
         }
@@ -127,7 +128,7 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
         let allowedStatuses = Asset.allowedToViewRoles(user);
         return allowedStatuses.includes(this.status) || this.uploaderId === user.id;
     }
-        
+
 
     public canEdit(user: User | null): boolean {
         if (!user) {
@@ -135,11 +136,12 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
         }
 
         // Users can edit their own assets, or if they are an admin, developer, or moderator
-        return user.id === this.uploaderId || 
-            user.roles.includes(UserRole.Admin) || 
+        return user.id === this.uploaderId ||
+            user.roles.includes(UserRole.Admin) ||
             user.roles.includes(UserRole.Moderator);
     }
-
+    // #endregion
+    // #region Edits
     public updateAsset(data: Partial<Pick<AssetInfer, 'name' | 'description'>>): Promise<Asset> {
         if (data.name) {
             this.name = data.name;
@@ -151,7 +153,7 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
         return this.save();
     }
 
-    public async requestCredit(reqBy: User, userToCredit: User): Promise<AssetRequest> {
+    public async requestCollab(reqBy: User, userToCredit: User): Promise<AssetRequest> {
         if (this.uploaderId === userToCredit.id || this.collaborators.includes(userToCredit.id)) {
             throw new Error(`This user is already credited for this asset.`);
         }
@@ -194,7 +196,7 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
             throw new Error(`This asset is already linked to the requested asset.`);
         }
 
-        if (this.uploaderId !== assetToLink.uploaderId) {
+        if (this.uploaderId !== assetToLink.uploaderId || reqBy.roles.includes(UserRole.Admin) || reqBy.roles.includes(UserRole.Moderator)) {
             let existingRequests = await AssetRequest.findAll({
                 where: {
                     requestResponseBy: assetToLink.uploaderId,
@@ -312,7 +314,7 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
         return this;
     }
 
-    public async setStatus(newStatus: Status, reason: string, userId: string): Promise<Asset> {
+    public async setStatus(newStatus: Status, reason: string, userId: string, sendAlert = true): Promise<Asset> {
         this.statusHistory.push({
             status: newStatus,
             reason: reason,
@@ -348,13 +350,29 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
         this.status = newStatus;
         return this.save();
     }
-
+    // #endregion
+    // #region Misc
+    public alertUploader(data: {
+        type: AlertType;
+        header: string;
+        message: string;
+    }): Promise<Alert> {
+        return Alert.create({
+            type: data.type,
+            userId: this.uploaderId,
+            assetId: this.id,
+            header: data.header,
+            message: data.message,
+        });
+    }
+    // #endregion Misc
+    // #region API Responses
     public async getApiV3Response(): Promise<AssetPublicAPIv3> {
         let author = await this.uploader;
         let authorApi: UserPublicAPIv3;
 
         if (!author) {
-            authorApi = {         
+            authorApi = {
             } as User; // Fallback to a default user if not found
         } else {
             authorApi = author.getApiResponse();
@@ -385,7 +403,7 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
 
     public async getApiV2Response(): Promise<AssetPublicAPIv2> {
         let author = await this.uploader;
-        let type : `avatar` | `saber` | `platform` | `bloq` = `avatar`;
+        let type: `avatar` | `saber` | `platform` | `bloq` = `avatar`;
         switch (this.type.split('_')[0]) {
             case `avatar`:
                 type = 'avatar';
@@ -440,4 +458,5 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
     public async getApiResponse(): Promise<AssetPublicAPIv3> {
         return this.getApiV3Response();
     }
+    // #endregion
 }

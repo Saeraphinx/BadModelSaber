@@ -1,7 +1,9 @@
-import { InferAttributes, Model, InferCreationAttributes, CreationOptional } from "sequelize";
+import { InferAttributes, Model, InferCreationAttributes, CreationOptional, NonAttribute } from "sequelize";
 import { z } from "zod/v4";
-import { LinkedAsset, RequestMessage, RequestType, UserRole } from "../DBExtras.ts";
+import { AlertType, LinkedAsset, RequestMessage, RequestType, Status, UserRole } from "../DBExtras.ts";
 import { User } from "./User.ts";
+import { Asset } from "./Asset.ts";
+import { Alert } from "./Alert.ts";
 
 export type AssetRequestInfer = InferAttributes<AssetRequest>;
 export class AssetRequest extends Model<InferAttributes<AssetRequest>, InferCreationAttributes<AssetRequest>> {
@@ -20,6 +22,11 @@ export class AssetRequest extends Model<InferAttributes<AssetRequest>, InferCrea
     declare createdAt: CreationOptional<Date>; // Timestamp of when the request was created
     declare updatedAt: CreationOptional<Date>; // Timestamp of when the request was last updated
     declare deletedAt: CreationOptional<Date | null>; // Timestamp of when the request was deleted, null if not deleted
+
+    public get refrencedAsset(): NonAttribute<Promise<Asset | null>> {
+        return Asset.findByPk(this.refrencedAssetId);
+    }
+
 
     // #region Validators
     public static validator = z.object({
@@ -86,19 +93,74 @@ export class AssetRequest extends Model<InferAttributes<AssetRequest>, InferCrea
         return this.save();
     }
 
-    public accept(userId: string) {
+    public alertReporter(data: {
+        type: AlertType;
+        header: string;
+        message: string;
+    }): Promise<Alert> {
+        return User.createAlert(this.requesterId, {
+            ...data,
+            requestId: this.id,
+        });
+    }
+
+    public async accept(userId: string, silent = false): Promise<this> {
+        let refrencedAsset = await this.refrencedAsset;
+        if (!refrencedAsset) {
+            throw new Error(`Referenced asset not found.`);
+        }
+        switch (this.requestType) {
+            case RequestType.Credit:
+                refrencedAsset.collaborators = [
+                    ...refrencedAsset.collaborators,
+                    this.objectToAdd as string
+                ];
+                await refrencedAsset.save();
+                break;
+            case RequestType.Link:
+                let obj = this.objectToAdd as LinkedAsset;
+                let otherAsset = await Asset.findByPk(obj.id);
+                if (!otherAsset) {
+                    throw new Error(`Linked asset not found.`);
+                }
+                refrencedAsset.addLink(otherAsset, obj.linkType);
+                break;
+            case RequestType.Report:
+                refrencedAsset.setStatus(Status.Rejected, `Report ID ${this.id}`, userId, false);
+                if (!silent) {
+                    refrencedAsset.alertUploader({
+                        type: AlertType.AssetRemoval,
+                        header: `Your asset ${refrencedAsset.id} (${refrencedAsset.name}) has been removed.`,
+                        message: `Your asset has been removed due to a report. Please do not re-upload the asset. If you have any question, please contact the approval team.`
+                    });
+                    this.alertReporter({
+                        type: AlertType.RequestAccepted,
+                        header: `Your report has been accepted`,
+                        message: `Your report has been accepted and the asset has been removed. If you have any question, please contact the approval team.`
+                    });
+                }
+                break;
+        }
+
         this.accepted = true;
         this.resolvedBy = userId;
         return this.save();
     }
 
-    public decline(userId: string) {
+    public decline(userId: string, silent = false): Promise<this> {
         this.accepted = false;
         this.resolvedBy = userId;
+        if (!silent) {
+            this.alertReporter({
+                type: AlertType.RequestDeclined,
+                header: `Your request has been declined`,
+                message: `Your request has been declined. If you have any question, please contact the approval team.`
+            });
+        }
         return this.save();
     }
 
-    public toAPIResponse() {
+    public getAPIResponse() {
         return {
             id: this.id,
             refrencedAssetId: this.refrencedAssetId,

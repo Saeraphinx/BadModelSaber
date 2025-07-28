@@ -18,7 +18,19 @@ export class User extends Model<InferAttributes<User>, InferCreationAttributes<U
     declare readonly updatedAt: CreationOptional<Date>;
     declare readonly deletedAt: CreationOptional<Date> | null;
 
-    public createAlert(options: {
+    public createAlert(data: {
+        type: AlertType;
+        assetId?: number | null;
+        requestId?: number | null;
+        header: string;
+        message: string;
+    }): Promise<Alert> {
+        return User.createAlert(this.id, {
+            ...data,
+        });
+    }
+
+    public static createAlert(userId:string, data: {
         type: AlertType;
         assetId?: number | null;
         requestId?: number | null;
@@ -26,12 +38,8 @@ export class User extends Model<InferAttributes<User>, InferCreationAttributes<U
         message: string;
     }): Promise<Alert> {
         return Alert.create({
-            type: options.type,
-            userId: this.id,
-            assetId: options.assetId ?? null,
-            requestId: options.requestId ?? null,
-            header: options.header,
-            message: options.message,
+            ...data,
+            userId: userId,
             read: false,
             discordMessageSent: true
         });

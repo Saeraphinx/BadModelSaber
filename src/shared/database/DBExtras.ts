@@ -198,7 +198,8 @@ export enum AlertType {
     AssetApproved = "asset_approved", // Alert when an asset is approved
     AssetRejected = "asset_rejected", // Alert when an asset is rejected
     AssetRemoval = "asset_removal", // Alert when an asset is removed
-    Request = "request", // Alert for asset requests
+    RequestAccepted = "request_accepted", // Alert when a request is accepted
+    RequestDeclined = "request_declined", // Alert when a request is declined
 }
 
 export enum RequestType {

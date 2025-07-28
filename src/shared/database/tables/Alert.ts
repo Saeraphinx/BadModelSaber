@@ -57,9 +57,9 @@ export class Alert extends Model<InferAttributes<Alert>, InferCreationAttributes
         updatedAt: Alert.validator.shape.updatedAt.nullish(),
         deletedAt: Alert.validator.shape.deletedAt.nullish(),
     }).refine((data) => {
-        // Ensure that either assetId or requestId is provided, but not both
-        if ((data.assetId === null && data.requestId === null) || (data.assetId !== null && data.requestId !== null)) {
-            throw new Error("Either assetId or requestId must be provided, but not both.");
+        // Ensure that only one of assetId or requestId is not nullish
+        if (data.assetId && data.requestId) {
+            throw new Error("Either assetId or requestId can be provided, but not both.");
         }
         return true;
     });

@@ -39,9 +39,6 @@ describe(`API v3`, () => {
     beforeAll(async () => {
         process.env.PORT = `8491`;
         process.env.BASE_URL = `http://localhost:8491`;
-        process.env.STORAGE_UPLOADS="./test/temp/uploads"
-        process.env.STORAGE_ICONS="./test/temp/icons"
-        process.env.STORAGE_LOGS="./test/temp/logs"
         server = await init(`test_bms_apiv3`);
         await server.db.importFakeData();
         await server.db.Users.findOne({
@@ -63,9 +60,6 @@ describe(`API v3`, () => {
         }
         await server.db.dropSchema();
         await server.stop();
-        if (fs.existsSync(`./test/temp`)) {
-            fs.rmSync(`./test/temp`, { recursive: true, force: true });
-        }
     });
 
     test(`should initialize server`, () => {
@@ -121,7 +115,7 @@ describe(`API v3`, () => {
         expect(res.body.assets).toBeInstanceOf(Array);
         for (let asset of res.body.assets) {
             let isUploader = asset.uploader.id === user.id;
-            let isCredited = asset.credits.some((credit: any) => credit.userId === user?.id);
+            let isCredited = asset.collaborators.some((credit: any) => credit === user?.id);
             expect(isUploader || isCredited, `Asset ${asset.id} should be uploaded by ${user.id} or credited to the user`).toBe(true,);
         }
     });

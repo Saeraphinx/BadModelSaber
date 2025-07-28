@@ -8,7 +8,11 @@ import { parseErrorMessage } from "../../../shared/Tools.ts";
 export class RequestRoutes {
     public static loadRoutes(router: Router): void {
         router.get(`/requests`, auth(`loggedIn`, true), (req, res) => {
-            const { responded, data } = validate(req, res, `query`, Validator.z.object({ includeActioned: Validator.z.boolean().default(false) }));
+            const { responded, data } = validate(req, res, `query`, Validator.z.object({ 
+                includeActioned: Validator.z.boolean().default(false),
+                onlyMine: Validator.z.boolean().default(false),
+                assetId: Validator.zNumberID.optional()
+            }));
             if (!req.auth.isAuthed || responded) {
                 return;
             }
@@ -18,15 +22,17 @@ export class RequestRoutes {
             AssetRequest.findAll({
                 where: {
                     accepted: data.includeActioned ? undefined : false,
-                    requestResponseBy: isElevated ? undefined : req.auth.user.id
+                    requestResponseBy: isElevated ? undefined : req.auth.user.id,
+                    requesterId: data.onlyMine ? req.auth.user.id : undefined,
+                    refrencedAssetId: data.assetId
                 }
             }).then(requests => {
                 if (requests.length === 0) {
-                    res.status(204).json({ message: `No requests found` });
+                    res.status(204).json();
                     return;
                 }
 
-                res.status(200).json(requests.map(r => r.toAPIResponse()));
+                res.status(200).json(requests.map(r => r.getAPIResponse()));
             }).catch(err => {
                 res.status(500).json({ message: `Error fetching requests: ${parseErrorMessage(err)}` });
             });
@@ -62,6 +68,7 @@ export class RequestRoutes {
 
                 await assetReq.addMessage(req.auth.user, body.message);
                 res.status(200).json({ message: `Message added successfully` });
+                return;
             } else {
                 // Accept or decline the request
                 if (!assetReq.allowedToAccept(req.auth.user)) {
@@ -69,15 +76,24 @@ export class RequestRoutes {
                     return;
                 }
 
+                let promise: Promise<any>;
                 if (pData.action === `accept`) {
-                    await assetReq.accept(req.auth.user.id);
+                    promise = assetReq.accept(req.auth.user.id);
                     res.status(200).json({ message: `Request accepted successfully` });
                 } else if (pData.action === `decline`) {
-                    await assetReq.decline(req.auth.user.id);
+                    promise = assetReq.decline(req.auth.user.id);
                     res.status(200).json({ message: `Request declined successfully` });
                 } else {
                     res.status(400).json({ message: `Invalid action` });
+                    return;
                 }
+
+                await promise.then(() => {
+                    res.status(200).json({ message: `Request ${pData.action}${pData.action === `accept` ? `ed` : `d`} successfully.` });
+                }).catch(err => {
+                    res.status(500).json({ message: `Error processing request: ${parseErrorMessage(err)}` });
+                });
+                return;
             }
         });
     }
