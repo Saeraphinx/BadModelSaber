@@ -6,30 +6,30 @@ import { parseErrorMessage } from "../../../shared/Tools.ts";
 
 export class ApprovalRoutes {
     public static loadRoutes(router: Router): void {
-        router.post(`/approvals/assets/{id}`, auth([UserRole.Moderator]), (req, res) => {
-            const { responded: pResponded, data: id } = validate(req, res, `params`, Validator.zNumberID);
+        router.post(`/assets/:id/approval`, auth([UserRole.Moderator]), async (req, res) => {
+            const { responded: pResponded, data: params } = validate(req, res, `params`, Validator.zNumberIDObj);
             const { responded: dResponded, data: body } = validate(req, res, `body`, Validator.zApprovalObjv3);
             if (pResponded || dResponded || req.auth.isAuthed === false) {
                 return;
             }
         
-            Asset.findByPk(id).then(asset => {
+            await Asset.findByPk(params.id).then(async asset => {
                 if (!asset) {
-                    res.status(404).json({ error: `Asset not found` });
+                    res.status(404).json({ message: `Asset not found` });
                     return;
                 }
         
-                asset.setStatus(body.status, body.reason, req.auth.user!.id).then((asset) => {
+                await asset.setStatus(body.status, body.reason, req.auth.user!.id).then(async (asset) => {
                     res.status(200).json({
                         message: `Asset status updated successfully`,
-                        asset: asset.getApiV3Response()
+                        asset: await asset.getApiV3Response()
                     });
                 }).catch(err => {
-                    res.status(500).json({ error: `Error updating asset status: ${parseErrorMessage(err)}` });
+                    res.status(500).json({ message: `Error updating asset status: ${parseErrorMessage(err)}` });
                     return;
                 });
             }).catch(err => {
-                res.status(500).json({ error: `Error fetching asset: ${parseErrorMessage(err)}` });
+                res.status(500).json({ message: `Error fetching asset: ${parseErrorMessage(err)}` });
                 return;
             });
         });

@@ -136,7 +136,7 @@ export function validate<T extends z.ZodType>(req: Request, res: Response, locat
 
     let data = location === `multipart` ? preparse : req[location];
     if (typeof data !== `object` || data === null) {
-         options.responseOnError ? res.status(400).json({ error: "Invalid data format" }) : null;
+        options.responseOnError ? res.status(400).json({ message: `Invalid data format in ${location}` }) : null;
         return { responded: true };
     }
     let parsedData = schema.safeParse(data);

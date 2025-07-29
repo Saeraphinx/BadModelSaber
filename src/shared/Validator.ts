@@ -7,22 +7,34 @@ import { Asset } from "./database/tables/Asset.ts";
 export class Validator {
     public static z = z;
     public static zNumberID = z.transform((input, ctx) => {
-        const num = Number(input);
-        if (Number.isNaN(num) || !Number.isInteger(num) || num <= 0) {
+        try {
+            let num = Number(input);
+            if (Number.isNaN(num) || !Number.isInteger(num) || num <= 0) {
+                ctx.issues.push({
+                    input,
+                    code: `custom`,
+                    message: `Invalid ID: must be a positive integer.`,
+                });
+                return z.NEVER;
+            }
+            return num;
+        } catch (error) {
             ctx.issues.push({
                 input,
                 code: `custom`,
-                message: `Invalid ID: must be a positive integer.`,
+                message: `Invalid ID: must be a number.`,
             });
             return z.NEVER;
         }
-        return num;
     });
     public static zUserID = z.string().min(1).max(64).regex(/^\d+$|^me$/, {
         error: `ID must be a non-empty string of digits or the word "me".`,
     });
     public static zAssetFileFormat = z.enum(AssetFileFormat);
     public static zAssetStatus = z.enum(Status);
+    public static zNumberIDObj = z.object({
+        id: Validator.zNumberID,
+    });
 
     public static zCreateAssetv3 = Asset.validator.pick({
         type: true,

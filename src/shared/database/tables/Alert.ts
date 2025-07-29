@@ -40,8 +40,8 @@ export class Alert extends Model<InferAttributes<Alert>, InferCreationAttributes
         deletedAt: z.date().nullable(),
     }).refine((data) => {
         // Ensure that either assetId or requestId is provided, but not both
-        if ((data.assetId === null && data.requestId === null) || (data.assetId !== null && data.requestId !== null)) {
-            throw new Error("Either assetId or requestId must be provided, but not both.");
+        if (data.assetId && data.requestId) {
+            throw new Error("Either assetId or requestId can be provided, but not both.");
         }
         return true;
     });

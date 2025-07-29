@@ -47,14 +47,11 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
         oldId: z.string().nullable(),
         linkedIds: z.array(z.object({
             id: z.number().refine(async (id) => await Asset.checkIfExists(id)),
-            linkType: z.enum(['older', 'newer', 'altFormat']),
+            linkType: z.enum(LinkedAssetLinkType),
         })),
         type: z.enum(AssetFileFormat),
         uploaderId: z.string().refine(async (id) => await User.checkIfExists(id)),
-        credits: z.array(z.object({
-            userId: z.string().refine(async (id) => await User.checkIfExists(id)),
-            workDone: z.string().min(1).max(64),
-        })),
+        collaborators: z.array(z.string()),
         name: z.string().min(1).max(255),
         description: z.string().max(4096),
         license: z.enum(Object.values(License)),
@@ -91,7 +88,7 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
         id: Asset.validator.shape.id.nullish(),
         oldId: Asset.validator.shape.oldId.nullish(),
         linkedIds: Asset.validator.shape.linkedIds.nullish(),
-        credits: Asset.validator.shape.credits.nullish(),
+        collaborators: Asset.validator.shape.collaborators.nullish(),
         licenseUrl: Asset.validator.shape.licenseUrl.nullish(),
         sourceUrl: Asset.validator.shape.sourceUrl.nullish(),
         createdAt: Asset.validator.shape.createdAt.nullish(),
@@ -315,12 +312,12 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
     }
 
     public async setStatus(newStatus: Status, reason: string, userId: string, sendAlert = true): Promise<Asset> {
-        this.statusHistory.push({
+        this.statusHistory = [...this.statusHistory, {
             status: newStatus,
             reason: reason,
             timestamp: new Date(),
             userId: userId, // User ID of the person who changed the status
-        });
+        }];
 
         if (this.status === newStatus) {
             // No change in status, nothing to do

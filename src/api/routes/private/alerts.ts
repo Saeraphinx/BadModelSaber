@@ -6,13 +6,13 @@ import { parseErrorMessage } from "../../../shared/Tools.ts";
 
 export class AlertRoutes {
     public static loadRoutes(router: Router): void {
-        router.get(`/alerts`, auth(`loggedIn`, true), (req, res) => {
+        router.get(`/alerts`, auth(`loggedIn`, true), async (req, res) => {
             const { responded, data } = validate(req, res, `query`, Validator.z.object({ read: Validator.z.coerce.boolean().default(false) }));
             if (!req.auth.isAuthed || responded) {
                 return;
             }
 
-            Alert.findAll({
+            await Alert.findAll({
                 where: {
                     userId: req.auth.user.id,
                     read: data.read
@@ -30,59 +30,63 @@ export class AlertRoutes {
             });
         });
 
-        router.post(`/alerts/:id/read`, auth(`loggedIn`, true), (req, res) => {
-            const { responded, data: id } = validate(req, res, `params`, Validator.zNumberID);
+        router.post(`/alerts/:id/read`, auth(`loggedIn`, true), async (req, res) => {
+            const { responded, data: params } = validate(req, res, `params`, Validator.z.object({
+                id: Validator.zNumberID
+            }));
             if (!req.auth.isAuthed || responded) {
                 return;
             }
 
-            Alert.findByPk(id).then(alert => {
+            await Alert.findByPk(params.id).then(async alert => {
                 if (!alert) {
-                    res.status(404).json({ error: `Alert not found` });
+                    res.status(404).json({ message: `Alert not found` });
                     return;
                 }
 
                 if (alert.userId !== req.auth.user?.id) {
-                    res.status(403).json({ error: `You are not allowed to read this alert` });
+                    res.status(403).json({ message: `You are not allowed to read this alert` });
                     return;
                 }
 
                 alert.read = true;
                 alert.discordMessageSent = true;
-                alert.save().then(() => {
-                    res.status(200).json({ message: `Alert marked as read` });
+                await alert.save().then(() => {
+                    res.status(200).json(alert.toAPIResponse());
                 }).catch(err => {
-                    res.status(500).json({ error: `Error updating alert: ${parseErrorMessage(err)}` });
+                    res.status(500).json({ message: `Error updating alert: ${parseErrorMessage(err)}` });
                 });
             }).catch(err => {
-                res.status(500).json({ error: `Error fetching alert: ${parseErrorMessage(err)}` });
+                res.status(500).json({ message: `Error fetching alert: ${parseErrorMessage(err)}` });
             });
         });
 
-        router.delete(`/alerts/:id`, auth(`loggedIn`, true), (req, res) => {
-            const { responded, data: id } = validate(req, res, `params`, Validator.zNumberID);
+        router.delete(`/alerts/:id`, auth(`loggedIn`, true), async (req, res) => {
+            const { responded, data: params } = validate(req, res, `params`, Validator.z.object({
+                id: Validator.zNumberID
+            }));
             if (!req.auth.isAuthed || responded) {
                 return;
             }
 
-            Alert.findByPk(id).then(alert => {
+            await Alert.findByPk(params.id).then(async alert => {
                 if (!alert) {
-                    res.status(404).json({ error: `Alert not found` });
+                    res.status(404).json({ message: `Alert not found` });
                     return;
                 }
 
                 if (alert.userId !== req.auth.user?.id) {
-                    res.status(403).json({ error: `You are not allowed to delete this alert` });
+                    res.status(403).json({ message: `You are not allowed to delete this alert` });
                     return;
                 }
 
-                alert.destroy().then(() => {
-                    res.status(200).json({ message: `Alert deleted successfully` });
+                await alert.destroy().then(() => {
+                    res.status(204).json();
                 }).catch(err => {
-                    res.status(500).json({ error: `Error deleting alert: ${parseErrorMessage(err)}` });
+                    res.status(500).json({ message: `Error deleting alert: ${parseErrorMessage(err)}` });
                 });
             }).catch(err => {
-                res.status(500).json({ error: `Error fetching alert: ${parseErrorMessage(err)}` });
+                res.status(500).json({ message: `Error fetching alert: ${parseErrorMessage(err)}` });
             });
         });
     }
