@@ -193,6 +193,7 @@ export enum UserRole {
     Trusted = "trusted", // This role has no special permissions at this point in time.
     BSMG = "bsmg", // This role is for BSMG staff, and has no special permissions at this point in time.
     Banned = "banned", // Banned users cannot create assets, comment, or upload files. 
+    Secret = "secret", // This role is for users who have found the secret & grants them access to the secret features.
 }
 export enum AlertType {
     AssetApproved = "asset_approved", // Alert when an asset is approved

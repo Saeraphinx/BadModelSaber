@@ -40,11 +40,11 @@ export function auth(requiredRole: UserRole[] | `loggedIn` | `any`, allowBanned 
             };
         }
 
-        if (EnvConfig.server.authBypass) {
-            req.auth.isAuthed = true;
-            await User.findByPk('5').then(user => {
+        if (EnvConfig.server.authBypass && typeof EnvConfig.server.authBypass === `string` && EnvConfig.server.authBypass !== `false`) {
+            await User.findByPk(EnvConfig.server.authBypass).then(user => {
                 if (user) {
-                    req.auth.user = user;
+                    req.auth.isAuthed = true;
+                    req.auth.user = user; 
                 } else {
                     Logger.error(`Auth bypass is enabled but the system user does not exist.`);
                 }

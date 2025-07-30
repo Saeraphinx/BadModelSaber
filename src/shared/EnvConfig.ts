@@ -23,7 +23,7 @@ export const DEFAULT_CONFIG = {
         storedSessionTimeout: 60 * 60 * 24 * 7, // how long to store sessions in seconds (default: 7 days)
         sessionCookieName: `bms_session`, // the name of the session cookie
         sessionSecret: `supersecretkey`, // the secret for the session cookie
-        authBypass: false, // whether to bypass authentication for the API (useful for development. always false in production)
+        authBypass: `false`, // whether to bypass authentication for the API (useful for development. always false in production)
     },
     storage: {
         uploads: `./storage/uploads`, // the directory where uploads are stored
@@ -55,7 +55,7 @@ export class EnvConfig {
             storedSessionTimeout: number;
             sessionCookieName: string;
             sessionSecret: string;
-            authBypass: boolean;
+            authBypass: string | boolean;
         } = DEFAULT_CONFIG.server;
     public static storage: typeof DEFAULT_CONFIG.storage = DEFAULT_CONFIG.storage;
     public static database: typeof DEFAULT_CONFIG.database = DEFAULT_CONFIG.database;
@@ -122,7 +122,7 @@ export class EnvConfig {
             storedSessionTimeout: parseInt(process.env.STORED_SESSION_TIMEOUT || `${DEFAULT_CONFIG.server.storedSessionTimeout}`),
             sessionCookieName: process.env.SESSION_COOKIE_NAME || DEFAULT_CONFIG.server.sessionCookieName,
             sessionSecret: process.env.SESSION_SECRET || DEFAULT_CONFIG.server.sessionSecret,
-            authBypass: EnvConfig.isDevMode ? process.env.AUTH_BYPASS === `true` : false,
+            authBypass: EnvConfig.isDevMode ? process.env.AUTH_BYPASS || false : false,
         };
 
         EnvConfig.storage = {

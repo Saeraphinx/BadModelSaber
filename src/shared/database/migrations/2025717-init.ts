@@ -25,7 +25,8 @@ export const up: Migration = async ({ context: db }) => {
         },
         avatarUrl: {
             type: DataTypes.STRING,
-            allowNull: true,
+            allowNull: false,
+            defaultValue: `https://cdn.discordapp.com/embed/avatars/0.png`
         },
         bio: {
             type: DataTypes.TEXT,
@@ -42,10 +43,7 @@ export const up: Migration = async ({ context: db }) => {
         },
         createdAt: DataTypes.DATE,
         updatedAt: DataTypes.DATE,
-        deletedAt: {
-            type: DataTypes.DATE,
-            allowNull: true,
-        }
+        deletedAt: DataTypes.DATE
     });
     await queryInterface.createTable(`assets`, {
         id: {
@@ -73,8 +71,8 @@ export const up: Migration = async ({ context: db }) => {
             type: DataTypes.STRING,
             allowNull: false
         },
-        credits: {
-            type: DataTypes.JSONB,
+        collaborators: {
+            type: DataTypes.ARRAY(DataTypes.STRING),
             allowNull: false,
             defaultValue: []
         },
@@ -183,7 +181,7 @@ export const up: Migration = async ({ context: db }) => {
             autoIncrement: true,
             allowNull: false
         },
-        refrencedAsset: {
+        refrencedAssetId: {
             type: DataTypes.INTEGER,
             allowNull: false
         },
@@ -195,23 +193,29 @@ export const up: Migration = async ({ context: db }) => {
             type: DataTypes.STRING,
             allowNull: true
         },
+        objectToAdd: {
+            type: DataTypes.JSONB,
+            allowNull: true,
+            defaultValue: null
+        },
+        resolvedBy: {
+            type: DataTypes.STRING,
+            allowNull: true,
+            defaultValue: null
+        },
         requestType: {
             type: DataTypes.STRING,
             allowNull: false,
-        },
-        reason: {
-            type: DataTypes.STRING,
-            allowNull: false
         },
         accepted: {
             type: DataTypes.BOOLEAN,
             allowNull: true,
             defaultValue: null
         },
-        acceptReason: {
-            type: DataTypes.STRING,
-            allowNull: true,
-            defaultValue: null
+        messages: {
+            type: DataTypes.JSONB,
+            allowNull: false,
+            defaultValue: []
         },
         createdAt: DataTypes.DATE,
         updatedAt: DataTypes.DATE,

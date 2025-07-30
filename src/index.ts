@@ -16,6 +16,7 @@ import { StatusRoutes } from "./api/routes/public/all/status.ts";
 import { FileRoutes } from "./api/routes/files/files.ts";
 import { Sequelize } from "sequelize";
 import { UpdateAssetRoutes } from "./api/routes/private/updateAsset.ts";
+import { UpdateUserRoutes } from "./api/routes/private/updateUser.ts";
 
 export async function init(overrideDbName?: string) {
     console.log(`Initializing BadModelSaber...`);
@@ -79,6 +80,7 @@ export async function init(overrideDbName?: string) {
     AlertRoutes.loadRoutes(apiRouter);
     ApprovalRoutes.loadRoutes(apiRouter);
     UpdateAssetRoutes.loadRoutes(apiRouter);
+    UpdateUserRoutes.loadRoutes(apiRouter);
     GetV2.loadRoutes(v2Router);
     UploadRoutesV3.loadRoutes(v3Router); // must be before GetAssetRoutesV3
     GetAssetRoutesV3.loadRoutes(v3Router);
