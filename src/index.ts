@@ -17,6 +17,7 @@ import { FileRoutes } from "./api/routes/files/files.ts";
 import { Sequelize } from "sequelize";
 import { UpdateAssetRoutes } from "./api/routes/private/updateAsset.ts";
 import { UpdateUserRoutes } from "./api/routes/private/updateUser.ts";
+import { RequestRoutes } from "./api/routes/private/requests.ts";
 
 export async function init(overrideDbName?: string) {
     console.log(`Initializing BadModelSaber...`);
@@ -79,6 +80,7 @@ export async function init(overrideDbName?: string) {
     StatusRoutes.loadRoutes(apiRouter);
     AlertRoutes.loadRoutes(apiRouter);
     ApprovalRoutes.loadRoutes(apiRouter);
+    RequestRoutes.loadRoutes(apiRouter);
     UpdateAssetRoutes.loadRoutes(apiRouter);
     UpdateUserRoutes.loadRoutes(apiRouter);
     GetV2.loadRoutes(v2Router);
@@ -93,8 +95,18 @@ export async function init(overrideDbName?: string) {
 
     FileRoutes.loadRoutes(fileRouter);
 
+    apiRouter.use((req, res, next) => {
+        res.status(404).send({message: `Unknown route.`});
+    });
+
     app.use(`${EnvConfig.server.apiRoute}`, apiRouter);
     app.use(`${EnvConfig.server.fileRoute}`, fileRouter);
+
+    // catch all unknown routes and return a 404
+    app.use((err:any, req:any, res:any, next:any) => {
+        Logger.error(err.stack);
+        res.status(500).send({message: `Server error`});
+    });
     // #endregion
 
     let server = app.listen(EnvConfig.server.port, () => {

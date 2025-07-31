@@ -1,6 +1,6 @@
 import { InferAttributes, Model, InferCreationAttributes, CreationOptional, NonAttribute } from "sequelize";
 import { z } from "zod/v4";
-import { AlertType, LinkedAsset, RequestMessage, RequestType, Status, UserRole } from "../DBExtras.ts";
+import { AlertType, AssetRequestPublicAPIv3, LinkedAsset, RequestMessage, RequestType, Status, UserRole } from "../DBExtras.ts";
 import { User } from "./User.ts";
 import { Asset } from "./Asset.ts";
 import { Alert } from "./Alert.ts";
@@ -160,7 +160,7 @@ export class AssetRequest extends Model<InferAttributes<AssetRequest>, InferCrea
         return this.save();
     }
 
-    public getAPIResponse() {
+    public getAPIResponse(): AssetRequestPublicAPIv3 {
         return {
             id: this.id,
             refrencedAssetId: this.refrencedAssetId,
@@ -169,9 +169,9 @@ export class AssetRequest extends Model<InferAttributes<AssetRequest>, InferCrea
             requestType: this.requestType,
             messages: this.messages,
             accepted: this.accepted,
+            resolvedBy: this.resolvedBy,
             createdAt: this.createdAt,
-            updatedAt: this.updatedAt,
-            deletedAt: this.deletedAt
+            updatedAt: this.updatedAt
         };
     }
 }

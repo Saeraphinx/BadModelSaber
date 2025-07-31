@@ -33,6 +33,19 @@ export type AlertPublicAPIv3 = {
     updatedAt: Date;
 };
 
+export type AssetRequestPublicAPIv3 = {
+    id: number;
+    refrencedAssetId: number;
+    requesterId: string;
+    requestResponseBy: string | null;
+    requestType: RequestType;
+    accepted: boolean | null;
+    messages: RequestMessage[];
+    resolvedBy: string | null;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
 export type AssetPublicAPIv2 = {
     tags: string[];
     type: string;
@@ -157,7 +170,6 @@ export enum Tags {
     FBT = 'FBT', // asset
     Cloth = 'Cloth',
     DynamicBones = 'Dynamic Bones',
-    FirstPersonCompatible = 'First-Person Compatible',
     Shaders = 'Shader Replacement',
     NSFW = 'NSFW',
 

@@ -1,16 +1,18 @@
 import { Router } from "express";
 import { auth, validate } from "../../../api/RequestUtils.ts";
-import { AssetRequest, RequestType, UserRole } from "../../../shared/Database.ts";
+import { AssetRequest, AssetRequestInfer, RequestType, UserRole } from "../../../shared/Database.ts";
 import { Validator } from "../../../shared/Validator.ts";
 import { request } from "http";
 import { parseErrorMessage } from "../../../shared/Tools.ts";
+import { Op, WhereOptions } from "sequelize";
 
 export class RequestRoutes {
     public static loadRoutes(router: Router): void {
         router.get(`/requests`, auth(`loggedIn`, true), (req, res) => {
             const { responded, data } = validate(req, res, `query`, Validator.z.object({ 
-                includeActioned: Validator.z.boolean().default(false),
-                onlyMine: Validator.z.boolean().default(false),
+                includeActioned: Validator.z.coerce.boolean().default(false),
+                myOutgoing: Validator.z.coerce.boolean().default(false),
+                myIncoming: Validator.z.coerce.boolean().default(false),
                 assetId: Validator.zNumberID.optional()
             }));
             if (!req.auth.isAuthed || responded) {
@@ -19,12 +21,32 @@ export class RequestRoutes {
 
             let isElevated = req.auth.user.roles.includes(UserRole.Admin) || req.auth.user.roles.includes(UserRole.Moderator);
 
+            if (!isElevated && !data.myIncoming && !data.myOutgoing) {
+                res.status(400).json({ message: `You must specify either myIncoming or myOutgoing to view requests` });
+                return;
+            }
+            const whereOptions: WhereOptions<AssetRequestInfer> = {};
+            const whereOptionsOr: WhereOptions<AssetRequestInfer> = {};
+            if (data.assetId) {
+                whereOptions.refrencedAssetId = data.assetId;
+            }
+            if (data.myIncoming) {
+                whereOptionsOr.requestResponseBy = req.auth.user.id;
+            }
+            if (data.myOutgoing) {
+                whereOptionsOr.requesterId = req.auth.user.id;
+            }
+            if (data.includeActioned) {
+                whereOptions.accepted = { [Op.or]: [null, true, false] };
+            } else {
+                whereOptions.accepted = null;
+            }
+            
+
             AssetRequest.findAll({
                 where: {
-                    accepted: data.includeActioned ? undefined : false,
-                    requestResponseBy: isElevated ? undefined : req.auth.user.id,
-                    requesterId: data.onlyMine ? req.auth.user.id : undefined,
-                    refrencedAssetId: data.assetId
+                    ...whereOptions,
+                    [Op.or]: whereOptionsOr
                 }
             }).then(requests => {
                 if (requests.length === 0) {
