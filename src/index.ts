@@ -18,6 +18,7 @@ import { Sequelize } from "sequelize";
 import { UpdateAssetRoutes } from "./api/routes/private/updateAsset.ts";
 import { UpdateUserRoutes } from "./api/routes/private/updateUser.ts";
 import { RequestRoutes } from "./api/routes/private/requests.ts";
+import { importFromOldModelSaber } from "./shared/Importer.ts";
 
 export async function init(overrideDbName?: string) {
     console.log(`Initializing BadModelSaber...`);
@@ -25,8 +26,10 @@ export async function init(overrideDbName?: string) {
     Logger.init();
     EnvConfig.server.authBypass ? Logger.warn(`Auth bypass is enabled. This should only be used in development or testing environments.`) : null;
     const db = new DatabaseManager(overrideDbName);
+    await db.sequelize.query(`DROP SCHEMA public CASCADE;`)
     await db.init();
     //await db.importFakeData();
+    await importFromOldModelSaber()
 
     const app = express();
     app.use(cors({

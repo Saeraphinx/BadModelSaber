@@ -60,6 +60,33 @@ export class RequestRoutes {
             });
         });
 
+        router.get(`/requests/:id`, auth(`loggedIn`, true), (req, res) => {
+            const { responded, data } = validate(req, res, `params`, Validator.z.object({
+                id: Validator.zNumberID,
+            }));
+            if (!req.auth.isAuthed || responded) {
+                return;
+            }
+
+            let isElevated = req.auth.user.roles.includes(UserRole.Admin) || req.auth.user.roles.includes(UserRole.Moderator);
+
+            AssetRequest.findByPk(data.id).then(assetReq => {
+                if (!assetReq) {
+                    res.status(404).json({ message: `Request not found` });
+                    return;
+                }
+
+                if (!isElevated && assetReq.requesterId !== req.auth.user?.id && assetReq.requestResponseBy !== req.auth.user?.id) {
+                    res.status(403).json({ message: `You are not allowed to view this request` });
+                    return;
+                }
+
+                res.status(200).json(assetReq.getAPIResponse());
+            }).catch(err => {
+                res.status(500).json({ message: `Error fetching request: ${parseErrorMessage(err)}` });
+            });
+        });
+
         router.post(`/requests/:id/:action`, auth(`loggedIn`, true), async (req, res) => {
             const { responded: qResponded, data: pData } = validate(req, res, `params`, Validator.z.object({
                 id: Validator.zNumberID,

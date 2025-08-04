@@ -17,7 +17,7 @@ export * from "./database/tables/Alert.ts";
 export * from "./database/tables/AssetRequest.ts";
 export * from "./database/DBExtras.ts";
 
-export type Migration = typeof DatabaseManager.prototype.umzug._types.migration;
+export type Migration = typeof  DatabaseManager.prototype.umzug._types.migration;
 
 export class DatabaseManager {
     public sequelize: Sequelize;
@@ -201,7 +201,7 @@ export class DatabaseManager {
                 unique: true
             },
             oldId: {
-                type: DataTypes.STRING,
+                type: DataTypes.INTEGER,
                 allowNull: true,
                 unique: true,
             },

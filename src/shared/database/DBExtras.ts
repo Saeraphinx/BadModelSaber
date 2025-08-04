@@ -14,7 +14,7 @@ export type SponserUrl = {
 export type UserPublicAPIv3 = {
     id: string;
     username: string;
-    displayName: string | null;
+    displayName: string;
     bio: string | null;
     sponsorUrl: SponserUrl[] | null;
     avatarUrl: string;
@@ -52,6 +52,7 @@ export type AssetPublicAPIv2 = {
     name: string;
     author: string;
     thumbnail: string;
+    id: number
     hash: string;
     bsaber: string; // empty if not available
     status: string;
@@ -71,7 +72,7 @@ export type AssetPublicAPIv1 = Pick<AssetPublicAPIv2, `tags` | `type` | `name` |
 
 export type AssetPublicAPIv3 = {
     id: number;
-    oldId: string | null;
+    oldId: number | null;
     linkedIds: LinkedAsset[]; // Array of linked asset IDs
     type: AssetFileFormat;
     uploader: UserPublicAPIv3;

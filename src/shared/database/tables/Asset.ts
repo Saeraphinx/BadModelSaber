@@ -8,7 +8,7 @@ import { ca } from "zod/v4/locales";
 export type AssetInfer = InferAttributes<Asset>;
 export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes<Asset>> {
     declare readonly id: CreationOptional<number>;
-    declare oldId: CreationOptional<string | null>; // id from modelsaber, if applicable
+    declare oldId: CreationOptional<number | null>; // id from modelsaber, if applicable
     declare linkedIds: CreationOptional<LinkedAsset[]>; // models that are linked to this asset, e.g. a pc .saber may have a linked .wacker, or a model may have a newer version that is linked to it
 
     declare type: AssetFileFormat;
@@ -44,7 +44,7 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
         // unique by db
         id: z.number().int().positive(),
         // unique by db
-        oldId: z.string().nullable(),
+        oldId: z.number().int().nullable(),
         linkedIds: z.array(z.object({
             id: z.number().refine(async (id) => await Asset.checkIfExists(id)),
             linkType: z.enum(LinkedAssetLinkType),
@@ -423,6 +423,7 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
             author: author ? author.displayName : 'Unknown',
             bsaber: ``,
             hash: this.fileHash,
+            id: this.id,
             discord: author ? author.username : 'Unknown',
             discordId: author ? author.id : '-1',
             install_link: `modelsaber://${type}/${this.id}/${this.fileName}`,
