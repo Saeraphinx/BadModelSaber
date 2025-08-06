@@ -69,7 +69,12 @@ export async function importFromOldModelSaber(): Promise<void> {
             // #region download asset
             let assetHash = "";
             let assetSize = 0;
-            await fetch(encodeURI(asset.download)).then(res => {
+            let uri = /https:\/\/modelsaber.com\/files\/\w+\/\d+\/(.+)/gi.exec(asset.download);
+            if (!uri || uri.length < 2) {
+                Logger.error(`Failed to parse asset download URL for asset ${asset.id} (${asset.name}), skipping...`);
+                continue;
+            }
+            await fetch(`${uri[1]}${encodeURIComponent(uri[2])}`).then(res => {
                 if (!res.ok) {
                     throw new Error(`Failed to download asset ${asset.id} (${asset.name}): ${res.statusText}`);
                 }
