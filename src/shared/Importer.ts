@@ -7,7 +7,7 @@ import ffmpegPath from "ffmpeg-static";
 import ffmpeg from "ffmpeg";
 import path from "path";
 import { EnvConfig } from "./EnvConfig.ts";
-import { json } from "sequelize";
+import { json, Op } from "sequelize";
 import { parseErrorMessage } from "./Tools.ts";
 
 type modelsaberasset= {
@@ -15,6 +15,7 @@ type modelsaberasset= {
 }
 
 const hashType = `md5`;
+const conversionStorage = `./storage/converts`;
 
 export async function importFromOldModelSaber(): Promise<void> {
     try {
@@ -24,14 +25,28 @@ export async function importFromOldModelSaber(): Promise<void> {
             throw err;
         });
         Logger.log(`Fetched ${Object.keys(modelSaberAll).length} assets from old ModelSaber.`);
-        if (!fs.existsSync(`./converts`)) {
-            fs.mkdirSync(`./converts`);
+        if (!fs.existsSync(conversionStorage)) {
+            fs.mkdirSync(conversionStorage);
         }
         const thumbnailOutputDir = path.resolve(EnvConfig.storage.icons)
         let i = 0;
         for (const [key, asset] of Object.entries(modelSaberAll)) {
             if (i++ % 50 === 0) {
                 Logger.log(`Processing asset ${i}/${Object.keys(modelSaberAll).length} (${key})`);
+            }
+            // check if asset already exists
+            const existingAsset = await Asset.findOne({ where: { 
+                [Op.or]: {
+                    oldId: asset.id,
+                    fileHash: asset.hash,
+                }
+            } });
+            if (fs.existsSync(path.join(EnvConfig.storage.uploads, `${asset.hash}.${asset.type}`))) {
+                continue;
+            }
+            if (existingAsset) {
+                Logger.log(`Asset ${asset.id} (${asset.name}) already exists, skipping...`);
+                continue;
             }
             let newType: AssetFileFormat;
             switch (asset.type) {
@@ -54,7 +69,12 @@ export async function importFromOldModelSaber(): Promise<void> {
             // #region download asset
             let assetHash = "";
             let assetSize = 0;
-            await fetch(asset.download).then(res => res.arrayBuffer()).then(async (arrayBuffer) => {
+            await fetch(encodeURI(asset.download)).then(res => {
+                if (!res.ok) {
+                    throw new Error(`Failed to download asset ${asset.id} (${asset.name}): ${res.statusText}`);
+                }
+                return res.arrayBuffer()
+            }).then(async (arrayBuffer) => {
                 // calculate hash
                 assetHash = crypto.createHash(hashType).update(Buffer.from(arrayBuffer)).digest('hex');
                 assetSize = arrayBuffer.byteLength;
@@ -64,7 +84,15 @@ export async function importFromOldModelSaber(): Promise<void> {
                 return;
             });
             // #endregion
-    
+            if (!assetHash || assetHash.length === 0 || assetSize === 0) {
+                Logger.error(`Failed to download asset ${asset.id} (${asset.name}), skipping...`);
+                continue;
+            }
+            
+            if (assetHash !== asset.hash) {
+                Logger.warn(`Asset ${asset.id} (${asset.name}) hash mismatch: expected ${asset.hash}, got ${assetHash}. This may cause issues with the asset.`);
+            }
+
             // #region thumbnail
             let thumbnailName = `image.png`;
             await fetch(asset.thumbnail.startsWith(`http`) ? asset.thumbnail :`https://modelsaber.com/files/${asset.type}/${asset.id}/${asset.thumbnail}`).then(res => res.arrayBuffer()).then(async (arrayBuffer) => {
@@ -73,7 +101,7 @@ export async function importFromOldModelSaber(): Promise<void> {
                 const format = asset.thumbnail.split('.').pop()?.toLowerCase() || 'png';
     
                 if (format === 'mp4' || format === 'webm' || (arrayBuffer.byteLength > 8 * 1024 * 1024 && format === 'gif')) {
-                    const oldFilePath = `./converts/${hash}.${format}`;
+                    const oldFilePath = `${conversionStorage}/${hash}.${format}`;
                     // if the thumbnail is a video, convert it to a webp image
                     fs.writeFileSync(oldFilePath, Buffer.from(arrayBuffer));
                     if (ffmpegPath.default) {
@@ -137,7 +165,7 @@ export async function importFromOldModelSaber(): Promise<void> {
                 Logger.error(parseErrorMessage(err));
             });
         }
-        fs.unlinkSync(`./converts`);
+        fs.unlinkSync(conversionStorage);
         Logger.log(`Finished importing data from old ModelSaber.`);
     } catch (error) {
         Logger.error(`An error occurred while importing from old ModelSaber: ${error}`);

@@ -54,7 +54,7 @@ export const up: Migration = async ({ context: db }) => {
             unique: true
         },
         oldId: {
-            type: DataTypes.STRING,
+            type: DataTypes.INTEGER,
             allowNull: true,
             unique: true,
         },
