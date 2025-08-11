@@ -26,10 +26,10 @@ export async function init(overrideDbName?: string) {
     Logger.init();
     EnvConfig.server.authBypass ? Logger.warn(`Auth bypass is enabled. This should only be used in development or testing environments.`) : null;
     const db = new DatabaseManager(overrideDbName);
-    await db.sequelize.query(`DROP SCHEMA public CASCADE;`)
+    //await db.sequelize.query(`DROP SCHEMA public CASCADE;`)
     await db.init();
     //await db.importFakeData();
-    await importFromOldModelSaber()
+    //await importFromOldModelSaber()
 
     const app = express();
     app.use(cors({

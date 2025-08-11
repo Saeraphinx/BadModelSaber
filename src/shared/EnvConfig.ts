@@ -7,6 +7,7 @@ export const DEFAULT_CONFIG = {
         discord: {
             clientId: ``,
             clientSecret: ``,
+            token: null
         },
     },
     server: {
@@ -40,6 +41,7 @@ export class EnvConfig {
             [key: string]: {
                 clientId: string;
                 clientSecret: string;
+                token: string | null;
             };
         } = DEFAULT_CONFIG.auth;
     public static server: {
@@ -106,6 +108,7 @@ export class EnvConfig {
             discord: {
                 clientId: process.env.DISCORD_CLIENT_ID || DEFAULT_CONFIG.auth.discord.clientId,
                 clientSecret: process.env.DISCORD_CLIENT_SECRET || DEFAULT_CONFIG.auth.discord.clientSecret,
+                token: process.env.DISCORD_TOKEN || DEFAULT_CONFIG.auth.discord.token,
             },
         };
 

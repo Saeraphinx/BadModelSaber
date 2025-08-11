@@ -54,7 +54,7 @@ export async function generateFakeData() {
         for (let count of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]) {
             for (let type of Object.values(AssetFileFormat)) {
                 await db.Assets.create({
-                    oldId: count % 2 == 1 ? faker.string.numeric(10) : null, // Only set oldId for odd types
+                    oldId: count % 2 == 1 ? faker.number.int({min: 1000000, max: 99999999}) : null, // Only set oldId for odd types
                     linkedIds: [],
                     type: type,
                     uploaderId: user.id,
