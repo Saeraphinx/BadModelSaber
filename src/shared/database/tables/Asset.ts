@@ -4,6 +4,7 @@ import { AlertType, AssetFileFormat, AssetPublicAPIv1, AssetPublicAPIv2, AssetPu
 import { z } from "zod/v4";
 import { EnvConfig } from "../../../shared/EnvConfig.ts";
 import { ca } from "zod/v4/locales";
+import { Logger } from "../../Logger.ts";
 
 export type AssetInfer = InferAttributes<Asset>;
 export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes<Asset>> {
@@ -52,7 +53,7 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
         type: z.enum(AssetFileFormat),
         uploaderId: z.string().refine(async (id) => await User.checkIfExists(id)),
         collaborators: z.array(z.string()),
-        name: z.string().min(1).max(255),
+        name: z.string().min(1).max(64),
         description: z.string().max(4096),
         license: z.enum(Object.values(License)),
         licenseUrl: z.url().nullable(),
@@ -146,7 +147,7 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
         if (data.description) {
             this.description = data.description;
         }
-
+        Logger.debug(`Updating asset ${this.id} with data: ${JSON.stringify(data)}`);
         return this.save();
     }
 
@@ -171,6 +172,7 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
             throw new Error(`This user has an open credit request for this asset.`);
         }
 
+        Logger.log(`Creating credit request for asset ${this.id} by user ${reqBy.id} to credit user ${userToCredit.id}`);
         return await AssetRequest.create({
             refrencedAssetId: this.id,
             requesterId: reqBy.id,
@@ -207,6 +209,8 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
             if (existingRequests.some(req => req.accepted === null)) {
                 throw new Error(`This user has an open link request for this asset.`);
             }
+
+            Logger.log(`Creating link request for asset ${this.id} by user ${reqBy.id} to link asset ${assetToLink.id}`);
             return await AssetRequest.create({
                 refrencedAssetId: this.id,
                 requesterId: reqBy.id,
@@ -218,6 +222,7 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
                 }
             });
         } else {
+            Logger.log(`Directly linking asset ${this.id} to asset ${assetToLink.id} by user ${reqBy.id}`);
             return this.addLink(assetToLink, type);
         }
     }
@@ -308,6 +313,7 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
         // Save both assets
         await this.save();
         await otherAsset.save();
+        Logger.log(`Linked asset ${this.id} to asset ${otherAsset.id} as ${type}`);
         return this;
     }
 
@@ -345,7 +351,40 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
                 throw new Error(`Invalid status transition from ${this.status} to ${newStatus}`);
         }
         this.status = newStatus;
+        Logger.log(`Asset ${this.id} status changed to ${newStatus} by user ${userId} for reason: ${reason}`);
         return this.save();
+    }
+    // #endregion
+    // #region Reports
+    public async report(reportedBy: User, reason: string): Promise<AssetRequest> {
+        if (this.uploaderId === reportedBy.id) {
+            throw new Error(`You cannot report your own asset.`);
+        }
+
+        let existingRequests = await AssetRequest.findAll({
+            where: {
+                requestResponseBy: this.uploaderId,
+                refrencedAssetId: this.id,
+                requestType: RequestType.Report
+            }
+        });
+
+        if (existingRequests.some(req => req.accepted === null)) {
+            throw new Error(`You have an open report request for this asset.`);
+        }
+
+        Logger.log(`Creating report request for asset ${this.id} by user ${reportedBy.id} for reason: ${reason}`);
+        return await AssetRequest.create({
+            refrencedAssetId: this.id,
+            requesterId: reportedBy.id,
+            requestType: RequestType.Report,
+            requestResponseBy: null,
+            messages: [{
+                userId: reportedBy.id,
+                message: reason,
+                timestamp: new Date(Date.now()),
+            }],
+        });
     }
     // #endregion
     // #region Misc

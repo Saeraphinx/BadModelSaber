@@ -20,15 +20,15 @@ import { UpdateUserRoutes } from "./api/routes/private/updateUser.ts";
 import { RequestRoutes } from "./api/routes/private/requests.ts";
 import { importFromOldModelSaber } from "./shared/Importer.ts";
 
-export async function init(overrideDbName?: string) {
+export async function init(overrideDbName: string = `public`) {
     console.log(`Initializing BadModelSaber...`);
     EnvConfig.load();
     Logger.init();
     EnvConfig.server.authBypass ? Logger.warn(`Auth bypass is enabled. This should only be used in development or testing environments.`) : null;
     const db = new DatabaseManager(overrideDbName);
-    //await db.sequelize.query(`DROP SCHEMA public CASCADE;`)
+    await db.dropSchema();
     await db.init();
-    //await db.importFakeData();
+    await db.importFakeData();
     //await importFromOldModelSaber()
 
     const app = express();
@@ -132,7 +132,7 @@ export async function init(overrideDbName?: string) {
 
 // check if this file is being run directly
 if (process.argv[1] === import.meta.filename) {
-    const { stop } = await init().catch((err) => {
+    const { stop } = await init(`testfakedata`).catch((err) => {
         Logger.error(`Failed to initialize BadModelSaber: ${err}`);
         process.exit(1);
     });

@@ -3,6 +3,7 @@ import { auth, validate } from "../../RequestUtils.ts";
 import { Alert } from "../../../shared/Database.ts";
 import { Validator } from "../../../shared/Validator.ts";
 import { parseErrorMessage } from "../../../shared/Tools.ts";
+import { Logger } from "../../../shared/Logger.ts";
 
 export class AlertRoutes {
     public static loadRoutes(router: Router): void {
@@ -52,6 +53,7 @@ export class AlertRoutes {
                 alert.read = true;
                 alert.discordMessageSent = true;
                 await alert.save().then(() => {
+                    Logger.debug(`Alert ${alert.id} marked as read for user ${req.auth.user?.id}`);
                     res.status(200).json(alert.toAPIResponse());
                 }).catch(err => {
                     res.status(500).json({ message: `Error updating alert: ${parseErrorMessage(err)}` });
@@ -81,6 +83,7 @@ export class AlertRoutes {
                 }
 
                 await alert.destroy().then(() => {
+                    Logger.debug(`Alert ${alert.id} deleted for user ${req.auth.user?.id}`);
                     res.status(204).json();
                 }).catch(err => {
                     res.status(500).json({ message: `Error deleting alert: ${parseErrorMessage(err)}` });

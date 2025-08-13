@@ -1,9 +1,10 @@
 import { InferAttributes, Model, InferCreationAttributes, CreationOptional, NonAttribute } from "sequelize";
 import { z } from "zod/v4";
-import { AlertType, AssetRequestPublicAPIv3, LinkedAsset, RequestMessage, RequestType, Status, UserRole } from "../DBExtras.ts";
+import { AlertType, AssetRequestPublicAPIv3, LinkedAsset, LinkedAssetLinkType, RequestMessage, RequestType, Status, UserRole } from "../DBExtras.ts";
 import { User } from "./User.ts";
 import { Asset } from "./Asset.ts";
 import { Alert } from "./Alert.ts";
+import { Logger } from "../../Logger.ts";
 
 export type AssetRequestInfer = InferAttributes<AssetRequest>;
 export class AssetRequest extends Model<InferAttributes<AssetRequest>, InferCreationAttributes<AssetRequest>> {
@@ -31,36 +32,65 @@ export class AssetRequest extends Model<InferAttributes<AssetRequest>, InferCrea
     // #region Validators
     public static validator = z.object({
         id: z.number().int().positive(),
-        refrencedAsset: z.number().int().min(1),
-        requesterId: z.string().min(1).max(100),
+        refrencedAssetId: z.number().int().min(1).refine(async (id) => await Asset.checkIfExists(id)),
+        requesterId: z.string().min(1).max(32).refine(async (id) => await User.checkIfExists(id)),
         requestResponseBy: z.string().min(1).max(100).nullable(),
+        objectToAdd: z.union([z.string().min(1).max(100), z.object({
+            id: z.number().int().positive(),
+            linkType: z.enum(LinkedAssetLinkType),
+        })]).nullable(),
         requestType: z.enum(RequestType),
-        reason: z.string().min(1).max(4096),
         accepted: z.boolean().nullable(),
-        acceptReason: z.string().max(320).nullable().default(`No reason provided.`),
+        resolvedBy: z.string().min(1).max(32).nullable().refine(async (id) => {
+            if (id === null) return true; // If resolvedBy is null, no need
+            return await User.checkIfExists(id);
+        }),
+        messages: z.array(z.object({
+            userId: z.string().min(1).max(32).refine(async (id) => await User.checkIfExists(id)),
+            message: z.string().max(1024),
+            timestamp: z.date(),
+        })).default([]),
         createdAt: z.date(),
         updatedAt: z.date(),
-        deletedAt: z.date().nullable(),
+        deletedAt: z.date().nullable().optional(),
     }).refine((data) => {
-        if (data.requestType === RequestType.Report) {
-            if (data.requestResponseBy !== null) {
-                return false; // Report requests should not have a specific user to respond to
-            }
-        };
-        if (data.requestType !== RequestType.Report && data.requestResponseBy === null) {
-            return false; // Non-report requests should have a specific user to respond to
+        // Ensure that if the requestType is Report, objectToAdd must be null
+        return data.requestType === RequestType.Report && data.objectToAdd !== null
+    }, {
+        message: `If requestType is Report, objectToAdd must be null`,
+    }).refine((data) => {
+        // Ensure that if the requestType is Credit or Link, objectToAdd must be a string or LinkedAsset
+        if (data.requestType === RequestType.Credit) {
+            return typeof data.objectToAdd === 'string'
+        } else if (data.requestType === RequestType.Link) {
+            if (data.objectToAdd === null) return false; // If requestType is Link, objectToAdd must not be null
+            return typeof data.objectToAdd === 'object' && 'id' in data.objectToAdd && 'linkType' in data.objectToAdd;
         }
-        return true;
+    }, {
+        message: `If requestType is Credit or Link, objectToAdd must be a string or LinkedAsset`,
+    }).refine((data) => {
+        // Ensure that if the requestType is Report, requestResponseBy must be null
+        return data.requestType !== RequestType.Report || data.requestResponseBy === null
+    }, {
+        message: `If requestType is Report, requestResponseBy must be null`
+    }).refine((data) => {
+            // Ensure that if the requestType is Credit or Link, requestResponseBy must not be null;
+        return data.requestType !== RequestType.Credit && data.requestType !== RequestType.Link || data.requestResponseBy !== null
+    }, {
+        message: `If requestType is Credit or Link, requestResponseBy must not be null`,
     });
+  
 
     public static createValidator = z.object({
         ...AssetRequest.validator.shape,
-        id: AssetRequest.validator.shape.id.nullable(), // id is optional when creating a new request
-        accepted: AssetRequest.validator.shape.accepted.nullable(),
-        acceptReason: AssetRequest.validator.shape.acceptReason.nullable(),
-        createdAt: AssetRequest.validator.shape.createdAt.nullable(),
-        updatedAt: AssetRequest.validator.shape.updatedAt.nullable(),
-        deletedAt: AssetRequest.validator.shape.deletedAt.nullable(),
+        id: AssetRequest.validator.shape.id.nullish(), // id is optional when creating a new request
+        
+        accepted: AssetRequest.validator.shape.accepted.nullish(),
+        resolvedBy: AssetRequest.validator.shape.resolvedBy.nullish(),
+        messages: AssetRequest.validator.shape.messages.nullish(),
+        createdAt: AssetRequest.validator.shape.createdAt.nullish(),
+        updatedAt: AssetRequest.validator.shape.updatedAt.nullish(),
+        deletedAt: AssetRequest.validator.shape.deletedAt.nullish(),
     });
 
     // #endregion Validators
@@ -82,6 +112,7 @@ export class AssetRequest extends Model<InferAttributes<AssetRequest>, InferCrea
     }
 
     public addMessage(user: User, message: string): Promise<this> {
+        Logger.log(`Adding message to request ${this.id} from user ${user.id}`);
         this.messages = [
             ...this.messages,
             {
@@ -144,6 +175,7 @@ export class AssetRequest extends Model<InferAttributes<AssetRequest>, InferCrea
 
         this.accepted = true;
         this.resolvedBy = userId;
+        Logger.log(`Request ${this.id} accepted by user ${userId}`);
         return this.save();
     }
 
@@ -157,6 +189,7 @@ export class AssetRequest extends Model<InferAttributes<AssetRequest>, InferCrea
                 message: `Your request has been declined. If you have any question, please contact the approval team.`
             });
         }
+        Logger.log(`Request ${this.id} declined by user ${userId}`);
         return this.save();
     }
 

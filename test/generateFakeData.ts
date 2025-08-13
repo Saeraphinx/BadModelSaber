@@ -1,8 +1,9 @@
 import * as fs from 'fs';
 
-import { AlertType, Asset, AssetFileFormat, DatabaseManager, License, SponserUrl, SponsorType, Status, Tags, User, UserRole } from '../src/shared/Database.ts';
+import { AlertType, Asset, AssetFileFormat, DatabaseManager, License, LinkedAssetLinkType, SponserUrl, SponsorType, Status, Tags, User, UserRole } from '../src/shared/Database.ts';
 import { faker } from '@faker-js/faker';
 import { EnvConfig } from '../src/shared/EnvConfig.ts';
+import { Op } from 'sequelize';
 
 export async function generateFakeData() {
     EnvConfig.load();
@@ -83,6 +84,30 @@ export async function generateFakeData() {
                 read: faker.datatype.boolean(),
             });
         }
+    }
+
+    for (let user of users) {
+        let userAsset = await db.Assets.findOne({ where: { uploaderId: user.id }});
+        if (!userAsset) throw new Error(`No asset found for user ${user.id}`);
+        await Asset.findAll({ where: { uploaderId: { [Op.ne]: user.id }}, offset: faker.number.int({ min: 0, max: 50 }), limit: 6 }).then(async assets => {
+            let i = 0;
+            for (let asset of assets) {
+                let author = await User.findByPk(asset.uploaderId);
+                if (!author) throw new Error(`Author not found for asset ${asset.id}`);
+                switch (i++ % 3) {
+                    case 0:
+                        asset.requestCollab(author, user);
+                        break;
+                    case 1:
+                        asset.requestLink(author, userAsset, faker.helpers.arrayElement(Object.values(LinkedAssetLinkType)))
+                        break;
+                    case 2:
+                        asset.report(user, `This is a test report for asset ${asset.id}.`);
+                        break;
+                }
+                    
+            }
+        })
     }
 
     console.log(`Generated fake data for ${users.length} users, ${await db.Assets.count()} assets, and ${await db.Alerts.count()} alerts.`);

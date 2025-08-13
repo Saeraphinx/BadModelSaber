@@ -1,6 +1,7 @@
 import { CreationOptional, InferAttributes, InferCreationAttributes, Model } from "sequelize";
 import { AlertType, SponserUrl, UserPublicAPIv3, UserRole } from "../DBExtras.ts";
 import { Alert } from "./Alert.ts";
+import { Logger } from "../../Logger.ts";
 
 export type UserInfer = InferAttributes<User>;
 export class User extends Model<InferAttributes<User>, InferCreationAttributes<User>>{
@@ -37,6 +38,7 @@ export class User extends Model<InferAttributes<User>, InferCreationAttributes<U
         header: string;
         message: string;
     }): Promise<Alert> {
+        Logger.debug(`Creating alert for user ${userId}: ${data.header}`);
         return Alert.create({
             ...data,
             userId: userId,
