@@ -6,6 +6,16 @@ import { Asset } from "./database/tables/Asset.ts";
 
 export class Validator {
     public static z = z;
+    public static zBool = z.preprocess((input) => {
+        if (typeof input === `string`) {
+            if (input.toLowerCase() === `true`) return true;
+        }
+        if (typeof input === `number`) {
+            if (input >= 1) return true;
+        }
+        if (typeof input === `boolean`) return input;
+        return false; // Default to false if not a boolean or string
+    }, z.boolean())
     public static zNumberID = z.transform((input, ctx) => {
         try {
             let num = Number(input);

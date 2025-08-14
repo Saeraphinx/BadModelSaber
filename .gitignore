@@ -4,6 +4,7 @@
 /storage
 /test/test.sqlite
 /test/testData.json
+/test/temp
 /converts
 .env
 .*.env

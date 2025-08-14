@@ -89,7 +89,17 @@ export async function generateFakeData() {
     for (let user of users) {
         let userAsset = await db.Assets.findOne({ where: { uploaderId: user.id }});
         if (!userAsset) throw new Error(`No asset found for user ${user.id}`);
-        await Asset.findAll({ where: { uploaderId: { [Op.ne]: user.id }}, offset: faker.number.int({ min: 0, max: 50 }), limit: 6 }).then(async assets => {
+        await Asset.findAll({ 
+            where: { 
+                uploaderId: { 
+                    [Op.ne]: user.id 
+                },
+                [Op.not]: {
+                    collaborators: {
+                        [Op.contains]: [user.id]
+                    }
+                }
+            }, offset: faker.number.int({ min: 0, max: 50 }), limit: 6 }).then(async assets => {
             let i = 0;
             for (let asset of assets) {
                 let author = await User.findByPk(asset.uploaderId);

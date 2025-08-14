@@ -1,23 +1,31 @@
 import { Router } from "express";
 import { auth, validate } from "../../RequestUtils.ts";
-import { Alert } from "../../../shared/Database.ts";
+import { Alert, AlertInfer } from "../../../shared/Database.ts";
 import { Validator } from "../../../shared/Validator.ts";
 import { parseErrorMessage } from "../../../shared/Tools.ts";
 import { Logger } from "../../../shared/Logger.ts";
+import { WhereOptions } from "sequelize";
 
 export class AlertRoutes {
     public static loadRoutes(router: Router): void {
         router.get(`/alerts`, auth(`loggedIn`, true), async (req, res) => {
-            const { responded, data } = validate(req, res, `query`, Validator.z.object({ read: Validator.z.coerce.boolean().default(false) }));
+            const { responded, data } = validate(req, res, `query`, Validator.z.object({ read: Validator.z.enum([`true`, `false`, `all`]).default(`false`) }));
             if (!req.auth.isAuthed || responded) {
                 return;
             }
 
+            let whereOptions: WhereOptions<AlertInfer> = {
+                userId: req.auth.user.id,
+            };
+
+            if (data.read === `true`) {
+                whereOptions.read = true;
+            } else if (data.read === `false`) {
+                whereOptions.read = false;
+            }
+
             await Alert.findAll({
-                where: {
-                    userId: req.auth.user.id,
-                    read: data.read
-                },
+                where: whereOptions,
                 order: [[`createdAt`, `DESC`]]
             }).then(alerts => {
                 if (alerts.length === 0) {
