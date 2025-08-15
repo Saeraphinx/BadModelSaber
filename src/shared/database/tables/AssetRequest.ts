@@ -1,4 +1,5 @@
-import { InferAttributes, Model, InferCreationAttributes, CreationOptional, NonAttribute } from "sequelize";
+import { AllowNull, Column, CreatedAt, DataType, DeletedAt, Model, Table, UpdatedAt } from "sequelize-typescript";
+import { InferAttributes, InferCreationAttributes, CreationOptional, NonAttribute } from "sequelize";
 import { z } from "zod/v4";
 import { AlertType, AssetRequestPublicAPIv3, LinkedAsset, LinkedAssetLinkType, RequestMessage, RequestType, Status, UserRole } from "../DBExtras.ts";
 import { User } from "./User.ts";
@@ -7,21 +8,73 @@ import { Alert } from "./Alert.ts";
 import { Logger } from "../../Logger.ts";
 
 export type AssetRequestInfer = InferAttributes<AssetRequest>;
+@Table({
+    tableName: `asset_requests`,
+    modelName: `AssetRequest`,
+    timestamps: true,
+    paranoid: true,
+})
 export class AssetRequest extends Model<InferAttributes<AssetRequest>, InferCreationAttributes<AssetRequest>> {
+    @Column({
+        type: DataType.INTEGER,
+        autoIncrement: true,
+        primaryKey: true,
+        allowNull: false,
+    })
     declare id: CreationOptional<number>;
+    @Column({
+        type: DataType.INTEGER,
+        allowNull: false,
+    })
     declare refrencedAssetId: number; // Asset ID that this request is for
+    @Column({
+        type: DataType.STRING,
+        allowNull: false,
+    })
     declare requesterId: string; // User ID of the person who made the request
+    @Column({
+        type: DataType.STRING,
+        allowNull: true,
+        defaultValue: null,
+    })
     declare requestResponseBy: string | null; // User ID of the person who has been asked to respond to the request. null if this isn't for a specific user
+    @Column({
+        type: DataType.JSONB,
+        allowNull: true,
+        defaultValue: null,
+    })
     declare objectToAdd: string | LinkedAsset | null;
 
+    @Column({
+        type: DataType.STRING,
+        allowNull: false,
+    })
     declare requestType: RequestType;
 
+    @Column({
+        type: DataType.BOOLEAN,
+        allowNull: true,
+        defaultValue: null,
+    })
     declare accepted: CreationOptional<boolean | null>; // Whether the request has been accepted or not
+    @Column({
+        type: DataType.STRING,
+        allowNull: true,
+        defaultValue: null,
+    })
     declare resolvedBy: CreationOptional<string | null>; // User ID of the person who resolved the request, null if not resolved
+    @Column({
+        type: DataType.ARRAY(DataType.JSONB),
+        allowNull: false,
+        defaultValue: [],
+    })
     declare messages: CreationOptional<RequestMessage[]>; // Array of messages related to the request
 
+    @CreatedAt
     declare createdAt: CreationOptional<Date>; // Timestamp of when the request was created
+    @UpdatedAt
     declare updatedAt: CreationOptional<Date>; // Timestamp of when the request was last updated
+    @DeletedAt
     declare deletedAt: CreationOptional<Date | null>; // Timestamp of when the request was deleted, null if not deleted
 
     public get refrencedAsset(): NonAttribute<Promise<Asset | null>> {

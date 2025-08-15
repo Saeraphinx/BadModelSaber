@@ -1,4 +1,5 @@
-import { InferAttributes, Model, InferCreationAttributes, NonAttribute, CreationOptional } from "sequelize";
+import { BelongsTo, Column, CreatedAt, DataType, DeletedAt, ForeignKey, Model, Table, UpdatedAt } from "sequelize-typescript";
+import { InferAttributes, InferCreationAttributes, NonAttribute, CreationOptional } from "sequelize";
 import { Alert, AssetRequest, User, UserRole } from "../../Database.ts";
 import { AlertType, AssetFileFormat, AssetPublicAPIv1, AssetPublicAPIv2, AssetPublicAPIv3, License, LinkedAsset, LinkedAssetLinkType, RequestType, Status, StatusHistory, Tags, UserPublicAPIv3 } from "../DBExtras.ts";
 import { z } from "zod/v4";
@@ -7,33 +8,132 @@ import { ca } from "zod/v4/locales";
 import { Logger } from "../../Logger.ts";
 
 export type AssetInfer = InferAttributes<Asset>;
+@Table({
+    tableName: `assets`,
+    modelName: `Asset`,
+    timestamps: true,
+    paranoid: true,
+})
 export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes<Asset>> {
+    @Column({
+        type: DataType.INTEGER,
+        autoIncrement: true,
+        primaryKey: true,
+        allowNull: false,
+    })
     declare readonly id: CreationOptional<number>;
+    @Column({
+        type: DataType.INTEGER,
+        allowNull: true,
+        defaultValue: null,
+    })
     declare oldId: CreationOptional<number | null>; // id from modelsaber, if applicable
+    @Column({
+        type: DataType.ARRAY(DataType.JSONB),
+        allowNull: false,
+        defaultValue: [],
+    })
     declare linkedIds: CreationOptional<LinkedAsset[]>; // models that are linked to this asset, e.g. a pc .saber may have a linked .wacker, or a model may have a newer version that is linked to it
 
+    @Column({
+        type: DataType.STRING,
+        allowNull: false,
+    })
     declare type: AssetFileFormat;
 
+    @Column({
+        type: DataType.STRING,
+        allowNull: false,
+        defaultValue: "",
+    })
+    @ForeignKey(() => User)
     declare uploaderId: string; // User ID of the uploader, this is not the author, but the person who uploaded the asset to the platform
+    @BelongsTo(() => User, {
+        foreignKey: `uploaderId`,
+    })
+    private declare _uploader?: NonAttribute<Promise<User | null>>;
+    @Column({
+        type: DataType.ARRAY(DataType.STRING),
+        allowNull: false,
+        defaultValue: [],
+    })
     declare collaborators: CreationOptional<string[]>; // credits for the asset, e.g. "Model by John Doe, Textures by Jane Smith"
+    @Column({
+        type: DataType.STRING,
+        allowNull: false,
+    })
     declare name: string;
+    @Column({
+        type: DataType.TEXT,
+        allowNull: false,
+    })
     declare description: string;
+    @Column({
+        type: DataType.STRING,
+        allowNull: false,
+    })
     declare license: License; // e.g. CC-BY, CC0, etc. or 'custom'
+    @Column({
+        type: DataType.STRING,
+        allowNull: true,
+        defaultValue: null,
+    })
     declare licenseUrl: CreationOptional<string | null>; // URL to the license, if applicable (e.g. custom is set for license)
+    @Column({
+        type: DataType.STRING,
+        allowNull: true,
+        defaultValue: null,
+    })
     declare sourceUrl: CreationOptional<string | null> // URL to the source of the asset, if applicable;
+    @Column({
+        type: DataType.STRING,
+        allowNull: false,
+    })
     declare fileHash: string;
+    @Column({
+        type: DataType.INTEGER,
+        allowNull: false,
+    })
     declare fileSize: number;
+    @Column({
+        type: DataType.ARRAY(DataType.STRING),
+        allowNull: false,
+        defaultValue: [],
+    })
     declare iconNames: string[]; // names of the icons associated with the asset, e.g. ["icon1.png", "icon2.png"]
+    @Column({
+        type: DataType.STRING,
+        allowNull: false,
+        defaultValue: Status.Pending,
+    })
     declare status: CreationOptional<Status>;
+    @Column({
+        type: DataType.ARRAY(DataType.JSONB),
+        allowNull: false,
+        defaultValue: [],
+    })
     declare statusHistory: CreationOptional<StatusHistory[]>;
+    @Column({
+        type: DataType.ARRAY(DataType.STRING),
+        allowNull: false,
+        defaultValue: [],
+    })
     declare tags: CreationOptional<Tags[]>; // system defined tags
 
+    @CreatedAt
     declare readonly createdAt: CreationOptional<Date>;
+    @UpdatedAt
     declare readonly updatedAt: CreationOptional<Date>;
+    @DeletedAt
     declare readonly deletedAt: CreationOptional<Date | null>;
 
     get uploader(): NonAttribute<Promise<User | null>> {
-        return User.findByPk(this.uploaderId); // This should be replaced with a User object in the actual implementation
+        if (this._uploader) {
+            return Promise.resolve(this._uploader) || null;
+        } else {
+            Logger.debug(`User not loaded, fetching from DB for uploaderId: ${this.uploaderId}`);
+            return User.findByPk(this.uploaderId) || null;
+        }
     }
 
     get fileName(): NonAttribute<string> {

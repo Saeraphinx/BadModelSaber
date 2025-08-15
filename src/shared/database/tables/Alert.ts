@@ -1,26 +1,78 @@
-import { InferAttributes, Model, InferCreationAttributes, CreationOptional } from "sequelize";
+import { Column, CreatedAt, DataType, DeletedAt, Model, Table, UpdatedAt } from "sequelize-typescript";
+import { InferAttributes, InferCreationAttributes, CreationOptional } from "sequelize";
 import { z } from "zod/v4";
 import { User } from "./User.ts";
 import { Asset } from "./Asset.ts";
 import { AlertPublicAPIv3, AlertType } from "../DBExtras.ts";
 
 export type AlertInfer = InferAttributes<Alert>;
+@Table({
+    tableName: `alerts`,
+    modelName: `Alert`,
+    timestamps: true,
+    paranoid: true,
+})
 export class Alert extends Model<InferAttributes<Alert>, InferCreationAttributes<Alert>> {
+    @Column({
+        type: DataType.INTEGER,
+        autoIncrement: true,
+        primaryKey: true,
+        allowNull: false,
+    })
     declare id: CreationOptional<number>;
     
+    @Column({
+        type: DataType.STRING,
+        allowNull: false,
+    })
     declare type: AlertType; // Type of alert, e.g. "new_asset", "asset_approved", etc.
+    @Column({
+        type: DataType.STRING,
+        allowNull: false,
+    })
     declare userId: string; // User ID of the person who should receive the alert
 
+    @Column({
+        type: DataType.INTEGER,
+        allowNull: true,
+        defaultValue: null,
+    })
     declare assetId: CreationOptional<number | null>; // Asset ID related to the alert, null if not applicable
+    @Column({
+        type: DataType.INTEGER,
+        allowNull: true,
+        defaultValue: null,
+    })
     declare requestId: CreationOptional<number | null>; // Request ID related to the alert, null if not applicable
 
+    @Column({
+        type: DataType.STRING,
+        allowNull: false,
+    })
     declare header: string; // Header of the alert, e.g. "New Asset Approved"
+    @Column({
+        type: DataType.TEXT,
+        allowNull: false,
+    })
     declare message: string; // Message content of the alert
+    @Column({
+        type: DataType.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
+    })
     declare read: CreationOptional<boolean>; // Whether the alert has been read or not
+    @Column({
+        type: DataType.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
+    })
     declare discordMessageSent: CreationOptional<boolean>; // Whether a Discord message has been sent for this alert
 
+    @CreatedAt
     declare createdAt: CreationOptional<Date>; // Timestamp of when the alert was created
+    @UpdatedAt
     declare updatedAt: CreationOptional<Date>; // Timestamp of when the alert was last updated
+    @DeletedAt
     declare deletedAt: CreationOptional<Date | null>; // Timestamp of when the alert was deleted, null
 
     // #region Validators
