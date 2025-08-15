@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { auth, validate } from "../../../RequestUtils.ts";
 import { Validator } from "../../../../shared/Validator.ts";
-import { Asset, AssetInfer } from "../../../../shared/Database.ts";
+import { Asset, AssetInfer, User } from "../../../../shared/Database.ts";
 import { Op, WhereOptions } from "sequelize";
 import { parseErrorMessage } from "../../../../shared/Tools.ts";
 import { AssetPublicAPIv3 } from "../../../../shared/database/DBExtras.ts";
@@ -33,7 +33,8 @@ export class GetAssetRoutesV3 {
                 where: whereOptions,
                 limit: query.limit ?? undefined,
                 offset: query.page && query.limit ? ((query.page - 1) * query.limit) : undefined,
-                order: [[`createdAt`, `DESC`]]
+                order: [[`createdAt`, `DESC`]],
+                attributes: query.minimalData ? [`id`, `name`, `type`, `status`, `uploaderId`, `createdAt`, `updatedAt`, `iconNames`] : undefined,
             }).then(async assets => {
                 let response = await Promise.all(assets.map(asset => asset.getApiV3Response()));
                 res.status(200).json({ assets: response, total: assets.length, page: query.page ?? null});

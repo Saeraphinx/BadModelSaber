@@ -84,7 +84,7 @@ export class AssetRequest extends Model<InferAttributes<AssetRequest>, InferCrea
     public static createValidator = z.object({
         ...AssetRequest.validator.shape,
         id: AssetRequest.validator.shape.id.nullish(), // id is optional when creating a new request
-        
+
         accepted: AssetRequest.validator.shape.accepted.nullish(),
         resolvedBy: AssetRequest.validator.shape.resolvedBy.nullish(),
         messages: AssetRequest.validator.shape.messages.nullish(),
@@ -193,11 +193,15 @@ export class AssetRequest extends Model<InferAttributes<AssetRequest>, InferCrea
         return this.save();
     }
 
-    public getAPIResponse(): AssetRequestPublicAPIv3 {
+    public async getAPIResponse(): Promise<AssetRequestPublicAPIv3> {
+        let requester = await User.findByPk(this.requesterId);
+        let refrencedAsset = await this.refrencedAsset;
         return {
             id: this.id,
             refrencedAssetId: this.refrencedAssetId,
+            refrencedAsset: await refrencedAsset?.getApiResponse() || null,
             requesterId: this.requesterId,
+            requester: requester?.getApiResponse() || null,
             requestResponseBy: this.requestResponseBy,
             requestType: this.requestType,
             messages: this.messages,

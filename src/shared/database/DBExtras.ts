@@ -35,8 +35,10 @@ export type AlertPublicAPIv3 = {
 
 export type AssetRequestPublicAPIv3 = {
     id: number;
-    refrencedAssetId: number;
+    refrencedAssetId: number; 
+    refrencedAsset: AssetPublicAPIv3 | null;
     requesterId: string;
+    requester: UserPublicAPIv3 | null;
     requestResponseBy: string | null;
     requestType: RequestType;
     accepted: boolean | null;
