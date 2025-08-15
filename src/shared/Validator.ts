@@ -62,6 +62,7 @@ export class Validator {
         tags: z.array(z.enum(Tags)).optional(),
         page: z.coerce.number().int().min(1).optional(),
         limit: z.coerce.number().int().min(1).max(250).optional(),
+        minimalData: this.zBool.default(true),
     }).refine((data) => {
         if (data.page || data.limit) {
             if (!data.page || !data.limit) {

@@ -161,7 +161,7 @@ export class AssetRequest extends Model<InferAttributes<AssetRequest>, InferCrea
     public static createValidator = z.object({
         ...AssetRequest.validator.shape,
         id: AssetRequest.validator.shape.id.nullish(), // id is optional when creating a new request
-        
+
         accepted: AssetRequest.validator.shape.accepted.nullish(),
         resolvedBy: AssetRequest.validator.shape.resolvedBy.nullish(),
         messages: AssetRequest.validator.shape.messages.nullish(),
