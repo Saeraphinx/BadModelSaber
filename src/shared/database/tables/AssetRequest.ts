@@ -1,4 +1,4 @@
-import { AllowNull, Column, CreatedAt, DataType, DeletedAt, Model, Table, UpdatedAt } from "sequelize-typescript";
+import { AllowNull, BelongsTo, Column, CreatedAt, DataType, DeletedAt, ForeignKey, Model, Table, UpdatedAt } from "sequelize-typescript";
 import { InferAttributes, InferCreationAttributes, CreationOptional, NonAttribute } from "sequelize";
 import { z } from "zod/v4";
 import { AlertType, AssetRequestPublicAPIv3, LinkedAsset, LinkedAssetLinkType, RequestMessage, RequestType, Status, UserRole } from "../DBExtras.ts";
@@ -26,12 +26,22 @@ export class AssetRequest extends Model<InferAttributes<AssetRequest>, InferCrea
         type: DataType.INTEGER,
         allowNull: false,
     })
+    @ForeignKey(() => Asset)
     declare refrencedAssetId: number; // Asset ID that this request is for
+    @BelongsTo(() => Asset, {
+        foreignKey: `refrencedAssetId`,
+    })
+    private declare _refrencedAsset?: NonAttribute<Promise<Asset | null>>; // This should be replaced with an Asset object in the actual implementation
     @Column({
         type: DataType.STRING,
         allowNull: false,
     })
+    @ForeignKey(() => User)
     declare requesterId: string; // User ID of the person who made the request
+    @BelongsTo(() => User, {
+        foreignKey: `requesterId`,
+    })
+    private declare _requester?: NonAttribute<Promise<User | null>>; // This should be replaced with a User object in the actual implementation
     @Column({
         type: DataType.STRING,
         allowNull: true,
@@ -78,7 +88,21 @@ export class AssetRequest extends Model<InferAttributes<AssetRequest>, InferCrea
     declare deletedAt: CreationOptional<Date | null>; // Timestamp of when the request was deleted, null if not deleted
 
     public get refrencedAsset(): NonAttribute<Promise<Asset | null>> {
-        return Asset.findByPk(this.refrencedAssetId);
+        if (this._refrencedAsset) {
+            return Promise.resolve(this._refrencedAsset) || null;
+        } else {
+            Logger.debug(`Asset not loaded, fetching from DB for refrencedAssetId: ${this.refrencedAssetId}`);
+            return Asset.findByPk(this.refrencedAssetId) || null;
+        }
+    }
+
+    public get requester(): NonAttribute<Promise<User | null>> {
+        if (this._requester) {
+            return Promise.resolve(this._requester) || null;
+        } else {
+            Logger.debug(`User not loaded, fetching from DB for requesterId: ${this.requesterId}`);
+            return User.findByPk(this.requesterId) || null;
+        }
     }
 
 
@@ -246,11 +270,24 @@ export class AssetRequest extends Model<InferAttributes<AssetRequest>, InferCrea
         return this.save();
     }
 
-    public getAPIResponse(): AssetRequestPublicAPIv3 {
+    public async getAPIResponse(): Promise<AssetRequestPublicAPIv3> {
+        let refrencedAsset = await this.refrencedAsset;
+        let requester = await this.requester;
+
+        let refAssetApi = null;
+        let requesterApi = null;
+
+        if (refrencedAsset && requester) {
+           refAssetApi = await refrencedAsset.getApiV3Response(false);
+           requesterApi = await requester.getApiResponse();
+        }
+
         return {
             id: this.id,
             refrencedAssetId: this.refrencedAssetId,
+            refrencedAsset: refAssetApi,
             requesterId: this.requesterId,
+            requester: requesterApi,
             requestResponseBy: this.requestResponseBy,
             requestType: this.requestType,
             messages: this.messages,

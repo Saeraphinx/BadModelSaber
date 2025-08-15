@@ -503,15 +503,18 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
     }
     // #endregion Misc
     // #region API Responses
-    public async getApiV3Response(): Promise<AssetPublicAPIv3> {
-        let author = await this.uploader;
-        let authorApi: UserPublicAPIv3;
+    public async getApiV3Response(includeAuthor: boolean = true): Promise<AssetPublicAPIv3> {
+        let author;
+        let authorApi: UserPublicAPIv3 | null = null;
 
-        if (!author) {
-            authorApi = {
-            } as User; // Fallback to a default user if not found
-        } else {
-            authorApi = author.getApiResponse();
+        if (includeAuthor) {
+            author = await this.uploader;
+            if (!author) {
+                authorApi = {
+                } as User; // Fallback to a default user if not found
+            } else {
+                authorApi = author.getApiResponse();
+            }
         }
 
         return {
@@ -519,6 +522,7 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
             oldId: this.oldId,
             linkedIds: this.linkedIds,
             type: this.type,
+            uploaderId: this.uploaderId,
             uploader: authorApi,
             name: this.name,
             description: this.description,

@@ -41,13 +41,13 @@ export class RequestRoutes {
             } else {
                 whereOptions.accepted = null;
             }
-            
 
             AssetRequest.findAll({
                 where: {
                     ...whereOptions,
                     [Op.or]: whereOptionsOr
-                }
+                },
+                include: [{ all: true }],
             }).then(requests => {
                 if (requests.length === 0) {
                     res.status(204).json();
