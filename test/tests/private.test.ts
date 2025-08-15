@@ -1,7 +1,7 @@
 import { init } from "../../src/index.ts";
 import { EnvConfig } from "../../src/shared/EnvConfig.ts";
 import supertest from "supertest";
-import { Alert, AlertType, AssetFileFormat, License, Status, StatusHistory, Tags, User, UserInfer, UserRole } from "../../src/shared/Database.ts";
+import { Alert, AlertType, Asset, AssetFileFormat, License, Status, StatusHistory, Tags, User, UserInfer, UserRole } from "../../src/shared/Database.ts";
 import { auth } from "../../src/api/RequestUtils.ts";
 import { NextFunction, Request } from "express";
 import { Op } from "sequelize";
@@ -41,7 +41,7 @@ describe(`API Private`, () => {
         process.env.BASE_URL = `http://localhost:8492`;
         server = await init(`test_bms_request`);
         //await server.db.importFakeData();
-        await server.db.Users.findOne({
+        await User.findOne({
             where: {
                 roles: { [Op.contains]: [UserRole.Admin] }
             }
@@ -70,14 +70,14 @@ describe(`API Private`, () => {
         let unreadAlert: Alert;
         let readAlert: Alert;
         beforeAll(async () => {
-            unreadAlert = await server.db.Alerts.create({
+            unreadAlert = await Alert.create({
                 type: AlertType.AssetApproved,
                 header: `Test Alert`,
                 message: `This is a test alert`,
                 userId: user!.id,
             });
     
-            readAlert = await server.db.Alerts.create({
+            readAlert = await Alert.create({
                 type: AlertType.AssetRejected,
                 header: `Read Alert`,
                 message: `This is a read alert`,
@@ -133,7 +133,7 @@ describe(`API Private`, () => {
 
     describe(`Approval`, () => {
         test(`should approve asset`, async () => {
-            const asset = await server.db.Assets.create({
+            const asset = await Asset.create({
                 name: `Test Asset`,
                 description: `This is a test asset for approval`,
                 fileHash: `testhash`,

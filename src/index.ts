@@ -26,9 +26,13 @@ export async function init(overrideDbName: string = `public`) {
     Logger.init();
     EnvConfig.server.authBypass ? Logger.warn(`Auth bypass is enabled. This should only be used in development or testing environments.`) : null;
     const db = new DatabaseManager(overrideDbName);
-    await db.dropSchema();
+    if (EnvConfig.isDevMode) {
+        await db.dropSchema();
+    }
     await db.init();
-    await db.importFakeData();
+    if (EnvConfig.isDevMode) {
+        await db.importFakeData();
+    }
     //await importFromOldModelSaber()
 
     const app = express();
