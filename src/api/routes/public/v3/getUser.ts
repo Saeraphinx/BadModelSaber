@@ -68,7 +68,8 @@ export class GetUserRoutesV3 {
                     },
                     limit: query.limit ?? undefined,
                     offset: query.page && query.limit ? ((query.page - 1) * query.limit) : undefined,
-                    order: [["createdAt", "DESC"]]
+                    order: [["createdAt", "DESC"]],
+                    include: { all: true }
                 }).then(async assets => {
                     const response = await Promise.all(assets.map(asset => asset.getApiV3Response()));
                     res.status(200).json({ assets: response, total: assets.length, page: query.page ?? null} );

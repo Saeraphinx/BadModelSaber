@@ -5,14 +5,13 @@ import { Validator } from "../../../shared/Validator.ts";
 import { request } from "http";
 import { parseErrorMessage } from "../../../shared/Tools.ts";
 import { Op, WhereOptions } from "sequelize";
+import { Logger } from "../../../shared/Logger.ts";
 
 export class RequestRoutes {
     public static loadRoutes(router: Router): void {
         router.get(`/requests`, auth(`loggedIn`, true), (req, res) => {
             const { responded, data } = validate(req, res, `query`, Validator.z.object({ 
                 includeActioned: Validator.z.coerce.boolean().default(false),
-                myOutgoing: Validator.z.coerce.boolean().default(false),
-                myIncoming: Validator.z.coerce.boolean().default(false),
                 assetId: Validator.zNumberID.optional()
             }));
             if (!req.auth.isAuthed || responded) {
@@ -20,44 +19,118 @@ export class RequestRoutes {
             }
 
             let isElevated = req.auth.user.roles.includes(UserRole.Admin) || req.auth.user.roles.includes(UserRole.Moderator);
+            let bailOut = false;
 
-            if (!isElevated && !data.myIncoming && !data.myOutgoing) {
-                res.status(400).json({ message: `You must specify either myIncoming or myOutgoing to view requests` });
-                return;
-            }
             const whereOptions: WhereOptions<AssetRequestInfer> = {};
-            const whereOptionsOr: WhereOptions<AssetRequestInfer> = {};
             if (data.assetId) {
                 whereOptions.refrencedAssetId = data.assetId;
             }
-            if (data.myIncoming) {
-                whereOptionsOr.requestResponseBy = req.auth.user.id;
-            }
-            if (data.myOutgoing) {
-                whereOptionsOr.requesterId = req.auth.user.id;
-            }
-            if (data.includeActioned) {
-                whereOptions.accepted = { [Op.or]: [null, true, false] };
-            } else {
+            if (!data.includeActioned) {
                 whereOptions.accepted = null;
             }
+            
 
-            AssetRequest.findAll({
+            let incoming = AssetRequest.findAll({
                 where: {
-                    ...whereOptions,
-                    [Op.or]: whereOptionsOr
+                    requestResponseBy: req.auth.user.id,
+                    ...whereOptions
                 },
-                include: [{ all: true }],
-            }).then(requests => {
-                if (requests.length === 0) {
-                    res.status(204).json();
+                include: { all: true },
+            }).catch(err => {
+                Logger.warn(`Error fetching incoming requests: ${parseErrorMessage(err)}`);
+                res.status(500).json({ message: `Error fetching incoming requests: ${parseErrorMessage(err)}` });
+                bailOut = true;
+            });
+            if (bailOut) {
+                return;
+            }
+            let outgoing = AssetRequest.findAll({
+                where: {
+                    requesterId: req.auth.user.id,
+                    ...whereOptions
+                },
+                include: { all: true },
+            }).catch(err => {
+                Logger.warn(`Error fetching outgoing requests: ${parseErrorMessage(err)}`);
+                res.status(500).json({ message: `Error fetching outgoing requests: ${parseErrorMessage(err)}` });
+                bailOut = true;
+            });
+            if (bailOut) {
+                return;
+            }
+
+            let reports = null;
+            if (isElevated) {
+                reports = AssetRequest.findAll({
+                    where: {
+                        requestType: RequestType.Report,
+                        ...whereOptions
+                    },
+                    include: { all: true },
+                }).catch(err => {
+                    Logger.warn(`Error fetching report requests: ${parseErrorMessage(err)}`);
+                    res.status(500).json({ message: `Error fetching report requests: ${parseErrorMessage(err)}` });
+                    bailOut = true;
+                });
+            }
+            if (bailOut) {
+                return;
+            }
+
+            Promise.all([incoming, outgoing, reports]).then(async ([incomingRequests, outgoingRequests, reportRequests]) => {
+                if (!incomingRequests || !outgoingRequests) {
+                    res.status(500).json({ message: `Error fetching requests` });
                     return;
                 }
 
-                res.status(200).json(requests.map(r => r.getAPIResponse()));
+                res.status(200).json({
+                    incoming: await Promise.all(incomingRequests.map(req => req.getAPIResponse())),
+                    outgoing: await Promise.all(outgoingRequests.map(req => req.getAPIResponse())),
+                    reports: reportRequests ? await Promise.all(reportRequests.map(req => req.getAPIResponse())) : null
+                });
             }).catch(err => {
                 res.status(500).json({ message: `Error fetching requests: ${parseErrorMessage(err)}` });
             });
+        });
+
+        router.get(`/requests/counts`, auth(`loggedIn`, true), async (req, res) => {
+            if (!req.auth.isAuthed) {
+                res.status(401).json({ message: `You must be logged in to view request counts` });
+                return;
+            }
+
+            let incoming = await AssetRequest.count({
+                where: {
+                    requestResponseBy: req.auth.user.id,
+                    accepted: null
+                }
+            }).catch(err => {
+                res.status(500).json({ message: `Error fetching request count: ${parseErrorMessage(err)}` });
+            });
+
+            let outgoing = await AssetRequest.count({
+                where: {
+                    requesterId: req.auth.user.id,
+                    accepted: null
+                }
+            }).catch(err => {
+                res.status(500).json({ message: `Error fetching request count: ${parseErrorMessage(err)}` });
+            });
+
+            let reports = null;
+            if (req.auth.user.roles.includes(UserRole.Admin) || req.auth.user.roles.includes(UserRole.Moderator)) {
+                reports = await AssetRequest.count({
+                    where: {
+                        requestType: RequestType.Report,
+                        accepted: null
+                    }
+                }).catch(err => {
+                    res.status(500).json({ message: `Error fetching report count: ${parseErrorMessage(err)}` });
+                });
+            }
+
+            res.status(200).json({ incoming: incoming ?? 0, outgoing: outgoing ?? 0, reports: reports ?? null });
+            return;
         });
 
         router.get(`/requests/:id`, auth(`loggedIn`, true), (req, res) => {
@@ -70,7 +143,7 @@ export class RequestRoutes {
 
             let isElevated = req.auth.user.roles.includes(UserRole.Admin) || req.auth.user.roles.includes(UserRole.Moderator);
 
-            AssetRequest.findByPk(data.id).then(assetReq => {
+            AssetRequest.findByPk(data.id, { include: { all: true }}).then(async assetReq => {
                 if (!assetReq) {
                     res.status(404).json({ message: `Request not found` });
                     return;
@@ -81,7 +154,7 @@ export class RequestRoutes {
                     return;
                 }
 
-                res.status(200).json(assetReq.getAPIResponse());
+                res.status(200).json(await assetReq.getAPIResponse());
             }).catch(err => {
                 res.status(500).json({ message: `Error fetching request: ${parseErrorMessage(err)}` });
             });

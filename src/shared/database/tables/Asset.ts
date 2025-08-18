@@ -4,7 +4,6 @@ import { Alert, AssetRequest, User, UserRole } from "../../Database.ts";
 import { AlertType, AssetFileFormat, AssetPublicAPIv1, AssetPublicAPIv2, AssetPublicAPIv3, License, LinkedAsset, LinkedAssetLinkType, RequestType, Status, StatusHistory, Tags, UserPublicAPIv3 } from "../DBExtras.ts";
 import { z } from "zod/v4";
 import { EnvConfig } from "../../../shared/EnvConfig.ts";
-import { ca } from "zod/v4/locales";
 import { Logger } from "../../Logger.ts";
 
 export type AssetInfer = InferAttributes<Asset>;
@@ -20,16 +19,18 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
         autoIncrement: true,
         primaryKey: true,
         allowNull: false,
+        unique: true,
     })
     declare readonly id: CreationOptional<number>;
     @Column({
         type: DataType.INTEGER,
         allowNull: true,
         defaultValue: null,
+        unique: true,
     })
     declare oldId: CreationOptional<number | null>; // id from modelsaber, if applicable
     @Column({
-        type: DataType.ARRAY(DataType.JSONB),
+        type: DataType.JSON,
         allowNull: false,
         defaultValue: [],
     })
@@ -88,6 +89,7 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
     @Column({
         type: DataType.STRING,
         allowNull: false,
+        unique: true,
     })
     declare fileHash: string;
     @Column({
@@ -108,7 +110,7 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
     })
     declare status: CreationOptional<Status>;
     @Column({
-        type: DataType.ARRAY(DataType.JSONB),
+        type: DataType.JSONB,
         allowNull: false,
         defaultValue: [],
     })
@@ -168,7 +170,7 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
             timestamp: z.date(),
             userId: z.string().refine(async (id) => await User.checkIfExists(id)), // User ID of the person who changed the status
         })),
-        tags: z.array(z.enum(Tags)).max(5).default([]),
+        tags: z.array(z.enum(Tags)).default([]),
         createdAt: z.date(),
         updatedAt: z.date(),
         deletedAt: z.date().nullable().optional(),

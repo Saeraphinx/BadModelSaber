@@ -40,6 +40,7 @@ export const up: Migration = async ({ context: db }) => {
             type: DataTypes.ARRAY(DataTypes.STRING),
             allowNull: false,
             defaultValue: [],
+            
         },
         createdAt: DataTypes.DATE,
         updatedAt: DataTypes.DATE,
@@ -69,7 +70,7 @@ export const up: Migration = async ({ context: db }) => {
         },
         uploaderId: {
             type: DataTypes.STRING,
-            allowNull: false
+            allowNull: false,
         },
         collaborators: {
             type: DataTypes.ARRAY(DataTypes.STRING),
@@ -106,7 +107,7 @@ export const up: Migration = async ({ context: db }) => {
             allowNull: false
         },
         iconNames: {
-            type: DataTypes.JSONB,
+            type: DataTypes.ARRAY(DataTypes.STRING),
             allowNull: false,
             defaultValue: []
         },
@@ -121,7 +122,7 @@ export const up: Migration = async ({ context: db }) => {
             defaultValue: []
         },
         tags: {
-            type: DataTypes.JSONB,
+            type: DataTypes.ARRAY(DataTypes.STRING),
             allowNull: false,
             defaultValue: []
         },

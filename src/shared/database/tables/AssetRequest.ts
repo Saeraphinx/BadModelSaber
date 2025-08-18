@@ -74,7 +74,7 @@ export class AssetRequest extends Model<InferAttributes<AssetRequest>, InferCrea
     })
     declare resolvedBy: CreationOptional<string | null>; // User ID of the person who resolved the request, null if not resolved
     @Column({
-        type: DataType.ARRAY(DataType.JSONB),
+        type: DataType.JSONB,
         allowNull: false,
         defaultValue: [],
     })

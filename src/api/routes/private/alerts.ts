@@ -10,6 +10,7 @@ export class AlertRoutes {
     public static loadRoutes(router: Router): void {
         router.get(`/alerts`, auth(`loggedIn`, true), async (req, res) => {
             const { responded, data } = validate(req, res, `query`, Validator.z.object({ read: Validator.z.enum([`true`, `false`, `all`]).default(`false`) }));
+            console.log(!req.auth.isAuthed || responded);
             if (!req.auth.isAuthed || responded) {
                 return;
             }
@@ -28,11 +29,6 @@ export class AlertRoutes {
                 where: whereOptions,
                 order: [[`createdAt`, `DESC`]]
             }).then(alerts => {
-                if (alerts.length === 0) {
-                    res.status(204).send();
-                    return;
-                }
-
                 res.status(200).json(alerts.map(a => a.toAPIResponse()));
             }).catch(err => {
                 res.status(500).json({ error: `Error fetching alerts: ${parseErrorMessage(err)}` });

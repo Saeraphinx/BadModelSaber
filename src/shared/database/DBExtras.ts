@@ -218,6 +218,7 @@ export enum UserRole {
     Secret = "secret", // This role is for users who have found the secret & grants them access to the secret features.
 }
 export enum AlertType {
+    Generic = "generic", // Generic alert type, used for non-specific alerts
     AssetApproved = "asset_approved", // Alert when an asset is approved
     AssetRejected = "asset_rejected", // Alert when an asset is rejected
     AssetRemoval = "asset_removal", // Alert when an asset is removed

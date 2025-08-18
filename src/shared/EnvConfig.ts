@@ -12,18 +12,19 @@ export const DEFAULT_CONFIG = {
     },
     server: {
         port: 6001,
-        frontendUrl: `http://localhost:5713`, // the URL of the frontend, used for redirects
+        frontendUrl: `http://localhost:5173`, // the URL of the frontend, used for redirects
         backendUrl: `http://localhost:6001`, // the URL of the backend, used for internal API calls & potential redirects
 
-        corsOrigin: `*`, // can be a string or an array of strings.
-        corsAllowCredentials: true, // whether to allow credentials in CORS requests
+        corsOrigin: `default`, // can be a string or an array of strings.
+        corsAllowCredentials: false, // whether to allow credentials in CORS requests
         apiRoute: `/api`, // the base route for the api. no trailing slash
         fileRoute: `/files`, // the base route for the files. no trailing slash
         trustProxy: false, // set to true if behind a reverse proxy like nginx
         storeSessions: true, // whether to store sessions in something other than memory
         storedSessionTimeout: 60 * 60 * 24 * 7, // how long to store sessions in seconds (default: 7 days)
         sessionCookieName: `bms_session`, // the name of the session cookie
-        sessionSecret: `supersecretkey`, // the secret for the session cookie
+        sessionCookieSameSite: `strict` as `strict`, // the SameSite attribute for the session cookie
+        sessionCookieSecret: `supersecretkey`, // the secret for the session cookie
         authBypass: `false`, // whether to bypass authentication for the API (useful for development. always false in production)
     },
     storage: {
@@ -56,7 +57,8 @@ export class EnvConfig {
             storeSessions: boolean;
             storedSessionTimeout: number;
             sessionCookieName: string;
-            sessionSecret: string;
+            sessionCookieSameSite: `strict` | `lax` | `none` | boolean;
+            sessionCookieSecret: string;
             authBypass: string | boolean;
         } = DEFAULT_CONFIG.server;
     public static storage: typeof DEFAULT_CONFIG.storage = DEFAULT_CONFIG.storage;
@@ -124,9 +126,27 @@ export class EnvConfig {
             storeSessions: process.env.STORE_SESSIONS === `true` || DEFAULT_CONFIG.server.storeSessions,
             storedSessionTimeout: parseInt(process.env.STORED_SESSION_TIMEOUT || `${DEFAULT_CONFIG.server.storedSessionTimeout}`),
             sessionCookieName: process.env.SESSION_COOKIE_NAME || DEFAULT_CONFIG.server.sessionCookieName,
-            sessionSecret: process.env.SESSION_SECRET || DEFAULT_CONFIG.server.sessionSecret,
+            sessionCookieSameSite: DEFAULT_CONFIG.server.sessionCookieSameSite,
+            sessionCookieSecret: process.env.SESSION_SECRET || DEFAULT_CONFIG.server.sessionCookieSecret,
             authBypass: EnvConfig.isDevMode ? process.env.AUTH_BYPASS || false : false,
         };
+
+        if (EnvConfig.server.corsOrigin === `default`) {
+            console.warn(`CORS origin is set to 'default'. This may cause issues in production. Please set CORS_ORIGIN in your environment variables.`);
+            EnvConfig.server.corsOrigin = [EnvConfig.server.frontendUrl, EnvConfig.server.backendUrl];
+        }
+
+        if (process.env.SESSION_COOKIE_SAME_SITE) {
+            const sameSite = process.env.SESSION_COOKIE_SAME_SITE.toLowerCase();
+            if (sameSite === `strict` || sameSite === `lax` || sameSite === `none`) {
+                EnvConfig.server.sessionCookieSameSite = sameSite;
+            } else if (sameSite === `true` || sameSite === `false`) {
+                EnvConfig.server.sessionCookieSameSite = sameSite === `true`;
+            } else {
+                console.warn(`Invalid SESSION_COOKIE_SAME_SITE value: ${process.env.SESSION_COOKIE_SAME_SITE}. Using default: ${DEFAULT_CONFIG.server.sessionCookieSameSite}`);
+                EnvConfig.server.sessionCookieSameSite = DEFAULT_CONFIG.server.sessionCookieSameSite;
+            }
+        }
 
         EnvConfig.storage = {
             uploads: process.env.STORAGE_UPLOADS || DEFAULT_CONFIG.storage.uploads,

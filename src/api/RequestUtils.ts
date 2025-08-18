@@ -46,10 +46,10 @@ export function auth(requiredRole: UserRole[] | `loggedIn` | `any`, allowBanned 
                     req.auth.isAuthed = true;
                     req.auth.user = user; 
                 } else {
-                    Logger.error(`Auth bypass is enabled but the system user does not exist.`);
+                    Logger.error(`Auth bypass is enabled but the user ${EnvConfig.server.authBypass} does not exist.`);
                 }
             }).catch(err => {
-                Logger.error(`Error fetching system user for auth bypass: ${err.message}`);
+                Logger.error(`Error fetching user ${EnvConfig.server.authBypass} for auth bypass: ${err.message}`);
             });
             return next();
         }
@@ -67,13 +67,13 @@ export function auth(requiredRole: UserRole[] | `loggedIn` | `any`, allowBanned 
                     Logger.error(`Error fetching user from session: ${err.message}`);
                 });
             }
-            return next();
+            return next(); // Allow any user case to proceed
         } else {
             if (!req.session?.userId) {
                 return res.status(401).json({ error: "Unauthorized" });
             }
 
-            await User.findByPk(req.session.userId).then(user => {
+            return await User.findByPk(req.session.userId).then(user => {
                 if (!user) {
                     return res.status(401).json({ error: "Unauthorized" });
                 }
@@ -93,7 +93,7 @@ export function auth(requiredRole: UserRole[] | `loggedIn` | `any`, allowBanned 
                 }
             }).catch(err => {
                 Logger.error(`Error fetching user from session: ${err.message}`);
-                return res.status(500).json({ error: "Internal Server Error" });
+                return res.status(500).json({ message: "Internal Server Error" });
             });
         }
         return res.status(500).json({ message: "Internal Server Error" });

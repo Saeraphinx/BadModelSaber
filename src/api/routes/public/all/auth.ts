@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import passport from 'passport';
-import { Strategy as DiscordStrategy } from 'passport-discord';
+import Strategy, { Strategy as DiscordStrategy } from 'passport-discord';
 import { Logger } from '../../../../shared/Logger.ts';
 import { Validator } from '../../../../shared/Validator.ts';
 import { createRandomString, parseErrorMessage } from '../../../../shared/Tools.ts';
@@ -30,16 +30,19 @@ export class AuthRoutes {
             clientSecret: EnvConfig.auth.discord.clientSecret,
             callbackURL: `${EnvConfig.server.backendUrl}${EnvConfig.server.apiRoute}/auth/discord/callback`,
             scope: [`identify`],
+            
         }, async function (accessToken, refreshToken, profile, done) {
             if (!profile) {
+                Logger.warn(`No profile received from Discord.`);
                 return done(null, false);
             }
             if (!profile.id) {
+                Logger.warn(`No ID received from Discord profile.`);
                 return done(null, false);
             }
             let dbUser = await User.findByPk(profile.id);
             if (!dbUser) {
-                User.create({
+                await User.create({
                     id: profile.id,
                     username: profile.username,
                     displayName: profile.global_name || profile.username,
@@ -52,7 +55,7 @@ export class AuthRoutes {
                     return done(err, false);
                 });
             } else {
-                dbUser.update({
+                await dbUser.update({
                     username: profile.username,
                     displayName: profile.displayName,
                     avatarUrl: profile.avatar ? `https://cdn.discordapp.com/avatars/${profile.id}/${profile.avatar}.png` : `https://cdn.discordapp.com/embed/avatars/${Number(profile.id) % 6}.png`,
@@ -63,7 +66,6 @@ export class AuthRoutes {
                     return done(err, false);
                 });
             }
-            return done(null, false);
         }));
 
         router.get(`/auth/discord`, async (req, res, next) => {
@@ -73,27 +75,27 @@ export class AuthRoutes {
             }
             let state = this.prepAuth(req.ip, query?.redirect || this.frontendBaseUrl.href);
             if (!state) {
-                res.status(400).send({ error: `Invalid parameters.` });
+                res.status(400).send({ message: `Invalid parameters.` });
                 return;
             }
             passport.authenticate(`discord`, { state: state, session: false })(req, res, next);
         });
 
-        router.get(`/auth/discord/callback`, passport.authenticate(`discord`, { failureRedirect: `/`, session: false }), async (req, res) => {
+        router.get(`/auth/discord/callback`, passport.authenticate(`discord`, { session: false }), async (req, res) => {
             let state = req.query[`state`];
             if (!state) {
-                res.status(400).send({ error: `Invalid parameters.` });
+                res.status(400).send({ message: `Invalid parameters.` });
                 return;
             }
             let stateObj = this.validStates.find((s) => s.stateId === state && s.ip === req.ip);
             if (!stateObj) {
-                res.status(400).send({ error: `Invalid state.` });
+                res.status(400).send({ message: `Invalid state.` });
                 return
             }
             this.validStates = this.validStates.filter((s) => s.stateId !== state);
 
             if (!req.user || !(req.user instanceof User)) {
-                res.status(500).send({ error: `Internal server error.` });
+                res.status(500).send({ message: `Internal server error.` });
                 return
             } else if (req.user instanceof User) {
                 Logger.info(`User ${req.user.username} (${req.user.id}) logged in via Discord.`);
@@ -101,7 +103,7 @@ export class AuthRoutes {
                 req.session.save((err) => {
                     if (err) {
                         Logger.error(`Error saving session: ${parseErrorMessage(err)}`);
-                        res.status(500).send({ error: `Internal server error.` });
+                        res.status(500).send({ message: `Internal server error.` });
                         return;
                     }
                 })
@@ -119,7 +121,7 @@ export class AuthRoutes {
             }
             req.session.destroy((err) => {
                 if (err) {
-                    res.status(500).send({ error: `Internal server error.` });
+                    res.status(500).send({ message: `Internal server error.` });
                     return
                 }
                 res.status(200).send(`<head><meta http-equiv="refresh" content="0; url=${query?.redirect}" /></head><body style="background-color: black;"><a style="color:white;" href="${query?.redirect}">Click here if you are not redirected...</a></body>`);
