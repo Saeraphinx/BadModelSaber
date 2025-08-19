@@ -146,7 +146,7 @@ export async function init(overrideDbName: string = `public`) {
 
 // check if this file is being run directly
 if (process.argv[1] === import.meta.filename) {
-    const { stop } = await init(`testsdatastuff`).catch((err) => {
+    const { stop } = await init(`testdbdata`).catch((err) => {
         Logger.error(`Failed to initialize BadModelSaber: ${err}`);
         process.exit(1);
     });

@@ -125,7 +125,16 @@ export class AssetRequest extends Model<InferAttributes<AssetRequest>, InferCrea
         messages: z.array(z.object({
             userId: z.string().min(1).max(32).refine(async (id) => await User.checkIfExists(id)),
             message: z.string().max(1024),
-            timestamp: z.date(),
+            timestamp: z.preprocess((input) => {
+                if (typeof input === 'string') {
+                    const date = new Date(input);
+                    if (isNaN(date.getTime())) {
+                        return undefined; // Will fail .date() validation
+                    }
+                    return date;
+                }
+                return input;
+            }, z.date()),
         })).default([]),
         createdAt: z.date(),
         updatedAt: z.date(),
@@ -168,7 +177,7 @@ export class AssetRequest extends Model<InferAttributes<AssetRequest>, InferCrea
         createdAt: AssetRequest.validator.shape.createdAt.nullish(),
         updatedAt: AssetRequest.validator.shape.updatedAt.nullish(),
         deletedAt: AssetRequest.validator.shape.deletedAt.nullish(),
-    });
+    })
 
     // #endregion Validators
     public allowedToMessage(user: User): boolean {

@@ -8,6 +8,7 @@ import { Op, WhereOptions } from "sequelize";
 import { Logger } from "../../../shared/Logger.ts";
 
 export class RequestRoutes {
+    // yea its not reall
     public static loadRoutes(router: Router): void {
         router.get(`/requests`, auth(`loggedIn`, true), (req, res) => {
             const { responded, data } = validate(req, res, `query`, Validator.z.object({ 
@@ -159,6 +160,35 @@ export class RequestRoutes {
                 res.status(500).json({ message: `Error fetching request: ${parseErrorMessage(err)}` });
             });
         });
+
+        router.post(`/requests/:id/messages`, auth(`loggedIn`, true), async (req, res) => { 
+            const { responded: pResponded, data: query } = validate(req, res, `params`, Validator.z.object({
+                id: Validator.zNumberID
+            }));
+            const { responded: bResponded, data: body } = validate(req, res, `body`, Validator.z.object({
+                message: Validator.z.string().min(1)
+            }));
+            if (!req.auth.isAuthed || pResponded || bResponded) {
+                return;
+            }
+
+            let assetReq = await AssetRequest.findByPk(query.id);
+            if (!assetReq) {
+                res.status(404).json({ message: `Request not found` });
+                return;
+            }
+
+            if (!assetReq.allowedToMessage(req.auth.user)) {
+                res.status(403).json({ message: `You are not allowed to message this request` });
+                return;
+            }
+
+            await assetReq.addMessage(req.auth.user, body.message).then(() => {
+                res.status(200).json({ message: `Message added successfully` });
+            }).catch(err => {
+                res.status(500).json({ message: `Error adding message: ${parseErrorMessage(err)}` });
+            });
+        })
 
         router.post(`/requests/:id/:action`, auth(`loggedIn`, true), async (req, res) => {
             const { responded: qResponded, data: pData } = validate(req, res, `params`, Validator.z.object({
