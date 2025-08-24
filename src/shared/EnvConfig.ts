@@ -81,6 +81,11 @@ export class EnvConfig {
     }
 
     public static load(): void {
+        if (fs.existsSync(`.env`)) {
+            dotenv.config({ path: `.env`, quiet: true });
+            console.log(`Loading environment configuration from .env`);
+        }
+
         switch (process.env.NODE_ENV) {
             case `production`:
                 console.log(`Running in production mode`);
@@ -97,10 +102,6 @@ export class EnvConfig {
                 break;
         }
         
-        if (fs.existsSync(`.env`)) {
-            dotenv.config({ path: `.env`, quiet: true });
-            console.log(`Loading environment configuration from .env`);
-        }
         if (fs.existsSync(`${process.env.NODE_ENV}.env`)) {
             dotenv.config({ path: `.${process.env.NODE_ENV}.env`, quiet: true });
             console.log(`Loading environment configuration from .${process.env.NODE_ENV}.env`);
