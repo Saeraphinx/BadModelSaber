@@ -4,7 +4,7 @@ import express from "express";
 import session, { SessionOptions } from 'express-session';
 import SequelizeStore from 'connect-session-sequelize'
 import cors from "cors";
-import { Logger } from "./shared/Logger.ts";
+import { Logger, LogLevel } from "./shared/Logger.ts";
 import { AuthRoutes } from "./api/routes/public/all/auth.ts";
 import { GetAssetRoutesV3 } from "./api/routes/public/v3/getAsset.ts";
 import { ApprovalRoutes } from "./api/routes/private/approval.ts";
@@ -26,9 +26,13 @@ export async function init(overrideDbName: string = `public`) {
     Logger.init();
     EnvConfig.server.authBypass ? Logger.warn(`Auth bypass is enabled. This should only be used in development or testing environments.`) : null;
     const db = new DatabaseManager(overrideDbName);
-    await db.dropSchema();
+    if (EnvConfig.isDevMode) {
+        await db.dropSchema();
+    }
     await db.init();
-    await db.importFakeData();
+    if (EnvConfig.isDevMode) {
+        await db.importFakeData();
+    }
     //await importFromOldModelSaber()
 
     const app = express();
@@ -42,7 +46,7 @@ export async function init(overrideDbName: string = `public`) {
 
     // #region Session management
     let sessionOptions: SessionOptions = {
-        secret: EnvConfig.server.sessionSecret,
+        secret: EnvConfig.server.sessionCookieSecret,
         resave: false,
         saveUninitialized: false,
         unset: `destroy`,
@@ -51,6 +55,8 @@ export async function init(overrideDbName: string = `public`) {
         cookie: {
             secure: `auto`,
             maxAge: EnvConfig.server.storedSessionTimeout,
+            httpOnly: true,
+            sameSite: EnvConfig.server.sessionCookieSameSite
         }
     };
     let sequelizeSessionStore: any | undefined = undefined;
@@ -72,6 +78,10 @@ export async function init(overrideDbName: string = `public`) {
     // #endregion
 
     // #region Register routes
+    app.use((req, res, next) => {
+        Logger.log(`${req.method} ${req.originalUrl} - ${req.ip} - Session: ${req.sessionID} - Auth: ${req.session['userId'] ? req.session['userId'] : `No`}`, LogLevel.Http);
+        next();
+    });
     const apiRouter = express.Router();
     const fileRouter = express.Router();
 
@@ -108,12 +118,16 @@ export async function init(overrideDbName: string = `public`) {
     // catch all unknown routes and return a 404
     app.use((err:any, req:any, res:any, next:any) => {
         Logger.error(err.stack);
-        res.status(500).send({message: `Server error`});
+        if (!res.headersSent) {
+            res.status(500).send({message: `Server error`});
+        }
     });
     // #endregion
 
     let server = app.listen(EnvConfig.server.port, () => {
         Logger.log(`Server is running on ${EnvConfig.server.backendUrl}`);
+        console.log(`http://localhost:6001/api/users/me`);
+        console.log(`http://localhost:6001/api/auth/discord`);
     });
 
     return {
@@ -132,7 +146,7 @@ export async function init(overrideDbName: string = `public`) {
 
 // check if this file is being run directly
 if (process.argv[1] === import.meta.filename) {
-    const { stop } = await init(`testfakedata`).catch((err) => {
+    const { stop } = await init(`testdbdata`).catch((err) => {
         Logger.error(`Failed to initialize BadModelSaber: ${err}`);
         process.exit(1);
     });

@@ -1,7 +1,6 @@
-import path, { parse } from "node:path";
 import { EnvConfig } from "./EnvConfig.ts";
 import { Logger } from "./Logger.ts";
-import { ModelStatic, Sequelize, DataType, DataTypes } from "sequelize";
+import { ModelStatic, Sequelize, DataType } from "sequelize-typescript";
 import { Umzug, SequelizeStorage } from "umzug";
 import { User } from "./database/tables/User.ts";
 import { Asset } from "./database/tables/Asset.ts";
@@ -24,11 +23,6 @@ export class DatabaseManager {
     public umzug: Umzug<this>;
     public schemaName: string;
     public adminUser: User | undefined;
-
-    public Users: ModelStatic<User>;
-    public Assets: ModelStatic<Asset>;
-    public Alerts: ModelStatic<Alert>;
-    public AssetRequests: ModelStatic<AssetRequest>;
 
     constructor(useAltSchema?: string) {
         Logger.log(`Creating DatabaseManager...`);
@@ -95,7 +89,7 @@ export class DatabaseManager {
         try {
             await this.sequelize.sync();
             Logger.log(`Database synced successfully.`);
-            this.adminUser = await this.Users.findOrCreate({
+            this.adminUser = await User.findOrCreate({
                 where: { id: `5` },
                 defaults: {
                     id: `5`,
@@ -146,6 +140,14 @@ export class DatabaseManager {
     public loadTables() {
         Logger.debug(`Loading tables...`);
 
+        this.sequelize.addModels([
+            User,
+            Asset,
+            Alert,
+            AssetRequest
+        ]);
+
+        /* old model stuffs
         this.Users = User.init({
             id: {
                 type: DataTypes.STRING,
@@ -387,12 +389,13 @@ export class DatabaseManager {
             tableName: `asset_requests`,
             timestamps: true,
         });
+        */
     }
 
     public loadHooks() {
         Logger.debug(`Loading hooks...`);
 
-        this.Assets.afterValidate(`checkAssetValidator`, async (asset, options) => {
+        Asset.afterValidate(`checkAssetValidator`, async (asset, options) => {
             // throws if invalid
             if (asset.isNewRecord) {
                 await Asset.createValidator.parseAsync(asset);
@@ -401,7 +404,7 @@ export class DatabaseManager {
             }
         });
 
-        this.Alerts.afterValidate(`checkAlertValidator`, async (alert, options) => {
+        Alert.afterValidate(`checkAlertValidator`, async (alert, options) => {
             // throws if invalid
             if (alert.isNewRecord) {
                 await Alert.createValidator.parseAsync(alert);
@@ -410,7 +413,7 @@ export class DatabaseManager {
             }
         });
 
-        this.AssetRequests.afterValidate(`checkAssetRequestValidator`, async (request, options) => {
+        AssetRequest.afterValidate(`checkAssetRequestValidator`, async (request, options) => {
             // throws if invalid
             if (request.isNewRecord) {
                 await AssetRequest.createValidator.parseAsync(request);
@@ -439,7 +442,9 @@ export class DatabaseManager {
             }
             await table.bulkCreate(data[model], { ignoreDuplicates: true, validate: true, }).then(async () => {
                 Logger.log(`Imported ${data[model].length} rows into table ${table.name}.`);
-                await this.sequelize.query(`SELECT setval('${this.schemaName}.${table.tableName}_id_seq', ${data[model].length}, true);`);
+                if (table.getAttributes().id?.autoIncrement) {
+                    await this.sequelize.query(`SELECT setval('${this.schemaName}.${table.tableName}_id_seq', ${data[model].length}, true);`);
+                }
             }).catch((error) => {
                 Logger.error(`Failed to import data into table ${table.name}: ${error.message}`);
             });

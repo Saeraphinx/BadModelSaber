@@ -1,4 +1,4 @@
-import { Asset, AssetFileFormat, AssetPublicAPIv2, License, LinkedAssetLinkType, Status, Tags, User, UserRole } from "./Database.ts";
+import { AlertType, Asset, AssetFileFormat, AssetPublicAPIv2, License, LinkedAssetLinkType, Status, Tags, User, UserRole } from "./Database.ts";
 import { Logger } from "./Logger.ts";
 import * as fs from "fs";
 import * as crypto from "crypto";
@@ -212,19 +212,30 @@ export async function importFromOldModelSaber(): Promise<void> {
                             id: discordUser.id,
                             username: discordUser.username,
                             displayName: discordUser.global_name || discordUser.username,
-                            avatarUrl: `https://cdn.discordapp.com/assets/${discordUser.id}/${discordUser.avatar}.webp`,
+                            avatarUrl: `https://cdn.discordapp.com/avatars/${discordUser.id}/${discordUser.avatar}.webp?animated=true`,
                             roles: [],
                         }).catch(err => {
                             Logger.error(`Failed to create user ${discordUser.id} (${discordUser.username}): ${err}`);
                             Logger.debug(`User data: ${JSON.stringify(discordUser)}`);
                             Logger.debug(parseErrorMessage(err));
                             return importerUser; // fallback to importer user
+                        }).then(user => {
+                            user.createAlert({
+                                type: AlertType.Generic,
+                                header: `Account Imported`,
+                                message: `Hi ${user.displayName}! Your account has been imported from the old ModelSaber. If you notice any of your assets missing, please contact us and we will try to add them back to your profile.`,
+                            });
+                            return user;
                         });
                     } else {
                         return importerUser; // fallback to importer user
                     }
                 } else {
-                    return importerUser
+                    if (!u) {
+                        return importerUser; // fallback to importer user
+                    } else {
+                        return u;
+                    }
                 }
             }).catch(err => {
                 Logger.error(`Failed to query user ${asset.discordid} (${asset.author}): ${err}`);
@@ -277,13 +288,18 @@ export async function importFromOldModelSaber(): Promise<void> {
             // remove html tags from names
             let description = `This asset was imported from the old ModelSaber.\n\nTags: ${asset.tags.join(', ')}`;
             let name = asset.name.replaceAll(/<\/?[\w\d#=]+>/g, ``).trim();
+            if (name.length >= 64) {
+                name = name.slice(0, 64);
+            }
             if (name != asset.name) {
-                Logger.warn(`Asset ${asset.id} (${asset.name}) name contained tags, removing them.`);
+                Logger.warn(`Asset ${asset.id} (${asset.name}) name contained issues, removing them.`);
                 description += `\nOriginal name: ${asset.name}`;
             }
+
+            if (user.id === importerUser.id) {
+                description += `\n\nThis asset was originally uploaded by ${asset.author}`;
+            }
             // #endregion
-
-
 
             // create asset in database
             Asset.create({
@@ -319,7 +335,7 @@ export async function importFromOldModelSaber(): Promise<void> {
             await baseAsset.addLink(newAsset, LinkedAssetLinkType.Alternate);
         }
         await new Promise(resolve => setTimeout(resolve, 5000)); // wait for all assets to be created
-        fs.rmSync(conversionStorage, { recursive: true, force: true });
+        //fs.rmSync(conversionStorage, { recursive: true, force: true });
         Logger.log(`Finished importing data from old ModelSaber.`);
     } catch (error) {
         Logger.error(`An error occurred while importing from old ModelSaber: ${error}`);

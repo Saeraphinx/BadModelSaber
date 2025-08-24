@@ -35,7 +35,7 @@ export type AlertPublicAPIv3 = {
 
 export type AssetRequestPublicAPIv3 = {
     id: number;
-    refrencedAssetId: number; 
+    refrencedAssetId: number;
     refrencedAsset: AssetPublicAPIv3 | null;
     requesterId: string;
     requester: UserPublicAPIv3 | null;
@@ -77,7 +77,8 @@ export type AssetPublicAPIv3 = {
     oldId: number | null;
     linkedIds: LinkedAsset[]; // Array of linked asset IDs
     type: AssetFileFormat;
-    uploader: UserPublicAPIv3;
+    uploaderId: string; // User ID of the uploader
+    uploader: UserPublicAPIv3 | null;
     icons: string[]; // Array of icon names
     name: string;
     description: string;
@@ -217,6 +218,7 @@ export enum UserRole {
     Secret = "secret", // This role is for users who have found the secret & grants them access to the secret features.
 }
 export enum AlertType {
+    Generic = "generic", // Generic alert type, used for non-specific alerts
     AssetApproved = "asset_approved", // Alert when an asset is approved
     AssetRejected = "asset_rejected", // Alert when an asset is rejected
     AssetRemoval = "asset_removal", // Alert when an asset is removed

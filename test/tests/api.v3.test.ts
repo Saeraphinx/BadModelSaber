@@ -2,7 +2,7 @@ import { afterAll, beforeAll, describe, expect, test, vi } from "vitest";
 import { init } from "../../src/index.ts";
 import { EnvConfig } from "../../src/shared/EnvConfig";
 import supertest from "supertest";
-import { AssetFileFormat, License, Status, Tags, User, UserInfer, UserRole } from "../../src/shared/Database.ts";
+import { Asset, AssetFileFormat, License, Status, Tags, User, UserInfer, UserRole } from "../../src/shared/Database.ts";
 import { auth } from "../../src/api/RequestUtils.ts";
 import { NextFunction, Request } from "express";
 import { Op } from "sequelize";
@@ -41,7 +41,7 @@ describe(`API v3`, () => {
         process.env.BASE_URL = `http://localhost:8491`;
         server = await init(`test_bms_apiv3`);
         await server.db.importFakeData();
-        await server.db.Users.findOne({
+        await User.findOne({
             where: {
                 roles: { [Op.contains]: [UserRole.Admin] }
             }
@@ -141,7 +141,7 @@ describe(`API v3`, () => {
         expect(res.statusCode, res.body.message).toBe(201);
         expect(res.body).toHaveProperty(`message`, `Asset created successfully.`);
         expect(res.body.asset).toHaveProperty(`name`, `Test Asset`);
-        let asset = await server.db.Assets.findByPk(res.body.asset.id);
+        let asset = await Asset.findByPk(res.body.asset.id);
         expect(asset).toBeDefined();
         expect(res.body.asset).toMatchObject(convertDatesToStrings(await asset?.getApiV3Response()) ?? {});
         expect(fs.existsSync(`./test/temp/uploads/${asset?.fileName}`)).toBe(true);

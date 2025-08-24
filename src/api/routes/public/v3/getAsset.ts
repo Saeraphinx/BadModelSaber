@@ -34,7 +34,8 @@ export class GetAssetRoutesV3 {
                 limit: query.limit ?? undefined,
                 offset: query.page && query.limit ? ((query.page - 1) * query.limit) : undefined,
                 order: [[`createdAt`, `DESC`]],
-                attributes: query.minimalData ? [`id`, `name`, `type`, `status`, `uploaderId`, `createdAt`, `updatedAt`, `iconNames`] : undefined,
+                attributes: query.minimalData ? [`id`, `name`, `type`, `status`, `uploaderId`, `createdAt`, `updatedAt`, `iconNames`, `tags`] : undefined,
+                include: {all: true}
             }).then(async assets => {
                 let response = await Promise.all(assets.map(asset => asset.getApiV3Response()));
                 res.status(200).json({ assets: response, total: assets.length, page: query.page ?? null});
@@ -51,10 +52,11 @@ export class GetAssetRoutesV3 {
                 return;
             }
 
-            Asset.findByPk(params.id).then(async asset => {
+            Asset.findByPk(params.id, {include: {all:true}}).then(async asset => {
                 if (!asset) {
                     Asset.findOne({
                         where: { oldId: params.id },
+                        include: { all: true }
                     }).then(async oldAsset => {
                         if (!oldAsset) {
                             res.status(404).json({ error: `Asset not found` });
@@ -95,7 +97,8 @@ export class GetAssetRoutesV3 {
                 where: {
                     id: ids,
                     status: Asset.allowedToViewRoles(req.auth.user)
-                }
+                },
+                include: { all: true }
             }).then(async assets => {
                 let response: {[key:number]: AssetPublicAPIv3} = {};
                 for (let asset of assets) {
