@@ -10,20 +10,21 @@ import { validate } from '../../../RequestUtils.ts';
 
 export class AuthRoutes {
     private static validStates: { stateId: string, ip: string, redirectUrl: URL, userId: number | null }[] = [];
-    private static frontendBaseUrl = new URL(EnvConfig.server.frontendUrl);
-    private static backendBaseUrl = new URL(EnvConfig.server.backendUrl);
-    private static redirectValidator = Validator.z.object({
-        redirect: Validator.z.url().default(EnvConfig.server.frontendUrl).refine((data) => {
-            let url = new URL(data);
-            return url.origin === AuthRoutes.frontendBaseUrl.origin || url.origin === AuthRoutes.backendBaseUrl.origin;
-        }, `Redirect URL must start with the server base URL.`)
-    })
 
     public static loadRoutes(router: Router) {
         if (!EnvConfig.auth.discord.clientSecret || !EnvConfig.auth.discord.clientId) {
             Logger.warn(`Discord authentication is not configured. Skipping Discord auth routes.`);
             return;
         }
+
+        const frontendBaseUrl = new URL(EnvConfig.server.frontendUrl);
+        const backendBaseUrl = new URL(EnvConfig.server.backendUrl);
+        const redirectValidator = Validator.z.object({
+            redirect: Validator.z.url().default(EnvConfig.server.frontendUrl).refine((data) => {
+                let url = new URL(data);
+                return url.origin === frontendBaseUrl.origin || url.origin === backendBaseUrl.origin;
+            }, `Redirect URL must start with the server base URL.`)
+        })
 
         passport.use(new DiscordStrategy({
             clientID: EnvConfig.auth.discord.clientId,
@@ -69,11 +70,11 @@ export class AuthRoutes {
         }));
 
         router.get(`/auth/discord`, async (req, res, next) => {
-            let { responded, data: query } = validate(req, res, `query`, AuthRoutes.redirectValidator);
+            let { responded, data: query } = validate(req, res, `query`, redirectValidator);
             if (responded || !req.ip) {
                 return;
             }
-            let state = this.prepAuth(req.ip, query?.redirect || this.frontendBaseUrl.href);
+            let state = this.prepAuth(req.ip, query?.redirect || frontendBaseUrl.href);
             if (!state) {
                 res.status(400).send({ message: `Invalid parameters.` });
                 return;
@@ -114,7 +115,7 @@ export class AuthRoutes {
 
 
         router.get(`/auth/logout`, async (req, res) => {
-            let { responded, data: query } = validate(req, res, `query`, AuthRoutes.redirectValidator);
+            let { responded, data: query } = validate(req, res, `query`, redirectValidator);
             if (responded) {
                 return;
             
