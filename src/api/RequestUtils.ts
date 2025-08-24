@@ -70,16 +70,16 @@ export function auth(requiredRole: UserRole[] | `loggedIn` | `any`, allowBanned 
             return next(); // Allow any user case to proceed
         } else {
             if (!req.session?.userId) {
-                return res.status(401).json({ error: "Unauthorized" });
+                return res.status(401).json({ message: "Unauthorized" });
             }
 
             return await User.findByPk(req.session.userId).then(user => {
                 if (!user) {
-                    return res.status(401).json({ error: "Unauthorized" });
+                    return res.status(401).json({ message: "Unauthorized" });
                 }
 
                 if (user.roles.includes(UserRole.Banned) && !allowBanned) {
-                    return res.status(403).json({ error: "Forbidden" });
+                    return res.status(403).json({ message: "Forbidden" });
                 }
 
                 if (requiredRole === `loggedIn` || requiredRole.some(role => user.roles.includes(role))) {
@@ -89,7 +89,7 @@ export function auth(requiredRole: UserRole[] | `loggedIn` | `any`, allowBanned 
                     };
                     return next();
                 } else {
-                    return res.status(403).json({ error: "Forbidden" });
+                    return res.status(403).json({ message: "Forbidden" });
                 }
             }).catch(err => {
                 Logger.error(`Error fetching user from session: ${err.message}`);
