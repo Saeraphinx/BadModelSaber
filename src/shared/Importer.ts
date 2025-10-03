@@ -1,4 +1,4 @@
-import { AlertType, Asset, AssetFileFormat, AssetPublicAPIv2, License, LinkedAssetLinkType, Status, Tags, User, UserRole } from "./Database.ts";
+import { AlertType, Asset, AssetFileFormat, AssetPublicAPIv2, License, LinkedAssetLinkType, Status, Tags, User, UserPermissions } from "./Database.ts";
 import { Logger } from "./Logger.ts";
 import * as fs from "fs";
 import * as crypto from "crypto";
@@ -31,7 +31,7 @@ export async function importFromOldModelSaber(): Promise<void> {
         username: `ModelSaber Importer`,
         displayName: `ModelSaber Importer`,
         avatarUrl: `https://cdn.discordapp.com/embed/avatars/6.png`,
-        roles: [UserRole.Developer],
+        roles: [UserPermissions.C_Developer],
         bio: `This user was created by the ModelSaber importer for assets that couldn't be linked to a specific user during the importing process.`,
     });
     try {

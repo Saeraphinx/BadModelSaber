@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { auth, validate } from "../../../api/RequestUtils.ts";
-import { AssetRequest, AssetRequestInfer, RequestType, UserRole } from "../../../shared/Database.ts";
+import { AssetRequest, AssetRequestInfer, RequestType, UserPermissions } from "../../../shared/Database.ts";
 import { Validator } from "../../../shared/Validator.ts";
 import { request } from "http";
 import { parseErrorMessage } from "../../../shared/Tools.ts";
@@ -19,7 +19,7 @@ export class RequestRoutes {
                 return;
             }
 
-            let isElevated = req.auth.user.roles.includes(UserRole.Admin) || req.auth.user.roles.includes(UserRole.Moderator);
+            let isElevated = req.auth.user.roles.includes(UserPermissions.Manage_All_Reports);
             let bailOut = false;
 
             const whereOptions: WhereOptions<AssetRequestInfer> = {};
@@ -119,7 +119,7 @@ export class RequestRoutes {
             });
 
             let reports = null;
-            if (req.auth.user.roles.includes(UserRole.Admin) || req.auth.user.roles.includes(UserRole.Moderator)) {
+            if (req.auth.user.roles.includes(UserPermissions.View_All_Reports)) {
                 reports = await AssetRequest.count({
                     where: {
                         requestType: RequestType.Report,
@@ -142,7 +142,7 @@ export class RequestRoutes {
                 return;
             }
 
-            let isElevated = req.auth.user.roles.includes(UserRole.Admin) || req.auth.user.roles.includes(UserRole.Moderator);
+            let isElevated = req.auth.user.roles.includes(UserPermissions.View_All_Reports);
 
             AssetRequest.findByPk(data.id, { include: { all: true }}).then(async assetReq => {
                 if (!assetReq) {

@@ -1,6 +1,6 @@
 import { Column, CreatedAt, DataType, DeletedAt, Model, Table, UpdatedAt } from "sequelize-typescript";
 import { CreationOptional, InferAttributes, InferCreationAttributes } from "sequelize";
-import { AlertType, SponserUrl, UserPublicAPIv3, UserRole } from "../DBExtras.ts";
+import { AlertType, SponserUrl, UserPublicAPIv3, UserPermissions } from "../DBExtras.ts";
 import { Alert } from "./Alert.ts";
 import { Logger } from "../../Logger.ts";
 import { Col } from "sequelize/lib/utils";
@@ -54,7 +54,7 @@ export class User extends Model<InferAttributes<User>, InferCreationAttributes<U
         allowNull: false,
         defaultValue: [],
     })
-    declare roles: CreationOptional<UserRole[]>;
+    declare roles: CreationOptional<UserPermissions[]>;
 
     @CreatedAt
     declare readonly createdAt: CreationOptional<Date>;

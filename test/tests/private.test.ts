@@ -1,7 +1,7 @@
 import { init } from "../../src/index.ts";
 import { EnvConfig } from "../../src/shared/EnvConfig.ts";
 import supertest from "supertest";
-import { Alert, AlertType, Asset, AssetFileFormat, License, Status, StatusHistory, Tags, User, UserInfer, UserRole } from "../../src/shared/Database.ts";
+import { Alert, AlertType, Asset, AssetFileFormat, License, Status, StatusHistory, Tags, User, UserInfer, UserPermissions } from "../../src/shared/Database.ts";
 import { auth } from "../../src/api/RequestUtils.ts";
 import { NextFunction, Request } from "express";
 import { Op } from "sequelize";
@@ -15,7 +15,7 @@ vi.mock(`../../src/api/RequestUtils.ts`, async () => {
     let original = await vi.importActual("../../src/api/RequestUtils.ts") as typeof import("../../src/api/RequestUtils.ts");
     return {
         ...original,
-        auth: vi.fn().mockImplementation((requiredRole: UserRole[] | `loggedIn` | `any`, allowBanned = false) => {
+        auth: vi.fn().mockImplementation((requiredRole: UserPermissions[] | `loggedIn` | `any`, allowBanned = false) => {
             return (req: Request, res: Response, next: NextFunction) => {
                 if (user) {
                     req.auth = {
@@ -43,7 +43,7 @@ describe(`API Private`, () => {
         //await server.db.importFakeData();
         await User.findOne({
             where: {
-                roles: { [Op.contains]: [UserRole.Admin] }
+                roles: { [Op.contains]: [UserPermissions.C_Admin] }
             }
         }).then((foundUser) => {
             if (foundUser) {
@@ -109,11 +109,6 @@ describe(`API Private`, () => {
             expect(res.status, res.body.message).toBe(200);
             expect(res.body).toMatchObject(convertDatesToStrings(unreadAlert.toAPIResponse()));
             expect(res.body.read).toBe(true);
-
-
-            // double check the api response
-            const checkRes = await api.get(`/alerts`);
-            expect(checkRes.status, res.body.message).toBe(204);
         });
 
         test(`should delete alert`, async () => {

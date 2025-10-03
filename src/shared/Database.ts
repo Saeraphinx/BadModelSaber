@@ -6,7 +6,7 @@ import { User } from "./database/tables/User.ts";
 import { Asset } from "./database/tables/Asset.ts";
 import { Alert } from "./database/tables/Alert.ts";
 import { AssetRequest } from "./database/tables/AssetRequest.ts";
-import { SponsorType, Status, UserRole } from "./database/DBExtras.ts";
+import { SponsorType, Status, UserPermissions } from "./database/DBExtras.ts";
 import fs from "node:fs";
 import { parseErrorMessage } from "./Tools.ts";
 
@@ -96,7 +96,7 @@ export class DatabaseManager {
                     username: `system`,
                     displayName: `System User`,
                     bio: `hi :3\n\nThis user account is used for system operations and is not meant to be used by anyone.`,
-                    roles: Object.values(UserRole).filter(role => role !== UserRole.Banned),
+                    roles: Object.values(UserPermissions),
                     sponsorUrl: [{
                         platform: SponsorType.Patreon,
                         url: `https://www.patreon.com/beatsabermoddinggroup`

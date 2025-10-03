@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { auth, validate } from "../../../api/RequestUtils.ts";
-import { Asset, AssetRequest, LinkedAssetLinkType, RequestType, User, UserRole } from "../../../shared/Database.ts";
+import { Asset, AssetRequest, LinkedAssetLinkType, RequestType, User, UserPermissions } from "../../../shared/Database.ts";
 import { Validator } from "../../../shared/Validator.ts";
 import { request } from "http";
 import { parseErrorMessage } from "../../../shared/Tools.ts";

@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 
-import { Alert, AlertType, Asset, AssetFileFormat, DatabaseManager, License, LinkedAssetLinkType, SponserUrl, SponsorType, Status, Tags, User, UserRole } from '../src/shared/Database.ts';
+import { Alert, AlertType, Asset, AssetFileFormat, DatabaseManager, License, LinkedAssetLinkType, SponserUrl, SponsorType, Status, Tags, User, UserPermissions } from '../src/shared/Database.ts';
 import { faker } from '@faker-js/faker';
 import { EnvConfig } from '../src/shared/EnvConfig.ts';
 import { Op } from 'sequelize';
@@ -29,7 +29,7 @@ export async function generateFakeData() {
         { platform: SponsorType.GitHub, url: `https://github.com/Saeraphinx/support` },
     ]
 
-    for (let [index, role] of Object.values(UserRole).entries()) {
+    for (let [index, role] of Object.values(UserPermissions).entries()) {
         let user = await User.create({
             id: faker.string.numeric(26),
             username: faker.internet.username({ firstName: `John`, lastName: role }),
@@ -52,7 +52,7 @@ export async function generateFakeData() {
     for (let user of users) {
         console.log(`Creating entries for user ${++userCount}/${users.length}`);
         let usersExcludingCurrent = users.filter(u => u.id !== user.id);
-        for (let count of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]) {
+        for (let count of [1, 2, 3, 4, 5, 6]) {
             for (let type of Object.values(AssetFileFormat)) {
                 await Asset.create({
                     oldId: count % 2 == 1 ? faker.number.int({min: 1000000, max: 99999999}) : null, // Only set oldId for odd types
@@ -74,7 +74,7 @@ export async function generateFakeData() {
             }
         }
 
-        for (let count of faker.helpers.arrayElements([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], { min: 1, max: 30 })) {
+        for (let count of faker.helpers.arrayElements([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], { min: 1, max: 10 })) {
             await Alert.create({
                 header: `Test Alert ${count}`,
                 message: `This is a test alert message number ${count} for user ${user.username}.`,
@@ -99,7 +99,7 @@ export async function generateFakeData() {
                         [Op.contains]: [user.id]
                     }
                 }
-            }, include: {all: true}, offset: faker.number.int({ min: 0, max: 50 }), limit: 6 }).then(async assets => {
+            }, include: {all: true}, offset: faker.number.int({ min: 0, max: 10 }), limit: 6 }).then(async assets => {
             let i = 0;
             for (let asset of assets) {
                 let author = await asset.uploader;

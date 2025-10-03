@@ -1,10 +1,11 @@
 import { BelongsTo, Column, CreatedAt, DataType, DeletedAt, ForeignKey, Model, Table, UpdatedAt } from "sequelize-typescript";
 import { InferAttributes, InferCreationAttributes, NonAttribute, CreationOptional } from "sequelize";
-import { Alert, AssetRequest, User, UserRole } from "../../Database.ts";
+import { Alert, AssetRequest, User, UserPermissions } from "../../Database.ts";
 import { AlertType, AssetFileFormat, AssetPublicAPIv1, AssetPublicAPIv2, AssetPublicAPIv3, License, LinkedAsset, LinkedAssetLinkType, RequestType, Status, StatusHistory, Tags, UserPublicAPIv3 } from "../DBExtras.ts";
 import { z } from "zod/v4";
 import { EnvConfig } from "../../../shared/EnvConfig.ts";
 import { Logger } from "../../Logger.ts";
+import { Webhooks } from "../../Webhooks.ts";
 
 export type AssetInfer = InferAttributes<Asset>;
 @Table({
@@ -210,9 +211,7 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
             return [Status.Approved, Status.Pending]
         }
 
-        if (user.roles.includes(UserRole.Admin) ||
-            user.roles.includes(UserRole.Moderator) ||
-            user.roles.includes(UserRole.Developer)) {
+        if (user.roles.includes(UserPermissions.View_All_Assets)) {
             return [Status.Approved, Status.Pending, Status.Private, Status.Rejected];
         }
 
@@ -235,10 +234,8 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
             return false; // Only logged-in users can edit assets
         }
 
-        // Users can edit their own assets, or if they are an admin, developer, or moderator
-        return user.id === this.uploaderId ||
-            user.roles.includes(UserRole.Admin) ||
-            user.roles.includes(UserRole.Moderator);
+        // Users can edit their own assets
+        return user.id === this.uploaderId || user.roles.includes(UserPermissions.Edit_Any_Asset);
     }
     // #endregion
     // #region Edits
@@ -297,7 +294,7 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
             throw new Error(`This asset is already linked to the requested asset.`);
         }
 
-        if (this.uploaderId !== assetToLink.uploaderId || reqBy.roles.includes(UserRole.Admin) || reqBy.roles.includes(UserRole.Moderator)) {
+        if (this.uploaderId !== assetToLink.uploaderId && !reqBy.roles.includes(UserPermissions.Edit_Any_Asset)) {
             let existingRequests = await AssetRequest.findAll({
                 where: {
                     requestResponseBy: assetToLink.uploaderId,
@@ -419,12 +416,22 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
         return this;
     }
 
-    public async setStatus(newStatus: Status, reason: string, userId: string, sendAlert = true): Promise<Asset> {
+    public async setStatus(newStatus: Status, reason: string, userId: string | User, sendAlert = true): Promise<Asset> {
+        let userPreformingAction: User | null = null;
+        if (userId instanceof User) {
+            userPreformingAction = userId;
+        } else {
+            userPreformingAction = await User.findByPk(userId);
+            if (!userPreformingAction) {
+                throw new Error(`User not found`);
+            }
+        }
+
         this.statusHistory = [...this.statusHistory, {
             status: newStatus,
             reason: reason,
             timestamp: new Date(),
-            userId: userId, // User ID of the person who changed the status
+            userId: userPreformingAction.id, // User ID of the person who changed the status
         }];
 
         if (this.status === newStatus) {
@@ -432,6 +439,7 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
             return this.save();
         }
 
+        let alertType = AlertType.Generic
         switch (this.status) {
             case Status.Rejected:
             case Status.Private:
@@ -439,18 +447,28 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
             case Status.Pending:
                 if (newStatus !== Status.Approved) {
                     // rejected from queue
-                    break;
+                    alertType = AlertType.AssetRejected;
                 } else {
                     // approved from queue
+                    alertType = AlertType.AssetApproved;
                 }
                 break;
             case Status.Approved:
                 if (newStatus !== Status.Approved) {
+                    alertType = AlertType.AssetRemoval
                     // verification revoked
                     break;
                 }
             default:
                 throw new Error(`Invalid status transition from ${this.status} to ${newStatus}`);
+        }
+        if (sendAlert) {
+            Webhooks.sendUpdateStatus(this, userPreformingAction, this.status, newStatus);
+            this.alertUploader({
+                type: alertType,
+                header: `Asset Status Updated`,
+                message: `The status of your asset ${this.name} has been changed to ${newStatus}${reason ? ` for the following reason: ${reason}` : `.`}`,
+            });
         }
         this.status = newStatus;
         Logger.log(`Asset ${this.id} status changed to ${newStatus} by user ${userId} for reason: ${reason}`);

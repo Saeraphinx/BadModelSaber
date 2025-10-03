@@ -2,7 +2,7 @@ import { afterAll, beforeAll, describe, expect, test, vi } from "vitest";
 import { init } from "../../src/index.ts";
 import { EnvConfig } from "../../src/shared/EnvConfig";
 import supertest from "supertest";
-import { Asset, AssetFileFormat, License, Status, Tags, User, UserInfer, UserRole } from "../../src/shared/Database.ts";
+import { Asset, AssetFileFormat, License, Status, Tags, User, UserInfer, UserPermissions } from "../../src/shared/Database.ts";
 import { auth } from "../../src/api/RequestUtils.ts";
 import { NextFunction, Request } from "express";
 import { Op } from "sequelize";
@@ -15,7 +15,7 @@ vi.mock(`../../src/api/RequestUtils.ts`, async () => {
     let original = await vi.importActual("../../src/api/RequestUtils.ts") as typeof import("../../src/api/RequestUtils.ts");
     return {
         ...original,
-        auth: vi.fn().mockImplementation((requiredRole: UserRole[] | `loggedIn` | `any`, allowBanned = false) => {
+        auth: vi.fn().mockImplementation((requiredRole: UserPermissions[] | `loggedIn` | `any`, allowBanned = false) => {
             return (req: Request, res: Response, next: NextFunction) => {
                 if (user) {
                     req.auth = {
@@ -43,7 +43,7 @@ describe(`API v3`, () => {
         await server.db.importFakeData();
         await User.findOne({
             where: {
-                roles: { [Op.contains]: [UserRole.Admin] }
+                roles: { [Op.contains]: [UserPermissions.C_Admin] }
             }
         }).then((foundUser) => {
             if (foundUser) {
