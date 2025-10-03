@@ -1,5 +1,5 @@
 import { Logger, LogLevel } from "../shared/Logger.ts";
-import { User, UserRole } from "../shared/Database.ts";
+import { User, UserPermissions } from "../shared/Database.ts";
 import { NextFunction, Request, Response } from "express";
 import fileUpload from 'express-fileupload';
 import { z } from "zod/v4";
@@ -31,7 +31,7 @@ type AuthInfo = {
     user: User
 };
 
-export function auth(requiredRole: UserRole[] | `loggedIn` | `any`, allowBanned = false): MiddlewareFunction {
+export function auth(requiredRole: UserPermissions[] | `loggedIn` | `any`, allowBanned = false): MiddlewareFunction {
     return async (req, res, next) => {
         if (!req.auth) {
             req.auth = {
@@ -78,7 +78,7 @@ export function auth(requiredRole: UserRole[] | `loggedIn` | `any`, allowBanned 
                     return res.status(401).json({ message: "Unauthorized" });
                 }
 
-                if (user.roles.includes(UserRole.Banned) && !allowBanned) {
+                if (user.roles.includes(UserPermissions.Create_Assets) && !allowBanned) {
                     return res.status(403).json({ message: "Forbidden" });
                 }
 

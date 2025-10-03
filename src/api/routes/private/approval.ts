@@ -1,12 +1,12 @@
 import { Router } from "express";
 import { auth, validate } from "../../RequestUtils.ts";
-import { Asset, UserRole } from "../../../shared/Database.ts";
+import { Asset, UserPermissions } from "../../../shared/Database.ts";
 import { Validator } from "../../../shared/Validator.ts";
 import { parseErrorMessage } from "../../../shared/Tools.ts";
 
 export class ApprovalRoutes {
     public static loadRoutes(router: Router): void {
-        router.post(`/assets/:id/approval`, auth([UserRole.Moderator]), async (req, res) => {
+        router.post(`/assets/:id/approval`, auth([UserPermissions.Approve_Assets]), async (req, res) => {
             const { responded: pResponded, data: params } = validate(req, res, `params`, Validator.zNumberIDObj);
             const { responded: dResponded, data: body } = validate(req, res, `body`, Validator.zApprovalObjv3);
             if (pResponded || dResponded || req.auth.isAuthed === false) {

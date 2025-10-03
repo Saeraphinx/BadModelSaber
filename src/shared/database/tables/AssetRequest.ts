@@ -1,7 +1,7 @@
 import { AllowNull, BelongsTo, Column, CreatedAt, DataType, DeletedAt, ForeignKey, Model, Table, UpdatedAt } from "sequelize-typescript";
 import { InferAttributes, InferCreationAttributes, CreationOptional, NonAttribute } from "sequelize";
 import { z } from "zod/v4";
-import { AlertType, AssetRequestPublicAPIv3, LinkedAsset, LinkedAssetLinkType, RequestMessage, RequestType, Status, UserRole } from "../DBExtras.ts";
+import { AlertType, AssetRequestPublicAPIv3, LinkedAsset, LinkedAssetLinkType, RequestMessage, RequestType, Status, UserPermissions } from "../DBExtras.ts";
 import { User } from "./User.ts";
 import { Asset } from "./Asset.ts";
 import { Alert } from "./Alert.ts";
@@ -182,7 +182,7 @@ export class AssetRequest extends Model<InferAttributes<AssetRequest>, InferCrea
     // #endregion Validators
     public allowedToMessage(user: User): boolean {
         if (this.requestType === RequestType.Report) {
-            return this.requesterId === user.id || user.roles.includes(UserRole.Admin) || user.roles.includes(UserRole.Moderator);
+            return this.requesterId === user.id || user.roles.includes(UserPermissions.Manage_All_Reports);
         } else {
             return false; // Non-report requests should not allow messaging
         }
@@ -191,9 +191,9 @@ export class AssetRequest extends Model<InferAttributes<AssetRequest>, InferCrea
 
     public allowedToAccept(user: User): boolean {
         if (this.requestType === RequestType.Report) {
-            return user.roles.includes(UserRole.Admin) || user.roles.includes(UserRole.Moderator);
+            return user.roles.includes(UserPermissions.Manage_All_Reports);
         } else {
-            return user.id === this.requestResponseBy || user.roles.includes(UserRole.Admin) || user.roles.includes(UserRole.Moderator);
+            return user.id === this.requestResponseBy || user.roles.includes(UserPermissions.Manage_All_Reports);
         }
     }
 

@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { auth, validate } from "../../../api/RequestUtils.ts";
-import { Asset, AssetRequest, LinkedAssetLinkType, RequestType, User, UserRole } from "../../../shared/Database.ts";
+import { Asset, AssetRequest, LinkedAssetLinkType, RequestType, User, UserPermissions } from "../../../shared/Database.ts";
 import { Validator } from "../../../shared/Validator.ts";
 import { request } from "http";
 import { parseErrorMessage } from "../../../shared/Tools.ts";
@@ -22,17 +22,17 @@ export class UpdateUserRoutes {
             }
 
             if (params.addOrRemove === `add`) {
-                if (user.roles.includes(UserRole.Secret)) {
+                if (user.roles.includes(UserPermissions.View_Pending_Assets)) {
                     res.status(400).json({ message: `User already has the secret role` });
                     return;
                 }
-                user.roles = [...user.roles, UserRole.Secret];
+                user.roles = [...user.roles, UserPermissions.View_Pending_Assets];
             } else {
-                if (!user.roles.includes(UserRole.Secret)) {
+                if (!user.roles.includes(UserPermissions.View_Pending_Assets)) {
                     res.status(400).json({ message: `User does not have the secret role` });
                     return;
                 }
-                user.roles = user.roles.filter(role => role !== UserRole.Secret);
+                user.roles = user.roles.filter(role => role !== UserPermissions.View_Pending_Assets);
             }
 
             await user.save().then(() => {

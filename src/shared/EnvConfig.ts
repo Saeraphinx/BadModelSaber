@@ -132,9 +132,11 @@ export class EnvConfig {
             authBypass: EnvConfig.isDevMode ? process.env.AUTH_BYPASS || false : false,
         };
 
-        if (EnvConfig.server.corsOrigin === `default`) {
-            console.warn(`CORS origin is set to 'default'. This may cause issues in production. Please set CORS_ORIGIN in your environment variables.`);
+        console.log(`Using CORS Origin: ${EnvConfig.server.corsOrigin}`);
+        if (EnvConfig.server.corsOrigin === `default` || (Array.isArray(EnvConfig.server.corsOrigin) && EnvConfig.server.corsOrigin[0] == `default`)) {
+            console.log(`CORS origin is set to 'default'. This may cause issues in production. Please set CORS_ORIGIN in your environment variables.`);
             EnvConfig.server.corsOrigin = [EnvConfig.server.frontendUrl, EnvConfig.server.backendUrl];
+            console.log(`CORS origin set to frontend and backend URLs: ${EnvConfig.server.corsOrigin}`);
         }
 
         if (process.env.SESSION_COOKIE_SAME_SITE) {

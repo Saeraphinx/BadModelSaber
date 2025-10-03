@@ -18,7 +18,7 @@ export type UserPublicAPIv3 = {
     bio: string | null;
     sponsorUrl: SponserUrl[] | null;
     avatarUrl: string;
-    roles: UserRole[];
+    roles: UserPermissions[];
 }
 
 export type AlertPublicAPIv3 = {
@@ -208,14 +208,28 @@ export enum Tags {
 // #endregion Asset Enums
 
 // #region Alert & Reqeust & User Enums
-export enum UserRole {
-    Admin = "admin", // Admins have permission to manage users & potentially other sensitive operations
-    Developer = "developer", // Developers are able to view everything for development purposes.
-    Moderator = "moderator", // Moderators can approve & delete assets
-    Trusted = "trusted", // This role has no special permissions at this point in time.
-    BSMG = "bsmg", // This role is for BSMG staff, and has no special permissions at this point in time.
-    Banned = "banned", // Banned users cannot create assets, comment, or upload files. 
-    Secret = "secret", // This role is for users who have found the secret & grants them access to the secret features.
+export enum UserPermissions {
+    // actual permissions
+    View_Pending_Assets = "view_pending_assets", // User can view & search pending assets
+    View_All_Assets = "view_all_assets", // User can view & search all assets, including private ones
+    Approve_Assets = "approve_assets", // User can approve/reject pending assets
+    Edit_Any_Asset = "edit_any_asset", // User can edit any asset, regardless of ownership
+
+    View_All_Reports = "view_all_reports", // User can view all asset reports
+    Manage_All_Reports = "manage_all_reports", // User can manage (resolve) asset reports
+
+    Manage_NonMod_Users = "manage_nonmod_users", // User can manage non-admin users (e.g. ban users)
+    Manage_All_Users = "manage_all_users", // User can manage admin users w/o restrictions
+    Create_Assets = "create_assets", // User can upload/create assets
+
+
+    // cosmetic roles for badges only
+    C_Developer = "cos_developer", // User is a developer of the site
+    C_Moderator = "cos_moderator", // User is a moderator of the site
+    C_Admin = "cos_admin", // User is an admin of the site
+    C_BSMG_Staff = "cos_bsmg_staff", // User is a member of the BSMG staff
+    C_Modeler = "cos_modeler", // User is a recognized modeler on ModelSaber
+
 }
 export enum AlertType {
     Generic = "generic", // Generic alert type, used for non-specific alerts
