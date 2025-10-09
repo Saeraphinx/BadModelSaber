@@ -25,7 +25,8 @@ export async function init(overrideDbName: string = `public`) {
     EnvConfig.load();
     Logger.init();
     EnvConfig.server.authBypass ? Logger.warn(`Auth bypass is enabled. This should only be used in development or testing environments.`) : null;
-    const db = new DatabaseManager(overrideDbName);
+    const schemaToUse = EnvConfig.isDevMode ? `dev_${overrideDbName}` : overrideDbName;
+    const db = new DatabaseManager(schemaToUse);
     if (EnvConfig.isDevMode) {
         await db.dropSchema();
     }
