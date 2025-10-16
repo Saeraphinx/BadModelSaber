@@ -1,10 +1,85 @@
-import { Router } from "express";
 import { auth, validate } from "../../../api/RequestUtils.ts";
 import { Asset, AssetRequest, LinkedAssetLinkType, RequestType, User, UserPermissions } from "../../../shared/Database.ts";
 import { Validator } from "../../../shared/Validator.ts";
 import { request } from "http";
 import { parseErrorMessage } from "../../../shared/Tools.ts";
+import { authProcedure, router } from "../../../api/trpc.ts";
 
+export const UpdateAssetRouter = router({
+    updateAsset: authProcedure(`loggedIn`).input(Validator.z.object({
+        assetId: Validator.zNumberID,
+        data: Asset.validator.pick({
+            name: true,
+            description: true,
+            tags: true
+        }).partial()
+    })).mutation(async ({ input, ctx }) => {
+        const asset = await Asset.findByPk(input.assetId);
+        if (!asset) {
+            throw new Error(`Asset not found`);
+        }
+        if (!asset.canEdit(ctx.user)) {
+            throw new Error(`You are not allowed to edit this asset`);
+        }
+        asset.updateAsset(input.data).then(updatedAsset => {
+            return updatedAsset.getApiResponse();
+        }).catch(err => {
+            throw new Error(`Error updating asset: ${parseErrorMessage(err)}`);
+        });
+    }),
+    linkAsset: authProcedure(`loggedIn`).input(Validator.z.object({
+        assetId: Validator.zNumberID,
+        linkToId: Validator.zNumberID,
+        type: Validator.z.enum(LinkedAssetLinkType)
+    })).mutation(async ({ input, ctx }) => {
+        const asset = await Asset.findByPk(input.assetId);
+        if (!asset) {
+            throw new Error(`Asset not found`);
+        }
+        if (!asset.canEdit(ctx.user)) {
+            throw new Error(`You are not allowed to edit this asset`);
+        }
+        const otherAsset = await Asset.findByPk(input.linkToId);
+        if (!otherAsset) {
+            throw new Error(`Asset to link not found`);
+        }
+
+        return asset.requestLink(ctx.user, otherAsset, input.type).then(result => {
+            if (result instanceof AssetRequest) {
+                return { message: `Request created successfully`, request: result.getAPIResponse() };
+            } else {
+                return { message: `Asset linked successfully`, asset: result.getApiResponse() };
+            }
+        }).catch(err => {
+            throw new Error(`Error linking asset: ${parseErrorMessage(err)}`);
+        });
+    }),
+    addCollaborator: authProcedure(`loggedIn`).input(Validator.z.object({
+        id: Validator.zNumberID,
+        userId: Validator.zUserID
+    })).mutation(async ({ input, ctx }) => {
+        const asset = await Asset.findByPk(input.id);
+        if (!asset) {
+            throw new Error(`Asset not found`);
+        }
+        if (!asset.canEdit(ctx.user)) {
+            throw new Error(`You are not allowed to edit this asset`);
+        }
+        if (asset.collaborators.includes(input.userId)) {
+            throw new Error(`User is already a collaborator on this asset`);
+        }
+        const userToCredit = await User.findByPk(input.userId);
+        if (!userToCredit) {
+            throw new Error(`User to credit not found`);
+        }
+        return asset.requestCollab(ctx.user, userToCredit).then(request => {
+            return request.getAPIResponse();
+        }).catch(err => {
+            throw new Error(`Error adding collaborator: ${parseErrorMessage(err)}`);
+        });
+    })
+})
+/*
 export class UpdateAssetRoutes {
     public static loadRoutes(router: Router): void {
         router.put(`/assets/:id`, auth(`loggedIn`, true), async (req, res) => {
@@ -120,3 +195,4 @@ export class UpdateAssetRoutes {
         })
     }
 }
+*/

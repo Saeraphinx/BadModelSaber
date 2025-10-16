@@ -6,7 +6,128 @@ import { request } from "http";
 import { parseErrorMessage } from "../../../shared/Tools.ts";
 import { Op, WhereOptions } from "sequelize";
 import { Logger } from "../../../shared/Logger.ts";
+import { authProcedure, router } from "../../../api/trpc.ts";
 
+export const RequestRouter = router({
+    request: authProcedure(`loggedIn`).input(Validator.z.object({
+        includeActioned: Validator.z.boolean().optional().default(false),
+        assetId: Validator.zNumberID.optional()
+    })).query(async ({ input, ctx }) => {
+        let isElevated = ctx.user.roles.includes(UserPermissions.Manage_All_Reports);
+        const whereOptions: WhereOptions<AssetRequestInfer> = {};
+
+        if (input.assetId) {
+            whereOptions.refrencedAssetId = input.assetId;
+        }
+        if (!input.includeActioned) {
+            whereOptions.accepted = null;
+        }
+
+        let incoming = AssetRequest.findAll({
+            where: {
+                requestResponseBy: ctx.user.id,
+                ...whereOptions
+            },
+            include: { all: true },
+        });
+        let outgoing = AssetRequest.findAll({
+            where: {
+                requesterId: ctx.user.id,
+                ...whereOptions
+            },
+            include: { all: true },
+        });
+        let reports = null;
+        if (isElevated) {
+            reports = AssetRequest.findAll({
+                where: {
+                    requestType: RequestType.Report,
+                    ...whereOptions
+                },
+                include: { all: true },
+            });
+        }
+        const [incomingRequests, outgoingRequests, reportRequests] = await Promise.all([incoming, outgoing, reports]);
+        return {
+            incoming: await Promise.all(incomingRequests.map(req => req.getAPIResponse())),
+            outgoing: await Promise.all(outgoingRequests.map(req => req.getAPIResponse())),
+            reports: reportRequests ? await Promise.all(reportRequests.map(req => req.getAPIResponse())) : null
+        };
+    }),
+    requestCounts: authProcedure(`loggedIn`).query(async ({ ctx }) => {
+        let incoming = await AssetRequest.count({
+            where: {
+                requestResponseBy: ctx.user.id,
+                accepted: null
+            }
+        });
+        let outgoing = await AssetRequest.count({
+            where: {
+                requesterId: ctx.user.id,
+                accepted: null
+            }
+        });
+        let reports = null;
+        if (ctx.user.roles.includes(UserPermissions.View_All_Reports)) {
+            reports = await AssetRequest.count({
+                where: {
+                    requestType: RequestType.Report,
+                    accepted: null
+                }
+            });
+        }
+        return { incoming: incoming ?? 0, outgoing: outgoing ?? 0, reports: reports ?? null };
+    }),
+    getRequest: authProcedure(`loggedIn`).input(Validator.z.object({
+        id: Validator.zNumberID,
+    })).query(async ({ input, ctx }) => {
+        let isElevated = ctx.user.roles.includes(UserPermissions.View_All_Reports);
+        const assetReq = await AssetRequest.findByPk(input.id, { include: { all: true }});
+        if (!assetReq) {
+            throw new Error(`Request not found`);
+        }
+        if (!isElevated && assetReq.requesterId !== ctx.user?.id && assetReq.requestResponseBy !== ctx.user?.id) {
+            throw new Error(`You are not allowed to view this request`);
+        }
+        return assetReq.getAPIResponse();
+    }),
+    addMessage: authProcedure(`loggedIn`).input(Validator.z.object({
+        id: Validator.zNumberID,
+        message: Validator.z.string().min(1)
+    })).mutation(async ({ input, ctx }) => {
+        const assetReq = await AssetRequest.findByPk(input.id);
+        if (!assetReq) {
+            throw new Error(`Request not found`);
+        }
+        if (!assetReq.allowedToMessage(ctx.user)) {
+            throw new Error(`You are not allowed to message this request`);
+        }
+        await assetReq.addMessage(ctx.user, input.message);
+        return { message: `Message added successfully` };
+    }),
+    handleRequest: authProcedure(`loggedIn`).input(Validator.z.object({
+        id: Validator.zNumberID,
+        action: Validator.z.enum([`accept`, `decline`]),
+    })).mutation(async ({ input, ctx }) => {
+        const assetReq = await AssetRequest.findByPk(input.id);
+        if (!assetReq) {
+            throw new Error(`Request not found`);
+        }
+        if (!assetReq.allowedToAccept(ctx.user)) {
+            throw new Error(`You are not allowed to ${input.action} this request`);
+        }
+        if (input.action === `accept`) {
+            await assetReq.accept(ctx.user.id);
+            return { message: `Request accepted successfully` };
+        } else if (input.action === `decline`) {
+            await assetReq.decline(ctx.user.id);
+            return { message: `Request declined successfully` };
+        }
+        throw new Error(`Invalid action`);
+    })
+});
+
+/*
 export class RequestRoutes {
     // yea its not reall
     public static loadRoutes(router: Router): void {
@@ -250,3 +371,4 @@ export class RequestRoutes {
         });
     }
 }
+*/

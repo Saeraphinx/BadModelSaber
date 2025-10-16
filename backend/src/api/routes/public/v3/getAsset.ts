@@ -1,11 +1,106 @@
 import { Router } from "express";
-import { auth, validate } from "../../../RequestUtils.ts";
 import { Validator } from "../../../../shared/Validator.ts";
 import { Asset, AssetInfer, User } from "../../../../shared/Database.ts";
 import { Op, WhereOptions } from "sequelize";
 import { parseErrorMessage } from "../../../../shared/Tools.ts";
-import { AssetPublicAPIv3 } from "../../../../shared/database/DBExtras.ts";
+import { AssetPublicAPIv3, assetPublicAPIv3Schema } from "../../../../shared/database/DBExtras.ts";
+import { authProcedure, router } from "../../../../api/trpc.ts";
 
+export const assetsRouterV3 = router({
+    getAssets: authProcedure(`any`)
+        .meta({
+            openapi: {
+                method: 'GET',
+                path: '/v3/assets',
+                tags: ['Assets'],
+            }
+        })
+        .input(Validator.zFilterAssetv3)
+        .output(Validator.z.object({
+            assets: Validator.z.array(assetPublicAPIv3Schema),
+            total: Validator.z.number(),
+            page: Validator.z.number().nullable()
+        }))
+        .query(async ({input, ctx}) => {
+        let allowedStatuses = Asset.allowedToViewRoles(ctx.user);
+        if (input.status && !allowedStatuses.includes(input.status)) {
+            return { assets: [], total: 0, page: null };
+        }   
+        let whereOptions: WhereOptions<AssetInfer> = {};
+        whereOptions.status = input.status ? input.status : allowedStatuses;
+        if (input.type) {
+            whereOptions.type = input.type;
+        }
+        if (input.tags) {
+            whereOptions.tags = { [Op.contains]: input.tags };
+        }
+        const assets = await Asset.findAll({
+            where: whereOptions,
+            limit: input.limit ?? undefined,
+            offset: input.page && input.limit ? ((input.page - 1) * input.limit) : undefined,
+            order: [[`createdAt`, `DESC`]],
+            attributes: input.minimalData ? [`id`, `name`, `type`, `status`, `uploaderId`, `createdAt`, `updatedAt`, `iconNames`, `tags`] : undefined,
+            include: {all: true}
+        });
+        let response = await Promise.all(assets.map(asset => asset.getApiV3Response()));
+        return { assets: response, total: assets.length, page: input.page ?? null};
+    }),
+    getAssetById: authProcedure(`any`)
+        .meta({
+            openapi: {
+                method: 'GET',
+                path: '/v3/assets/{id}',
+                tags: ['Assets'],
+            }
+        })
+        .input(Validator.z.object({
+            id: Validator.zNumberID
+        }))
+        .output(assetPublicAPIv3Schema)
+        .query(async ({input, ctx}) => {
+        let asset = await Asset.findByPk(input.id, {include: {all:true}});
+        if (!asset) {
+            asset = await Asset.findOne({
+                where: { oldId: input.id },
+                include: { all: true }
+            });
+            if (!asset) {
+                throw new Error(`Asset not found`);
+            }
+        }
+        if (!asset.canView(ctx.user)) {
+            throw new Error(`You are not allowed to view this asset`);
+        }
+        return await asset.getApiV3Response();
+    }),
+    getMultipleAssetsById: authProcedure(`any`)
+        .meta({
+            openapi: {
+                method: 'GET',
+                path: '/v3/multi/assets',
+                tags: ['Assets'],
+            }
+        })
+        .input(Validator.z.object({
+            id: Validator.zAssetIdArray
+        }))
+        .query(async ({input, ctx}) => {
+        const assets = await Asset.findAll({
+            where: {
+                id: input.id,
+                status: Asset.allowedToViewRoles(ctx.user)
+            },
+            include: { all: true }
+        });
+        let response: {[key:number]: AssetPublicAPIv3} = {};
+        for (let asset of assets) {
+            response[asset.id] = await asset.getApiV3Response();
+        }
+        return response;
+    })
+});
+
+/*
 export class GetAssetRoutesV3 {
     public static loadRoutes(router: Router): void {
         router.get(`/assets`, auth(`any`, true), (req, res) => {
@@ -112,3 +207,4 @@ export class GetAssetRoutesV3 {
         });
     }
 }
+*/

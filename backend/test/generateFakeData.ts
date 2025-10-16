@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 
 import { Alert, AlertType, Asset, AssetFileFormat, DatabaseManager, License, LinkedAssetLinkType, SponserUrl, SponsorType, Status, Tags, User, UserPermissions } from '../src/shared/Database.ts';
-import { faker } from '@faker-js/faker';
+import { de, faker } from '@faker-js/faker';
 import { EnvConfig } from '../src/shared/EnvConfig.ts';
 import { Op } from 'sequelize';
 
@@ -75,11 +75,24 @@ export async function generateFakeData() {
         }
 
         for (let count of faker.helpers.arrayElements([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], { min: 1, max: 10 })) {
+            let shouldIncludeAsset = -1;
+            let shouldIncludeRequest = -1;
+            switch (count % 3) {
+                case 0:
+                    shouldIncludeAsset = faker.number.int({ min: 0, max: 100 });
+                    break;
+                case 1:
+                    shouldIncludeRequest = faker.number.int({ min: 0, max: 100 });
+                    break;
+                default:
+                    break;
+            }
             await Alert.create({
                 header: `Test Alert ${count}`,
                 message: `This is a test alert message number ${count} for user ${user.username}.`,
                 userId: user.id,
-                assetId: null,
+                assetId: shouldIncludeAsset !== -1 ? shouldIncludeAsset : null,
+                requestId: shouldIncludeRequest !== -1 ? shouldIncludeRequest : null,
                 type: faker.helpers.arrayElement(Object.values(AlertType)),
                 read: faker.datatype.boolean(),
             });

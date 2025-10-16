@@ -1,6 +1,6 @@
 import { Column, CreatedAt, DataType, DeletedAt, Model, Table, UpdatedAt } from "sequelize-typescript";
 import { CreationOptional, InferAttributes, InferCreationAttributes } from "sequelize";
-import { AlertType, SponserUrl, UserPublicAPIv3, UserPermissions } from "../DBExtras.ts";
+import { AlertType, SponsorUrl, UserPublicAPIv3, UserPermissions } from "../DBExtras.ts";
 import { Alert } from "./Alert.ts";
 import { Logger } from "../../Logger.ts";
 import { Col } from "sequelize/lib/utils";
@@ -41,7 +41,7 @@ export class User extends Model<InferAttributes<User>, InferCreationAttributes<U
         allowNull: true,
         defaultValue: null,
     })
-    declare sponsorUrl: CreationOptional<SponserUrl[] | null>;
+    declare sponsorUrl: CreationOptional<SponsorUrl[] | null>;
     @Column({
         type: DataType.STRING,
         allowNull: false,

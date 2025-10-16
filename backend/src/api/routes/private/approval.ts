@@ -1,9 +1,29 @@
 import { Router } from "express";
 import { auth, validate } from "../../RequestUtils.ts";
-import { Asset, UserPermissions } from "../../../shared/Database.ts";
+import { Asset, Status, UserPermissions } from "../../../shared/Database.ts";
 import { Validator } from "../../../shared/Validator.ts";
 import { parseErrorMessage } from "../../../shared/Tools.ts";
+import { authProcedure, router } from "../../../api/trpc.ts";
 
+export const approvalRouter = router({
+    approveAsset: authProcedure([UserPermissions.Approve_Assets]).input(Validator.z.object({
+        id: Validator.z.number().int().positive(),
+        status: Validator.z.enum(Status),
+        reason: Validator.z.string().max(1000).optional()
+    })).mutation(async ({input, ctx}) => {
+        const asset = await Asset.findByPk(input.id);
+        if (!asset) {
+            throw new Error(`Asset not found`);
+        }
+        await asset.setStatus(input.status, input.reason ?? `No reason given.`, ctx.user.id).then(() => {
+            return asset.getApiV3Response();
+        }).catch(err => {
+            throw new Error(`Error updating asset status: ${parseErrorMessage(err)}`);
+        });
+    })
+});
+
+/*
 export class ApprovalRoutes {
     public static loadRoutes(router: Router): void {
         router.post(`/assets/:id/approval`, auth([UserPermissions.Approve_Assets]), async (req, res) => {
@@ -35,3 +55,4 @@ export class ApprovalRoutes {
         });
     }
 }
+*/

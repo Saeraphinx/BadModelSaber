@@ -5,20 +5,12 @@ import session, { SessionOptions } from 'express-session';
 import SequelizeStore from 'connect-session-sequelize'
 import cors from "cors";
 import { Logger, LogLevel } from "./shared/Logger.ts";
-import { AuthRoutes } from "./api/routes/public/all/auth.ts";
-import { GetAssetRoutesV3 } from "./api/routes/public/v3/getAsset.ts";
-import { ApprovalRoutes } from "./api/routes/private/approval.ts";
+import { AuthRoutes } from "./api/routes/public/auth.ts";
 import { UploadRoutesV3 } from "./api/routes/public/v3/upload.ts";
-import { AlertRoutes } from "./api/routes/private/alerts.ts";
-import { GetV2 } from "./api/routes/public/v2/get.ts";
-import { GetUserRoutesV3 } from "./api/routes/public/v3/getUser.ts";
-import { StatusRoutes } from "./api/routes/public/all/status.ts";
 import { FileRoutes } from "./api/routes/files/files.ts";
 import { Sequelize } from "sequelize";
-import { UpdateAssetRoutes } from "./api/routes/private/updateAsset.ts";
-import { UpdateUserRoutes } from "./api/routes/private/updateUser.ts";
-import { RequestRoutes } from "./api/routes/private/requests.ts";
 import { importFromOldModelSaber } from "./shared/Importer.ts";
+import { loadExpressMiddleware, loadOpenApiMiddleware } from "./api/trpc.ts";
 
 export async function init(overrideDbName: string = `public`) {
     console.log(`Initializing BadModelSaber...`);
@@ -41,8 +33,8 @@ export async function init(overrideDbName: string = `public`) {
         origin: EnvConfig.server.corsOrigin,
         credentials: EnvConfig.server.corsAllowCredentials,
     }))
-    app.use(express.json());
-    app.use(express.urlencoded({ extended: true }));
+    //app.use(express.json());
+    //app.use(express.urlencoded({ extended: false }));
     app.set(`trust proxy`, EnvConfig.server.trustProxy);
 
     // #region Session management
@@ -91,21 +83,12 @@ export async function init(overrideDbName: string = `public`) {
     const v3Router = express.Router();
 
     AuthRoutes.loadRoutes(apiRouter);
-    StatusRoutes.loadRoutes(apiRouter);
-    AlertRoutes.loadRoutes(apiRouter);
-    ApprovalRoutes.loadRoutes(apiRouter);
-    RequestRoutes.loadRoutes(apiRouter);
-    UpdateAssetRoutes.loadRoutes(apiRouter);
-    UpdateUserRoutes.loadRoutes(apiRouter);
-    GetV2.loadRoutes(v2Router);
     UploadRoutesV3.loadRoutes(v3Router); // must be before GetAssetRoutesV3
-    GetAssetRoutesV3.loadRoutes(v3Router);
-    GetUserRoutesV3.loadRoutes(v3Router);
 
-    apiRouter.use(`/v1`, v1Router);
-    apiRouter.use(`/v2`, v2Router);
+    apiRouter.use(`/trpc`, loadExpressMiddleware);
     apiRouter.use(`/v3`, v3Router);
     apiRouter.use(v3Router);
+    apiRouter.use(loadOpenApiMiddleware); // load all openapi routes
 
     FileRoutes.loadRoutes(fileRouter);
 

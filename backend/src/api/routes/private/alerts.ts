@@ -1,10 +1,60 @@
 import { Router } from "express";
-import { auth, validate } from "../../RequestUtils.ts";
 import { Alert, AlertInfer } from "../../../shared/Database.ts";
 import { Validator } from "../../../shared/Validator.ts";
 import { parseErrorMessage } from "../../../shared/Tools.ts";
 import { Logger } from "../../../shared/Logger.ts";
 import { WhereOptions } from "sequelize";
+import { authProcedure, router } from "../../../api/trpc.ts";
+
+export const alertsRouter = router({
+    getAlerts: authProcedure(`loggedIn`).input(Validator.z.object({ read: Validator.z.enum([`true`, `false`, `all`]).default(`false`) })).query(async ({input, ctx}) => {
+        let whereOptions: WhereOptions<AlertInfer> = {
+            userId: ctx.user.id,
+        };
+        if (input.read === `true`) {
+            whereOptions.read = true;
+        } else if (input.read === `false`) {
+            whereOptions.read = false;
+        }
+        const alerts = await Alert.findAll({
+            where: whereOptions,
+            order: [[`createdAt`, `DESC`]]
+        });
+        return alerts.map(a => a.toAPIResponse());
+    }),
+    markAlertRead: authProcedure(`loggedIn`).input(Validator.z.object({
+        id: Validator.z.number().int().positive()
+    })).mutation(async ({input, ctx}) => {
+        const alert = await Alert.findByPk(input.id);
+        if (!alert) {
+            throw new Error(`Alert not found`);
+        }
+        if (alert.userId !== ctx.user.id) {
+            throw new Error(`You are not allowed to read this alert`);
+        }
+        alert.read = true;
+        alert.discordMessageSent = true;
+        await alert.save();
+        Logger.debug(`Alert ${alert.id} marked as read for user ${ctx.user.id}`);
+        return alert.toAPIResponse();
+    }),
+    deleteAlert: authProcedure(`loggedIn`).input(Validator.z.object({
+        id: Validator.z.number().int().positive()
+    })).mutation(async ({input, ctx}) => {
+        const alert = await Alert.findByPk(input.id);
+        if (!alert) {
+            throw new Error(`Alert not found`);
+        }
+        if (alert.userId !== ctx.user.id) {
+            throw new Error(`You are not allowed to delete this alert`);
+        }
+        await alert.destroy();
+        Logger.debug(`Alert ${alert.id} deleted for user ${ctx.user.id}`);
+        return;
+    })
+});
+
+/*
 
 export class AlertRoutes {
     public static loadRoutes(router: Router): void {
@@ -98,3 +148,4 @@ export class AlertRoutes {
         });
     }
 }
+*/

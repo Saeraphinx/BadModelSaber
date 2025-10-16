@@ -1,12 +1,12 @@
 import { Router } from 'express';
 import passport from 'passport';
 import Strategy, { Strategy as DiscordStrategy } from 'passport-discord';
-import { Logger } from '../../../../shared/Logger.ts';
-import { Validator } from '../../../../shared/Validator.ts';
-import { createRandomString, parseErrorMessage } from '../../../../shared/Tools.ts';
-import { EnvConfig } from '../../../../shared/EnvConfig.ts';
-import { User } from '../../../../shared/Database.ts';
-import { validate } from '../../../RequestUtils.ts';
+import { Logger } from '../../../shared/Logger.ts';
+import { Validator } from '../../../shared/Validator.ts';
+import { createRandomString, parseErrorMessage } from '../../../shared/Tools.ts';
+import { EnvConfig } from '../../../shared/EnvConfig.ts';
+import { User } from '../../../shared/Database.ts';
+import { validate } from '../../RequestUtils.ts';
 
 export class AuthRoutes {
     private static validStates: { stateId: string, ip: string, redirectUrl: URL, userId: number | null }[] = [];

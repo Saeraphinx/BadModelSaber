@@ -1,11 +1,81 @@
 import { Router } from "express";
-import { auth, validate } from "../../../RequestUtils.ts";
 import { Validator } from "../../../../shared/Validator.ts";
 import { Asset, AssetInfer, User } from "../../../../shared/Database.ts";
 import { Op, WhereOptions } from "sequelize";
 import { parseErrorMessage } from "../../../../shared/Tools.ts";
-import { AssetPublicAPIv3 } from "../../../../shared/database/DBExtras.ts";
+import { AssetPublicAPIv3, userPublicAPIv3Schema } from "../../../../shared/database/DBExtras.ts";
+import { authProcedure, router } from "../../../../api/trpc.ts";
 
+export const userRouterV3 = router({
+    getMe: authProcedure(`loggedIn`)
+        .meta({
+            openapi: {
+                method: 'GET',
+                path: '/v3/users/me',
+                tags: ['Users'],
+            }
+        })
+        .output(userPublicAPIv3Schema)
+        .query(async ({ctx}) => {
+        return ctx.user.getApiResponse();
+    }),
+    getUserById: authProcedure(`any`).input(Validator.z.object({
+        id: Validator.zUserID
+    })).query(async ({input, ctx}) => {
+        let userId = input.id;
+        if (userId === `me`) {
+            if (!ctx.userId) {
+                throw new Error(`You are not logged in`);
+            } else {
+                userId = ctx.userId;
+            }
+        }
+        const user = await User.findByPk(userId);
+        if (!user) {
+            throw new Error(`User not found`);
+        }
+        return user.getApiResponse();
+    }),
+    getAssetsByUserId: authProcedure(`any`).input(Validator.z.object({
+        id: Validator.zUserID,
+        ...Validator.zFilterAssetv3.shape
+    })).query(async ({input, ctx}) => {
+        let userId = input.id;
+        if (userId === `me`) {
+            if (!ctx.userId) {
+                throw new Error(`You are not logged in`);
+            } else {
+                userId = ctx.userId;
+            }
+        }
+        const user = await User.findByPk(userId);
+        if (!user) {
+            throw new Error(`User not found`);
+        }
+        let whereOptions: WhereOptions<AssetInfer> = {
+            status: Asset.allowedToViewRoles(ctx.user),
+            [Op.or]: [
+                { uploaderId: user.id },
+                {
+                    collaborators: {
+                        [Op.contains]: [user.id]
+                    },
+                }
+            ]
+        };
+        const assets = await Asset.findAll({
+            where: whereOptions,
+            limit: input.limit ?? undefined,
+            offset: input.page && input.limit ? ((input.page - 1) * input.limit) : undefined,
+            order: [["createdAt", "DESC"]],
+            include: { all: true }
+        });
+        let response = await Promise.all(assets.map(asset => asset.getApiV3Response()));
+        return { assets: response, total: assets.length, page: input.page ?? null};
+    })
+});
+
+/*
 export class GetUserRoutesV3 {
     public static loadRoutes(router: Router): void {
         router.get(`/users/:id`, auth(`any`, true), (req, res) => {
@@ -82,3 +152,4 @@ export class GetUserRoutesV3 {
         });
     }
 }
+    */
