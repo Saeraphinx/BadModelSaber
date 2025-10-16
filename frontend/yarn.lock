@@ -511,6 +511,16 @@
     "@tailwindcss/oxide" "4.1.8"
     tailwindcss "4.1.8"
 
+"@trpc/client@^11.6.0":
+  version "11.6.0"
+  resolved "https://registry.yarnpkg.com/@trpc/client/-/client-11.6.0.tgz#e3015a905870c94045a391e6c02ce956ed8e8030"
+  integrity sha512-DyWbYk2hd50BaVrXWVkaUnaSwgAF5g/lfBkXtkF1Aqlk6BtSzGUo3owPkgqQO2I5LwWy1+ra9TsSfBBvIZpTwg==
+
+"@trpc/server@^11.6.0":
+  version "11.6.0"
+  resolved "https://registry.yarnpkg.com/@trpc/server/-/server-11.6.0.tgz#beafa9d366031cfcb2e338120c8276141df5135a"
+  integrity sha512-skTso0AWbOZck40jwNeYv++AMZXNWLUWdyk+pB5iVaYmEKTuEeMoPrEudR12VafbEU6tZa8HK3QhBfTYYHDCdg==
+
 "@tybys/wasm-util@^0.9.0":
   version "0.9.0"
   resolved "https://registry.yarnpkg.com/@tybys/wasm-util/-/wasm-util-0.9.0.tgz#3e75eb00604c8d6db470bf18c37b7d984a0e3355"
