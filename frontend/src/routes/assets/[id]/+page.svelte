@@ -6,12 +6,29 @@
   import * as Carousel from "$shadcn/components/ui/carousel/index.js";
   import Separator from "$shadcn/components/ui/separator/separator.svelte";
   import { type CarouselAPI } from "$shadcn/components/ui/carousel/context.js";
-  import { BadgeAlert, Car, ChevronLeftIcon, ChevronRightIcon, CircleDot, CircleIcon, ClipboardCopyIcon, CloudDownloadIcon, DotIcon, DownloadIcon, Edit, HamburgerIcon, MegaphoneIcon, MenuIcon, PlusIcon, SquarePenIcon } from "@lucide/svelte";
+  import {
+    BadgeAlert,
+    Car,
+    ChevronLeftIcon,
+    ChevronRightIcon,
+    CircleDot,
+    CircleIcon,
+    ClipboardCopyIcon,
+    CloudDownloadIcon,
+    DotIcon,
+    DownloadIcon,
+    Edit,
+    HamburgerIcon,
+    MegaphoneIcon,
+    MenuIcon,
+    PlusIcon,
+    SquarePenIcon,
+  } from "@lucide/svelte";
   import { MediaQuery } from "svelte/reactivity";
   import { navigating, page } from "$app/state";
   import Skeleton from "$shadcn/components/ui/skeleton/skeleton.svelte";
   import CarouselNavigator from "$lib/components/generic/CarouselNavigator.svelte";
-  import { fetchApiSafe, getAssetThumbnailUrl, getAssetUrl } from "$lib/scripts/utils/api.js";
+  import { getAssetThumbnailUrl, getAssetUrl, trpc } from "$lib/scripts/utils/api.js";
   import ApprovalPopup from "$lib/components/assets/ApprovalDialog.svelte";
   import { onMount } from "svelte";
   import { toast } from "svelte-sonner";
@@ -24,6 +41,7 @@
   import { fromZodError } from "zod-validation-error";
   import { cn } from "$shadcn/utils";
   import LinkAssetDialog from "$lib/components/assets/LinkAssetDialog.svelte";
+  import { invalidateAll } from "$app/navigation";
 
   let { data } = $props();
   const typeData = $derived.by(() => getAssetTypeData(data.pageData.type));
@@ -73,17 +91,15 @@
       return;
     }
 
-    fetchApiSafe(`/assets/${data.pageData.id}`, {
-      method: "PUT",
-      body: JSON.stringify({
-        name: editName,
-        description: editDescription,
-        tags: editTags,
-      }),
-    }, data.fetch).then((res) => {
-      if (res.isError) {
-        toast.error(`Failed to save changes: ${res.message}`);
-      } else {
+    trpc.UpdateAssetRouter.updateAsset.mutate({
+        assetId: data.pageData.id,
+        data: {
+          name: editName,
+          description: editDescription,
+          tags: editTags,
+        },
+      })
+      .then((res) => {
         toast.success("Changes saved successfully!", {
           description: "Reload the page to see the changes.",
           duration: 100 * 60 * 60 * 24, // 24 hours
@@ -91,16 +107,16 @@
           action: {
             label: "Reload",
             onClick: () => {
-              window.location.reload();
+              invalidateAll();
             },
-          }
+          },
         });
         isEditing = false;
-      }
-    }).catch((err) => {
-      console.error("Error saving changes:", err);
-      toast.error(`Error saving changes: ${err.message}`);
-    });
+      })
+      .catch((err) => {
+        console.error("Error saving changes:", err);
+        toast.error(`Error saving changes: ${err.message}`);
+      });
   }
   // #endregion
 
@@ -112,28 +128,22 @@
 
   onMount(async () => {
     if (data.pageData.linkedIds.length > 0) {
-      fetchApiSafe<{ [key: string]: AssetPublicAPIv3 }>(`/multi/assets?id=${data.pageData.linkedIds.slice(0, 20).join("&id=")}`, {}, data.fetch).then((res) => {
-        if (res.isError) {
-          toast.error(`Failed to load related assets: ${res.message}`);
-          isRelatedLoading = false;
-          return;
-        } else {
-          relatedAssets = res.data ? Object.values(res.data) : [];
-          isRelatedLoading = false;
-        }
+      trpc.assetsRouterV3.getMultipleAssetsById.query({ id: data.pageData.linkedIds.splice(0,20)}).then((res) => {
+        relatedAssets = res ? Object.values(res) : [];
+        isRelatedLoading = false;
+      }).catch((err) => {
+        toast.error(`Failed to load related assets: ${err.message}`);
+        isRelatedLoading = false;
       });
     } else {
       isRelatedLoading = false;
     }
-    fetchApiSafe<{ assets: AssetPublicAPIv3[] }>(`/users/${data.pageData.uploaderId}/assets?limit=10`, {}, data.fetch).then((res) => {
-      if (res.isError) {
-        toast.error(`Failed to load author's assets: ${res.message}`);
+    trpc.userRouterV3.getAssetsByUserId.query({ id: data.pageData.uploaderId, limit: 20}).then((res) => {
+        authorAssets = res.assets.filter((i) => i.id !== data.pageData.id) || [];
         isAuthorLoading = false;
-        return;
-      } else {
-        authorAssets = res.data?.assets.filter((i) => i.id !== data.pageData.id) || [];
-        isAuthorLoading = false;
-      }
+    }).catch((err) => {
+      toast.error(`Failed to load author's other assets: ${err.message}`);
+      isAuthorLoading = false;
     });
   });
 
@@ -230,23 +240,23 @@
       {@render dT_Regular("Uploaded", new Date(data.pageData.createdAt).toLocaleString())}
       {@render dT_Regular("Last Updated", new Date(data.pageData.updatedAt).toLocaleString())}
       <div class="flex justify-between items-center overflow-ellipsis">
-          <span class="text-muted-foreground">File Hash</span>
-          <div class="flex flex-row items-center gap-2 justify-end max-w-[70%]">
-            <div class="block overflow-ellipsis overflow-hidden whitespace-nowrap max-w-[100%]">
-              <span class="font-mono w-full" title={data.pageData.fileHash}>{data.pageData.fileHash}</span>
-            </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              title="Copy File Hash"
-              onclick={() => {
-                navigator.clipboard.writeText(data.pageData.fileHash);
-                toast.success("File hash copied to clipboard!");
-              }}>
-              <ClipboardCopyIcon />
-            </Button>
+        <span class="text-muted-foreground">File Hash</span>
+        <div class="flex flex-row items-center gap-2 justify-end max-w-[70%]">
+          <div class="block overflow-ellipsis overflow-hidden whitespace-nowrap max-w-[100%]">
+            <span class="font-mono w-full" title={data.pageData.fileHash}>{data.pageData.fileHash}</span>
           </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            title="Copy File Hash"
+            onclick={() => {
+              navigator.clipboard.writeText(data.pageData.fileHash);
+              toast.success("File hash copied to clipboard!");
+            }}>
+            <ClipboardCopyIcon />
+          </Button>
         </div>
+      </div>
     </div>
   </div>
 {/snippet}
@@ -267,7 +277,7 @@
             {#if isBlurred}
               <div class="flex flex-col absolute top-0 left-0 w-full h-full justify-center items-center">
                 <p class="text-green">This asset has the NSFW tag.</p>
-                <Button onclick={() => isBlurred = false}>Unhide</Button>
+                <Button onclick={() => (isBlurred = false)}>Unhide</Button>
               </div>
             {/if}
           </div>
@@ -362,13 +372,13 @@
     {/if}
     {#if allowedToEdit}
       {#if isEditing}
-        <Button 
-          variant="default" 
+        <Button
+          variant="default"
           disabled={!isPendingSave || !zAssetName.success || !zAssetDescription.success}
           onclick={() => {
             saveChanges();
           }}>
-        Submit Changes</Button>
+          Submit Changes</Button>
         <Button
           variant="secondary"
           onclick={() => {

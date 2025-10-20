@@ -7,7 +7,6 @@
   import { Textarea } from "$shadcn/components/ui/textarea";
   import { Button } from "$shadcn/components/ui/button";
   import Checkbox from "$shadcn/components/ui/checkbox/checkbox.svelte";
-  import { fetchApi, fetchApiSafe } from "$lib/scripts/utils/api";
   import { toast } from "svelte-sonner";
 
   // #region Alert

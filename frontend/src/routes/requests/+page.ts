@@ -1,6 +1,5 @@
 import { type AssetRequestPublicAPIv3, type AssetFileFormat, RequestType } from "$lib/scripts/api/DBTypes";
 import { error } from "@sveltejs/kit";
-import { fetchApi, fetchApiSafe } from "$lib/scripts/utils/api";
 import type { PageLoad } from "./$types.js";
 
 export const load: PageLoad = async ({ parent }) => {

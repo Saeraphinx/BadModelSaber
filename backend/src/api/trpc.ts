@@ -8,6 +8,9 @@ import { UpdateAssetRouter } from './routes/private/updateAsset.ts';
 import { userRouterV3 } from './routes/public/v3/getUser.ts';
 import { assetsRouterV3 } from './routes/public/v3/getAsset.ts';
 import { createOpenApiExpressMiddleware, createOpenApiHttpHandler, generateOpenApiDocument, OpenApiMeta } from 'trpc-to-openapi';
+import { authRouter } from './routes/private/auth.ts';
+import { konamiRouter } from './routes/private/updateUser.ts';
+import SuperJSON from 'superjson';
 
 // eslint-disable-next-line quotes
 declare module 'express-session' {
@@ -28,13 +31,16 @@ async function createContext(opts: CreateExpressContextOptions) {
 
     return {
         req: opts.req,
+        res: opts.res,
         userId: userId,
     };
 }
 
 export type Context = Awaited<ReturnType<typeof createContext>>;
 
-const t = initTRPC.context<Context>().meta<OpenApiMeta>().create();
+const t = initTRPC.context<Context>().meta<OpenApiMeta>().create({
+    transformer: SuperJSON,
+});
 export const router = t.router;
 
 //dummy no auth procedure
@@ -122,7 +128,9 @@ const appRouter = router({
     RequestRouter,
     UpdateAssetRouter,
     userRouterV3,
+    konamiRouter,
     assetsRouterV3,
+    authRouter,
 });
 
 export type AppRouter = typeof appRouter;

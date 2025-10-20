@@ -1,7 +1,7 @@
 <script lang="ts">
   import RequestCard from "$lib/components/requests/RequestCard.svelte";
   import { type AssetRequestPublicAPIv3 } from "$lib/scripts/api/DBTypes.js";
-  import { fetchApi } from "$lib/scripts/utils/api.js";
+  import { trpc } from "$lib/scripts/utils/api.js";
   import Badge from "$shadcn/components/ui/badge/badge.svelte";
   import * as Tabs from "$shadcn/components/ui/tabs/index.js";
   import { onMount } from "svelte";
@@ -13,15 +13,11 @@
   let reports: AssetRequestPublicAPIv3[] | null = $state([]);
 
   onMount(() => {
-    fetchApi<{
-      incoming: AssetRequestPublicAPIv3[];
-      outgoing: AssetRequestPublicAPIv3[];
-      reports: AssetRequestPublicAPIv3[] | null;
-    }>(`/requests`, {}, fetch)
+    trpc.RequestRouter.request.query({})
       .then((res) => {
-        incomingRequests = res.data.incoming || [];
-        outgoingRequests = res.data.outgoing || [];
-        reports = res.data.reports || null;
+        incomingRequests = res.incoming || [];
+        outgoingRequests = res.outgoing || [];
+        reports = res.reports || null;
       })
       .catch((err) => {
         console.error("Failed to fetch requests:", err);

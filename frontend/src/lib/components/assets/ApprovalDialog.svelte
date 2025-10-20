@@ -1,6 +1,7 @@
 <script lang="ts">
+  import { invalidateAll } from "$app/navigation";
   import { Status } from "$lib/scripts/api/DBTypes";
-  import { fetchApiSafe } from "$lib/scripts/utils/api";
+  import { trpc } from "$lib/scripts/utils/api";
   import { Button, buttonVariants } from "$shadcn/components/ui/button/index.js";
   import * as Dialog from "$shadcn/components/ui/dialog/index.js";
   import { Input } from "$shadcn/components/ui/input/index.js";
@@ -28,34 +29,22 @@
 
   function handleSubmit() {
     console.log(`Updating asset ${id} (${name}) to status ${selectedStatus} with reason: ${reason}`);
-    let res = fetchApiSafe(`/approvals/assets/${id}`, {
-      method: 'POST',
-      credentials: 'include',
-      body: JSON.stringify({
+    let res = trpc.approvalRouter.approveAsset.mutate({
+        id: id,
         status: selectedStatus,
         reason: reason,
-      }),
-    }).then((res) => {
-      if (!res.isError) {
+      }).then((res) => {
         console.log(`Successfully updated asset ${id} (${name}) to status ${selectedStatus}`);
         toast.success(`Successfully updated asset ${name} to ${selectedStatus}`, {
           description: "The asset status has been updated successfully. Reload the page to see changes.",
           dismissable: false,
           action: {
             label: "Reload",
-            onClick: () => window.location.reload(),
+            onClick: () => invalidateAll(),
           },
         });
         visible = false;
-      } else {
-        console.error(`Failed to update asset ${id} (${name}):`, res.message);
-        toast.error(`Failed to update asset ${name}`, {
-          description: res.message || "An error occurred while updating the asset status.",
-          dismissable: true,
-          duration: 30000
-        });
-      }
-    }).catch((err) => {
+      }).catch((err) => {
       console.error(`Error updating asset ${id} (${name}):`, err);
       toast.error(`Error updating asset ${name}`, {
         description: "An unexpected error occurred while updating the asset status.",

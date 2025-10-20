@@ -18,9 +18,9 @@
   import { generateAssetSearchEngine } from "$lib/scripts/utils/search.js";
   import { getContext, onMount } from "svelte";
   import ApprovalPopup from "$lib/components/assets/ApprovalDialog.svelte";
-  import { fetchApiSafe } from "$lib/scripts/utils/api.js";
   import { toast } from "svelte-sonner";
   import { capitalizeFirstLetter, getAssetTypeString } from "$lib/scripts/utils/stylizer.js";
+  import { trpc } from "$lib/scripts/utils/api.js";
 
   let { data } = $props();
   // Generic Page Data
@@ -82,12 +82,9 @@
   // Asset Fetch
   async function fetchAssets() {
     assetsLoading = true;
-    let assets = await fetchApiSafe<{ assets: AssetPublicAPIv3[] }>(`/assets`, {}, data.fetch)
+    let assets = await trpc.assetsRouterV3.getAssets.query({})
       .then((response) => {
-        if (response.isError) {
-          return;
-        }
-        return response.data.assets;
+        return response.assets;
       })
       .catch((error) => {
         console.error("Error fetching assets:", error);

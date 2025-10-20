@@ -5,7 +5,7 @@ import session, { SessionOptions } from 'express-session';
 import SequelizeStore from 'connect-session-sequelize'
 import cors from "cors";
 import { Logger, LogLevel } from "./shared/Logger.ts";
-import { AuthRoutes } from "./api/routes/public/auth.ts";
+import { AuthRoutes } from "./api/routes/private/auth.ts";
 import { UploadRoutesV3 } from "./api/routes/public/v3/upload.ts";
 import { FileRoutes } from "./api/routes/files/files.ts";
 import { Sequelize } from "sequelize";

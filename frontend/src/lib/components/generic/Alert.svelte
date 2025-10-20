@@ -1,6 +1,6 @@
 <script lang="ts">
   import { AlertType, type AlertPublicAPIv3 } from '$lib/scripts/api/DBTypes';
-  import { fetchApi } from '$lib/scripts/utils/api';
+  import { trpc } from '$lib/scripts/utils/api';
   import Button from '$shadcn/components/ui/button/button.svelte';
   import { cn } from '$shadcn/utils';
   import { ExternalLinkIcon } from '@lucide/svelte';
@@ -36,9 +36,7 @@
 
   function markRead() {
     isVisible = false;
-    fetchApi(`/alerts/${alert.id}/read`, {
-      method: 'POST',
-    }).catch((error) => {
+    trpc.alertsRouter.markAlertRead.mutate({ id: alert.id }).catch((error) => {
       console.error('Failed to mark alert as read:', error);
       toast.error('Failed to mark alert as read.', {
         description: error.message,
@@ -48,9 +46,7 @@
 
   function deleteAlert() {
     isVisible = false;
-    fetchApi(`/alerts/${alert.id}`, {
-      method: 'DELETE',
-    }).catch((error) => {
+     trpc.alertsRouter.deleteAlert.mutate({ id: alert.id }).catch((error) => {
       console.error('Failed to delete alert:', error);
       toast.error('Failed to delete alert.', {
         description: error.message,

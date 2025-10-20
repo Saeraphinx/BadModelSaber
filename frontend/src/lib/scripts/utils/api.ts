@@ -14,11 +14,13 @@ export function getAssetThumbnailUrl(fileName: string): string {
 
 import { createTRPCClient, httpBatchLink } from '@trpc/client';
 import type { AppRouter } from '../../../../../backend/src/api/trpc';
+import SuperJSON from "superjson";
 
 export const trpc = createTRPCClient<AppRouter>({
   links: [
     httpBatchLink({
       url: `${env.PUBLIC_API_URL}/trpc`,
+      transformer: SuperJSON,
       // You can pass any HTTP headers you wish here
       /*async headers() {
         return {

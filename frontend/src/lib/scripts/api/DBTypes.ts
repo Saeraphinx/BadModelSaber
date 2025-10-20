@@ -1,96 +1,9 @@
+import z from "zod/v4";
+
 export enum SponsorType {
     GitHub = "github",
     KoFi = "ko-fi",
     Patreon = "patreon",
-}
-
-export type SponserUrl = {
-    platform: SponsorType;
-    url: string;
-}
-
-export type UserPublicAPIv3 = {
-    id: string;
-    username: string;
-    displayName: string;
-    bio: string | null;
-    sponsorUrl: SponserUrl[] | null;
-    avatarUrl: string;
-    roles: UserPermissions[];
-}
-
-export type AlertPublicAPIv3 = {
-    id: number;
-    type: AlertType;
-    assetId: number | null;
-    requestId: number | null;
-    header: string;
-    message: string;
-    read: boolean;
-    createdAt: Date;
-    updatedAt: Date;
-};
-
-export type AssetRequestPublicAPIv3 = {
-    id: number;
-    refrencedAssetId: number;
-    refrencedAsset: AssetPublicAPIv3 | null;
-    requesterId: string;
-    requester: UserPublicAPIv3 | null;
-    requestResponseBy: string | null;
-    requestType: RequestType;
-    accepted: boolean | null;
-    messages: RequestMessage[];
-    resolvedBy: string | null;
-    createdAt: Date;
-    updatedAt: Date;
-}
-
-export type AssetPublicAPIv2 = {
-    tags: string[];
-    type: string;
-    name: string;
-    author: string;
-    thumbnail: string;
-    id: number
-    hash: string;
-    bsaber: string; // empty if not available
-    status: string;
-    discordid: string; // "-1" if not available
-    discord: string; // username
-    variationid: number | null; // null if not a variation
-    platform: `pc`,
-    download: string; // download URL
-    install_link: string; // install link URL - "modelsaber://${type}/${id}/${filename}.${fileFormat}"
-    date: string; // date in 2018-12-29 06:35:39 UTC format
-}
-
-export type AssetPublicAPIv1 = Pick<AssetPublicAPIv2, `tags` | `type` | `name` | `author` | `hash` | `bsaber` | `download` | `install_link` | `date`> & {
-    image: string; // thumbnail full URL
-}
-
-
-export type AssetPublicAPIv3 = {
-    id: number;
-    oldId: number | null;
-    linkedIds: LinkedAsset[]; // Array of linked asset IDs
-    type: AssetFileFormat;
-    uploaderId: string; // User ID of the uploader
-    uploader: UserPublicAPIv3 | null;
-    icons: string[]; // Array of icon names
-    name: string;
-    description: string;
-    license: string; // e.g. CC-BY, CC0, etc. or 'custom'
-    licenseUrl: string | null;
-    sourceUrl: string | null;
-    fileHash: string;
-    fileSize: number;
-    status: Status;
-    statusHistory: StatusHistory[];
-    collaborators: string[];
-    tags: string[];
-    createdAt: Date;
-    updatedAt: Date;
 }
 
 // #region Asset Enums
@@ -138,18 +51,6 @@ export enum License {
     CC40_BY_NC_SA = "cc4.0-by-nc-sa",
     CC40_BY_NC_ND = "cc4.0-by-nc-nd",
     Custom = "custom"
-}
-
-export type StatusHistory = {
-    status: Status;
-    reason: string;
-    timestamp: Date;
-    userId: string; // User ID of the person who changed the status
-};
-
-export interface LinkedAsset {
-    id: number;
-    linkType: LinkedAssetLinkType;
 }
 
 export enum LinkedAssetLinkType {
@@ -218,7 +119,7 @@ export enum UserPermissions {
 
     Manage_NonMod_Users = "manage_nonmod_users", // User can manage non-admin users (e.g. ban users)
     Manage_All_Users = "manage_all_users", // User can manage admin users w/o restrictions
-    Create_Assets = "create_assets", // User can upload/create asset
+    Create_Assets = "create_assets", // User can upload/create assets
 
 
     // cosmetic roles for badges only
@@ -245,8 +146,143 @@ export enum RequestType {
 }
 // #endregion Alert Enums
 
-export interface RequestMessage {
-    userId: string; // User ID of the person who sent the message
-    message: string; // The message content
-    timestamp: Date; // Timestamp of when the message was sent
-}
+// #region Zod Schemas
+export const sponsorTypeSchema = z.enum(SponsorType)
+export type SponsorUrl = z.infer<typeof sponsorUrlSchema>;
+export const sponsorUrlSchema = z.object({
+  platform: sponsorTypeSchema,
+  url: z.string()
+})
+
+export type AssetPublicAPIv2 = z.infer<typeof assetPublicAPIv2Schema>;
+export const assetPublicAPIv2Schema = z.object({
+  tags: z.array(z.string()),
+  type: z.string(),
+  name: z.string(),
+  author: z.string(),
+  thumbnail: z.string(),
+  id: z.number(),
+  hash: z.string(),
+  bsaber: z.string(),
+  status: z.string(),
+  discordid: z.string(),
+  discord: z.string(),
+  variationid: z.number().nullable(),
+  platform: z.string(),
+  download: z.string(),
+  install_link: z.string(),
+  date: z.string()
+})
+
+export type AssetPublicAPIv1 = z.infer<typeof assetPublicAPIv1Schema>;
+export const assetPublicAPIv1Schema = assetPublicAPIv2Schema.pick({
+    tags: true,
+    type: true,
+    name: true,
+    author: true,
+    hash: true,
+    bsaber: true,
+    download: true,
+    install_link: true,
+    date: true
+}).extend({
+    image: z.string()
+});
+
+// #region Asset Enums
+export const assetFileFormatSchema = z.enum(AssetFileFormat)
+export const statusSchema = z.enum(Status)
+export const licenseSchema = z.enum(License)
+export type StatusHistory = z.infer<typeof statusHistorySchema>;
+export const statusHistorySchema = z.object({
+  status: statusSchema,
+  reason: z.string(),
+  timestamp: z.date(),
+  userId: z.string()
+})
+export const linkedAssetLinkTypeSchema = z.enum(LinkedAssetLinkType)
+export const tagsSchema = z.enum(Tags)
+
+// #endregion Asset Enums
+// #region Alert & Reqeust & User Enums
+export const userPermissionsSchema = z.enum(UserPermissions)
+export const alertTypeSchema = z.enum(AlertType)
+export const requestTypeSchema = z.enum(RequestType)
+
+// #endregion Alert Enums
+export type RequestMessage = z.infer<typeof requestMessageSchema>;
+export const requestMessageSchema = z.object({
+  userId: z.string(),
+  message: z.string(),
+  timestamp: z.date()
+})
+
+export type UserPublicAPIv3 = z.infer<typeof userPublicAPIv3Schema>;
+export const userPublicAPIv3Schema = z.object({
+  id: z.string(),
+  username: z.string(),
+  displayName: z.string(),
+  bio: z.string().nullable(),
+  sponsorUrl: z.array(sponsorUrlSchema).nullable(),
+  avatarUrl: z.string(),
+  roles: z.array(userPermissionsSchema)
+})
+
+export type AlertPublicAPIv3 = z.infer<typeof alertPublicAPIv3Schema>;
+export const alertPublicAPIv3Schema = z.object({
+  id: z.number(),
+  type: alertTypeSchema,
+  assetId: z.number().nullable(),
+  requestId: z.number().nullable(),
+  header: z.string(),
+  message: z.string(),
+  read: z.boolean(),
+  createdAt: z.date(),
+  updatedAt: z.date()
+})
+
+export type LinkedAsset = z.infer<typeof linkedAssetSchema>;
+export const linkedAssetSchema = z.object({
+  id: z.number(),
+  linkType: linkedAssetLinkTypeSchema
+})
+
+export type AssetPublicAPIv3 = z.infer<typeof assetPublicAPIv3Schema>;
+export const assetPublicAPIv3Schema = z.object({
+  id: z.number(),
+  oldId: z.number().nullable(),
+  linkedIds: z.array(linkedAssetSchema),
+  type: assetFileFormatSchema,
+  uploaderId: z.string(),
+  uploader: userPublicAPIv3Schema.nullable(),
+  icons: z.array(z.string()),
+  name: z.string(),
+  description: z.string(),
+  license: z.string(),
+  licenseUrl: z.string().nullable(),
+  sourceUrl: z.string().nullable(),
+  fileHash: z.string(),
+  fileSize: z.number(),
+  status: statusSchema,
+  statusHistory: z.array(statusHistorySchema),
+  collaborators: z.array(z.string()),
+  tags: z.array(z.string()),
+  createdAt: z.date(),
+  updatedAt: z.date()
+})
+
+export type AssetRequestPublicAPIv3 = z.infer<typeof assetRequestPublicAPIv3Schema>;
+export const assetRequestPublicAPIv3Schema = z.object({
+  id: z.number(),
+  refrencedAssetId: z.number(),
+  refrencedAsset: assetPublicAPIv3Schema.nullable(),
+  requesterId: z.string(),
+  requester: userPublicAPIv3Schema.nullable(),
+  requestResponseBy: z.string().nullable(),
+  requestType: requestTypeSchema,
+  accepted: z.boolean().nullable(),
+  messages: z.array(requestMessageSchema),
+  resolvedBy: z.string().nullable(),
+  createdAt: z.date(),
+  updatedAt: z.date()
+})

@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { Alert, AlertInfer } from "../../../shared/Database.ts";
+import { Alert, AlertInfer, alertPublicAPIv3Schema } from "../../../shared/Database.ts";
 import { Validator } from "../../../shared/Validator.ts";
 import { parseErrorMessage } from "../../../shared/Tools.ts";
 import { Logger } from "../../../shared/Logger.ts";
@@ -7,7 +7,12 @@ import { WhereOptions } from "sequelize";
 import { authProcedure, router } from "../../../api/trpc.ts";
 
 export const alertsRouter = router({
-    getAlerts: authProcedure(`loggedIn`).input(Validator.z.object({ read: Validator.z.enum([`true`, `false`, `all`]).default(`false`) })).query(async ({input, ctx}) => {
+    getAlerts: authProcedure(`loggedIn`)
+        .input(Validator.z.object({ 
+            read: Validator.z.enum([`true`, `false`, `all`]).default(`false`) }
+        ))
+        .output(Validator.z.array(alertPublicAPIv3Schema))
+        .query(async ({input, ctx}) => {
         let whereOptions: WhereOptions<AlertInfer> = {
             userId: ctx.user.id,
         };

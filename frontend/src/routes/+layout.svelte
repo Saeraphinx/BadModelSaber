@@ -22,8 +22,10 @@
   import { Switch } from "$shadcn/components/ui/switch";
   import { Label } from "$shadcn/components/ui/label";
   import ScrollArea from "$shadcn/components/ui/scroll-area/scroll-area.svelte";
-  import { fetchApiSafe, getApiUrl } from "$lib/scripts/utils/api";
+  import { trpc } from "$lib/scripts/utils/api";
   import { invalidate, invalidateAll } from "$app/navigation";
+  import { getCallSites } from "util";
+  import { redirect } from "@sveltejs/kit";
 
   let { data, children } = $props();
   let theme: `system` | `light` | `dark` = $state("system");
@@ -74,9 +76,7 @@
           action: {
             label: "Enable",
             onClick: () => {
-              fetchApiSafe("/konami/add", {
-                method: "POST",
-              })
+              trpc.konamiRouter.konami.mutate(`add`)
                 .then(() => {
                   toast.success("Secret features enabled!", {
                     description: "You can now access hidden content and features on ModelSaber. Use responsibly!",
@@ -105,9 +105,7 @@
   });
 
   function removeSecret() {
-    fetchApiSafe("/konami/remove", {
-      method: "POST",
-    })
+    trpc.konamiRouter.konami.mutate(`remove`)
       .then(() => {
         toast.info("Secret features disabled!", {
           description: "Access to hidden content and features has been revoked.",
@@ -153,16 +151,8 @@
   let openAlerts = $state(false);
   let showRead = $state(false);
   async function updateAlerts() { // this is honestly a fucking mess but its what works for now
-    const response = await fetchApiSafe<AlertPublicAPIv3[]>(`/alerts?read=${showRead}`, {
-      method: "GET",
-    }, data.fetch).then((res) => {
-      if (res.isError) {
-        toast.error("Failed to fetch read alerts.", {
-          description: res.message,
-        });
-        return [];
-      }
-      allAlerts = res.data;
+    trpc.alertsRouter.getAlerts.query({read: showRead ? `true` : `false`}).then((val) => {
+      allAlerts = val;
     }).catch((error) => {
       toast.error("Failed to fetch read alerts.", {
         description: error.message,
@@ -324,16 +314,26 @@
               <DropdownMenu.RadioItem closeOnSelect={false} value="light">Light</DropdownMenu.RadioItem>
             </DropdownMenu.RadioGroup>
             <DropdownMenu.Separator />
-            <a href={getApiUrl(`/auth/logout?redirect=${encodeURIComponent(page.url.href)}`)}>
+            <Button variant="link" onclick={() => {
+              trpc.authRouter.logout.mutate({}).then(() => {
+                invalidateAll();
+              });
+            }}>
               <DropdownMenu.Item>
                 <LogOutIcon class="text-red-400" />
                 Logout
               </DropdownMenu.Item>
-            </a>
+            </Button>
           </DropdownMenu.Content>
         </DropdownMenu.Root>
       {:else}
-        <Button variant="outline" class="text-base" href={getApiUrl(`/auth/discord?redirect=${encodeURIComponent(page.url.href)}`)}>
+        <Button variant="outline" class="text-base" onclick={() => {
+          trpc.authRouter.discordAuthInit.query({
+            redirect: `${env.PUBLIC_BASE_URL}${page.url.pathname}`,
+          }).then((url) => {
+            redirect(307, url.url);
+          });
+        }}>
           <LogIn />
           Login
         </Button>
