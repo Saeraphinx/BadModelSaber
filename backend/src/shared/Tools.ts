@@ -61,6 +61,6 @@ export function capitalizeWords(sentence: string): string {
   return capitalizedWords.join(' ');
 }
 
-export function dedupeArray(arr: any[]): any[] {
+export function dedupeArray(arr: any[]): typeof arr {
     return Array.from(new Set(arr));
 }

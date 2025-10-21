@@ -32,6 +32,6 @@ export const load = (async ({ fetch, params, parent }) => {
       title: `${userData.displayName || `Error`} - ModelSaber`,
       description: userData.bio,
     },
-    pageData: {userData, assets: assets || []},
+    pageData: {user: userData, assets: assets || []},
   };
 }) satisfies PageLoad;

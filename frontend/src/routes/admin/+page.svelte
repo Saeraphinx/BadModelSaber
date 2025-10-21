@@ -6,7 +6,7 @@
   import Input from "$shadcn/components/ui/input/input.svelte";
   import { Textarea } from "$shadcn/components/ui/textarea";
   import { Button } from "$shadcn/components/ui/button";
-  import Checkbox from "$shadcn/components/ui/checkbox/checkbox.svelte";
+  import { Checkbox } from "$shadcn/components/ui/checkbox";
   import { toast } from "svelte-sonner";
   import { trpc } from "$lib/scripts/utils/api";
 
@@ -38,12 +38,38 @@
   let roleUserId = $state("");
   let rolePermissions = $state<UserPermissions[]>([]);
   let hasBeenLoaded = $state(false);
+  function clearRoleSelections() {
+    const checkboxes = document.querySelectorAll("input[type=checkbox]");
+    checkboxes.forEach((checkbox) => {
+      (checkbox as HTMLInputElement).checked = false;
+    });
+  }
   function loadUserRoles() {
-    toast.info("Not Impliemented");
-    hasBeenLoaded = true;
+    trpc.userRouterV3.getUserById.query({ id: roleUserId }).then((user) => {
+      rolePermissions = user.roles;
+      for (const perm of user.roles) {
+        let checkbox = document.getElementById(perm) as HTMLInputElement;
+        if (checkbox) {
+          checkbox.checked = true;
+        }
+      }
+      toast.success("User roles loaded.");
+      hasBeenLoaded = true;
+    }).catch((err) => {
+      console.error(err);
+      toast.error("Failed to load user roles.");
+    });
   }
   function sendUserRoles() {
-    toast.info("Not Impliemented");
+    trpc.AdminRouter.setRoles.mutate({
+      userId: roleUserId,
+      roles: rolePermissions,
+    }).then(() => {
+      toast.success("User roles updated.");
+    }).catch((err) => {
+      console.error(err);
+      toast.error("Failed to update user roles.");
+    });
   }
 </script>
 
@@ -94,15 +120,18 @@
       <!-- Role Panel -->
       <Label class="mt-4 mb-2">Target User</Label>
       <div class="flex flex-row">  
-        <Input bind:value={roleUserId} class="w-3/4 mr-1" placeholder="User ID" />
+        <Input bind:value={roleUserId} class="w-3/4 mr-1" placeholder="User ID" oninput={() => {
+          hasBeenLoaded = false;
+          clearRoleSelections();
+        }}/>
         <Button onclick={loadUserRoles} class="w-1/4">Fetch</Button>
       </div>
       <Label class="mt-4 mb-2">Permissions</Label>
       <div class="flex flex-row flex-wrap gap-2 m-2">
         {#each Object.values(UserPermissions) as item}
           <div class="flex flex-row items-center gap-1">
-            <Checkbox onclick={(e) => {
-              if ((e.target as HTMLInputElement).checked) {
+            <Checkbox bind:checked={() => {return rolePermissions.includes(item)}, (val) => {
+              if (val) {
                 rolePermissions = [...rolePermissions, item];
               } else {
                 rolePermissions = rolePermissions.filter((perm) => perm !== item);

@@ -5,8 +5,8 @@
   import Separator from "$shadcn/components/ui/separator/separator.svelte";
 
   const { data } = $props();
-  const user = data.pageData.userData;
-  const assets = data.pageData.assets || [];
+  const user = data.pageData.user;
+  const assets = data.pageData.assets.assets;
   let dialog = $state<ApprovalDialog>();
 </script>
 

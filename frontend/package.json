@@ -22,7 +22,7 @@
     "clsx": "^2.1.1",
     "embla-carousel-svelte": "^8.6.0",
     "flexsearch": "^0.8.205",
-    "svelte": "^5.0.0",
+    "svelte": "^5.9.0",
     "svelte-check": "^4.0.0",
     "svelte-sonner": "^1.0.5",
     "tailwind-merge": "^3.0.2",

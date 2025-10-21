@@ -72,7 +72,7 @@ export function getRoleData(role: string): {
       return {
         bgColor: 'bg-pink-500',
         textColor: 'text-white',
-        text: 'Developer',
+        text: 'ModelSaber Developer',
         value: UserPermissions.C_Developer,
         hidden: false,
       }

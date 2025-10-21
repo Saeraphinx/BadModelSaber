@@ -287,6 +287,14 @@
                 Requests
               </DropdownMenu.Item>
             </a>
+            {#if data.user.roles.includes(UserPermissions.Manage_NonMod_Users) || data.user.roles.includes(UserPermissions.Manage_All_Users)}
+              <a href="/admin">
+                <DropdownMenu.Item>
+                  <Settings />
+                  Admin Panel
+                </DropdownMenu.Item>
+              </a>
+            {/if}
             {#if data.user.roles.includes(UserPermissions.View_Pending_Assets)}
               <button onclick={removeSecret}>
                 <DropdownMenu.Item>
@@ -311,7 +319,7 @@
               <DropdownMenu.RadioItem closeOnSelect={false} value="light">Light</DropdownMenu.RadioItem>
             </DropdownMenu.RadioGroup>
             <DropdownMenu.Separator />
-            <Button variant="link" onclick={() => {
+            <button onclick={() => {
               trpc.authRouter.logout.mutate({}).then(() => {
                 invalidateAll();
               });
@@ -320,7 +328,7 @@
                 <LogOutIcon class="text-red-400" />
                 Logout
               </DropdownMenu.Item>
-            </Button>
+            </button>
           </DropdownMenu.Content>
         </DropdownMenu.Root>
       {:else}

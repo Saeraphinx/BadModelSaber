@@ -4,8 +4,12 @@ import type { PageLoad } from './$types';
 import { trpc } from '../../../lib/scripts/utils/api';
 
 export const load = (async ({ fetch, params }) => {
+  let id = parseInt(params.id, 10);
+  if (isNaN(id)) {
+    throw error(404, `Invalid asset ID`);
+  }
   let asset = await trpc.assetsRouterV3.getAssetById.query({
-    id: params.id
+    id
   });
 
   return {
