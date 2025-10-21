@@ -21,30 +21,30 @@ export const assetsRouterV3 = router({
             total: Validator.z.number(),
             page: Validator.z.number().nullable()
         }))
-        .query(async ({input, ctx}) => {
-        let allowedStatuses = Asset.allowedToViewRoles(ctx.user);
-        if (input.status && !allowedStatuses.includes(input.status)) {
-            return { assets: [], total: 0, page: null };
-        }   
-        let whereOptions: WhereOptions<AssetInfer> = {};
-        whereOptions.status = input.status ? input.status : allowedStatuses;
-        if (input.type) {
-            whereOptions.type = input.type;
-        }
-        if (input.tags) {
-            whereOptions.tags = { [Op.contains]: input.tags };
-        }
-        const assets = await Asset.findAll({
-            where: whereOptions,
-            limit: input.limit ?? undefined,
-            offset: input.page && input.limit ? ((input.page - 1) * input.limit) : undefined,
-            order: [[`createdAt`, `DESC`]],
-            attributes: input.minimalData ? [`id`, `name`, `type`, `status`, `uploaderId`, `createdAt`, `updatedAt`, `iconNames`, `tags`] : undefined,
-            include: {all: true}
-        });
-        let response = await Promise.all(assets.map(asset => asset.getApiV3Response()));
-        return { assets: response, total: assets.length, page: input.page ?? null};
-    }),
+        .query(async ({ input, ctx }) => {
+            let allowedStatuses = Asset.allowedToViewRoles(ctx.user);
+            if (input.status && !allowedStatuses.includes(input.status)) {
+                return { assets: [], total: 0, page: null };
+            }
+            let whereOptions: WhereOptions<AssetInfer> = {};
+            whereOptions.status = input.status ? input.status : allowedStatuses;
+            if (input.type) {
+                whereOptions.type = input.type;
+            }
+            if (input.tags) {
+                whereOptions.tags = { [Op.contains]: input.tags };
+            }
+            const assets = await Asset.findAll({
+                where: whereOptions,
+                limit: input.limit ?? undefined,
+                offset: input.page && input.limit ? ((input.page - 1) * input.limit) : undefined,
+                order: [[`createdAt`, `DESC`]],
+                attributes: input.minimalData ? [`id`, `name`, `type`, `status`, `uploaderId`, `createdAt`, `updatedAt`, `iconNames`, `tags`] : undefined,
+                include: { all: true }
+            });
+            let response = await Promise.all(assets.map(asset => asset.getApiV3Response()));
+            return { assets: response, total: assets.length, page: input.page ?? null };
+        }),
     getAssetById: authProcedure(`any`)
         .meta({
             openapi: {
@@ -54,25 +54,25 @@ export const assetsRouterV3 = router({
             }
         })
         .input(Validator.z.object({
-            id: Validator.zNumberID
+            id: Validator.zNumberId
         }))
         .output(assetPublicAPIv3Schema)
-        .query(async ({input, ctx}) => {
-        let asset = await Asset.findByPk(input.id, {include: {all:true}});
-        if (!asset) {
-            asset = await Asset.findOne({
-                where: { oldId: input.id },
-                include: { all: true }
-            });
+        .query(async ({ input, ctx }) => {
+            let asset = await Asset.findByPk(input.id, { include: { all: true } });
             if (!asset) {
-                throw new Error(`Asset not found`);
+                asset = await Asset.findOne({
+                    where: { oldId: input.id },
+                    include: { all: true }
+                });
+                if (!asset) {
+                    throw new Error(`Asset not found`);
+                }
             }
-        }
-        if (!asset.canView(ctx.user)) {
-            throw new Error(`You are not allowed to view this asset`);
-        }
-        return await asset.getApiV3Response();
-    }),
+            if (!asset.canView(ctx.user)) {
+                throw new Error(`You are not allowed to view this asset`);
+            }
+            return await asset.getApiV3Response();
+        }),
     getMultipleAssetsById: authProcedure(`any`)
         .meta({
             openapi: {
@@ -82,22 +82,23 @@ export const assetsRouterV3 = router({
             }
         })
         .input(Validator.z.object({
-            id: Validator.zAssetIdArray
+            id: Validator.z.array(Validator.zNumberId)
         }))
-        .query(async ({input, ctx}) => {
-        const assets = await Asset.findAll({
-            where: {
-                id: input.id,
-                status: Asset.allowedToViewRoles(ctx.user)
-            },
-            include: { all: true }
-        });
-        let response: {[key:number]: AssetPublicAPIv3} = {};
-        for (let asset of assets) {
-            response[asset.id] = await asset.getApiV3Response();
-        }
-        return response;
-    })
+        .output(Validator.z.record(Validator.z.number(), assetPublicAPIv3Schema))
+        .query(async ({ input, ctx }) => {
+            const assets = await Asset.findAll({
+                where: {
+                    id: input.id,
+                    status: Asset.allowedToViewRoles(ctx.user)
+                },
+                include: { all: true }
+            });
+            let response: { [key: number]: AssetPublicAPIv3 } = {};
+            for (let asset of assets) {
+                response[asset.id] = await asset.getApiV3Response();
+            }
+            return response;
+        })
 });
 
 /*

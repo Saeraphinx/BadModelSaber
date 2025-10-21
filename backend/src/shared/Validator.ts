@@ -15,8 +15,12 @@ export class Validator {
         }
         if (typeof input === `boolean`) return input;
         return false; // Default to false if not a boolean or string
-    }, z.boolean())
-    public static zNumberID = z.transform((input, ctx) => {
+    }, z.boolean());
+    public static zNumberId = z.number().int().positive();
+    /**
+     * @deprecated Use z.number().int().positive() instead
+     */
+    public static zNumberIDTransform = z.transform((input, ctx) => {
         try {
             let num = Number(input);
             if (Number.isNaN(num) || !Number.isInteger(num) || num <= 0) {
@@ -43,7 +47,7 @@ export class Validator {
     public static zAssetFileFormat = z.enum(AssetFileFormat);
     public static zAssetStatus = z.enum(Status);
     public static zNumberIDObj = z.object({
-        id: Validator.zNumberID,
+        id: Validator.zNumberIDTransform,
     });
 
     public static zCreateAssetv3 = Asset.validator.pick({
@@ -77,7 +81,7 @@ export class Validator {
         reason: z.string().max(320).optional().default(`No reason provided.`),
     });
 
-    public static zAssetIdArray = z.array(Validator.zNumberID);
+    public static zAssetIdArray = z.array(Validator.zNumberIDTransform);
 
 
     public static validateThumbnail(file: fileUpload.UploadedFile) {

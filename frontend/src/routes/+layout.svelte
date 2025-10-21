@@ -6,7 +6,6 @@
   import Button, { buttonVariants } from "$shadcn/components/ui/button/button.svelte";
   import * as Avatar from "$shadcn/components/ui/avatar";
   import { BellDotIcon, BellIcon, FileBadgeIcon, GitBranchIcon, Link2Icon, LogIn, LogOutIcon, Menu, MessageCircleQuestionIcon, PlusIcon, Settings, SunIcon, TrafficConeIcon, UserIcon } from "@lucide/svelte";
-  import type { Orientation } from "bits-ui";
   import { MediaQuery } from "svelte/reactivity";
   import * as Popover from "$shadcn/components/ui/popover";
   import { page } from "$app/state";
@@ -18,13 +17,11 @@
   import { Badge } from "$shadcn/components/ui/badge";
   import * as Sheet from "$shadcn/components/ui/sheet";
   import Alert from "$lib/components/generic/Alert.svelte";
-  import * as Tabs from "$shadcn/components/ui/tabs";
   import { Switch } from "$shadcn/components/ui/switch";
   import { Label } from "$shadcn/components/ui/label";
   import ScrollArea from "$shadcn/components/ui/scroll-area/scroll-area.svelte";
   import { trpc } from "$lib/scripts/utils/api";
-  import { invalidate, invalidateAll } from "$app/navigation";
-  import { getCallSites } from "util";
+  import { invalidateAll } from "$app/navigation";
   import { redirect } from "@sveltejs/kit";
 
   let { data, children } = $props();

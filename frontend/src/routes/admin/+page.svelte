@@ -8,6 +8,7 @@
   import { Button } from "$shadcn/components/ui/button";
   import Checkbox from "$shadcn/components/ui/checkbox/checkbox.svelte";
   import { toast } from "svelte-sonner";
+  import { trpc } from "$lib/scripts/utils/api";
 
   // #region Alert
   let alertType = $state(AlertType.AssetApproved);
@@ -17,22 +18,18 @@
   let alertHeader = $state("");
   let alertMessage = $state("");
   function sendAdminAlert() {
-    fetchApiSafe("/admin/alert", {
-      method: "POST",
-      body: JSON.stringify({
-        userId: alertUserId,
-        type: alertType,
-        assetId: alertAssetId,
-        requestId: alertRequestId,
-        header: alertHeader,
-        message: alertMessage,
-      }),
+    trpc.AdminRouter.createAlert.mutate({
+      userId: alertUserId,
+      type: alertType,
+      assetId: parseInt(alertAssetId) || undefined,
+      requestId: parseInt(alertRequestId) || undefined,
+      header: alertHeader,
+      message: alertMessage,
     }).then((res) => {
-      if (res.isError) {
-        toast.error(`Error sending alert: ${res.message}`);
-      } else {
-        toast.success(`Alert sent successfully. ${res.message}`);
-      }
+      toast.success(`Alert sent successfully.`);
+    }).catch((err) => {
+      console.error(err);
+      toast.error(`Failed to send alert.`);
     });
   }
   // #endregion

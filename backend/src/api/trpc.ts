@@ -1,16 +1,12 @@
 import { initTRPC, TRPCError } from '@trpc/server';
 import { type CreateExpressContextOptions, createExpressMiddleware } from '@trpc/server/adapters/express';
 import { User, UserPermissions } from '../shared/Database.ts';
-import { alertsRouter } from './routes/private/alerts.ts';
-import { approvalRouter } from './routes/private/approval.ts';
-import { RequestRouter } from './routes/private/requests.ts';
-import { UpdateAssetRouter } from './routes/private/updateAsset.ts';
-import { userRouterV3 } from './routes/public/v3/getUser.ts';
-import { assetsRouterV3 } from './routes/public/v3/getAsset.ts';
-import { createOpenApiExpressMiddleware, createOpenApiHttpHandler, generateOpenApiDocument, OpenApiMeta } from 'trpc-to-openapi';
-import { authRouter } from './routes/private/auth.ts';
-import { konamiRouter } from './routes/private/updateUser.ts';
+import { OpenApiMeta } from 'trpc-to-openapi';
 import SuperJSON from 'superjson';
+import test from 'node:test';
+import { parseErrorMessage } from '../shared/Tools.ts';
+import { ZodError } from 'zod/v4';
+import { fromZodError } from 'zod-validation-error';
 
 // eslint-disable-next-line quotes
 declare module 'express-session' {
@@ -23,7 +19,7 @@ declare module 'express-session' {
  * Creates context for an incoming request
  * @see https://trpc.io/docs/v11/context
  */
-async function createContext(opts: CreateExpressContextOptions) {
+export async function createContext(opts: CreateExpressContextOptions) {
     let userId = undefined;
     if (opts.req.session?.userId) {
         userId = opts.req.session.userId;
@@ -40,6 +36,18 @@ export type Context = Awaited<ReturnType<typeof createContext>>;
 
 const t = initTRPC.context<Context>().meta<OpenApiMeta>().create({
     transformer: SuperJSON,
+    errorFormatter({ shape, error }) {
+        return {
+            ...shape,
+            data: {
+                ...shape.data,
+                zodError:
+                    error.cause instanceof ZodError
+                        ? fromZodError(error.cause).toString()
+                        : null,
+            },
+        };
+    },
 });
 export const router = t.router;
 
@@ -121,31 +129,3 @@ export function authProcedure(permissions: any): ProcedureReturn {
         throw new TRPCError({ code: 'FORBIDDEN', message: 'You do not have permission to access this resource' });
     });
 }
-
-const appRouter = router({
-    alertsRouter,
-    approvalRouter,
-    RequestRouter,
-    UpdateAssetRouter,
-    userRouterV3,
-    konamiRouter,
-    assetsRouterV3,
-    authRouter,
-});
-
-export type AppRouter = typeof appRouter;
-export const loadExpressMiddleware = createExpressMiddleware({
-    router: appRouter,
-    createContext,
-});
-export const loadOpenApiMiddleware = createOpenApiExpressMiddleware({ 
-    router: appRouter, 
-    createContext 
-});
-export const generateOpenAPIDoc = generateOpenApiDocument(appRouter, {
-  title: 'tRPC OpenAPI',
-  version: '1.0.0',
-  baseUrl: 'http://localhost:3000',
-  defs: {
-  },
-});

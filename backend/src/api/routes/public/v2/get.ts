@@ -1,11 +1,8 @@
-import { auth, validate } from "../../../RequestUtils.ts";
 import { LegacyValidator } from "../../../../shared/LegacyValidator.ts";
-import { Router } from "express";
 import { Asset, AssetFileFormat, AssetInfer, assetPublicAPIv1Schema, Status } from "../../../../shared/Database.ts";
 import { z } from "zod/v4";
 import { Op, WhereOptions } from "sequelize";
 import { authProcedure, router } from "../../../../api/trpc.ts";
-import { Validator } from "../../../../shared/Validator.ts";
 
 export const GetV2Router = router({
     getAssets: authProcedure(`any`)

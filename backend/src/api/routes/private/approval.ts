@@ -1,5 +1,3 @@
-import { Router } from "express";
-import { auth, validate } from "../../RequestUtils.ts";
 import { Asset, Status, UserPermissions } from "../../../shared/Database.ts";
 import { Validator } from "../../../shared/Validator.ts";
 import { parseErrorMessage } from "../../../shared/Tools.ts";

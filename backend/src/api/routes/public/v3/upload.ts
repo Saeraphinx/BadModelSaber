@@ -1,6 +1,5 @@
 import { Router, RequestHandler, NextFunction } from "express";
 import fileUpload from "express-fileupload";
-import { auth, MiddlewareFunction, validate } from "../../../RequestUtils.ts";
 import { Logger, LogLevel } from "../../../../shared/Logger.ts";
 import { Validator } from "../../../../shared/Validator.ts";
 import { parseErrorMessage } from "../../../../shared/Tools.ts";
@@ -11,6 +10,8 @@ import { EnvConfig } from "../../../../shared/EnvConfig.ts";
 
 export class UploadRoutesV3 {
     public static loadRoutes(router: Router): void {
+        return;
+        /*
         router.post(`/assets/upload`, auth(`loggedIn`, false), file(), async (req, res) => {
             const files = req.files;
             const { responded, data: body } = validate(req, res, `multipart`, Validator.zCreateAssetv3);
@@ -124,11 +125,12 @@ export class UploadRoutesV3 {
                 return;
             });
         });
+        */
     }      
 }
 
 
-function file(limit = 250 * 1024 * 1024): MiddlewareFunction {
+function file(limit = 250 * 1024 * 1024) {
     return fileUpload({
         limits: {
             files: 6,

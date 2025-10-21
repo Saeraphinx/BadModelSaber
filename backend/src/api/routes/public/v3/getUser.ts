@@ -15,8 +15,9 @@ export const userRouterV3 = router({
                 tags: ['Users'],
             }
         })
+        .input(Validator.z.void())
         .output(userPublicAPIv3Schema)
-        .query(async ({ctx}) => {
+        .query(({ctx}) => {
         return ctx.user.getApiResponse();
     }),
     getUserById: authProcedure(`any`).input(Validator.z.object({

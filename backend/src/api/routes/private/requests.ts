@@ -1,17 +1,13 @@
-import { Router } from "express";
-import { auth, validate } from "../../../api/RequestUtils.ts";
+
 import { AssetRequest, AssetRequestInfer, RequestType, UserPermissions } from "../../../shared/Database.ts";
 import { Validator } from "../../../shared/Validator.ts";
-import { request } from "http";
-import { parseErrorMessage } from "../../../shared/Tools.ts";
-import { Op, WhereOptions } from "sequelize";
-import { Logger } from "../../../shared/Logger.ts";
+import { WhereOptions } from "sequelize";
 import { authProcedure, router } from "../../../api/trpc.ts";
 
 export const RequestRouter = router({
     request: authProcedure(`loggedIn`).input(Validator.z.object({
         includeActioned: Validator.z.boolean().optional().default(false),
-        assetId: Validator.zNumberID.optional()
+        assetId: Validator.zNumberIDTransform.optional()
     })).query(async ({ input, ctx }) => {
         let isElevated = ctx.user.roles.includes(UserPermissions.Manage_All_Reports);
         const whereOptions: WhereOptions<AssetRequestInfer> = {};
@@ -79,7 +75,7 @@ export const RequestRouter = router({
         return { incoming: incoming ?? 0, outgoing: outgoing ?? 0, reports: reports ?? null };
     }),
     getRequest: authProcedure(`loggedIn`).input(Validator.z.object({
-        id: Validator.zNumberID,
+        id: Validator.zNumberIDTransform,
     })).query(async ({ input, ctx }) => {
         let isElevated = ctx.user.roles.includes(UserPermissions.View_All_Reports);
         const assetReq = await AssetRequest.findByPk(input.id, { include: { all: true }});
@@ -92,7 +88,7 @@ export const RequestRouter = router({
         return assetReq.getAPIResponse();
     }),
     addMessage: authProcedure(`loggedIn`).input(Validator.z.object({
-        id: Validator.zNumberID,
+        id: Validator.zNumberIDTransform,
         message: Validator.z.string().min(1)
     })).mutation(async ({ input, ctx }) => {
         const assetReq = await AssetRequest.findByPk(input.id);
@@ -106,7 +102,7 @@ export const RequestRouter = router({
         return { message: `Message added successfully` };
     }),
     handleRequest: authProcedure(`loggedIn`).input(Validator.z.object({
-        id: Validator.zNumberID,
+        id: Validator.zNumberIDTransform,
         action: Validator.z.enum([`accept`, `decline`]),
     })).mutation(async ({ input, ctx }) => {
         const assetReq = await AssetRequest.findByPk(input.id);

@@ -13,7 +13,7 @@ export function getAssetThumbnailUrl(fileName: string): string {
 }
 
 import { createTRPCClient, httpBatchLink } from '@trpc/client';
-import type { AppRouter } from '../../../../../backend/src/api/trpc';
+import type { AppRouter } from '../../../../../backend/src/api/routers';
 import SuperJSON from "superjson";
 
 export const trpc = createTRPCClient<AppRouter>({

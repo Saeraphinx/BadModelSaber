@@ -5,12 +5,12 @@ import session, { SessionOptions } from 'express-session';
 import SequelizeStore from 'connect-session-sequelize'
 import cors from "cors";
 import { Logger, LogLevel } from "./shared/Logger.ts";
-import { AuthRoutes } from "./api/routes/private/auth.ts";
 import { UploadRoutesV3 } from "./api/routes/public/v3/upload.ts";
 import { FileRoutes } from "./api/routes/files/files.ts";
 import { Sequelize } from "sequelize";
 import { importFromOldModelSaber } from "./shared/Importer.ts";
-import { loadExpressMiddleware, loadOpenApiMiddleware } from "./api/trpc.ts";
+import { generateOpenAPIDoc, loadExpressMiddleware, loadOpenApiMiddleware } from "./api/routers.ts";
+import swaggerUi from "swagger-ui-express";
 
 export async function init(overrideDbName: string = `public`) {
     console.log(`Initializing BadModelSaber...`);
@@ -73,6 +73,14 @@ export async function init(overrideDbName: string = `public`) {
     // #region Register routes
     app.use((req, res, next) => {
         Logger.log(`${req.method} ${req.originalUrl} - ${req.ip} - Session: ${req.sessionID} - Auth: ${req.session['userId'] ? req.session['userId'] : `No`}`, LogLevel.Http);
+        if (!EnvConfig.isProduction && EnvConfig.server.authBypass && !req.session['userId']) {
+            if (typeof EnvConfig.server.authBypass === `boolean`) {
+                req.session.userId = `5`;
+            } else {
+                req.session.userId = EnvConfig.server.authBypass;
+            }
+            Logger.warn(`Auth bypass enabled - automatically logged in as user ID ${req.session.userId}`);
+        }
         next();
     });
     const apiRouter = express.Router();
@@ -82,8 +90,14 @@ export async function init(overrideDbName: string = `public`) {
     const v2Router = express.Router();
     const v3Router = express.Router();
 
-    AuthRoutes.loadRoutes(apiRouter);
     UploadRoutesV3.loadRoutes(v3Router); // must be before GetAssetRoutesV3
+
+    let apiDoc = generateOpenAPIDoc;
+    apiDoc.servers = [{
+        url: EnvConfig.server.backendUrl + EnvConfig.server.apiRoute
+    }]
+
+    apiRouter.use(`/docs`, swaggerUi.serve, swaggerUi.setup(apiDoc));
 
     apiRouter.use(`/trpc`, loadExpressMiddleware);
     apiRouter.use(`/v3`, v3Router);

@@ -1,13 +1,11 @@
-import { auth, validate } from "../../../api/RequestUtils.ts";
-import { Asset, AssetRequest, LinkedAssetLinkType, RequestType, User, UserPermissions } from "../../../shared/Database.ts";
+import { Asset, AssetRequest, LinkedAssetLinkType, User } from "../../../shared/Database.ts";
 import { Validator } from "../../../shared/Validator.ts";
-import { request } from "http";
 import { parseErrorMessage } from "../../../shared/Tools.ts";
 import { authProcedure, router } from "../../../api/trpc.ts";
 
 export const UpdateAssetRouter = router({
     updateAsset: authProcedure(`loggedIn`).input(Validator.z.object({
-        assetId: Validator.zNumberID,
+        assetId: Validator.zNumberIDTransform,
         data: Asset.validator.pick({
             name: true,
             description: true,
@@ -28,8 +26,8 @@ export const UpdateAssetRouter = router({
         });
     }),
     linkAsset: authProcedure(`loggedIn`).input(Validator.z.object({
-        assetId: Validator.zNumberID,
-        linkToId: Validator.zNumberID,
+        assetId: Validator.zNumberIDTransform,
+        linkToId: Validator.zNumberIDTransform,
         type: Validator.z.enum(LinkedAssetLinkType)
     })).mutation(async ({ input, ctx }) => {
         const asset = await Asset.findByPk(input.assetId);
@@ -55,7 +53,7 @@ export const UpdateAssetRouter = router({
         });
     }),
     addCollaborator: authProcedure(`loggedIn`).input(Validator.z.object({
-        id: Validator.zNumberID,
+        id: Validator.zNumberIDTransform,
         userId: Validator.zUserID
     })).mutation(async ({ input, ctx }) => {
         const asset = await Asset.findByPk(input.id);
