@@ -4,11 +4,12 @@ import { Validator } from "../../../shared/Validator.ts";
 import z from "zod/v4";
 import { dedupeArray } from "../../../shared/Tools.ts";
 import { authProcedure, router } from "../../../api/trpc.ts";
+import { Logger } from "../../../shared/Logger.ts";
 
 export const AdminRouter = router({
     setRoles: authProcedure([UserPermissions.Manage_All_Users])
         .input(z.object({
-            userId: Validator.zNumberIDTransform,
+            userId: Validator.zUserID,
             roles: Validator.z.array(Validator.z.enum(UserPermissions)),
         }))
         .mutation(async ({ input, ctx }) => {
@@ -17,8 +18,13 @@ export const AdminRouter = router({
                 throw new Error(`User not found`);
             }
             targetUser.roles = dedupeArray(input.roles);
-            await targetUser.save();
-            return { message: `User roles updated successfully`, roles: targetUser.roles };
+            targetUser.save().then((u) => {
+                Logger.log(`Successfully saved roles for user ${targetUser.id}: ${targetUser.roles.join(", ")}`);
+                return { message: `User roles updated successfully`, user: u };
+            }).catch((e) => {
+                Logger.error(`Error saving user roles for user ${targetUser.id}: ${e}`);
+                throw new Error(`Failed to save user roles`);
+            });
         }),
     banUser: authProcedure([UserPermissions.Manage_All_Users, UserPermissions.Manage_NonMod_Users])
         .input(z.object({

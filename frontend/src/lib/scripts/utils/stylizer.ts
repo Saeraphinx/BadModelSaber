@@ -28,6 +28,7 @@ function toTitleCase(str: string): string {
 }
 
 export function getAssetTypeData(format: AssetFileFormat): {
+  rawString: AssetFileFormat;
   formatString: string;
   typeString: string;
   combinedString: string;
@@ -39,17 +40,55 @@ export function getAssetTypeData(format: AssetFileFormat): {
   switch (format) {
     case AssetFileFormat.HSVConfig_JSON:
       return {
+        rawString: format,
         formatString: fileFormat,
         typeString: "HitScoreVisualizer",
         combinedString: `HSV (${fileFormat})`,
       };
     default: 
       return {
+        rawString: format,
         formatString: fileFormat,
         typeString: capitalType,
         combinedString: `${capitalType} (${fileFormat})`,
       };
   }
+}
+
+export function getAssetTypeCategories(): Map<string, ReturnType<typeof getAssetTypeData>[]> {
+  let categories: Map<string, ReturnType<typeof getAssetTypeData>[]> = new Map();
+  for (let format in AssetFileFormat) {
+    let type = `${format.split('_')[0].replaceAll('-', ' ')}s`; // Pluralize type
+    let category = categories.get(type) ?? [];
+    category.push(getAssetTypeData(AssetFileFormat[format as keyof typeof AssetFileFormat]));
+    categories.set(type, category);
+  }
+  let singleFormats: ReturnType<typeof getAssetTypeData>[] = [];
+  for (let [key, value] of categories) {
+    if (value.length == 1 || key == 'Sounds') { // Group single formats and Sound into Other
+      categories.delete(key);
+      singleFormats.push(...value);
+    }
+  }
+
+  // file format that goes into config
+  let configCategories = [`.json`];
+  // Create Other and Config categories & set their position
+  categories.set('Configs', []);
+  categories.set('Other', []);
+  for (let format of singleFormats) {
+    if (configCategories.includes(format.formatString)) {
+      let category = categories.get('Configs') ?? [];
+      category.push(format);
+      categories.set('Configs', category);
+    } else {
+      let category = categories.get('Other') ?? [];
+      category.push(format);
+      categories.set('Other', category);
+    }
+  }
+
+  return categories;
 }
 
 export function getRoleData(role: string): {

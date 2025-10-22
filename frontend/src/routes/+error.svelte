@@ -2,7 +2,7 @@
   import { page } from "$app/state";
   import * as Accordion from "$shadcn/components/ui/accordion";
   import { Button } from "$shadcn/components/ui/button";
-  import Separator from "$shadcn/components/ui/separator/separator.svelte";
+  import { Separator } from "$shadcn/components/ui/separator";
   import { CodeXmlIcon, HomeIcon } from "@lucide/svelte";
   import { onMount } from "svelte";
   import { toast } from "svelte-sonner";
@@ -20,7 +20,6 @@
           displayName: page.data.user?.displayName,
           roles: page.data.user?.roles,
         },
-        alerts: page.data.alerts?.map((alert: any) => alert.id) || [],
         requests: {
           incoming: page.data.requestCounts?.incoming || null,
           outgoing: page.data.requestCounts?.outgoing || null,

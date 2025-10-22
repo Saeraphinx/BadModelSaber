@@ -28,9 +28,9 @@ export type AppRouter = typeof appRouter;
 export const loadExpressMiddleware = createExpressMiddleware({
     router: appRouter,
     createContext,
-    onError: ({ error, type, path }) => {
-        Logger.error(`tRPC Error on ${type} ${path}: ${error.message}`);
-    }
+    // onError: ({ error, type, path }) => {
+    //     Logger.error(`tRPC Error on ${type} ${path}: ${error.message}`);
+    // }
 });
 export const loadOpenApiMiddleware = createOpenApiExpressMiddleware({
     router: appRouter,

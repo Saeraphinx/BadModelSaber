@@ -19,7 +19,7 @@
   import { getContext, onMount } from "svelte";
   import ApprovalPopup from "$lib/components/assets/ApprovalDialog.svelte";
   import { toast } from "svelte-sonner";
-  import { capitalizeFirstLetter, getAssetTypeString } from "$lib/scripts/utils/stylizer.js";
+  import { capitalizeFirstLetter, getAssetTypeCategories, getAssetTypeString } from "$lib/scripts/utils/stylizer.js";
   import { trpc } from "$lib/scripts/utils/api.js";
 
   let { data } = $props();
@@ -44,15 +44,6 @@
   let selectedFileFormats = $state<AssetFileFormat[]>([]);
   let selectedStatuses = $state<Status[]>([Status.Approved]);
   let searchQuery = $state<string>("");
-  let assetFileFormats = $derived.by(() => {
-    return Object.values(AssetFileFormat).map((format) => {
-      let type = format.split("_")[0];
-      return {
-        value: format,
-        label: getAssetTypeString(format),
-      };
-    });
-  });
   let assetStatuses = $derived.by(() => {
     if (!data.user) return [Status.Approved];
     if (data.user.roles.includes(UserPermissions.View_All_Assets)) {
@@ -161,20 +152,30 @@
         <ChevronRight class="h-4 w-4 transition-transform {filterFileFormatVisible ? `rotate-90` : ``}" />
       </Collapsible.Trigger>
       <Collapsible.Content class="my-2">
-        {#each assetFileFormats as format}
-          <div class="flex items-center space-x-2 py-1">
-            <Checkbox
-              onCheckedChange={(e) => {
-                if (e) {
-                  selectedFileFormats.push(format.value);
-                  selectedFileFormats = [...new Set(selectedFileFormats)]; // Ensure uniqueness & force reactivity
-                } else {
-                  selectedFileFormats = selectedFileFormats.filter((f) => f !== format.value);
-                }
-              }}
-              value={format.value}
-              id={format.value} />
-            <Label for={format.value}>{format.label}</Label>
+        {#each getAssetTypeCategories() as type}
+          <div class="pt-1">
+            <span class="font-medium my-2">{type[0]}</span>
+            <Separator class="my-1" />
+            {#each type[1] as format}
+              <div class="flex items-center space-x-2 py-1">
+                <Checkbox
+                  onCheckedChange={(e) => {
+                    if (e) {
+                      selectedFileFormats.push(format.rawString);
+                      selectedFileFormats = [...new Set(selectedFileFormats)]; // Ensure uniqueness & force reactivity
+                    } else {
+                      selectedFileFormats = selectedFileFormats.filter((f) => f !== format.rawString);
+                    }
+                  }}
+                  value={format.rawString}
+                  id={format.rawString} />
+                {#if type[0] == `Configs` || type[0] == `Other`}
+                  <Label for={format.rawString}>{format.combinedString}</Label>
+                {:else}
+                  <Label for={format.rawString}>{format.formatString}</Label>
+                {/if}
+              </div>
+            {/each}
           </div>
         {/each}
       </Collapsible.Content>

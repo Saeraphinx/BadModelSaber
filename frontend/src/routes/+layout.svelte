@@ -3,7 +3,7 @@
   import * as NavigationMenu from "$shadcn/components/ui/navigation-menu/index.js";
   import * as DropdownMenu from "$shadcn/components/ui/dropdown-menu/index.js";
   import { getContext, onMount, setContext } from "svelte";
-  import Button, { buttonVariants } from "$shadcn/components/ui/button/button.svelte";
+  import { Button, buttonVariants } from "$shadcn/components/ui/button";
   import * as Avatar from "$shadcn/components/ui/avatar";
   import { BellDotIcon, BellIcon, FileBadgeIcon, GitBranchIcon, Link2Icon, LogIn, LogOutIcon, Menu, MessageCircleQuestionIcon, PlusIcon, Settings, SunIcon, TrafficConeIcon, UserIcon } from "@lucide/svelte";
   import { MediaQuery } from "svelte/reactivity";
