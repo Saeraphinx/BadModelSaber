@@ -69,7 +69,7 @@
     <p class="text-base">Creative Commons License Selection</p>
     <p class="text-sm text-gray-500">
       Decide how others can use your asset.<br>
-      Visit <a class="underline" href="https://creativecommons.org/share-your-work/cclicenses/">creativecommons.org</a> for more info. 
+      Visit <a class="underline" href="https://creativecommons.org/share-your-work/cclicenses/" target="_blank">creativecommons.org</a> for more info. 
     </p>
     <!-- Attribution -->
     <span class="flex flex-row items-center">

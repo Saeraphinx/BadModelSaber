@@ -8,6 +8,7 @@ import { Logger } from "../../Logger.ts";
 import { Webhooks } from "../../Webhooks.ts";
 
 export type AssetInfer = InferAttributes<Asset>;
+export type AssetValidatorType = typeof Asset.validator; // for use in frontend
 @Table({
     tableName: `assets`,
     modelName: `Asset`,

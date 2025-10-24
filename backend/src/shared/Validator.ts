@@ -1,6 +1,5 @@
 import { z } from "zod/v4";
 
-import fileUpload from "express-fileupload";
 import { AssetFileFormat, Status, Tags } from "./database/DBExtras.ts";
 import { Asset } from "./database/tables/Asset.ts";
 
@@ -84,17 +83,17 @@ export class Validator {
     public static zAssetIdArray = z.array(Validator.zNumberIDTransform);
 
 
-    public static validateThumbnail(file: fileUpload.UploadedFile) {
+    public static validateThumbnail(file: File) {
         let isAcceptableImage =
-            ((file.mimetype === `image/png` && file.name.endsWith(`.png`)) ||
-                (file.mimetype === `image/jpeg` && file.name.endsWith(`.jpg`)) ||
-                (file.mimetype === `image/gif` && file.name.endsWith(`.gif`)) ||
-                (file.mimetype === `image/webp` && file.name.endsWith(`.webp`)));
+            ((file.type === `image/png` && file.name.endsWith(`.png`)) ||
+                (file.type === `image/jpeg` && file.name.endsWith(`.jpg`)) ||
+                (file.type === `image/gif` && file.name.endsWith(`.gif`)) ||
+                (file.type === `image/webp` && file.name.endsWith(`.webp`)));
 
         return isAcceptableImage
     }
 
-    public static validateAssetFile(file: fileUpload.UploadedFile, type: AssetFileFormat): boolean {
+    public static validateAssetFile(file: File, type: AssetFileFormat): boolean {
         let typeFileExtension = type.split(`_`)[1].toLowerCase();
         switch (type) {
             // PC assets
@@ -104,26 +103,26 @@ export class Validator {
             case AssetFileFormat.Note_Bloq:
             case AssetFileFormat.Wall_Pixie:
             case AssetFileFormat.HealthBar_Energy:
-                return file.mimetype === `application/octet-stream` && file.name.endsWith(`.${typeFileExtension}`);
+                return file.type === `application/octet-stream` && file.name.endsWith(`.${typeFileExtension}`);
             // Quest/PC assets
             case AssetFileFormat.Saber_Wacker:
             case AssetFileFormat.Note_Cyoob:
             case AssetFileFormat.Wall_Box:
-                return (file.mimetype === `application/zip` || file.mimetype === `application/x-zip-compressed`) && file.name.endsWith(`.${typeFileExtension}`);
+                return (file.type === `application/zip` || file.type === `application/x-zip-compressed`) && file.name.endsWith(`.${typeFileExtension}`);
             // Sound assets
             case AssetFileFormat.Sound_Ogg:
-                return file.mimetype === `audio/ogg` && file.name.endsWith(`.${typeFileExtension}`);
+                return file.type === `audio/ogg` && file.name.endsWith(`.${typeFileExtension}`);
             case AssetFileFormat.Sound_Mp3:
-                return file.mimetype === `audio/mpeg3` && file.name.endsWith(`.${typeFileExtension}`);
+                return file.type === `audio/mpeg3` && file.name.endsWith(`.${typeFileExtension}`);
             // Banner assets
             case AssetFileFormat.Banner_Png:
-                return file.mimetype === `image/png` && file.name.endsWith(`.${typeFileExtension}`);
+                return file.type === `image/png` && file.name.endsWith(`.${typeFileExtension}`);
             // JSON assets
             case AssetFileFormat.ChromaEnv_JSON:
             case AssetFileFormat.CountersPlusConfig_JSON:
             case AssetFileFormat.HSVConfig_JSON:
             case AssetFileFormat.Camera2Config_JSON:
-                return file.mimetype === `application/json` && file.name.endsWith(`.${typeFileExtension}`);
+                return file.type === `application/json` && file.name.endsWith(`.${typeFileExtension}`);
             default:
                 return false; // Invalid asset type
         }

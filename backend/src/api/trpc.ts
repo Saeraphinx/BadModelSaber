@@ -39,6 +39,7 @@ const t = initTRPC.context<Context>().meta<OpenApiMeta>().create({
     errorFormatter({ shape, error }) {
         return {
             ...shape,
+            customMessage: parseErrorMessage(error),
             data: {
                 ...shape.data,
                 zodError:

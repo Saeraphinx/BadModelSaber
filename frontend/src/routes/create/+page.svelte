@@ -9,6 +9,10 @@
   import { DivideCircleIcon, TagIcon } from "@lucide/svelte";
   import TagBadge from "$lib/components/assets/TagBadge.svelte";
   import TypeSelector from "$lib/components/forms/TypeSelector.svelte";
+  import { trpc } from "$lib/scripts/utils/api";
+  import { redirect } from "@sveltejs/kit";
+  import { toast } from "svelte-sonner";
+  import { zAsset } from "$lib/scripts/api/validator";
 
   let type = $state(AssetFileFormat.Note_Bloq);
   let name = $state("");
@@ -21,6 +25,32 @@
   let asset: File | undefined = $state(undefined);
 
   let openTagPicker = $state(false);
+
+  function submitAsset() {
+    let formData = new FormData();
+    formData.append("data", JSON.stringify({
+      type,
+      name,
+      description,
+      license: license === "custom",
+      licenseUrl: customLicense || undefined,
+      tags,
+      credits,
+    }));
+    formData.append("asset", asset!);
+    if (thumbnail) {
+      for (let i = 0; i < thumbnail.length; i++) {
+        formData.append(`icon_${i}`, thumbnail[i]);
+      }
+    }
+
+    trpc.uploadAssetV3.part1.mutate(formData).then((res) => {
+      redirect(307, `/asset/${res.id}`);
+    }).catch((err) => {
+      toast.error(`Failed to submit asset: ${err}`);
+      console.error(err.customMessage || err);
+    });
+  }
 </script>
 
 <div class="flex flex-col text-center w-full p-4">
@@ -38,11 +68,11 @@
       </span>
       <span>
         <Label class="p-1 pb-2" for="name">Name</Label>
-        <Input bind:value={name} id="name" />
+        <Input bind:value={name} aria-invalid={!zAsset.shape.name.safeParse(name).success} id="name" />
       </span>
       <span>
         <Label class="p-1 pb-2" for="description">Description</Label>
-        <Textarea class="min-h-32" bind:value={description} id="description" />
+        <Textarea class="min-h-32" bind:value={description} aria-invalid={!zAsset.shape.description.safeParse(description).success} id="description" />
       </span>
       <span>
         <Label class="p-1 pb-2" for="license">License</Label>
@@ -51,7 +81,7 @@
       {#if license === "custom"}
         <span>
           <Label class="p-1 pb-2" for="custom-license">Custom License</Label>
-          <Input bind:value={customLicense} id="custom-license" />
+          <Input bind:value={customLicense} aria-invalid={!zAsset.shape.licenseUrl.safeParse(customLicense).success} id="custom-license" />
         </span>
       {/if}
       <span>
@@ -101,7 +131,7 @@
       <p class="text-sm text-muted-foreground mt-2 pl-1">Please ensure that you have the rights to upload this asset to ModelSaber.</p>
     </div>
     <div class="flex flex-col justify-center w-full max-w-md p-4 bg-card rounded-lg shadow-md mt-4">
-      <Button class="w-full">Submit</Button>
+      <Button onclick={submitAsset} class="w-full">Submit</Button>
     </div>
   </div>
 </div>

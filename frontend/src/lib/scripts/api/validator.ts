@@ -1,5 +1,6 @@
 import z from "zod/v4";
 import { AssetFileFormat, License, LinkedAssetLinkType, Status, Tags } from "./DBTypes";
+import type { AssetValidatorType } from "../../../../../backend/src/shared/Database"
 
 class Asset {
   static async checkIfExists(id: number): Promise<boolean> {
@@ -14,7 +15,7 @@ class User {
   }
 }
 
-export const zAsset = z.object({
+export const zAsset: AssetValidatorType = z.object({
   // unique by db
   id: z.number().int().positive(),
   // unique by db

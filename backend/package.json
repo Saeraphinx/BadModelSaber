@@ -32,6 +32,7 @@
     "umzug": "^3.8.2",
     "winston": "^3.17.0",
     "zod": "^4.1.12",
+    "zod-form-data": "^3.0.1",
     "zod-openapi": "^5.4.3",
     "zod-validation-error": "^4.0.1"
   },

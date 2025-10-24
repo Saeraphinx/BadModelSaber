@@ -5,7 +5,6 @@ import session, { SessionOptions } from 'express-session';
 import SequelizeStore from 'connect-session-sequelize'
 import cors from "cors";
 import { Logger, LogLevel } from "./shared/Logger.ts";
-import { UploadRoutesV3 } from "./api/routes/public/v3/upload.ts";
 import { FileRoutes } from "./api/routes/files/files.ts";
 import { Sequelize } from "sequelize";
 import { importFromOldModelSaber } from "./shared/Importer.ts";
@@ -36,6 +35,7 @@ export async function init(overrideDbName: string = `public`) {
     //app.use(express.json());
     //app.use(express.urlencoded({ extended: false }));
     app.set(`trust proxy`, EnvConfig.server.trustProxy);
+    app.set(`x-powered-by`, false);
 
     // #region Session management
     let sessionOptions: SessionOptions = {
@@ -86,12 +86,6 @@ export async function init(overrideDbName: string = `public`) {
     const apiRouter = express.Router();
     const fileRouter = express.Router();
 
-    const v1Router = express.Router();
-    const v2Router = express.Router();
-    const v3Router = express.Router();
-
-    UploadRoutesV3.loadRoutes(v3Router); // must be before GetAssetRoutesV3
-
     let apiDoc = generateOpenAPIDoc;
     apiDoc.servers = [{
         url: EnvConfig.server.backendUrl + EnvConfig.server.apiRoute
@@ -100,8 +94,6 @@ export async function init(overrideDbName: string = `public`) {
     apiRouter.use(`/docs`, swaggerUi.serve, swaggerUi.setup(apiDoc));
 
     apiRouter.use(`/trpc`, loadExpressMiddleware);
-    apiRouter.use(`/v3`, v3Router);
-    apiRouter.use(v3Router);
     apiRouter.use(loadOpenApiMiddleware); // load all openapi routes
 
     FileRoutes.loadRoutes(fileRouter);
