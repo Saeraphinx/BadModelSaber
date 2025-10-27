@@ -220,7 +220,7 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
         return [Status.Approved, Status.Pending];
     }
 
-    public canView(user: User | undefined): boolean {
+    public canView(user: User | null | undefined): boolean {
         if (!user) {
             return this.status === Status.Approved || this.status === Status.Pending;
         }

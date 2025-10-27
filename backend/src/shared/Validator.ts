@@ -113,7 +113,7 @@ export class Validator {
             case AssetFileFormat.Sound_Ogg:
                 return file.type === `audio/ogg` && file.name.endsWith(`.${typeFileExtension}`);
             case AssetFileFormat.Sound_Mp3:
-                return file.type === `audio/mpeg3` && file.name.endsWith(`.${typeFileExtension}`);
+                return file.type === `audio/mpeg` && file.name.endsWith(`.${typeFileExtension}`);
             // Banner assets
             case AssetFileFormat.Banner_Png:
                 return file.type === `image/png` && file.name.endsWith(`.${typeFileExtension}`);

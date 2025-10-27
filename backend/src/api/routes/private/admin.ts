@@ -5,6 +5,7 @@ import z from "zod/v4";
 import { dedupeArray } from "../../../shared/Tools.ts";
 import { authProcedure, router } from "../../../api/trpc.ts";
 import { Logger } from "../../../shared/Logger.ts";
+import { importFromOldModelSaber } from "../../../shared/Importer.ts";
 
 export const AdminRouter = router({
     setRoles: authProcedure([UserPermissions.Manage_All_Users])
@@ -54,5 +55,9 @@ export const AdminRouter = router({
         .mutation(async ({ input }) => {
             let alert = await Alert.create(input);
             return alert;
+        }),
+    importOldModelSaberData: authProcedure([UserPermissions.Administative_Tasks])
+        .mutation(async ({ input, ctx }) => {
+            importFromOldModelSaber((message, level) => {});
         }),
 });

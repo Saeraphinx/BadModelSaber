@@ -139,6 +139,14 @@ export function getRoleData(role: string): {
         value: UserPermissions.C_Modeler,
         hidden: false,
       }
+    case UserPermissions.C_System:
+      return {
+        bgColor: 'bg-gray-800',
+        textColor: 'text-white',
+        text: 'System Account',
+        value: UserPermissions.C_System,
+        hidden: true,
+      }
     default:
       return {
         bgColor: 'bg-gray-500',

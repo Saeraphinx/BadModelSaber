@@ -9,7 +9,7 @@
   import { DivideCircleIcon, TagIcon } from "@lucide/svelte";
   import TagBadge from "$lib/components/assets/TagBadge.svelte";
   import TypeSelector from "$lib/components/forms/TypeSelector.svelte";
-  import { trpc } from "$lib/scripts/utils/api";
+  import { parseErrorMessage, trpc } from "$lib/scripts/utils/api";
   import { redirect } from "@sveltejs/kit";
   import { toast } from "svelte-sonner";
   import { zAsset } from "$lib/scripts/api/validator";
@@ -21,8 +21,8 @@
   let customLicense = $state("");
   let tags: Tags[] = $state([]);
   let credits = $state("");
-  let thumbnail: FileList | undefined = $state(undefined);
-  let asset: File | undefined = $state(undefined);
+  let thumbnails: FileList | undefined = $state(undefined);
+  let asset: FileList | undefined = $state(undefined);
 
   let openTagPicker = $state(false);
 
@@ -32,23 +32,47 @@
       type,
       name,
       description,
-      license: license === "custom",
-      licenseUrl: customLicense || undefined,
+      license: license,
+      licenseUrl: !customLicense || customLicense.length == 0 ? null : customLicense,
+      sourceUrl: null,
       tags,
       credits,
     }));
-    formData.append("asset", asset!);
-    if (thumbnail) {
-      for (let i = 0; i < thumbnail.length; i++) {
-        formData.append(`icon_${i}`, thumbnail[i]);
+    console.log("Submitting asset with data:", {
+      type,
+      name,
+      description,
+      license: license ?? "custom",
+      licenseUrl: !customLicense || customLicense.length == 0 ? null : customLicense,
+      tags,
+      credits,
+      asset,
+      thumbnails,
+    });
+    if (!asset || !asset[0]) {
+      toast.error("Please select an asset file to upload.");
+      return;
+    }
+    formData.append("asset", asset[0]);
+    if (thumbnails && thumbnails.length > 0) {
+      for (let i = 0; i < thumbnails.length; i++) {
+        formData.append(`icon_${i+1}`, thumbnails[i]);
       }
+    } else {
+      toast.error("Please select a thumbnail image to upload.");
+      return;
     }
 
-    trpc.uploadAssetV3.part1.mutate(formData).then((res) => {
-      redirect(307, `/asset/${res.id}`);
-    }).catch((err) => {
-      toast.error(`Failed to submit asset: ${err}`);
-      console.error(err.customMessage || err);
+    // needs to be awaited since redirect is an error throw
+    let newAsset = trpc.uploadAssetV3.part1.mutate(formData).catch((err) => {
+      toast.error(`Failed to submit asset: ${parseErrorMessage(err)}`);
+      console.error(err);
+    });
+    Promise.resolve(newAsset).then((asset) => {
+      if (asset) {
+        toast.success("Asset submitted successfully!");
+        throw redirect(303, `/asset/${asset.id}`);
+      }
     });
   }
 </script>
@@ -116,12 +140,12 @@
     <div class="flex flex-col justify-center w-full max-w-md p-4 bg-card rounded-lg shadow-md mt-4">
       <!-- value is the first file in the files array -->
       <Label class="p-1 pb-2" for="thumbnail">Thumbnail</Label>
-      <Input id="thumbnail" type="file" files={thumbnail} accept=".png,.jpeg,.webp,.gif" multiple />
+      <Input id="thumbnail" type="file" bind:files={thumbnails} accept=".png,.jpeg,.webp,.gif" multiple />
       <p class="text-sm text-muted-foreground mt-2 pl-1">Please ensure your thumbnail meets the requirements above.</p>
       <span class="h-4"></span>
       <Label class="p-1 pb-2" for="zip">Asset</Label>
       <Input
-        bind:value={asset}
+        bind:files={asset}
         class=""
         type="file"
         id="asset"

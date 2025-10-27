@@ -22,7 +22,6 @@
   import ScrollArea from "$shadcn/components/ui/scroll-area/scroll-area.svelte";
   import { trpc } from "$lib/scripts/utils/api";
   import { invalidateAll } from "$app/navigation";
-  import { redirect } from "@sveltejs/kit";
 
   let { data, children } = $props();
   let theme: `system` | `light` | `dark` = $state("system");
@@ -332,12 +331,11 @@
           </DropdownMenu.Content>
         </DropdownMenu.Root>
       {:else}
-        <Button variant="outline" class="text-base" onclick={() => {
-          trpc.authRouter.discordAuthInit.query({
+        <Button variant="outline" class="text-base" onclick={async () => {
+          let url = await trpc.authRouter.discordAuthInit.query({
             redirect: `${env.PUBLIC_BASE_URL}${page.url.pathname}`,
-          }).then((url) => {
-            redirect(307, url.url);
           });
+          window.location.href = url.url;
         }}>
           <LogIn />
           Login

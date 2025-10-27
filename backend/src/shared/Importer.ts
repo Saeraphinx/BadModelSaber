@@ -20,9 +20,10 @@ const conversionStorage = `./storage/converts`;
 const doAssetDownload = false; // set to false to skip downloading assets, useful for testing
 const doTumbnailDownload = true; // set to false to skip downloading thumbnails, useful for testing
 
-export async function importFromOldModelSaber(): Promise<void> {
+export async function importFromOldModelSaber(sendMessage: (messaage: string, type: `log` | `warn` | `error`) => void): Promise<void> {
     if (!EnvConfig.auth.discord.token) {
         Logger.error(`Discord token is not set in the environment variables. Please set DISCORD_TOKEN to import from old ModelSaber.`);
+        sendMessage(`Discord token is not set in the environment variables. Please set DISCORD_TOKEN to import from old ModelSaber.`, `error`);
         return;
     }
     const discordRest = new REST({ version: '10' }).setToken(EnvConfig.auth.discord.token);
@@ -31,15 +32,18 @@ export async function importFromOldModelSaber(): Promise<void> {
         username: `ModelSaber Importer`,
         displayName: `ModelSaber Importer`,
         avatarUrl: `https://cdn.discordapp.com/embed/avatars/6.png`,
-        roles: [UserPermissions.C_Developer],
+        roles: [UserPermissions.C_System],
         bio: `This user was created by the ModelSaber importer for assets that couldn't be linked to a specific user during the importing process.`,
     });
     try {
+        sendMessage(`Starting import from old ModelSaber...`, `log`);
         Logger.log(`Importing data from old ModelSaber...`);
         const modelSaberAll = await fetch(`https://modelsaber.com/api/v2/get.php`).then(res => res.json() as Promise<modelsaberasset>).catch(err => {
+            sendMessage(`Failed to fetch old ModelSaber data: ${err}`, `error`);
             Logger.error(`Failed to fetch old ModelSaber data: ${err}`)
             throw err;
         });
+        sendMessage(`Fetched ${Object.keys(modelSaberAll).length} assets from old ModelSaber.`, `log`);
         Logger.log(`Fetched ${Object.keys(modelSaberAll).length} assets from old ModelSaber.`);
         if (!fs.existsSync(conversionStorage)) {
             fs.mkdirSync(conversionStorage);
@@ -48,6 +52,7 @@ export async function importFromOldModelSaber(): Promise<void> {
         let i = 0;
         for (const [key, asset] of Object.entries(modelSaberAll)) {
             if (i++ % 50 === 0) {
+                sendMessage(`Processing asset ${i}/${Object.keys(modelSaberAll).length} (${key})`, `log`);
                 Logger.log(`Processing asset ${i}/${Object.keys(modelSaberAll).length} (${key})`);
             }
             // #region prep
@@ -60,6 +65,7 @@ export async function importFromOldModelSaber(): Promise<void> {
             } });
 
             if (existingAsset) {
+                sendMessage(`Asset ${asset.id} (${asset.name}) already exists, skipping...`, `warn`);
                 Logger.log(`Asset ${asset.id} (${asset.name}) already exists, skipping...`);
                 continue;
             }
@@ -78,6 +84,7 @@ export async function importFromOldModelSaber(): Promise<void> {
                     newType = AssetFileFormat.Note_Bloq;
                     break;
                 default:
+                    sendMessage(`Unknown asset type ${asset.type} for asset ${asset.id}, skipping...`, `warn`);
                     Logger.warn(`Unknown asset type ${asset.type} for asset ${asset.id}, skipping...`);
                     continue;
             }
@@ -88,12 +95,14 @@ export async function importFromOldModelSaber(): Promise<void> {
             let assetSize = 0;
             let uri = /(https:\/\/modelsaber.com\/files\/\w+\/\d+\/)(.+)/gi.exec(asset.download);
             if (!uri || uri.length < 3) {
+                sendMessage(`Failed to parse asset download URL for asset ${asset.id} (${asset.name}), skipping...`, `error`);
                 Logger.error(`Failed to parse asset download URL for asset ${asset.id} (${asset.name}), skipping...`);
                 continue;
             }
             if (!fs.existsSync(path.join(EnvConfig.storage.uploads, `${asset.hash}.${asset.type}`)) && doAssetDownload) {
                 await fetch(`${uri[1]}${encodeURIComponent(uri[2])}`).then(res => {
                     if (!res.ok) {
+                        sendMessage(`Failed to download asset ${asset.id} (${asset.name}): ${res.statusText}`, `error`);
                         throw new Error(`Failed to download asset ${asset.id} (${asset.name}): ${res.statusText}`);
                     }
                     return res.arrayBuffer()
@@ -103,6 +112,7 @@ export async function importFromOldModelSaber(): Promise<void> {
                     assetSize = arrayBuffer.byteLength;
                     fs.writeFileSync(path.join(EnvConfig.storage.uploads, `${assetHash}.${asset.type}`), Buffer.from(arrayBuffer));
                 }).catch(err => {
+                    sendMessage(`Failed to download asset ${asset.id} (${asset.name}): ${err}`, `error`);
                     Logger.error(`Failed to download asset ${asset.id} (${asset.name}): ${err}`);
                     return;
                 });
@@ -112,11 +122,13 @@ export async function importFromOldModelSaber(): Promise<void> {
             }
 
             if (!assetHash || assetHash.length === 0 || assetSize === 0) {
+                sendMessage(`Failed to download asset ${asset.id} (${asset.name}), skipping...`, `error`);
                 Logger.error(`Failed to download asset ${asset.id} (${asset.name}), skipping...`);
                 continue;
             }
             
             if (assetHash !== asset.hash) {
+                sendMessage(`Asset ${asset.id} (${asset.name}) hash mismatch: expected ${asset.hash}, got ${assetHash}. This may cause issues with the asset.`, `warn`);
                 Logger.warn(`Asset ${asset.id} (${asset.name}) hash mismatch: expected ${asset.hash}, got ${assetHash}. This may cause issues with the asset.`);
             }
             // #endregion
@@ -146,22 +158,27 @@ export async function importFromOldModelSaber(): Promise<void> {
                                 .setDisableAudio()
                                 .save(path.join(thumbnailOutputDir, `${hash}.webp`), (error, file) => {
                                     if (error) {
+                                        sendMessage(`Failed to convert video thumbnail for asset ${asset.id}: ${JSON.stringify(error)}`, `error`);
                                         Logger.error(`Failed to convert video thumbnail for asset ${asset.id}: ${JSON.stringify(error)}`);
                                     }
                                     thumbnailName = `${hash}.webp`;
                                 });
                         }).catch(err => {
+                            sendMessage(`Failed to convert video thumbnail for asset ${asset.id}: ${JSON.stringify(err)}`, `error`);
                             Logger.error(`Failed to convert video thumbnail for asset ${asset.id}: ${JSON.stringify(err)}`);
                         });
                     } else {
                         if (arrayBuffer.byteLength > 8 * 1024 * 1024) {
+                            sendMessage(`Thumbnail for asset ${asset.id} is larger than 8MB, reformatting...`, `warn`);
                             Logger.warn(`Asset ${asset.id} thumbnail is larger than 8MB, reformatting...`);
                             sharp(Buffer.from(arrayBuffer))
                                 .webp({ quality: 60 })
                                 .toFile(path.join(thumbnailOutputDir, `${hash}.webp`), (err, info) => {
                                     if (err) {
+                                        sendMessage(`Failed to reformat thumbnail for asset ${asset.id}: ${err}`, `error`);
                                         Logger.error(`Failed to reformat thumbnail for asset ${asset.id}: ${err}`);
                                     } else {
+                                        sendMessage(`Reformatted thumbnail for asset ${asset.id} to ${info.size} bytes.`, `log`);
                                         Logger.log(`Reformatted thumbnail for asset ${asset.id} to ${info.size} bytes.`);
                                     }
                                     thumbnailName = `${hash}.webp`;
@@ -175,6 +192,7 @@ export async function importFromOldModelSaber(): Promise<void> {
             }
 
             if (thumbnailName === `default.png` && doTumbnailDownload) {
+                sendMessage(`Asset ${asset.id} (${asset.name}) has no thumbnail, using default thumbnail.`, `warn`);
                 Logger.warn(`Asset ${asset.id} (${asset.name}) has no thumbnail, using default thumbnail.`);
             }
             // #endregion
@@ -188,6 +206,7 @@ export async function importFromOldModelSaber(): Promise<void> {
                     }
                     let discordUser = await discordRest.get(Routes.user(asset.discordid)).then(async (res) => {
                         if (!res) {
+                            sendMessage(`Failed to fetch Discord user ${asset.discordid} for asset ${asset.id} (${asset.name}), skipping...`, `error`);
                             Logger.error(`Failed to fetch Discord user ${asset.discordid} for asset ${asset.id} (${asset.name}), skipping...`);
                             return {
                                 id: `0`,
@@ -198,6 +217,7 @@ export async function importFromOldModelSaber(): Promise<void> {
                         }
                         return res as APIUser;
                     }).catch(err => {
+                        sendMessage(`Failed to fetch Discord user ${asset.discordid} for asset ${asset.id} (${asset.name}): ${err}`, `error`);
                         Logger.error(`Failed to fetch Discord user ${asset.discordid} for asset ${asset.id} (${asset.name}): ${err}`);
                         return {
                             id: `0`,
@@ -215,6 +235,7 @@ export async function importFromOldModelSaber(): Promise<void> {
                             avatarUrl: `https://cdn.discordapp.com/avatars/${discordUser.id}/${discordUser.avatar}.webp?animated=true`,
                             roles: [],
                         }).catch(err => {
+                            sendMessage(`Failed to create user ${discordUser.id} (${discordUser.username}): ${err}`, `error`);
                             Logger.error(`Failed to create user ${discordUser.id} (${discordUser.username}): ${err}`);
                             Logger.debug(`User data: ${JSON.stringify(discordUser)}`);
                             Logger.debug(parseErrorMessage(err));
@@ -238,11 +259,13 @@ export async function importFromOldModelSaber(): Promise<void> {
                     }
                 }
             }).catch(err => {
+                sendMessage(`Failed to query user ${asset.discordid} (${asset.author}): ${err}`, `error`);
                 Logger.error(`Failed to query user ${asset.discordid} (${asset.author}): ${err}`);
                 return importerUser; // fallback to importer user
             });
 
             if (user.id === importerUser.id) {
+                sendMessage(`Asset ${asset.id} (${asset.name}) could not be linked to a user, using importer user.`, `warn`);
                 Logger.debug(`Asset ${asset.id} (${asset.name}) has invalid Discord ID (${asset.discordid}), using importer user.`);
             }
             // #endregion
@@ -292,6 +315,7 @@ export async function importFromOldModelSaber(): Promise<void> {
                 name = name.slice(0, 64);
             }
             if (name != asset.name) {
+                sendMessage(`Asset ${asset.id} (${asset.name}) name contained HTML tags, removing them.`, `warn`);
                 Logger.warn(`Asset ${asset.id} (${asset.name}) name contained issues, removing them.`);
                 description += `\nOriginal name: ${asset.name}`;
             }
@@ -310,12 +334,14 @@ export async function importFromOldModelSaber(): Promise<void> {
                 type: newType,
                 fileSize: assetSize,
                 iconNames: [thumbnailName],
-                license: License.CC40_BY,
+                license: License.Custom,
+                licenseUrl: `https://modelsaber.com/info/unknown-license`,
                 uploaderId: user.id || `6`,
                 status: Status.Approved,
                 tags: tags as Tags[],
                 createdAt: new Date(asset.date),
             }).catch(err => {
+                sendMessage(`Failed to create asset ${asset.id} (${asset.name}): ${err}`, `error`);
                 Logger.error(`Failed to create asset ${asset.id} (${asset.name}): ${err}`);
                 Logger.debug(`Asset data: ${JSON.stringify(err)}`);
                 Logger.debug(parseErrorMessage(err));
@@ -336,8 +362,10 @@ export async function importFromOldModelSaber(): Promise<void> {
         }
         await new Promise(resolve => setTimeout(resolve, 5000)); // wait for all assets to be created
         //fs.rmSync(conversionStorage, { recursive: true, force: true });
+        sendMessage(`Finished importing data from old ModelSaber.`, `log`);
         Logger.log(`Finished importing data from old ModelSaber.`);
     } catch (error) {
+        sendMessage(`An error occurred while importing from old ModelSaber: ${parseErrorMessage(error)}`, `error`);
         Logger.error(`An error occurred while importing from old ModelSaber: ${error}`);
         Logger.error(JSON.stringify(error));
         Logger.error(parseErrorMessage(error));

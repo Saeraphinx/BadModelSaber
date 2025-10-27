@@ -1,5 +1,5 @@
 import type { LayoutLoad } from "./$types";
-import { trpc } from "$lib/scripts/utils/api";
+import { parseError, trpc } from "$lib/scripts/utils/api";
 
 export const load: LayoutLoad = async ({ fetch }) => {
   let pendingToasts: Awaited<ReturnType<LayoutLoad>>['pendingToasts'] = [];
@@ -16,14 +16,16 @@ export const load: LayoutLoad = async ({ fetch }) => {
     user: undefined,
     pendingToasts: pendingToasts,
   }
-  let userRes = await trpc.userRouterV3.getMe.query().catch((error) => {
-    console.error(`Failed to fetch user data:`, error)
+  let userRes = await trpc.userRouterV3.getMe.query().catch((err) => {
+    let error = parseError(err);
     userToasted = true;
-    pendingToasts.push({
-      type: 'error',
-      title: `Unable to fetch user data`,
-      description: `Error: ${error.message}`,
-    });
+    if (error.code == 403) {
+      pendingToasts.push({
+        type: 'error',
+        title: `Unable to fetch user data`,
+        description: `${error.message}`,
+      });
+    }
   });
 
   if (!userRes) {

@@ -22,7 +22,8 @@ export function loadAuthConfig() {
         revocation_endpoint: `https://discord.com/api/v10/oauth2/token/revoke`,
         authorization_endpoint: `https://discord.com/oauth2/authorize`,
         grant_types_supported: [`authorization_code`],
-    }, EnvConfig.auth.discord.clientSecret, EnvConfig.auth.discord.clientSecret);
+        scopes_supported: [`identify`],
+    }, EnvConfig.auth.discord.clientId, EnvConfig.auth.discord.clientSecret);
 }
 
 let validStates: { stateId: string, ip: string, redirectUrl: URL, userId: number | null }[] = [];
@@ -49,6 +50,9 @@ export const authRouter = router({
             url: Validator.z.string(),
         }))
         .query(async ({ input, ctx, path }) => {
+            if (discordConfig === undefined) {
+                loadAuthConfig();
+            }
             let state = prepAuth(ctx.req.ip || ``, input.redirect || EnvConfig.server.frontendUrl);
             if (!state) {
                 throw new Error(`Could not prepare authentication.`);
@@ -65,11 +69,7 @@ export const authRouter = router({
                 response_type: `code`,
             })
 
-            if (ctx.req.path.includes(`trpc`)) {
-                return { url: url.toString() };
-            } else {
-                throw new Error(`Invalid request to ${path}`);
-            }
+            return { url: url.toString() };
         }),
     discordAuthCallback: authProcedure(`any`)
         .meta({ openapi: { method: 'GET', path: '/auth/discord/callback', tags: ['Authentication'] } })
@@ -89,7 +89,7 @@ export const authRouter = router({
                 throw new Error(`Discord authentication is not configured.`);
             }
 
-            let tokenSet = await OpenIDClient.authorizationCodeGrant(discordConfig, new URL(ctx.req.originalUrl), {
+            let tokenSet = await OpenIDClient.authorizationCodeGrant(discordConfig, null), {
                 expectedState: stateObj.stateId,
             });
 

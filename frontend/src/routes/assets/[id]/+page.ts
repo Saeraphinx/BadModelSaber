@@ -1,7 +1,7 @@
 import { AssetFileFormat, LinkedAssetLinkType, Status, type AssetPublicAPIv3 } from '$lib/scripts/api/DBTypes';
 import { error } from '@sveltejs/kit';
 import type { PageLoad } from './$types';
-import { trpc } from '../../../lib/scripts/utils/api';
+import { parseError, parseErrorMessage, trpc } from '../../../lib/scripts/utils/api';
 
 export const load = (async ({ fetch, params }) => {
   let id = parseInt(params.id, 10);
@@ -10,6 +10,14 @@ export const load = (async ({ fetch, params }) => {
   }
   let asset = await trpc.assetsRouterV3.getAssetById.query({
     id
+  }).catch((err) => {
+    console.error(`Error fetching asset ${id}: ${err}`);
+    let ef = parseError(err);
+    throw error(ef.code, {
+      additionalInfo: JSON.stringify(err),
+      message: `Error fetching asset`,
+      subtitle: `${ef.message}`,
+    });
   });
 
   return {

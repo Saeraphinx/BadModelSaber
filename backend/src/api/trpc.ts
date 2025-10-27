@@ -36,19 +36,20 @@ export type Context = Awaited<ReturnType<typeof createContext>>;
 
 const t = initTRPC.context<Context>().meta<OpenApiMeta>().create({
     transformer: SuperJSON,
-    errorFormatter({ shape, error }) {
-        return {
-            ...shape,
-            customMessage: parseErrorMessage(error),
-            data: {
-                ...shape.data,
-                zodError:
-                    error.cause instanceof ZodError
-                        ? fromZodError(error.cause).toString()
-                        : null,
-            },
-        };
-    },
+    errorFormatter(opts) {
+    const { shape, error } = opts;
+    return {
+      ...shape,
+      data: {
+        ...shape.data,
+        formattedMessage: parseErrorMessage(error.cause),
+        zodError:
+          error.code === 'BAD_REQUEST' && error.cause instanceof ZodError
+            ? error.cause.flatten()
+            : null,
+      },
+    };
+  },
 });
 export const router = t.router;
 
@@ -76,12 +77,24 @@ function dummyLoggedIn() {
     });
 }
 
+function dummyAnyLoggedIn() {
+    return t.procedure.use(async ({ ctx, next }) => {
+        return next({
+            ctx: {
+                ...ctx,
+                user: ctx.userId ? {} as User : null,
+            }
+        });
+    });
+}
+
 type ProcedureReturn = ReturnType<
-    typeof dummyNoAuth | typeof dummyLoggedIn
+    typeof dummyNoAuth | typeof dummyLoggedIn | typeof dummyAnyLoggedIn
 >;
 
 // Function overloads for better type inference
 export function authProcedure(permissions: 'any'): ReturnType<typeof dummyNoAuth>;
+export function authProcedure(permissions: 'anyCheckAuth'): ReturnType<typeof dummyAnyLoggedIn>;
 export function authProcedure(permissions: 'loggedIn'): ReturnType<typeof dummyLoggedIn>;
 export function authProcedure(permissions: UserPermissions[]): ReturnType<typeof dummyLoggedIn>;
 export function authProcedure(permissions: any): ProcedureReturn {
@@ -95,11 +108,20 @@ export function authProcedure(permissions: any): ProcedureReturn {
             });
         }
 
-        if (!ctx.userId) {
+        if (!ctx.userId && permissions !== `anyCheckAuth`) {
             throw new TRPCError({ code: 'UNAUTHORIZED', message: 'You must be logged in to access this resource' });
         }
 
         const user = await User.findByPk(ctx.userId);
+        if (permissions === `anyCheckAuth`) {
+            return next({
+                ctx: {
+                    ...ctx,
+                    user,
+                }
+            });
+        }
+
         if (!user) {
             throw new TRPCError({ code: 'UNAUTHORIZED', message: 'You must be logged in to access this resource' });
         }

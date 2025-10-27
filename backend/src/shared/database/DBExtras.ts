@@ -121,7 +121,7 @@ export enum UserPermissions {
     Manage_NonMod_Users = "manage_nonmod_users", // User can manage non-admin users (e.g. ban users)
     Manage_All_Users = "manage_all_users", // User can manage admin users w/o restrictions
     Create_Assets = "create_assets", // User can upload/create assets
-
+    Administative_Tasks = "administrative_tasks", // User can perform high-level admin tasks
 
     // cosmetic roles for badges only
     C_Developer = "cos_developer", // User is a developer of the site
@@ -129,7 +129,7 @@ export enum UserPermissions {
     C_Admin = "cos_admin", // User is an admin of the site
     C_BSMG_Staff = "cos_bsmg_staff", // User is a member of the BSMG staff
     C_Modeler = "cos_modeler", // User is a recognized modeler on ModelSaber
-
+    C_System = "cos_system", // User is a system account
 }
 export enum AlertType {
     Generic = "generic", // Generic alert type, used for non-specific alerts

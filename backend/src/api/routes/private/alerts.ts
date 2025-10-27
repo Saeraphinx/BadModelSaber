@@ -5,6 +5,7 @@ import { parseErrorMessage } from "../../../shared/Tools.ts";
 import { Logger } from "../../../shared/Logger.ts";
 import { WhereOptions } from "sequelize";
 import { authProcedure, router } from "../../../api/trpc.ts";
+import { TRPCError } from "@trpc/server";
 
 export const alertsRouter = router({
     getAlerts: authProcedure(`loggedIn`)
@@ -32,10 +33,10 @@ export const alertsRouter = router({
     })).mutation(async ({input, ctx}) => {
         const alert = await Alert.findByPk(input.id);
         if (!alert) {
-            throw new Error(`Alert not found`);
+            throw new TRPCError({ code: `NOT_FOUND`, message: `Alert not found`});
         }
         if (alert.userId !== ctx.user.id) {
-            throw new Error(`You are not allowed to read this alert`);
+            throw new TRPCError({ code: `FORBIDDEN`, message: `You are not allowed to read this alert`});
         }
         alert.read = true;
         alert.discordMessageSent = true;
@@ -48,10 +49,10 @@ export const alertsRouter = router({
     })).mutation(async ({input, ctx}) => {
         const alert = await Alert.findByPk(input.id);
         if (!alert) {
-            throw new Error(`Alert not found`);
+            throw new TRPCError({ code: `NOT_FOUND`, message: `Alert not found`});
         }
         if (alert.userId !== ctx.user.id) {
-            throw new Error(`You are not allowed to delete this alert`);
+            throw new TRPCError({ code: `FORBIDDEN`, message: `You are not allowed to read this alert`});
         }
         await alert.destroy();
         Logger.debug(`Alert ${alert.id} deleted for user ${ctx.user.id}`);

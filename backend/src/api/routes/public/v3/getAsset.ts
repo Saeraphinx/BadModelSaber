@@ -5,9 +5,10 @@ import { Op, WhereOptions } from "sequelize";
 import { parseErrorMessage } from "../../../../shared/Tools.ts";
 import { AssetPublicAPIv3, assetPublicAPIv3Schema } from "../../../../shared/database/DBExtras.ts";
 import { authProcedure, router } from "../../../../api/trpc.ts";
+import { TRPCError } from "@trpc/server";
 
 export const assetsRouterV3 = router({
-    getAssets: authProcedure(`any`)
+    getAssets: authProcedure(`anyCheckAuth`)
         .meta({
             openapi: {
                 method: 'GET',
@@ -45,7 +46,7 @@ export const assetsRouterV3 = router({
             let response = await Promise.all(assets.map(asset => asset.getApiV3Response()));
             return { assets: response, total: assets.length, page: input.page ?? null };
         }),
-    getAssetById: authProcedure(`any`)
+    getAssetById: authProcedure(`anyCheckAuth`)
         .meta({
             openapi: {
                 method: 'GET',
@@ -65,11 +66,12 @@ export const assetsRouterV3 = router({
                     include: { all: true }
                 });
                 if (!asset) {
-                    throw new Error(`Asset not found`);
+                    throw new TRPCError({code: `NOT_FOUND`, message: `Asset not found.`} );
                 }
             }
+
             if (!asset.canView(ctx.user)) {
-                throw new Error(`You are not allowed to view this asset`);
+                throw new TRPCError({code: `FORBIDDEN`, message: `You are not allowed to view this asset.`} );
             }
             return await asset.getApiV3Response();
         }),
