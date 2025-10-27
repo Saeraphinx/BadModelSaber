@@ -22,6 +22,12 @@ export const trpc = createTRPCClient<AppRouter>({
       condition: (op) => isNonJsonSerializable(op.input),
       true: httpLink({ // this section is needed for file uploads
         url: `${env.PUBLIC_API_URL}/trpc`,
+        fetch: (input, init) => {
+          return fetch(input, {
+            ...init,
+            credentials: 'include',
+          });
+        },
         transformer: {
           serialize: (data) => data,
           deserialize: SuperJSON.deserialize,
@@ -29,6 +35,12 @@ export const trpc = createTRPCClient<AppRouter>({
       }),
       false: httpBatchLink({
         url: `${env.PUBLIC_API_URL}/trpc`,
+        fetch: (input, init) => {
+          return fetch(input, {
+            ...init,
+            credentials: 'include',
+          });
+        },
         transformer: SuperJSON,
       }),
     }),

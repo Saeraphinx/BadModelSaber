@@ -21,7 +21,7 @@ export const DEFAULT_CONFIG = {
         fileRoute: `/files`, // the base route for the files. no trailing slash
         trustProxy: false, // set to true if behind a reverse proxy like nginx
         storeSessions: true, // whether to store sessions in something other than memory
-        storedSessionTimeout: 60 * 60 * 24 * 7, // how long to store sessions in seconds (default: 7 days)
+        storedSessionTimeout: 1000 * 60 * 60 * 24 * 7, // how long to store sessions in miliseconds (default: 7 days)
         sessionCookieName: `bms_session`, // the name of the session cookie
         sessionCookieSameSite: `strict` as `strict`, // the SameSite attribute for the session cookie
         sessionCookieSecret: `supersecretkey`, // the secret for the session cookie

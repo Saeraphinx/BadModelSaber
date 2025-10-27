@@ -49,6 +49,18 @@
   resolved "https://registry.yarnpkg.com/@discordjs/collection/-/collection-2.1.1.tgz#901917bc538c12b9c3613036d317847baee08cae"
   integrity sha512-LiSusze9Tc7qF03sLCujF5iZp7K+vRNEDBZ86FT9aQAv3vxMLihUvKvpsCWiQ2DJq1tVckopKm1rxomgNUc9hg==
 
+"@discordjs/core@^2.3.0":
+  version "2.3.0"
+  resolved "https://registry.yarnpkg.com/@discordjs/core/-/core-2.3.0.tgz#1b74296f72e8dffba838aa802a8a86f3e5104ea6"
+  integrity sha512-4Zl4MwKau1DBOBbmlQdVExaBPoDg6vS3Z8js4oZyCe59EnH7LGPRu7L7PKkYjs81Ftkuf0U5XMClsBHv1ARznA==
+  dependencies:
+    "@discordjs/rest" "^2.6.0"
+    "@discordjs/util" "^1.1.1"
+    "@discordjs/ws" "^2.0.3"
+    "@sapphire/snowflake" "^3.5.3"
+    "@vladfrangu/async_event_emitter" "^2.4.6"
+    discord-api-types "^0.38.29"
+
 "@discordjs/formatters@^0.6.1":
   version "0.6.1"
   resolved "https://registry.yarnpkg.com/@discordjs/formatters/-/formatters-0.6.1.tgz#211bf3eb060d8fe7fa1f020b8be3c4adad00555a"
@@ -90,6 +102,21 @@
     discord-api-types "^0.38.1"
     tslib "^2.6.2"
     ws "^8.17.0"
+
+"@discordjs/ws@^2.0.3":
+  version "2.0.3"
+  resolved "https://registry.yarnpkg.com/@discordjs/ws/-/ws-2.0.3.tgz#a73ee62333d6e3a717a6311d92c9f01edddde4de"
+  integrity sha512-c/Yd0eK2kFAvGn5/xECdUziSXLQh7tFO7kw2nfsj46B6txhPpJweR8yYjtYQ+kbUsaFcoQOrZ69wYqfetdqSHw==
+  dependencies:
+    "@discordjs/collection" "^2.1.1"
+    "@discordjs/rest" "^2.5.1"
+    "@discordjs/util" "^1.1.1"
+    "@sapphire/async-queue" "^1.5.3"
+    "@types/ws" "^8.5.12"
+    "@vladfrangu/async_event_emitter" "^2.4.6"
+    discord-api-types "^0.38.1"
+    tslib "^2.6.3"
+    ws "^8.18.0"
 
 "@emnapi/runtime@^1.4.4":
   version "1.4.5"
@@ -802,7 +829,7 @@
   resolved "https://registry.yarnpkg.com/@types/validator/-/validator-13.15.1.tgz#52f3617eb5ba30dd0018380c64568440d0b4de0a"
   integrity sha512-9gG6ogYcoI2mCMLdcO0NYI0AYrbxIjv0MDmy/5Ywo6CpWWrqYayc+mmgxRsCgtcGJm9BSbXkMsmxGah1iGHAAQ==
 
-"@types/ws@^8.5.10":
+"@types/ws@^8.5.10", "@types/ws@^8.5.12":
   version "8.18.1"
   resolved "https://registry.yarnpkg.com/@types/ws/-/ws-8.18.1.tgz#48464e4bf2ddfd17db13d845467f6070ffea4aa9"
   integrity sha512-ThVF6DCVhA8kUGy+aazFQ4kXQ7E1Ty7A3ypFOe0IcJV8O/M511G99AW24irKrW56Wt44yG9+ij8FaqoBGkuBXg==
@@ -1297,6 +1324,11 @@ discord-api-types@^0.38.1, discord-api-types@^0.38.16:
   version "0.38.26"
   resolved "https://registry.yarnpkg.com/discord-api-types/-/discord-api-types-0.38.26.tgz#d30f6bf0a4725b0a5ea46e0a12cef0b8880bbc9a"
   integrity sha512-xpmPviHjIJ6dFu1eNwNDIGQ3N6qmPUUYFVAx/YZ64h7ZgPkTcKjnciD8bZe8Vbeji7yS5uYljyciunpq0J5NSw==
+
+discord-api-types@^0.38.29:
+  version "0.38.31"
+  resolved "https://registry.yarnpkg.com/discord-api-types/-/discord-api-types-0.38.31.tgz#023c7f18662dc4a44a22798300f44e4b148cafb1"
+  integrity sha512-kC94ANsk8ackj8ENTuO8joTNEL0KtymVhHy9dyEC/s4QAZ7GCx40dYEzQaadyo8w+oP0X8QydE/nzAWRylTGtQ==
 
 discord.js@^14.19.3:
   version "14.22.1"
@@ -1910,11 +1942,6 @@ jju@~1.4.0:
   resolved "https://registry.yarnpkg.com/jju/-/jju-1.4.0.tgz#a3abe2718af241a2b2904f84a625970f389ae32a"
   integrity sha512-8wb9Yw966OSxApiCt0K3yNJL8pnNeIv+OEq2YMidz4FKP6nonSRoOXc80iXY4JaN2FC11B9qsNmDsm+ZOfMROA==
 
-jose@^6.1.0:
-  version "6.1.0"
-  resolved "https://registry.yarnpkg.com/jose/-/jose-6.1.0.tgz#96285365689d16f2845a353964d2284bf19f464c"
-  integrity sha512-TTQJyoEoKcC1lscpVDCSsVgYzUDg/0Bt3WE//WiTPK6uOCQC2KZS4MpugbMWt/zyjkopgZoXhZuCi00gLudfUA==
-
 js-tokens@^9.0.1:
   version "9.0.1"
   resolved "https://registry.yarnpkg.com/js-tokens/-/js-tokens-9.0.1.tgz#2ec43964658435296f6761b34e10671c2d9527f4"
@@ -2113,11 +2140,6 @@ node-mock-http@^1.0.0:
   resolved "https://registry.yarnpkg.com/node-mock-http/-/node-mock-http-1.0.3.tgz#4e55e093267a3b910cded7354389ce2d02c89e77"
   integrity sha512-jN8dK25fsfnMrVsEhluUTPkBFY+6ybu7jSB1n+ri/vOGjJxU8J9CZhpSGkHXSkFjtUhbmoncG/YG9ta5Ludqog==
 
-oauth4webapi@^3.8.2:
-  version "3.8.2"
-  resolved "https://registry.yarnpkg.com/oauth4webapi/-/oauth4webapi-3.8.2.tgz#500d1979038c14656f3f24ff1eb501ff3993115b"
-  integrity sha512-FzZZ+bht5X0FKe7Mwz3DAVAmlH1BV5blSak/lHMBKz0/EBMhX6B10GlQYI51+oRp8ObJaX0g6pXrAxZh5s8rjw==
-
 object-assign@^4:
   version "4.1.1"
   resolved "https://registry.yarnpkg.com/object-assign/-/object-assign-4.1.1.tgz#2109adc7965887cfc05cbbd442cac8bfbb360863"
@@ -2160,14 +2182,6 @@ openapi3-ts@4.4.0:
   integrity sha512-9asTNB9IkKEzWMcHmVZE7Ts3kC9G7AFHfs8i7caD8HbI76gEjdkId4z/AkP83xdZsH7PLAnnbl47qZkXuxpArw==
   dependencies:
     yaml "^2.5.0"
-
-openid-client@^6.8.1:
-  version "6.8.1"
-  resolved "https://registry.yarnpkg.com/openid-client/-/openid-client-6.8.1.tgz#0e6dd3c1e9c98771ebf387b793ce9f626791a924"
-  integrity sha512-VoYT6enBo6Vj2j3Q5Ec0AezS+9YGzQo1f5Xc42lreMGlfP4ljiXPKVDvCADh+XHCV/bqPu/wWSiCVXbJKvrODw==
-  dependencies:
-    jose "^6.1.0"
-    oauth4webapi "^3.8.2"
 
 package-json-from-dist@^1.0.0:
   version "1.0.1"
@@ -3184,7 +3198,7 @@ wrappy@1:
   resolved "https://registry.yarnpkg.com/wrappy/-/wrappy-1.0.2.tgz#b5243d8f3ec1aa35f1364605bc0d1036e30ab69f"
   integrity sha512-l4Sp/DRseor9wL6EvV2+TuQn63dMkPjZ/sp9XkghTEbV9KlPS1xUsZ3u7/IQO4wxtcFB4bgpQPRcR3QCvezPcQ==
 
-ws@^8.17.0:
+ws@^8.17.0, ws@^8.18.0:
   version "8.18.3"
   resolved "https://registry.yarnpkg.com/ws/-/ws-8.18.3.tgz#b56b88abffde62791c639170400c93dcb0c95472"
   integrity sha512-PEIGCY5tSlUt50cqyMXfCzX+oOPqN0vuGqWzbcJ2xvnkzkq46oOpz7dQaTDBdfICb4N14+GARUDw2XV2N4tvzg==

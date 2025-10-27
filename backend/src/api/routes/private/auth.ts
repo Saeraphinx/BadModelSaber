@@ -3,27 +3,16 @@ import { Logger } from '../../../shared/Logger.ts';
 import { Validator } from '../../../shared/Validator.ts';
 import { createRandomString, parseErrorMessage } from '../../../shared/Tools.ts';
 import { EnvConfig } from '../../../shared/EnvConfig.ts';
-import { User } from '../../../shared/Database.ts';
+import { User, UserPermissions } from '../../../shared/Database.ts';
 import { authProcedure, router } from '../../trpc.ts';
-import * as OpenIDClient from 'openid-client';
-import { RESTGetAPICurrentUserResult } from 'discord.js';
+import { REST, RESTGetAPICurrentUserResult, RESTOAuth2AuthorizationQuery, RESTPostOAuth2AccessTokenWithBotAndGuildsScopeResult, RESTPostOAuth2ClientCredentialsResult, Routes } from 'discord.js';
+import { OAuth2API } from '@discordjs/core';
 
-let discordConfig: OpenIDClient.Configuration;
-const DiscordUserEndpoint = new URL(`https://discord.com/api/v10/users/@me`);
 export function loadAuthConfig() {
     if (!EnvConfig.auth.discord.clientSecret || !EnvConfig.auth.discord.clientId) {
         Logger.warn(`Discord authentication is not configured.`);
         return;
     }
-
-    discordConfig = new OpenIDClient.Configuration({
-        issuer: `https://discord.com`,
-        token_endpoint: `https://discord.com/api/v10/oauth2/token`,
-        revocation_endpoint: `https://discord.com/api/v10/oauth2/token/revoke`,
-        authorization_endpoint: `https://discord.com/oauth2/authorize`,
-        grant_types_supported: [`authorization_code`],
-        scopes_supported: [`identify`],
-    }, EnvConfig.auth.discord.clientId, EnvConfig.auth.discord.clientSecret);
 }
 
 let validStates: { stateId: string, ip: string, redirectUrl: URL, userId: number | null }[] = [];
@@ -47,29 +36,25 @@ export const authRouter = router({
             redirect: Validator.z.url().optional(),
         }))
         .output(Validator.z.object({
-            url: Validator.z.string(),
+            url: Validator.z.url(),
         }))
         .query(async ({ input, ctx, path }) => {
-            if (discordConfig === undefined) {
-                loadAuthConfig();
-            }
-            let state = prepAuth(ctx.req.ip || ``, input.redirect || EnvConfig.server.frontendUrl);
+            let state = prepAuth(ctx.req.ip || ``, input.redirect ?? EnvConfig.server.frontendUrl);
             if (!state) {
                 throw new Error(`Could not prepare authentication.`);
             }
 
-            if (!discordConfig) {
-                throw new Error(`Discord authentication is not configured.`);
-            }
-
-            let url = OpenIDClient.buildAuthorizationUrl(discordConfig, {
-                redirect_uri: `${EnvConfig.server.backendUrl}${EnvConfig.server.apiRoute}/auth/discord/callback`,
-                scope: `identify`,
+            let RESTClient = new REST({ version: '10' });
+            let oauth2 = new OAuth2API(RESTClient);
+            let url = oauth2.generateAuthorizationURL({
+                client_id: EnvConfig.auth.discord.clientId,
+                redirect_uri: `${EnvConfig.server.backendUrl}/api/auth/discord/callback`,
+                response_type: 'code',
+                scope: 'identify',
                 state: state,
-                response_type: `code`,
             })
 
-            return { url: url.toString() };
+            return { url };
         }),
     discordAuthCallback: authProcedure(`any`)
         .meta({ openapi: { method: 'GET', path: '/auth/discord/callback', tags: ['Authentication'] } })
@@ -85,16 +70,18 @@ export const authRouter = router({
             }
             validStates = validStates.filter((s) => s.stateId !== input.state);
 
-            if (!discordConfig) {
-                throw new Error(`Discord authentication is not configured.`);
-            }
-
-            let tokenSet = await OpenIDClient.authorizationCodeGrant(discordConfig, null), {
-                expectedState: stateObj.stateId,
+            let RESTClient = new REST({ version: '10' });
+            let tokenResponse = await (new OAuth2API(RESTClient)).tokenExchange({
+                code: input.code,
+                grant_type: 'authorization_code',
+                client_id: EnvConfig.auth.discord.clientId,
+                client_secret: EnvConfig.auth.discord.clientSecret,
+                redirect_uri: `${EnvConfig.server.backendUrl}/api/auth/discord/callback`,
             });
-
-            let userInfo: RESTGetAPICurrentUserResult = await OpenIDClient.fetchProtectedResource(discordConfig, tokenSet.access_token, DiscordUserEndpoint, `GET`).then(res => res.json() as Promise<any>).catch(err => {
-                throw new Error(`Error fetching user info from Discord: ${parseErrorMessage(err)}`);
+            RESTClient.setToken(tokenResponse.access_token);
+            let userInfo = await RESTClient.get(Routes.user(`@me`), {authPrefix: `Bearer`}).then((res) => res as RESTGetAPICurrentUserResult).catch((err) => {
+                Logger.error(`Error fetching Discord user info: ${parseErrorMessage(err)}`);
+                throw new Error(`Failed to fetch user info from Discord.`, err);
             });
 
             let dbUser = await User.findByPk(userInfo.id);
@@ -102,7 +89,8 @@ export const authRouter = router({
                 dbUser = await User.create({
                     id: userInfo.id,
                     username: userInfo.username,
-                    displayName: userInfo.global_name || userInfo.username,
+                    displayName: userInfo.global_name ?? userInfo.username,
+                    roles: [UserPermissions.Create_Assets],
                     avatarUrl: userInfo.avatar ? `https://cdn.discordapp.com/avatars/${userInfo.id}/${userInfo.avatar}.png` : `https://cdn.discordapp.com/embed/avatars/${Number(userInfo.id) % 6}.png`,
                 });
                 Logger.info(`New user created: ${dbUser.username} (${dbUser.id})`);
@@ -122,7 +110,7 @@ export const authRouter = router({
                 }
             });
             if (ctx.res) {
-                ctx.res.redirect(stateObj.redirectUrl.toString());
+                ctx.res.send(`<head><meta http-equiv="refresh" content="0; url=${stateObj.redirectUrl.href}" /></head><body style="background-color: black;"><a style="color:white;" href="${stateObj.redirectUrl.href}">Click here if you are not redirected...</a></body>`);
             }
             return;
         }),
