@@ -115,7 +115,7 @@
         <Input placeholder="Test Message" />
         <Label class="mt-4 mb-2">Message</Label>
         <Textarea placeholder="This is a test message from the admins." />
-        <Button class="mt-4 mb-2 w-full">Send Alert</Button>
+        <Button onclick={sendAdminAlert} class="mt-4 mb-2 w-full">Send Alert</Button>
       </Tabs.Content>
       <Tabs.Content value="roles">
         <!-- Role Panel -->

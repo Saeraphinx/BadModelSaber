@@ -48,7 +48,7 @@ export async function importFromOldModelSaber(sendMessage: (messaage: string, ty
         if (!fs.existsSync(conversionStorage)) {
             fs.mkdirSync(conversionStorage);
         }
-        const thumbnailOutputDir = path.resolve(EnvConfig.storage.icons)
+
         let i = 0;
         for (const [key, asset] of Object.entries(modelSaberAll)) {
             if (i++ % 50 === 0) {
@@ -99,7 +99,7 @@ export async function importFromOldModelSaber(sendMessage: (messaage: string, ty
                 Logger.error(`Failed to parse asset download URL for asset ${asset.id} (${asset.name}), skipping...`);
                 continue;
             }
-            if (!fs.existsSync(path.join(EnvConfig.storage.uploads, `${asset.hash}.${asset.type}`)) && doAssetDownload) {
+            if (doAssetDownload) {
                 await fetch(`${uri[1]}${encodeURIComponent(uri[2])}`).then(res => {
                     if (!res.ok) {
                         sendMessage(`Failed to download asset ${asset.id} (${asset.name}): ${res.statusText}`, `error`);
@@ -110,7 +110,7 @@ export async function importFromOldModelSaber(sendMessage: (messaage: string, ty
                     // calculate hash
                     assetHash = crypto.createHash(hashType).update(Buffer.from(arrayBuffer)).digest('hex');
                     assetSize = arrayBuffer.byteLength;
-                    fs.writeFileSync(path.join(EnvConfig.storage.uploads, `${assetHash}.${asset.type}`), Buffer.from(arrayBuffer));
+                    fs.writeFileSync(path.join(, `${assetHash}.${asset.type}`), Buffer.from(arrayBuffer));
                 }).catch(err => {
                     sendMessage(`Failed to download asset ${asset.id} (${asset.name}): ${err}`, `error`);
                     Logger.error(`Failed to download asset ${asset.id} (${asset.name}): ${err}`);

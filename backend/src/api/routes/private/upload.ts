@@ -7,10 +7,20 @@ import path from "node:path";
 import fs from "node:fs";
 import { EnvConfig } from "../../../shared/EnvConfig.ts";
 import { authProcedure, router } from "../../trpc.ts";
-import z from "zod";
 import { zfd } from "zod-form-data";
 import { createHash } from "node:crypto";
-import { get } from "node:http";
+
+/*
+Files follow this structure:
+/storage/{uploads}/{assetId}/{files...}
+
+Where
+- {uploads} is the uploads directory as per EnvConfig
+- {assetId} is the ID of the asset in the database
+- {files...} are the files associated with the asset, including:
+    - The main asset file, named as per ${asset.name}.${asset.type} (e.g., myModel.whacker)
+    - Icon files, named as 1.png, 2.jpg, etc.
+*/
 
 export const uploadAssetV3 = router({
     part1: authProcedure([UserPermissions.Create_Assets])
@@ -28,12 +38,11 @@ export const uploadAssetV3 = router({
     .mutation(async ({ ctx, input }) => {
         Logger.debug(`Asset upload started for user with asset type ${input.data.type}`);
         let fileHash = await getHashFromFile(input.asset);
-        let imageHashes: Map<string, File> = new Map();
+        let imageNames: Map<string, File> = new Map();
         for (let i = 1; i <=5; i++) {
             let iconFile = (input as any)[`icon_${i}`] as File | undefined;
             if (iconFile) {
-                let iconHash = await getHashFromFile(iconFile);
-                imageHashes.set(`${iconHash}.${path.extname(iconFile.name)}`, iconFile);
+                imageNames.set(`${i}.${path.extname(iconFile.name)}`, iconFile);
             }
         }
             
@@ -48,24 +57,25 @@ export const uploadAssetV3 = router({
             uploaderId: ctx.user.id,
             fileHash: fileHash,
             fileSize: input.asset.size,
-            iconNames: Array.from(imageHashes.keys()),
+            iconNames: Array.from(imageNames.keys()),
             status: Status.Private,
         }).then(async (asset) => {
             Logger.debug(`Asset database entry created for user ${ctx.user?.id} with asset ID ${asset.id}`);
+            fs.mkdirSync(asset.folderPath, { recursive: true });
             await input.asset.arrayBuffer().then(async (buffer) => {
-                fs.writeFileSync(path.join(EnvConfig.storage.uploads, asset.fileName), Buffer.from(buffer));
+                fs.writeFileSync(asset.assetFilePath, Buffer.from(buffer));
             }).catch((err) => {
                 Logger.error(`Error saving asset file: ${err.message}`)
                 throw new Error(`Failed to save asset file. Please contact a site administrator.`);
             });
 
-            for (let [iconName, iconFile] of imageHashes) {
+            for (let [iconName, iconFile] of imageNames) {
                 Logger.debug(`Saving icon file ${iconName} for asset ID ${asset.id}`);
                 await iconFile.arrayBuffer().then(async (buffer) => {
-                    fs.writeFileSync(path.join(EnvConfig.storage.icons, iconName), Buffer.from(buffer));
+                    fs.writeFileSync(path.join(asset.folderPath, iconName), Buffer.from(buffer));
                 }).catch((err) => {
                     Logger.error(`Error saving icon file: ${err.message}`)
-                    fs.unlinkSync(path.join(EnvConfig.storage.uploads, asset.fileName));
+                    fs.unlinkSync(path.join(EnvConfig.storage.uploads, asset.assetFileName));
                     throw new Error(`Failed to save icon file. Please contact a site administrator.`);
                 });
             }

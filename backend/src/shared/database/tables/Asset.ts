@@ -6,6 +6,7 @@ import { z } from "zod/v4";
 import { EnvConfig } from "../../../shared/EnvConfig.ts";
 import { Logger } from "../../Logger.ts";
 import { Webhooks } from "../../Webhooks.ts";
+import path from "node:path";
 
 export type AssetInfer = InferAttributes<Asset>;
 export type AssetValidatorType = typeof Asset.validator; // for use in frontend
@@ -140,8 +141,16 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
         }
     }
 
-    get fileName(): NonAttribute<string> {
-        return `${this.fileHash}.${this.type.split('_')[1]}`; // e.g. ".saber"
+    get folderPath(): NonAttribute<string> {
+        return path.join(EnvConfig.storage.uploads, this.id.toString());
+    }
+
+    get assetFilePath(): NonAttribute<string> {
+        return path.join(this.folderPath, this.assetFileName);
+    }
+
+    get assetFileName(): NonAttribute<string> {
+        return `${this.name}.${this.type.split('_')[1]}`; // e.g. ".saber"
     }
 
     // #region Validators
@@ -590,8 +599,8 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
             id: this.id,
             discord: author ? author.username : 'Unknown',
             discordid: author ? author.id : '-1',
-            install_link: `modelsaber://${type}/${this.id}/${this.fileName}`,
-            download: `${EnvConfig.server.backendUrl}/${EnvConfig.server.fileRoute}/asset/${this.fileName}`,
+            install_link: `modelsaber://${type}/${this.id}/${this.assetFileName}`,
+            download: `${EnvConfig.server.backendUrl}/${EnvConfig.server.fileRoute}/asset/${this.assetFileName}`,
             status: this.status,
             platform: `pc`,
             variationid: null,

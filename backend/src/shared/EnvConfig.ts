@@ -29,7 +29,6 @@ export const DEFAULT_CONFIG = {
     },
     storage: {
         uploads: `./storage/uploads`, // the directory where uploads are stored
-        icons: `./storage/icons`, // the directory where icons are stored
         logs: `./storage/logs`, // the directory where logs are stored
     },
     database: {
@@ -153,15 +152,11 @@ export class EnvConfig {
 
         EnvConfig.storage = {
             uploads: process.env.STORAGE_UPLOADS || DEFAULT_CONFIG.storage.uploads,
-            icons: process.env.STORAGE_ICONS || DEFAULT_CONFIG.storage.icons,
             logs: process.env.STORAGE_LOGS || DEFAULT_CONFIG.storage.logs,
         };
 
         if (!fs.existsSync(EnvConfig.storage.uploads)) {
             fs.mkdirSync(EnvConfig.storage.uploads, { recursive: true });
-        }
-        if (!fs.existsSync(EnvConfig.storage.icons)) {
-            fs.mkdirSync(EnvConfig.storage.icons, { recursive: true });
         }
 
         EnvConfig.database = {
