@@ -145,7 +145,7 @@ export function getRoleData(role: string): {
         textColor: 'text-white',
         text: 'System Account',
         value: UserPermissions.C_System,
-        hidden: true,
+        hidden: false,
       }
     default:
       return {

@@ -52,6 +52,7 @@ const t = initTRPC.context<Context>().meta<OpenApiMeta>().create({
   },
 });
 export const router = t.router;
+export const publicProcedure = t.procedure;
 
 //dummy no auth procedure
 function dummyNoAuth() {

@@ -1,5 +1,6 @@
 import * as Winston from "winston";
 import { EnvConfig } from "./EnvConfig.ts";
+import fs from "fs";
 
 export class Logger {
     private static winston: Winston.Logger | undefined;
@@ -55,6 +56,30 @@ export class Logger {
         });
 
         Logger.log(`Logger initialized.`);
+    }
+
+    public static getLogs(afterTimestamp?: Date): { timestamp: Date; level: LogLevel; message: string }[] {
+        if (!Logger.winston) {
+            throw new Error(`Logger not initialized`);
+        }
+        let logs = fs.readFileSync(`storage/logs/bms.log`, `utf-8`);
+        let logEntries = logs.split(`\n`).filter(line => line.trim().length > 0).map(line => {
+            try {
+                let log = JSON.parse(line);
+                let date = new Date(log.timestamp);
+                if (afterTimestamp && date <= afterTimestamp) {
+                    return null;
+                }
+                return {
+                    timestamp: date,
+                    level: log.level,
+                    message: log.message,
+                };
+            } catch {
+                return null;
+            }
+        }).filter(entry => entry !== null);
+        return logEntries;
     }
 
     public static log(message: any, level: LogLevel = LogLevel.Info): void {

@@ -6,6 +6,7 @@ import { dedupeArray } from "../../../shared/Tools.ts";
 import { authProcedure, router } from "../../../api/trpc.ts";
 import { Logger } from "../../../shared/Logger.ts";
 import { importFromOldModelSaber } from "../../../shared/Importer.ts";
+import { fstat } from "fs";
 
 export const AdminRouter = router({
     setRoles: authProcedure([UserPermissions.Manage_All_Users])
@@ -29,7 +30,7 @@ export const AdminRouter = router({
         }),
     banUser: authProcedure([UserPermissions.Manage_All_Users, UserPermissions.Manage_NonMod_Users])
         .input(z.object({
-            userId: Validator.zNumberIDTransform,
+            userId: Validator.zNumberId,
             ban: z.boolean(),
         }))
         .mutation(async ({ input, ctx }) => {
@@ -52,12 +53,16 @@ export const AdminRouter = router({
             assetId: true,
             userId: true,
         }))
-        .mutation(async ({ input }) => {
+        .mutation(async ({ input, ctx }) => {
             let alert = await Alert.create(input);
             return alert;
         }),
     importOldModelSaberData: authProcedure([UserPermissions.Administative_Tasks])
         .mutation(async ({ input, ctx }) => {
             importFromOldModelSaber((message, level) => {});
+        }),
+    getAdminLogs: authProcedure([UserPermissions.Administative_Tasks])
+        .query(async ({ input, ctx }) => {
+            return Logger.getLogs(new Date(Date.now() - 1000 * 60 * 5)); // last 5 minutes
         }),
 });

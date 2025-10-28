@@ -17,10 +17,10 @@ type modelsaberasset= {
 
 const hashType = `md5`;
 const conversionStorage = `./storage/converts`;
-const doAssetDownload = false; // set to false to skip downloading assets, useful for testing
+const doAssetDownload = true; // set to false to skip downloading assets, useful for testing
 const doTumbnailDownload = true; // set to false to skip downloading thumbnails, useful for testing
 
-export async function importFromOldModelSaber(sendMessage: (messaage: string, type: `log` | `warn` | `error`) => void): Promise<void> {
+export async function importFromOldModelSaber(sendMessage: (messaage: string, type: `info` | `warn` | `error`) => void): Promise<void> {
     if (!EnvConfig.auth.discord.token) {
         Logger.error(`Discord token is not set in the environment variables. Please set DISCORD_TOKEN to import from old ModelSaber.`);
         sendMessage(`Discord token is not set in the environment variables. Please set DISCORD_TOKEN to import from old ModelSaber.`, `error`);
@@ -36,14 +36,14 @@ export async function importFromOldModelSaber(sendMessage: (messaage: string, ty
         bio: `This user was created by the ModelSaber importer for assets that couldn't be linked to a specific user during the importing process.`,
     });
     try {
-        sendMessage(`Starting import from old ModelSaber...`, `log`);
+        sendMessage(`Starting import from old ModelSaber...`, `info`);
         Logger.log(`Importing data from old ModelSaber...`);
         const modelSaberAll = await fetch(`https://modelsaber.com/api/v2/get.php`).then(res => res.json() as Promise<modelsaberasset>).catch(err => {
             sendMessage(`Failed to fetch old ModelSaber data: ${err}`, `error`);
             Logger.error(`Failed to fetch old ModelSaber data: ${err}`)
             throw err;
         });
-        sendMessage(`Fetched ${Object.keys(modelSaberAll).length} assets from old ModelSaber.`, `log`);
+        sendMessage(`Fetched ${Object.keys(modelSaberAll).length} assets from old ModelSaber.`, `info`);
         Logger.log(`Fetched ${Object.keys(modelSaberAll).length} assets from old ModelSaber.`);
         if (!fs.existsSync(conversionStorage)) {
             fs.mkdirSync(conversionStorage);
@@ -52,7 +52,7 @@ export async function importFromOldModelSaber(sendMessage: (messaage: string, ty
         let i = 0;
         for (const [key, asset] of Object.entries(modelSaberAll)) {
             if (i++ % 50 === 0) {
-                sendMessage(`Processing asset ${i}/${Object.keys(modelSaberAll).length} (${key})`, `log`);
+                sendMessage(`Processing asset ${i}/${Object.keys(modelSaberAll).length} (${key})`, `info`);
                 Logger.log(`Processing asset ${i}/${Object.keys(modelSaberAll).length} (${key})`);
             }
             // #region prep
@@ -99,8 +99,9 @@ export async function importFromOldModelSaber(sendMessage: (messaage: string, ty
                 Logger.error(`Failed to parse asset download URL for asset ${asset.id} (${asset.name}), skipping...`);
                 continue;
             }
+            let assetFileBuffer: ArrayBuffer | null = null;
             if (doAssetDownload) {
-                await fetch(`${uri[1]}${encodeURIComponent(uri[2])}`).then(res => {
+                assetFileBuffer = await fetch(`${uri[1]}${encodeURIComponent(uri[2])}`).then(res => {
                     if (!res.ok) {
                         sendMessage(`Failed to download asset ${asset.id} (${asset.name}): ${res.statusText}`, `error`);
                         throw new Error(`Failed to download asset ${asset.id} (${asset.name}): ${res.statusText}`);
@@ -110,11 +111,11 @@ export async function importFromOldModelSaber(sendMessage: (messaage: string, ty
                     // calculate hash
                     assetHash = crypto.createHash(hashType).update(Buffer.from(arrayBuffer)).digest('hex');
                     assetSize = arrayBuffer.byteLength;
-                    fs.writeFileSync(path.join(, `${assetHash}.${asset.type}`), Buffer.from(arrayBuffer));
+                    return arrayBuffer;
                 }).catch(err => {
                     sendMessage(`Failed to download asset ${asset.id} (${asset.name}): ${err}`, `error`);
                     Logger.error(`Failed to download asset ${asset.id} (${asset.name}): ${err}`);
-                    return;
+                    return null;
                 });
             } else {
                 assetSize = doAssetDownload ? fs.statSync(path.join(EnvConfig.storage.uploads, `${asset.hash}.${asset.type}`)).size : Math.floor(Math.random() * 1000000);
@@ -135,14 +136,14 @@ export async function importFromOldModelSaber(sendMessage: (messaage: string, ty
 
             // #region thumbnail
             let thumbnailName = `default.png`;
+            let tempThumbnailFilePath = ``;
+            let thumbnailOutputDir = path.join(EnvConfig.storage.uploads, `temp_thumbnails`);
             if (doTumbnailDownload) {
                 await fetch(asset.thumbnail.startsWith(`http`) ? asset.thumbnail :`https://modelsaber.com/files/${asset.type}/${asset.id}/${asset.thumbnail}`).then(res => res.arrayBuffer()).then(async (arrayBuffer) => {
-                    // calculate hash
-                    const hash = crypto.createHash(hashType).update(Buffer.from(arrayBuffer)).digest('hex');
-                    const format = asset.thumbnail.split('.').pop()?.toLowerCase() || 'png';
-        
+                    const format = asset.thumbnail.split('.').pop()?.toLowerCase() ?? 'png';
+                    // convert to webp if video or too large
                     if (format === 'mp4' || format === 'webm' || (arrayBuffer.byteLength > 8 * 1024 * 1024 && format === 'gif')) {
-                        const oldFilePath = `${conversionStorage}/${hash}.${format}`;
+                        const oldFilePath = `${conversionStorage}/1.${format}`;
                         // if the thumbnail is a video, convert it to a webp image
                         fs.writeFileSync(oldFilePath, Buffer.from(arrayBuffer));
                         if (ffmpegPath.default) {
@@ -156,12 +157,12 @@ export async function importFromOldModelSaber(sendMessage: (messaage: string, ty
                                 //.setVideoSize('512x512', true, false, `#000`)
                                 .setVideoAspectRatio('1:1')
                                 .setDisableAudio()
-                                .save(path.join(thumbnailOutputDir, `${hash}.webp`), (error, file) => {
+                                .save(path.join(thumbnailOutputDir, `1.webp`), (error, file) => {
                                     if (error) {
                                         sendMessage(`Failed to convert video thumbnail for asset ${asset.id}: ${JSON.stringify(error)}`, `error`);
                                         Logger.error(`Failed to convert video thumbnail for asset ${asset.id}: ${JSON.stringify(error)}`);
                                     }
-                                    thumbnailName = `${hash}.webp`;
+                                    thumbnailName = `1.webp`;
                                 });
                         }).catch(err => {
                             sendMessage(`Failed to convert video thumbnail for asset ${asset.id}: ${JSON.stringify(err)}`, `error`);
@@ -173,22 +174,27 @@ export async function importFromOldModelSaber(sendMessage: (messaage: string, ty
                             Logger.warn(`Asset ${asset.id} thumbnail is larger than 8MB, reformatting...`);
                             sharp(Buffer.from(arrayBuffer))
                                 .webp({ quality: 60 })
-                                .toFile(path.join(thumbnailOutputDir, `${hash}.webp`), (err, info) => {
+                                .toFile(path.join(thumbnailOutputDir, `1.webp`), (err, info) => {
                                     if (err) {
                                         sendMessage(`Failed to reformat thumbnail for asset ${asset.id}: ${err}`, `error`);
                                         Logger.error(`Failed to reformat thumbnail for asset ${asset.id}: ${err}`);
                                     } else {
-                                        sendMessage(`Reformatted thumbnail for asset ${asset.id} to ${info.size} bytes.`, `log`);
+                                        sendMessage(`Reformatted thumbnail for asset ${asset.id} to ${info.size} bytes.`, `info`);
                                         Logger.log(`Reformatted thumbnail for asset ${asset.id} to ${info.size} bytes.`);
                                     }
-                                    thumbnailName = `${hash}.webp`;
+                                    thumbnailName = `1.webp`;
                                 });
                         } else {
-                            fs.writeFileSync(path.join(thumbnailOutputDir, `${hash}.${format}`), Buffer.from(arrayBuffer));
-                            thumbnailName = `${hash}.${format}`;
+                            fs.writeFileSync(path.join(thumbnailOutputDir, `1.${format}`), Buffer.from(arrayBuffer));
+                            thumbnailName = `1.${format}`;
                         }
                     }
-                })
+                }).catch(err => {
+                    sendMessage(`Failed to download thumbnail for asset ${asset.id} (${asset.name}): ${err}`, `error`);
+                    Logger.error(`Failed to download thumbnail for asset ${asset.id} (${asset.name}): ${err}`);
+                });
+
+                tempThumbnailFilePath = path.join(thumbnailOutputDir, thumbnailName);
             }
 
             if (thumbnailName === `default.png` && doTumbnailDownload) {
@@ -340,12 +346,25 @@ export async function importFromOldModelSaber(sendMessage: (messaage: string, ty
                 status: Status.Approved,
                 tags: tags as Tags[],
                 createdAt: new Date(asset.date),
+            }).then((record) => {
+                if (assetFileBuffer) {
+                    fs.writeFileSync(record.assetFilePath, Buffer.from(assetFileBuffer));
+                } else {
+                    sendMessage(`Asset file buffer for asset ${asset.id} (${asset.name}) is null, skipping file save.`, `warn`);
+                    Logger.warn(`Asset file buffer for asset ${asset.id} (${asset.name}) is null, skipping file save.`);
+                }
+                if (doTumbnailDownload && tempThumbnailFilePath && fs.existsSync(tempThumbnailFilePath)) {
+                    fs.copyFileSync(tempThumbnailFilePath, path.join(record.folderPath, thumbnailName));
+                } else {
+                    sendMessage(`Thumbnail file for asset ${asset.id} (${asset.name}) does not exist, skipping thumbnail save.`, `warn`);
+                    Logger.warn(`Thumbnail file for asset ${asset.id} (${asset.name}) does not exist, skipping thumbnail save.`);
+                }
             }).catch(err => {
                 sendMessage(`Failed to create asset ${asset.id} (${asset.name}): ${err}`, `error`);
                 Logger.error(`Failed to create asset ${asset.id} (${asset.name}): ${err}`);
                 Logger.debug(`Asset data: ${JSON.stringify(err)}`);
                 Logger.debug(parseErrorMessage(err));
-            });
+            })
         }
 
         //#region variations
@@ -362,7 +381,7 @@ export async function importFromOldModelSaber(sendMessage: (messaage: string, ty
         }
         await new Promise(resolve => setTimeout(resolve, 5000)); // wait for all assets to be created
         //fs.rmSync(conversionStorage, { recursive: true, force: true });
-        sendMessage(`Finished importing data from old ModelSaber.`, `log`);
+        sendMessage(`Finished importing data from old ModelSaber.`, `info`);
         Logger.log(`Finished importing data from old ModelSaber.`);
     } catch (error) {
         sendMessage(`An error occurred while importing from old ModelSaber: ${parseErrorMessage(error)}`, `error`);

@@ -96,7 +96,7 @@ export class DatabaseManager {
                     username: `system`,
                     displayName: `System User`,
                     bio: `hi :3\n\nThis user account is used for system operations and is not meant to be used by anyone.`,
-                    roles: [...Object.values(UserPermissions).filter(r => !r.startsWith(`c_`)), UserPermissions.C_System], // no cosmetic roles except system
+                    roles: [...Object.values(UserPermissions).filter(r => !r.startsWith(`cos_`)), UserPermissions.C_System], // no cosmetic roles except system
                     sponsorUrl: [{
                         platform: SponsorType.Patreon,
                         url: `https://www.patreon.com/beatsabermoddinggroup`

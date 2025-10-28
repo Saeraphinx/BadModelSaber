@@ -1,29 +1,59 @@
 import express, { Router } from "express";
 import { EnvConfig } from "../../../shared/EnvConfig.ts";
-import { AssetFileFormat } from "../../../shared/Database.ts";
+import { Asset, AssetFileFormat } from "../../../shared/Database.ts";
+import path from "path";
+import fs from "fs";
 
 export class FileRoutes {
     public static loadRoutes(router: Router): void {
-        router.use(`/icons`, express.static(EnvConfig.storage.icons, {
-            dotfiles: `ignore`,
-            index: false,
-            extensions: [`png`, `jpg`, `gif`, `webp`],
-            lastModified: true,
-            immutable: true,
-            maxAge: EnvConfig.isProduction ? `2 weeks` : 0, // 2 weeks in production, no caching in development
-            fallthrough: false, // Do not fall through to next middleware if file not found
-        }));
+        router.get(`/:assetId/:fileName`, async (req, res) => {
+            const assetId = req.params.assetId;
+            const fileName = req.params.fileName;
 
-        let fileExtentions = Object.values(AssetFileFormat).map(format => format.split(`_`)[1]);
+            let requestedPath = path.resolve(EnvConfig.storagePath, assetId, fileName);
+            if (!requestedPath.startsWith(EnvConfig.storagePath)) {
+                res.status(400).json({ message: `Invalid file path` });
+                return;
+            }
+            if (!fs.existsSync(requestedPath)) {
+                res.status(404).json({ message: `File not found` });
+                return;
+            }
 
-        router.use(`/uploads`, express.static(EnvConfig.storage.uploads, {
-            dotfiles: `ignore`,
-            index: false,
-            extensions: fileExtentions,
-            lastModified: true,
-            immutable: true,
-            maxAge: EnvConfig.isProduction ? `2 weeks` : 0, // 2 weeks in production, no caching in development
-            fallthrough: false, // Do not fall through to next middleware if file not found
-        }));
+            res.sendFile(requestedPath, { 
+                dotfiles: 'deny', 
+                cacheControl: true,
+                maxAge: '14d',
+                immutable: true
+            });
+        });
+
+        // compatibility route for old asset file paths
+        router.get(`/:type/:assetId/:fileName`, async (req, res) => {
+            const type = req.params.type;
+            let assetId = req.params.assetId;
+            let fileName = req.params.fileName;
+
+            let requestedPath = path.resolve(EnvConfig.storagePath, assetId, fileName);
+            if (!requestedPath.startsWith(EnvConfig.storagePath)) {
+                res.status(400).json({ message: `Invalid file path` });
+                return;
+            }
+            if (!fs.existsSync(requestedPath)) {
+                let asset = Asset.findOne({ where: { id: assetId } }).then(asset => {
+                    if (!asset) {
+                        res.status(404).json({ message: `File not found` });
+                        return;
+                    }
+                    requestedPath = asset.assetFilePath;
+                });
+            }
+            res.sendFile(requestedPath, { 
+                dotfiles: 'deny', 
+                cacheControl: true,
+                maxAge: '14d',
+                immutable: true
+            });
+        });
     }
 }

@@ -9,6 +9,7 @@
   import { Checkbox } from "$shadcn/components/ui/checkbox";
   import { toast } from "svelte-sonner";
   import { trpc } from "$lib/scripts/utils/api";
+  import { RefreshCwIcon } from "@lucide/svelte";
 
   // #region Alert
   let alertType = $state(AlertType.AssetApproved);
@@ -71,9 +72,51 @@
       toast.error("Failed to update user roles.");
     });
   }
+  // #endregion
+
+  // #region Admin Logs
+  let adminLogs: { timestamp: Date; level: string; message: string }[] = $state([]);
+  function fetchAdminLogs() {
+    trpc.AdminRouter.getAdminLogs.query().then((logs) => {
+      adminLogs = logs;
+      toast.success("Admin logs fetched.");
+    }).catch((err) => {
+      console.error(err);
+      toast.error("Failed to fetch admin logs.");
+    });
+  }
 </script>
 
 <div class="flex flex-col md:flex-row gap-4 m-auto p-4 justify-center">
+  <div class="flex flex-col items-center justify-center p-4 bg-accent rounded-lg m-auto w-[400px]">
+    <div class="flex flex-row gap-2">
+      <p class="text-2xl">
+        Admin Logs
+      </p>
+      <Button variant="outline" size="icon" onclick={fetchAdminLogs}>
+        <RefreshCwIcon />
+      </Button>
+    </div>
+    <div class="h-[400px] w-full overflow-y-scroll bg-background-secondary rounded-lg p-2">
+      {#if adminLogs.length >= 1}
+        {#each adminLogs as log}
+          <div class="flex flex-row mb-2">
+            {#if log.level === 'error'}
+              <p class="text-red-500 font-mono"><strong>[{new Date(log.timestamp).toLocaleString()}] [{log.level.toUpperCase()}]</strong> {log.message}</p>
+            {:else if log.level === 'warn'}
+              <p class="text-yellow-500 font-mono"><strong>[{new Date(log.timestamp).toLocaleString()}] [{log.level.toUpperCase()}]</strong> {log.message}</p>
+            {:else}
+              <p class="font-mono"><strong>[{new Date(log.timestamp).toLocaleString()}] [{log.level.toUpperCase()}]</strong> {log.message}</p>
+            {/if}
+          </div>
+        {/each}
+      {:else}
+        <div class="flex flex-col items-center justify-center h-full">
+          <p>No logs to display. Click the refresh button to load logs.</p>
+        </div>
+      {/if}
+    </div>
+  </div>
   <div class="flex flex-col items-center justify-center p-4 bg-accent rounded-lg m-auto w-[400px]">
     <p class="p-2 text-2xl">Manual Operations</p>
     <Tabs.Root value="roles" class="w-full">
@@ -148,6 +191,13 @@
   </div>
   <div class="flex flex-col items-center justify-center p-4 bg-accent rounded-lg m-auto w-[400px]">
     <p>One-Shots</p>
-    <Button class="mt-4 mb-2 w-full">Import Old ModelSaber Data</Button>
+    <Button class="mt-4 mb-2 w-full" onclick={() => {
+      trpc.AdminRouter.importOldModelSaberData.mutate().then(() => {
+        toast.success("Import started.");
+      }).catch((err) => {
+        console.error(err);
+        toast.error("Failed to start import.");
+      });
+    }}>Import Old ModelSaber Data</Button>
   </div>
 </div>
