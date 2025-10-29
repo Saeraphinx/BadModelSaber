@@ -28,7 +28,7 @@
   import { navigating, page } from "$app/state";
   import Skeleton from "$shadcn/components/ui/skeleton/skeleton.svelte";
   import CarouselNavigator from "$lib/components/generic/CarouselNavigator.svelte";
-  import { getAssetThumbnailUrl, getAssetUrl, trpc } from "$lib/scripts/utils/api.js";
+  import { getAssetUrl, trpc } from "$lib/scripts/utils/api.js";
   import ApprovalPopup from "$lib/components/assets/ApprovalDialog.svelte";
   import { onMount } from "svelte";
   import { toast } from "svelte-sonner";
@@ -128,7 +128,7 @@
 
   onMount(async () => {
     if (data.pageData.linkedIds.length > 0) {
-      trpc.assetsRouterV3.getMultipleAssetsById.query({ id: data.pageData.linkedIds.splice(0,20)}).then((res) => {
+      trpc.assetsRouterV3.getMultipleAssetsById.query({ id: data.pageData.linkedIds.splice(0,20) }).then((res) => {
         relatedAssets = res ? Object.values(res) : [];
         isRelatedLoading = false;
       }).catch((err) => {
@@ -273,7 +273,7 @@
       {#each data.pageData.icons as icon}
         <Carousel.Item>
           <div class="overflow-hidden rounded-2xl relative">
-            <img src={`${getAssetThumbnailUrl(icon)}`} alt="Icon for {data.pageData.name}" class="w-full h-full rounded-2xl transition-all duration-300 {isBlurred ? `blur-2xl` : ``}" />
+            <img src={`${getAssetUrl(data.pageData.id, icon)}`} alt="Icon for {data.pageData.name}" class="w-full h-full rounded-2xl transition-all duration-300 {isBlurred ? `blur-2xl` : ``}" />
             {#if isBlurred}
               <div class="flex flex-col absolute top-0 left-0 w-full h-full justify-center items-center">
                 <p class="text-green">This asset has the NSFW tag.</p>
@@ -345,7 +345,7 @@
 {#snippet buttons(center = mobileView.current)}
   <div class={cn("flex flex-row gap-2 flex-wrap", center ? "justify-center" : "justify-start")}>
     {#if !isEditing}
-      <Button variant="default" href={getAssetUrl(`unknown`)} disabled>
+      <Button variant="default" href={getAssetUrl(data.pageData.id, data.pageData.name)} disabled>
         <DownloadIcon />
         Download
       </Button>

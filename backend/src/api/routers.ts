@@ -13,6 +13,8 @@ import { konamiRouter } from './routes/private/updateUser.ts';
 import { Logger } from '../shared/Logger.ts';
 import { uploadAssetV3 } from './routes/private/upload.ts';
 import { parseErrorMessage } from '../shared/Tools.ts';
+import { statusRouter } from './routes/private/status.ts';
+import { EnvConfig } from '../shared/EnvConfig.ts';
 
 const appRouter = router({
     AdminRouter,
@@ -24,7 +26,8 @@ const appRouter = router({
     konamiRouter,
     assetsRouterV3,
     authRouter,
-    uploadAssetV3
+    uploadAssetV3,
+    statusRouter
 });
 
 export type AppRouter = typeof appRouter;
@@ -32,7 +35,9 @@ export const loadExpressMiddleware = createExpressMiddleware({
     router: appRouter,
     createContext,
     onError: ({ error, type, path }) => {
-        Logger.error(`tRPC Error on ${type} ${path}: ${error.cause ? parseErrorMessage(error.cause) : error.message}`);
+        if (EnvConfig.isDevMode) {
+            Logger.error(`tRPC Error on ${type} ${path}: ${error.cause ? parseErrorMessage(error.cause) : error.message}`);
+        }
     }
 });
 export const loadOpenApiMiddleware = createOpenApiExpressMiddleware({

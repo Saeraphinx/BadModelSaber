@@ -3,6 +3,7 @@ import { EnvConfig } from "../../../shared/EnvConfig.ts";
 import { Asset, AssetFileFormat } from "../../../shared/Database.ts";
 import path from "path";
 import fs from "fs";
+import { Logger } from "../../../shared/Logger.ts";
 
 export class FileRoutes {
     public static loadRoutes(router: Router): void {
@@ -10,16 +11,19 @@ export class FileRoutes {
             const assetId = req.params.assetId;
             const fileName = req.params.fileName;
 
-            let requestedPath = path.resolve(EnvConfig.storagePath, assetId, fileName);
-            if (!requestedPath.startsWith(EnvConfig.storagePath)) {
+            let requestedPath = path.resolve(EnvConfig.storage.uploads, assetId, fileName);
+            if (!requestedPath.startsWith(path.resolve(EnvConfig.storage.uploads))) {
                 res.status(400).json({ message: `Invalid file path` });
                 return;
+            } else {
+                Logger.warn(`Invalid file path attempt ${req.path} resulting in ${requestedPath}`);
             }
             if (!fs.existsSync(requestedPath)) {
                 res.status(404).json({ message: `File not found` });
                 return;
             }
 
+            Logger.debug(`Serving file via new route: ${requestedPath}`);
             res.sendFile(requestedPath, { 
                 dotfiles: 'deny', 
                 cacheControl: true,
@@ -34,10 +38,12 @@ export class FileRoutes {
             let assetId = req.params.assetId;
             let fileName = req.params.fileName;
 
-            let requestedPath = path.resolve(EnvConfig.storagePath, assetId, fileName);
-            if (!requestedPath.startsWith(EnvConfig.storagePath)) {
+            let requestedPath = path.resolve(EnvConfig.storage.uploads, assetId, fileName);
+            if (!requestedPath.startsWith(path.resolve(EnvConfig.storage.uploads))) {
                 res.status(400).json({ message: `Invalid file path` });
                 return;
+            } else {
+                Logger.warn(`Invalid file path attempt ${req.path} resulting in ${requestedPath}`);
             }
             if (!fs.existsSync(requestedPath)) {
                 let asset = Asset.findOne({ where: { id: assetId } }).then(asset => {
@@ -48,6 +54,8 @@ export class FileRoutes {
                     requestedPath = asset.assetFilePath;
                 });
             }
+
+            Logger.debug(`Serving file via compat route: ${requestedPath}`);
             res.sendFile(requestedPath, { 
                 dotfiles: 'deny', 
                 cacheControl: true,

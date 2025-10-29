@@ -92,6 +92,11 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
     @Column({
         type: DataType.STRING,
         allowNull: false,
+    })
+    declare fileName: string; // file-safe version of the asset name
+    @Column({
+        type: DataType.STRING,
+        allowNull: false,
         unique: true,
     })
     declare fileHash: string;
@@ -154,6 +159,8 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
     }
 
     // #region Validators
+    private static validatorTypeTest1: z.infer<typeof Asset.validator> = ({} as Asset); // validator has property asset doesn't
+    private static validatorTypeTest2: AssetInfer = ({} as z.infer<typeof Asset.validator>); // asset has property validator doesn't
     public static validator = z.object({
         // unique by db
         id: z.number().int().positive(),
@@ -171,9 +178,11 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
         license: z.enum(Object.values(License)),
         licenseUrl: z.url().nullable(),
         sourceUrl: z.url().nullable(),
+        fileName: z.string().min(1).max(128).regex(/^[\\/:*?"<>|]+$/g, "File name contains invalid characters"),
         // unique by db
         fileHash: z.string().min(1).max(64),
         fileSize: z.number().int().positive(),
+        iconNames: z.array(z.string()).max(5),
         status: z.enum(Status),
         statusHistory: z.array(z.object({
             status: z.enum(Status),
@@ -184,7 +193,7 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
         tags: z.array(z.enum(Tags)).default([]),
         createdAt: z.date(),
         updatedAt: z.date(),
-        deletedAt: z.date().nullable().optional(),
+        deletedAt: z.date().nullable(),
     }).refine(async (data) => {
         if (data.license === 'custom' && !data.licenseUrl) {
             return false; // If license is custom, licenseUrl must be provided
@@ -195,6 +204,7 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
     }, {
         message: "If license is 'custom', licenseUrl must be provided.",
     });
+
 
     // This validator is used for creating new assets, it omits the id and timestamps and other fields that are marked as CreationOptional
     public static createValidator = z.object({
@@ -518,6 +528,12 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
     }
     // #endregion
     // #region Misc
+
+    public static convertNameToFileSafe(name: string): string {
+        // Remove any invalid file name characters
+        return name.replace(/[\\\/:\*\?"<>\|]/g, `_`).substring(0, 128);
+    }
+
     public alertUploader(data: {
         type: AlertType;
         header: string;

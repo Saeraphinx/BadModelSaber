@@ -1,15 +1,7 @@
 import { env } from "$env/dynamic/public";
 
-export function getApiUrl(path: string): string {
-  return `${env.PUBLIC_API_URL}${path}`;
-}
-
-export function getAssetUrl(fileName: string): string {
-  return `${env.PUBLIC_ASSET_URL}/uploads/${fileName}`;
-}
-
-export function getAssetThumbnailUrl(fileName: string): string {
-  return `${env.PUBLIC_ASSET_URL}/icons/${fileName}`;
+export function getAssetUrl(assetId: number, fileName: string): string {
+  return `${env.PUBLIC_ASSET_URL}/${assetId}/${fileName}`;
 }
 
 import { createTRPCClient, httpBatchLink, httpLink, isNonJsonSerializable, splitLink } from '@trpc/client';

@@ -118,7 +118,7 @@ export async function importFromOldModelSaber(sendMessage: (messaage: string, ty
                     return null;
                 });
             } else {
-                assetSize = doAssetDownload ? fs.statSync(path.join(EnvConfig.storage.uploads, `${asset.hash}.${asset.type}`)).size : Math.floor(Math.random() * 1000000);
+                assetSize = 0;
                 assetHash = asset.hash;
             }
 
@@ -138,6 +138,9 @@ export async function importFromOldModelSaber(sendMessage: (messaage: string, ty
             let thumbnailName = `default.png`;
             let tempThumbnailFilePath = ``;
             let thumbnailOutputDir = path.join(EnvConfig.storage.uploads, `temp_thumbnails`);
+            if (!fs.existsSync(thumbnailOutputDir)) {
+                fs.mkdirSync(thumbnailOutputDir, { recursive: true });
+            }
             if (doTumbnailDownload) {
                 await fetch(asset.thumbnail.startsWith(`http`) ? asset.thumbnail :`https://modelsaber.com/files/${asset.type}/${asset.id}/${asset.thumbnail}`).then(res => res.arrayBuffer()).then(async (arrayBuffer) => {
                     const format = asset.thumbnail.split('.').pop()?.toLowerCase() ?? 'png';
@@ -239,7 +242,7 @@ export async function importFromOldModelSaber(sendMessage: (messaage: string, ty
                             username: discordUser.username,
                             displayName: discordUser.global_name || discordUser.username,
                             avatarUrl: `https://cdn.discordapp.com/avatars/${discordUser.id}/${discordUser.avatar}.webp?animated=true`,
-                            roles: [],
+                            roles: [UserPermissions.Create_Assets],
                         }).catch(err => {
                             sendMessage(`Failed to create user ${discordUser.id} (${discordUser.username}): ${err}`, `error`);
                             Logger.error(`Failed to create user ${discordUser.id} (${discordUser.username}): ${err}`);
@@ -347,6 +350,7 @@ export async function importFromOldModelSaber(sendMessage: (messaage: string, ty
                 tags: tags as Tags[],
                 createdAt: new Date(asset.date),
             }).then((record) => {
+                fs.mkdirSync(record.folderPath, { recursive: true });
                 if (assetFileBuffer) {
                     fs.writeFileSync(record.assetFilePath, Buffer.from(assetFileBuffer));
                 } else {

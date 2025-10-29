@@ -5,6 +5,7 @@ import path from 'path';
 export const DEFAULT_CONFIG = {
     auth: {
         discord: {
+            autoAdminIds: [`213074932458979330`],
             clientId: ``,
             clientSecret: ``,
             token: null
@@ -39,6 +40,7 @@ export const DEFAULT_CONFIG = {
 export class EnvConfig {
     public static auth: {
             [key: string]: {
+                autoAdminIds?: string[];
                 clientId: string;
                 clientSecret: string;
                 token: string | null;
@@ -108,6 +110,7 @@ export class EnvConfig {
 
         EnvConfig.auth = {
             discord: {
+                autoAdminIds: process.env.DISCORD_AUTO_ADMIN_IDS ? process.env.DISCORD_AUTO_ADMIN_IDS.split(`,`) : DEFAULT_CONFIG.auth.discord.autoAdminIds,
                 clientId: process.env.DISCORD_CLIENT_ID || DEFAULT_CONFIG.auth.discord.clientId,
                 clientSecret: process.env.DISCORD_CLIENT_SECRET || DEFAULT_CONFIG.auth.discord.clientSecret,
                 token: process.env.DISCORD_TOKEN || DEFAULT_CONFIG.auth.discord.token,

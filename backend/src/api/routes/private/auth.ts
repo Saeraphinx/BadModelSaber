@@ -86,11 +86,18 @@ export const authRouter = router({
 
             let dbUser = await User.findByPk(userInfo.id);
             if (!dbUser) {
+                let roles = [UserPermissions.Create_Assets];
+                if (userInfo && EnvConfig.auth.discord.autoAdminIds && EnvConfig.auth.discord.autoAdminIds.includes(userInfo.id)) {
+                    Logger.info(`Auto-assigning administrative permissions to user ${userInfo.username} (${userInfo.id})`);
+                    roles.push(UserPermissions.Administative_Tasks);
+                    roles.push(UserPermissions.Manage_All_Users);
+                    roles.push(UserPermissions.C_Admin)
+                }
                 dbUser = await User.create({
                     id: userInfo.id,
                     username: userInfo.username,
                     displayName: userInfo.global_name ?? userInfo.username,
-                    roles: [UserPermissions.Create_Assets],
+                    roles: roles,
                     avatarUrl: userInfo.avatar ? `https://cdn.discordapp.com/avatars/${userInfo.id}/${userInfo.avatar}.png` : `https://cdn.discordapp.com/embed/avatars/${Number(userInfo.id) % 6}.png`,
                 });
                 Logger.info(`New user created: ${dbUser.username} (${dbUser.id})`);
