@@ -310,6 +310,9 @@ export async function importFromOldModelSaber(sendMessage: (messaage: string, ty
                 } else if (msTagProcessed.includes(`full body tracking`)) {
                     tags.push(Tags.FBT);
                     break;
+                } else if (msTagProcessed.includes(`anima`)) {
+                    tags.push(Tags.Animations);
+                    break;
                 }
 
                 if (!tagAccepted) {
@@ -341,6 +344,7 @@ export async function importFromOldModelSaber(sendMessage: (messaage: string, ty
                 description: description,
                 fileHash: assetHash,
                 type: newType,
+                fileSafeName: Asset.convertNameToFileSafe(name),
                 fileSize: assetSize,
                 iconNames: [thumbnailName],
                 license: License.Custom,
@@ -366,7 +370,7 @@ export async function importFromOldModelSaber(sendMessage: (messaage: string, ty
             }).catch(err => {
                 sendMessage(`Failed to create asset ${asset.id} (${asset.name}): ${err}`, `error`);
                 Logger.error(`Failed to create asset ${asset.id} (${asset.name}): ${err}`);
-                Logger.debug(`Asset data: ${JSON.stringify(err)}`);
+                Logger.debug(err);
                 Logger.debug(parseErrorMessage(err));
             })
         }

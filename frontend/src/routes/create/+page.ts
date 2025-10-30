@@ -9,13 +9,13 @@ export const load: PageLoad = async ({ parent }) => {
     return error(401, {message: 'You must be logged in to view this page', redirectToHome: true});
   }
 
-  if (!parentData.user.roles.includes(UserPermissions.Administative_Tasks) && !parentData.user.roles.includes(UserPermissions.Manage_All_Users)) {
+  if (!parentData.user.roles.includes(UserPermissions.Create_Assets)) {
     return error(403, {message: 'You do not have permission to view this page'});
   }
 
   return {
     pageMetadata: {
-      title: 'Admin Panel - ModelSaber',
+      title: 'Create Asset - ModelSaber',
     },
     user: parentData.user,
   };

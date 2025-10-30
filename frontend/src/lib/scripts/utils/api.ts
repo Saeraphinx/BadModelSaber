@@ -8,36 +8,40 @@ import { createTRPCClient, httpBatchLink, httpLink, isNonJsonSerializable, split
 import type { AppRouter } from '../../../../../backend/src/api/routers';
 import SuperJSON from "superjson";
 
-export const trpc = createTRPCClient<AppRouter>({
-  links: [
-    splitLink({
-      condition: (op) => isNonJsonSerializable(op.input),
-      true: httpLink({ // this section is needed for file uploads
-        url: `${env.PUBLIC_API_URL}/trpc`,
-        fetch: (input, init) => {
-          return fetch(input, {
-            ...init,
-            credentials: 'include',
-          });
-        },
-        transformer: {
-          serialize: (data) => data,
-          deserialize: SuperJSON.deserialize,
-        },
+export const trpc = createTRPC();
+
+export function createTRPC(svelteFetch: typeof fetch = fetch) {
+  return createTRPCClient<AppRouter>({
+    links: [
+      splitLink({
+        condition: (op) => isNonJsonSerializable(op.input),
+        true: httpLink({ // this section is needed for file uploads
+          url: `${env.PUBLIC_API_URL}/trpc`,
+          fetch: (input, init) => {
+            return svelteFetch(input, {
+              ...init,
+              credentials: 'include',
+            });
+          },
+          transformer: {
+            serialize: (data) => data,
+            deserialize: SuperJSON.deserialize,
+          },
+        }),
+        false: httpBatchLink({
+          url: `${env.PUBLIC_API_URL}/trpc`,
+          fetch: (input, init) => {
+            return svelteFetch(input, {
+              ...init,
+              credentials: 'include',
+            });
+          },
+          transformer: SuperJSON,
+        }),
       }),
-      false: httpBatchLink({
-        url: `${env.PUBLIC_API_URL}/trpc`,
-        fetch: (input, init) => {
-          return fetch(input, {
-            ...init,
-            credentials: 'include',
-          });
-        },
-        transformer: SuperJSON,
-      }),
-    }),
-  ],
-});
+    ],
+  });
+}
 
 export function parseError(err: unknown): {
   message: string;
@@ -72,7 +76,7 @@ export function parseError(err: unknown): {
     };
   }
 }
-    
+
 
 export function parseErrorMessage(err: unknown): string {
   try {

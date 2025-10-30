@@ -1,4 +1,4 @@
-import { DataTypes } from "sequelize";
+import { DataTypes, ModelAttributes } from "sequelize";
 import { Migration, Status } from "../../Database.ts";
 
 /*
@@ -96,6 +96,10 @@ export const up: Migration = async ({ context: db }) => {
         sourceUrl: {
             type: DataTypes.STRING,
             allowNull: true
+        },
+        fileSafeName: {
+            type: DataTypes.STRING,
+            allowNull: false,
         },
         fileHash: {
             type: DataTypes.STRING,

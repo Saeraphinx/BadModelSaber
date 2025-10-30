@@ -2,6 +2,7 @@
 // for information about these interfaces
 import type { AlertPublicAPIv3, AssetRequestPublicAPIv3, UserPublicAPI } from '$lib/scripts/api/DBTypes';
 import 'unplugin-icons/types/svelte'
+import type { AppRouter } from '../../../../../backend/src/api/routers';
 
 declare global {
   namespace App {
@@ -19,7 +20,6 @@ declare global {
         outgoing: number;
         reports: number | null; // Optional, can be null if not available
       };
-      fetch : typeof fetch; // Optional fetch override for server-side requests & to make sveltekit happy
       pendingToasts?: {
         type: 'info' | 'success' | 'error';
         title: string;

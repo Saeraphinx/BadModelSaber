@@ -46,7 +46,7 @@ export class FileRoutes {
                 Logger.warn(`Invalid file path attempt ${req.path} resulting in ${requestedPath}`);
             }
             if (!fs.existsSync(requestedPath)) {
-                let asset = Asset.findOne({ where: { id: assetId } }).then(asset => {
+                await Asset.findOne({ where: { id: assetId } }).then(asset => {
                     if (!asset) {
                         res.status(404).json({ message: `File not found` });
                         return;

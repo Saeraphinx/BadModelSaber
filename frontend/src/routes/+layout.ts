@@ -6,7 +6,6 @@ export const load: LayoutLoad = async ({ fetch }) => {
   let userToasted = false;
   let alertsToasted = false;
   const defaultObj = {
-    fetch,
     alerts: [],
     requestCounts: {
       incoming: 0,
@@ -48,7 +47,6 @@ export const load: LayoutLoad = async ({ fetch }) => {
   });
 
   return {
-      fetch,
       pendingToasts: pendingToasts,
       requestCounts: {
         incoming: !requestRes ? 0 : requestRes.incoming || 0,

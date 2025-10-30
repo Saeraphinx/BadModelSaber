@@ -93,7 +93,7 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
         type: DataType.STRING,
         allowNull: false,
     })
-    declare fileName: string; // file-safe version of the asset name
+    declare fileSafeName: string; // file-safe version of the asset name
     @Column({
         type: DataType.STRING,
         allowNull: false,
@@ -155,8 +155,11 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
     }
 
     get assetFileName(): NonAttribute<string> {
-        return `${this.name}.${this.type.split('_')[1]}`; // e.g. ".saber"
+        return `${this.fileSafeName}.${this.type.split('_')[1]}`; // e.g. ".saber"
     }
+
+    private static readonly invalidFileNameChars = /[<>:"/\\|?*\x00-\x1F]/gi;
+    private static readonly invalidFileNameWin = /^(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(\..*)?$/gi;
 
     // #region Validators
     private static validatorTypeTest1: z.infer<typeof Asset.validator> = ({} as Asset); // validator has property asset doesn't
@@ -178,7 +181,7 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
         license: z.enum(Object.values(License)),
         licenseUrl: z.url().nullable(),
         sourceUrl: z.url().nullable(),
-        fileName: z.string().min(1).max(128).regex(/^[\\/:*?"<>|]+$/g, "File name contains invalid characters"),
+        fileSafeName: z.string().min(1).max(128).refine(str => !Asset.invalidFileNameChars.test(str), `Invalid charecters`).refine(str => !Asset.invalidFileNameWin.test(str), "File name is a reserved Windows name"),
         // unique by db
         fileHash: z.string().min(1).max(64),
         fileSize: z.number().int().positive(),
@@ -528,10 +531,17 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
     }
     // #endregion
     // #region Misc
-
-    public static convertNameToFileSafe(name: string): string {
-        // Remove any invalid file name characters
-        return name.replace(/[\\\/:\*\?"<>\|]/g, `_`).substring(0, 128);
+    public static convertNameToFileSafe(name: string, fallbackName?: string): string {
+        name = name.trim();
+        if (name.length === 0) {
+            name = fallbackName ?? 'invalid_name';
+        }
+        if (name.length > 120) {
+            name = name.substring(0, 120);
+        }
+        name = name.replace(this.invalidFileNameChars, '_');
+        name = name.replace(this.invalidFileNameWin, '');
+        return name;
     }
 
     public alertUploader(data: {

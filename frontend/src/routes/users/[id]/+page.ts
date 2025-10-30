@@ -3,12 +3,16 @@ import { trpc } from '$lib/scripts/utils/api';
 import { error } from '@sveltejs/kit';
 import type { PageLoad } from './$types';
 
+export const ssr = false;
 export const load = (async ({ fetch, params, parent }) => {
+  const parentData = await parent();
+  const { user } = parentData;
   let userData: UserPublicAPIv3;
   if (params.id === 'me') {
-    const { user } = await parent();
+    console.log('User from parent:', user);
+    console.log('Full parent data:', parentData);
     if (!user) {
-      error(403, 'You must be logged in to view your profile');
+      error(403, { message: 'You must be logged in to view your profile', subtitle: `You must be logged in to view your profile` });
     }
     userData = user;
   } else {

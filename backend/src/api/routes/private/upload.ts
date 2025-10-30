@@ -54,6 +54,7 @@ export const uploadAssetV3 = router({
             sourceUrl: input.data.sourceUrl,
             type: input.data.type,
             tags: input.data.tags,
+            fileSafeName: Asset.convertNameToFileSafe(input.data.name),
             uploaderId: ctx.user.id,
             fileHash: fileHash,
             fileSize: input.asset.size,
