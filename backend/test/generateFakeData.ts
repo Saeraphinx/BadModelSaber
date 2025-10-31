@@ -1,0 +1,153 @@
+import * as fs from 'fs';
+
+import { Alert, AlertType, Asset, AssetFileFormat, DatabaseManager, License, LinkedAssetLinkType, SponserUrl, SponsorType, Status, Tags, User, UserPermissions } from '../src/shared/Database.ts';
+import { de, faker } from '@faker-js/faker';
+import { EnvConfig } from '../src/shared/EnvConfig.ts';
+import { Op } from 'sequelize';
+
+export async function generateFakeData() {
+    EnvConfig.load();
+    let db = new DatabaseManager(`generateFakeData`);
+    await db.init();
+
+    const testIcons = [
+        `icon1.png`,
+        `icon2.jpg`,
+        `icon3.gif`,
+        `icon4.webp`,
+        `icon5.png`,
+        `icon6.jpg`,
+        `icon7.gif`,
+        `icon8.webp`,
+    ];
+
+    let users: User[] = []
+
+    let sponserUrls: SponserUrl[] = [
+        { platform: SponsorType.Patreon, url: `https://www.patreon.com/beatsabermoddinggroup` },
+        { platform: SponsorType.KoFi, url: `https://ko-fi.com/BadModelSaber` },
+        { platform: SponsorType.GitHub, url: `https://github.com/Saeraphinx/support` },
+    ]
+
+    for (let [index, role] of Object.values(UserPermissions).entries()) {
+        let user = await User.create({
+            id: faker.string.numeric(26),
+            username: faker.internet.username({ firstName: `John`, lastName: role }),
+            displayName: faker.internet.displayName({ firstName: `John`, lastName: role }),
+            avatarUrl: `https://cdn.discordapp.com/embed/avatars/${index % 6}.png`,
+            bio: faker.lorem.sentence(),
+            sponsorUrl: faker.helpers.arrayElements(sponserUrls, { min: 0, max: 3 }),
+            roles: [role],
+        });
+        users.push(user);
+    }
+
+    if (db.adminUser) {
+        users.push(db.adminUser);
+    }
+
+    console.log(`Created ${users.length} users with roles`);
+
+    let userCount = 0;
+    for (let user of users) {
+        console.log(`Creating entries for user ${++userCount}/${users.length}`);
+        let usersExcludingCurrent = users.filter(u => u.id !== user.id);
+        for (let count of [1, 2, 3, 4, 5, 6]) {
+            for (let type of Object.values(AssetFileFormat)) {
+                await Asset.create({
+                    oldId: count % 2 == 1 ? faker.number.int({min: 1000000, max: 99999999}) : null, // Only set oldId for odd types
+                    linkedIds: [],
+                    type: type,
+                    uploaderId: user.id,
+                    collaborators: faker.helpers.arrayElements(usersExcludingCurrent, { min: 0, max: 3 }).map(u => u.id),
+                    name: `${faker.lorem.words(2)} ${type}`,
+                    description: `This is a test asset of type ${type}.\n${faker.lorem.paragraph()}`,
+                    license: License.CC0,
+                    licenseUrl: null,
+                    sourceUrl: null,
+                    fileHash: faker.git.commitSha(),
+                    fileSize: faker.number.int({ min: 1000, max: 1000000 }),
+                    iconNames: faker.helpers.arrayElements(testIcons, { min: 1, max: 5 }),
+                    status: faker.helpers.arrayElement(Object.values(Status)),
+                    tags: faker.helpers.arrayElements(Object.values(Tags), { min: 0, max: 5 }),
+                })
+            }
+        }
+
+        for (let count of faker.helpers.arrayElements([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], { min: 1, max: 10 })) {
+            let shouldIncludeAsset = -1;
+            let shouldIncludeRequest = -1;
+            switch (count % 3) {
+                case 0:
+                    shouldIncludeAsset = faker.number.int({ min: 0, max: 100 });
+                    break;
+                case 1:
+                    shouldIncludeRequest = faker.number.int({ min: 0, max: 100 });
+                    break;
+                default:
+                    break;
+            }
+            await Alert.create({
+                header: `Test Alert ${count}`,
+                message: `This is a test alert message number ${count} for user ${user.username}.`,
+                userId: user.id,
+                assetId: shouldIncludeAsset !== -1 ? shouldIncludeAsset : null,
+                requestId: shouldIncludeRequest !== -1 ? shouldIncludeRequest : null,
+                type: faker.helpers.arrayElement(Object.values(AlertType)),
+                read: faker.datatype.boolean(),
+            });
+        }
+    }
+
+    for (let user of users) {
+        let userAsset = await Asset.findOne({ where: { uploaderId: user.id }});
+        if (!userAsset) throw new Error(`No asset found for user ${user.id}`);
+        await Asset.findAll({ 
+            where: { 
+                uploaderId: { 
+                    [Op.ne]: user.id 
+                },
+                [Op.not]: {
+                    collaborators: {
+                        [Op.contains]: [user.id]
+                    }
+                }
+            }, include: {all: true}, offset: faker.number.int({ min: 0, max: 10 }), limit: 6 }).then(async assets => {
+            let i = 0;
+            for (let asset of assets) {
+                let author = await asset.uploader;
+                if (!author) throw new Error(`Author not found for asset ${asset.id}`);
+                switch (i++ % 3) {
+                    case 0:
+                        asset.requestCollab(author, user);
+                        break;
+                    case 1:
+                        asset.requestLink(author, userAsset, faker.helpers.arrayElement(Object.values(LinkedAssetLinkType)))
+                        break;
+                    case 2:
+                        asset.report(user, `This is a test report for asset ${asset.id}.`);
+                        break;
+                }
+                    
+            }
+        })
+    }
+
+    console.log(`Generated fake data for ${users.length} users, ${await Asset.count()} assets, and ${await Alert.count()} alerts.`);
+    let data = await db.export();
+
+    if (fs.existsSync(`./storage/fakeData.json`)) {
+        fs.unlinkSync(`./storage/fakeData.json`);
+    }
+
+    fs.writeFileSync(`./storage/fakeData.json`, JSON.stringify(data, null, 0));
+    console.log(`Fake data written to ../storage/fakeData.json`);
+
+    await db.dropSchema();
+    await db.closeConnenction();
+    return true;
+}
+
+if (process.argv[1] === import.meta.filename) {
+    generateFakeData()
+}

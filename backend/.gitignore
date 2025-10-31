@@ -1,0 +1,10 @@
+build/
+node_modules/
+storage/
+test/test.sqlite
+test/testData.json
+test/temp
+converts
+.env
+.*.env
+!.default.env
