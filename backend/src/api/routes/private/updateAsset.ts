@@ -26,8 +26,8 @@ export const UpdateAssetRouter = router({
         });
     }),
     linkAsset: authProcedure(`loggedIn`).input(Validator.z.object({
-        assetId: Validator.zNumberIDTransform,
-        linkToId: Validator.zNumberIDTransform,
+        assetId: Validator.zNumberId,
+        linkToId: Validator.zNumberId,
         type: Validator.z.enum(LinkedAssetLinkType)
     })).mutation(async ({ input, ctx }) => {
         const asset = await Asset.findByPk(input.assetId);
@@ -42,7 +42,7 @@ export const UpdateAssetRouter = router({
             throw new Error(`Asset to link not found`);
         }
 
-        return asset.requestLink(ctx.user, otherAsset, input.type).then(result => {
+        return await asset.requestLink(ctx.user, otherAsset, input.type).then(result => {
             if (result instanceof AssetRequest) {
                 return { message: `Request created successfully`, request: result.getAPIResponse() };
             } else {
@@ -53,7 +53,7 @@ export const UpdateAssetRouter = router({
         });
     }),
     addCollaborator: authProcedure(`loggedIn`).input(Validator.z.object({
-        id: Validator.zNumberIDTransform,
+        id: Validator.zNumberId,
         userId: Validator.zUserID
     })).mutation(async ({ input, ctx }) => {
         const asset = await Asset.findByPk(input.id);

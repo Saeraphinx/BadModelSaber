@@ -71,7 +71,7 @@
     Promise.resolve(newAsset).then((asset) => {
       if (asset) {
         toast.success("Asset submitted successfully!");
-        throw redirect(303, `/asset/${asset.id}`);
+        window.location.href = `/assets/${asset.id}`; // redirect to new asset page
       }
     });
   }

@@ -86,7 +86,8 @@ export const assetsRouterV3 = router({
         .input(Validator.z.object({
             id: Validator.z.array(Validator.zNumberId)
         }))
-        .output(Validator.z.record(Validator.z.number(), assetPublicAPIv3Schema))
+        // Record keys as numbers doesn't exist in javascript, and zod errors on it because of that
+        .output(Validator.z.record(Validator.z.string(), assetPublicAPIv3Schema))
         .query(async ({ input, ctx }) => {
             const assets = await Asset.findAll({
                 where: {
@@ -95,10 +96,11 @@ export const assetsRouterV3 = router({
                 },
                 include: { all: true }
             });
-            let response: { [key: number]: AssetPublicAPIv3 } = {};
+            let response: { [key: string]: AssetPublicAPIv3 } = {};
             for (let asset of assets) {
-                response[asset.id] = await asset.getApiV3Response();
+                response[asset.id.toString()] = await asset.getApiV3Response();
             }
+            console.log(response);
             return response;
         })
 });

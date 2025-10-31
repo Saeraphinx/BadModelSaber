@@ -3,36 +3,12 @@ import { init } from "../../src/index.ts";
 import { EnvConfig } from "../../src/shared/EnvConfig";
 import supertest from "supertest";
 import { Asset, AssetFileFormat, License, Status, Tags, User, UserInfer, UserPermissions } from "../../src/shared/Database.ts";
-import { auth } from "../../src/api/RequestUtils.ts";
 import { NextFunction, Request } from "express";
 import { Op } from "sequelize";
 import * as fs from "fs";
 
 let api_v3 = supertest(`http://localhost:8491/api/v3`);
 let user: User | undefined = undefined;
-
-vi.mock(`../../src/api/RequestUtils.ts`, async () => {
-    let original = await vi.importActual("../../src/api/RequestUtils.ts") as typeof import("../../src/api/RequestUtils.ts");
-    return {
-        ...original,
-        auth: vi.fn().mockImplementation((requiredRole: UserPermissions[] | `loggedIn` | `any`, allowBanned = false) => {
-            return (req: Request, res: Response, next: NextFunction) => {
-                if (user) {
-                    req.auth = {
-                        isAuthed: true,
-                        user: user
-                    };
-                } else {
-                    req.auth = {
-                        isAuthed: false,
-                        user: undefined
-                    };
-                }
-                next();
-            }
-        }),
-    }
-});
 
 describe(`API v3`, () => {
     let server: Awaited<ReturnType<typeof init>>;
@@ -144,7 +120,7 @@ describe(`API v3`, () => {
         let asset = await Asset.findByPk(res.body.asset.id);
         expect(asset).toBeDefined();
         expect(res.body.asset).toMatchObject(convertDatesToStrings(await asset?.getApiV3Response()) ?? {});
-        expect(fs.existsSync(`./test/temp/uploads/${asset?.fileName}`)).toBe(true);
+        expect(fs.existsSync(`./test/temp/uploads/${asset?.assetFileName}`)).toBe(true);
         expect(fs.existsSync(`./test/temp/icons/${asset?.iconNames[0]}`)).toBe(true);
         expect(fs.existsSync(`./test/temp/icons/${asset?.iconNames[1]}`)).toBe(true);
         expect(asset?.status).toBe(Status.Private);

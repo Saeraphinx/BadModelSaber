@@ -120,8 +120,7 @@ export enum UserPermissions {
     Manage_NonMod_Users = "manage_nonmod_users", // User can manage non-admin users (e.g. ban users)
     Manage_All_Users = "manage_all_users", // User can manage admin users w/o restrictions
     Create_Assets = "create_assets", // User can upload/create assets
-    Administative_Tasks = "administrative_tasks", // User can perform high-level admin tasks (e.g. import data)
-
+    Administative_Tasks = "administrative_tasks", // User can perform high-level admin tasks
 
     // cosmetic roles for badges only
     C_Developer = "cos_developer", // User is a developer of the site
@@ -264,6 +263,8 @@ export const assetPublicAPIv3Schema = z.object({
   sourceUrl: z.string().nullable(),
   fileHash: z.string(),
   fileSize: z.number(),
+  fileSafeName: z.string(),
+  downloadUrl: z.url(),
   status: statusSchema,
   statusHistory: z.array(statusHistorySchema),
   collaborators: z.array(z.string()),

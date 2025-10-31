@@ -5,9 +5,8 @@
   import Button from "$shadcn/components/ui/button/button.svelte";
   import { BadgeAlert, BadgeCheck, BadgeX, Download, DownloadCloud, InfoIcon } from "@lucide/svelte";
   import ApprovalDialog from "./ApprovalDialog.svelte";
-  import { getAssetUrl } from "$lib/scripts/utils/api";
+  import { getAssetDownloadUrl, getOneClickUrl, getThumbnailUrl } from "$lib/scripts/utils/api";
   import type { ClassValue } from "svelte/elements";
-  import { generateOneClickUrl } from "$lib/scripts/utils/oneclick";
   import { invalidate } from "$app/navigation";
   import { page } from "$app/state";
   import { cn } from "$shadcn/utils";
@@ -42,14 +41,14 @@
         };
     }
   });
-  let downloadUrl = getAssetUrl(props.asset.id, props.asset.name);
-  let oneClickUrl = generateOneClickUrl(props.asset);
+  let downloadUrl = getAssetDownloadUrl(props.asset);
+  let oneClickUrl = getOneClickUrl(props.asset);
 </script>
 
 <div class="relative {sizeClasses.size}">
   <!-- Image -->
   <div class="overflow-hidden rounded-2xl mb-4">
-    <img src={getAssetUrl(props.asset.id, props.asset.icons[0])} alt={`Icon for ${props.asset.name}`} class="{sizeClasses.size} rounded-2xl {props.asset.tags.includes(Tags.NSFW) ? `blur-xl` : ``}" />
+    <img src={getThumbnailUrl(props.asset.id, props.asset.icons[0])} alt={`Icon for ${props.asset.name}`} class="{sizeClasses.size} rounded-2xl {props.asset.tags.includes(Tags.NSFW) ? `blur-xl` : ``}" />
   </div>
 
   <!-- Card Overlay -->

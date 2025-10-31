@@ -588,6 +588,9 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
             icons: this.iconNames,
             fileHash: this.fileHash,
             fileSize: this.fileSize,
+            fileSafeName: this.fileSafeName,
+            //fileroute has the / inlcuded, so no need to add another /
+            downloadUrl: `${EnvConfig.server.backendUrl}${EnvConfig.server.fileRoute}/${this.id}/${this.assetFileName}`,
             status: this.status,
             statusHistory: this.statusHistory,
             collaborators: this.collaborators,

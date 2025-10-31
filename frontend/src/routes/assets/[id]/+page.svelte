@@ -28,7 +28,7 @@
   import { navigating, page } from "$app/state";
   import Skeleton from "$shadcn/components/ui/skeleton/skeleton.svelte";
   import CarouselNavigator from "$lib/components/generic/CarouselNavigator.svelte";
-  import { getAssetUrl, trpc } from "$lib/scripts/utils/api.js";
+  import { getOneClickUrl, getAssetDownloadUrl, trpc, getThumbnailUrl } from "$lib/scripts/utils/api.js";
   import ApprovalPopup from "$lib/components/assets/ApprovalDialog.svelte";
   import { onMount } from "svelte";
   import { toast } from "svelte-sonner";
@@ -128,7 +128,7 @@
 
   onMount(async () => {
     if (data.pageData.linkedIds.length > 0) {
-      trpc.assetsRouterV3.getMultipleAssetsById.query({ id: data.pageData.linkedIds.splice(0,20) }).then((res) => {
+      trpc.assetsRouterV3.getMultipleAssetsById.query({ id: data.pageData.linkedIds.map(li => li.id).splice(0,20) }).then((res) => {
         relatedAssets = res ? Object.values(res) : [];
         isRelatedLoading = false;
       }).catch((err) => {
@@ -224,10 +224,10 @@
           <span class="text-muted-foreground">License</span>
           {#if data.pageData.licenseUrl}
             <a href={data.pageData.licenseUrl} target="_blank" rel="noopener noreferrer" class="font-medium text-primary hover:underline">
-              {data.pageData.license}
+              Custom License...
             </a>
           {:else}
-            <span class="font-medium">{data.pageData.license}</span>
+            <span class="font-medium">{data.pageData.license.toLocaleUpperCase()}</span>
           {/if}
         </div>
       {/if}
@@ -242,7 +242,7 @@
       <div class="flex justify-between items-center overflow-ellipsis">
         <span class="text-muted-foreground">File Hash</span>
         <div class="flex flex-row items-center gap-2 justify-end max-w-[70%]">
-          <div class="block overflow-ellipsis overflow-hidden whitespace-nowrap max-w-[100%]">
+          <div class="block overflow-ellipsis overflow-hidden whitespace-nowrap max-w-full">
             <span class="font-mono w-full" title={data.pageData.fileHash}>{data.pageData.fileHash}</span>
           </div>
           <Button
@@ -273,7 +273,7 @@
       {#each data.pageData.icons as icon}
         <Carousel.Item>
           <div class="overflow-hidden rounded-2xl relative">
-            <img src={`${getAssetUrl(data.pageData.id, icon)}`} alt="Icon for {data.pageData.name}" class="w-full h-full rounded-2xl transition-all duration-300 {isBlurred ? `blur-2xl` : ``}" />
+            <img src={`${getThumbnailUrl(data.pageData.id, icon)}`} alt="Icon for {data.pageData.name}" class="w-full h-full rounded-2xl transition-all duration-300 {isBlurred ? `blur-2xl` : ``}" />
             {#if isBlurred}
               <div class="flex flex-col absolute top-0 left-0 w-full h-full justify-center items-center">
                 <p class="text-green">This asset has the NSFW tag.</p>
@@ -295,7 +295,7 @@
     <div class="flex justify-between items-center">
       <span class="text-lg font-semibold">{title}</span>
       {#if apiType === "related" && isEditing}
-        <Button onclick={() => addRelatedDialog?.showDialog()}>
+        <Button onclick={() => addRelatedDialog?.showDialog(data.pageData.id)}>
           <PlusIcon />
           Add Related Asset
         </Button>
@@ -303,7 +303,7 @@
     </div>
     {#if assets.length === 0 && !isLoading}
       <div class="flex w-full justify-center items-center">
-        <span class="text-gray-500 dark:text-gray-400 w-full py-8 text-center">{ifNoFound}</span>
+        <span class="text-gray-500 dark:text-gray-400 w-2xl py-8 text-center">{ifNoFound}</span>
       </div>
     {:else}
       <Carousel.Root
@@ -345,11 +345,11 @@
 {#snippet buttons(center = mobileView.current)}
   <div class={cn("flex flex-row gap-2 flex-wrap", center ? "justify-center" : "justify-start")}>
     {#if !isEditing}
-      <Button variant="default" href={getAssetUrl(data.pageData.id, data.pageData.name)} disabled>
+      <Button variant="default" href={getAssetDownloadUrl(data.pageData)} download>
         <DownloadIcon />
         Download
       </Button>
-      <Button variant="outline" href="" disabled>
+      <Button variant="outline" href={getOneClickUrl(data.pageData)}>
         <CloudDownloadIcon />
         OneClick Install
       </Button>

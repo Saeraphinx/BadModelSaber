@@ -1,7 +1,36 @@
 import { env } from "$env/dynamic/public";
+import type { AssetPublicAPIv3 } from "../api/DBTypes";
 
-export function getAssetUrl(assetId: number, fileName: string): string {
-  return `${env.PUBLIC_ASSET_URL}/${assetId}/${fileName}`;
+export function getThumbnailUrl(id: number | string, thumbnailName:string): string {
+  return `${env.PUBLIC_ASSET_URL}/${id}/${thumbnailName}`;
+}
+
+export function getAssetDownloadUrl(asset: AssetPublicAPIv3): string {
+  return asset.downloadUrl;
+  //return `${env.PUBLIC_ASSET_URL}/${assetId}/${fileName}`;
+}
+
+export function getOneClickUrl(asset: AssetPublicAPIv3): string {
+  const baseUrl = "modelsaber://";
+  let modelType: string;
+  switch (asset.type) {
+    case `avatar_avatar`:
+      modelType = "avatar";
+      break;
+    case `saber_saber`:
+      modelType = "saber";
+      break;
+    case `platform_plat`:
+      modelType = "platform";
+      break;
+    case `note_bloq`:
+      modelType = "bloq";
+    default:
+      modelType = asset.type
+      break;
+  }
+
+  return `${baseUrl}${modelType}/${asset.id}/${asset.fileSafeName}.${asset.type.split("_")[1]}`;
 }
 
 import { createTRPCClient, httpBatchLink, httpLink, isNonJsonSerializable, splitLink } from '@trpc/client';

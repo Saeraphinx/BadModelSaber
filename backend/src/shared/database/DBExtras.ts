@@ -264,6 +264,8 @@ export const assetPublicAPIv3Schema = z.object({
   sourceUrl: z.string().nullable(),
   fileHash: z.string(),
   fileSize: z.number(),
+  fileSafeName: z.string(),
+  downloadUrl: z.url(),
   status: statusSchema,
   statusHistory: z.array(statusHistorySchema),
   collaborators: z.array(z.string()),

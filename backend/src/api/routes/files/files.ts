@@ -12,12 +12,12 @@ export class FileRoutes {
             const fileName = req.params.fileName;
 
             let requestedPath = path.resolve(EnvConfig.storage.uploads, assetId, fileName);
-            if (!requestedPath.startsWith(path.resolve(EnvConfig.storage.uploads))) {
+             if (!requestedPath.startsWith(path.resolve(EnvConfig.storage.uploads))) {
+                Logger.warn(`Invalid file path attempt ${req.path} resulting in ${requestedPath}`);
                 res.status(400).json({ message: `Invalid file path` });
                 return;
-            } else {
-                Logger.warn(`Invalid file path attempt ${req.path} resulting in ${requestedPath}`);
-            }
+            } 
+            
             if (!fs.existsSync(requestedPath)) {
                 res.status(404).json({ message: `File not found` });
                 return;
@@ -40,11 +40,11 @@ export class FileRoutes {
 
             let requestedPath = path.resolve(EnvConfig.storage.uploads, assetId, fileName);
             if (!requestedPath.startsWith(path.resolve(EnvConfig.storage.uploads))) {
+                Logger.warn(`Invalid file path attempt ${req.path} resulting in ${requestedPath}`);
                 res.status(400).json({ message: `Invalid file path` });
                 return;
-            } else {
-                Logger.warn(`Invalid file path attempt ${req.path} resulting in ${requestedPath}`);
-            }
+            } 
+
             if (!fs.existsSync(requestedPath)) {
                 await Asset.findOne({ where: { id: assetId } }).then(asset => {
                     if (!asset) {
