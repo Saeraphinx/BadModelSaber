@@ -103,6 +103,8 @@ export enum Tags {
     ThirdPerson = 'Third Person', // camera2
 
     Contest = 'Contest',
+    
+    Featured = 'Featured',
 }
 // #endregion Asset Enums
 
@@ -113,6 +115,7 @@ export enum UserPermissions {
     View_All_Assets = "view_all_assets", // User can view & search all assets, including private ones
     Approve_Assets = "approve_assets", // User can approve/reject pending assets
     Edit_Any_Asset = "edit_any_asset", // User can edit any asset, regardless of ownership
+    Allow_Internal_Tags = "allow_internal_tags", // User can add internal tags to assets
 
     View_All_Reports = "view_all_reports", // User can view all asset reports
     Manage_All_Reports = "manage_all_reports", // User can manage (resolve) asset reports

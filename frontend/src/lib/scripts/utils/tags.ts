@@ -1,7 +1,7 @@
 import type { ClassValue } from "svelte/elements";
 import { AssetFileFormat, Tags } from "../api/DBTypes";
 
-export function getTagData(tag: Tags, assetType: AssetFileFormat): { category: string, outlineColor: ClassValue, disabled: boolean } {
+export function getTagData(tag: Tags, assetType: AssetFileFormat, shouldShowInternal: boolean = false): { category: string, outlineColor: ClassValue, disabled: boolean } {
   let splitType = assetType.split("_");
   let type = splitType[0];
   let format = splitType[1];
@@ -60,6 +60,7 @@ export function getTagData(tag: Tags, assetType: AssetFileFormat): { category: s
       intClass = `bg-[#33FFAA]`;
       break;
 
+    case Tags.Featured:
     case Tags.Contest:
       intClass = `bg-[#3b397a]`;
       break;
@@ -104,8 +105,10 @@ export function getTagData(tag: Tags, assetType: AssetFileFormat): { category: s
       category = "Type-Specific";
       break;
 
+    case Tags.Featured:
     case Tags.Contest:
-      disabled = true;
+      category = "Special";
+      disabled = !shouldShowInternal;
       break;
     case Tags.Pride:
     case Tags.Meme:
@@ -134,9 +137,9 @@ export function getTagData(tag: Tags, assetType: AssetFileFormat): { category: s
   };
 }
 
-export function getAllTagsData(assetType: AssetFileFormat): { tag: Tags, data: ReturnType<typeof getTagData> }[] {
+export function getAllTagsData(assetType: AssetFileFormat, shouldShowInternal=false): { tag: Tags, data: ReturnType<typeof getTagData> }[] {
   return Object.values(Tags).map((tag) => ({
     tag,
-    data: getTagData(tag, assetType),
+    data: getTagData(tag, assetType, shouldShowInternal),
   }));
 }

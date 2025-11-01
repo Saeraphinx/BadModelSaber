@@ -262,6 +262,10 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
     }
     // #endregion
     // #region Edits
+    public static readonly protectedTags = [
+        Tags.Featured,
+        Tags.Contest,
+    ];
     public updateAsset(data: Partial<Pick<AssetInfer, 'name' | 'description' | 'tags'>>, user: User): Promise<Asset> {
         if (data.name) {
             this.name = data.name;
@@ -275,10 +279,8 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
             let removedTags = this.tags.filter(tag => data.tags?.includes(tag));
             // only allow adding/removing internal tags if user has permission
             if (
-                newTags.some(tag => tag.startsWith('protect_')) || 
-                newTags.some(tag => tag.startsWith(`internal_`)) || 
-                removedTags.some(tag => tag.startsWith('internal_')) ||
-                removedTags.some(tag => tag.startsWith('protect_'))
+                newTags.some(tag => Asset.protectedTags.includes(tag)) || 
+                removedTags.some(tag => Asset.protectedTags.includes(tag))
             ) {
                 if (!user.roles.includes(UserPermissions.Allow_Internal_Tags)) {
                     throw new Error(`You do not have permission to add or remove internal tags.`);
