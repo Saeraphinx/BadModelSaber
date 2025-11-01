@@ -28,7 +28,7 @@
   import { navigating, page } from "$app/state";
   import Skeleton from "$shadcn/components/ui/skeleton/skeleton.svelte";
   import CarouselNavigator from "$lib/components/generic/CarouselNavigator.svelte";
-  import { getOneClickUrl, getAssetDownloadUrl, trpc, getThumbnailUrl } from "$lib/scripts/utils/api.js";
+  import { getOneClickUrl, getAssetDownloadUrl, trpc, getThumbnailUrl, parseErrorMessage } from "$lib/scripts/utils/api.js";
   import ApprovalPopup from "$lib/components/assets/ApprovalDialog.svelte";
   import { onMount } from "svelte";
   import { toast } from "svelte-sonner";
@@ -38,7 +38,6 @@
   import Textarea from "$shadcn/components/ui/textarea/textarea.svelte";
   import TagPicker from "$lib/components/forms/TagPicker.svelte";
   import { zAsset } from "$lib/scripts/api/validator.js";
-  import { fromZodError } from "zod-validation-error";
   import { cn } from "$shadcn/utils";
   import LinkAssetDialog from "$lib/components/assets/LinkAssetDialog.svelte";
   import { invalidateAll } from "$app/navigation";
@@ -410,7 +409,7 @@
       <div class="flex flex-col w-full">
         <Input aria-invalid={!zAssetName.success} type="text" bind:value={editName} placeholder="Asset Name" class="w-full mb-2" />
         {#if !zAssetName.success}
-          <span class="text-sm text-red-500 mt-1">{fromZodError(zAssetName.error)}</span>
+          <span class="text-sm text-red-500 mt-1">{parseErrorMessage(zAssetName.error)}</span>
         {/if}
       </div>
     {:else}
