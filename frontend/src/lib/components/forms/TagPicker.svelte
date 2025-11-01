@@ -11,11 +11,15 @@
 
   let {
     type = AssetFileFormat.Note_Bloq,
+    showInternalTags = false,
+    showProtectedTags = false,
     selectedTags = $bindable([] as Tags[]),
     open = $bindable(false),
     class: className = "",
   }: {
     type: AssetFileFormat;
+    showInternalTags?: boolean;
+    showProtectedTags?: boolean;
     selectedTags: Tags[];
     open: boolean;
     class?: ClassValue;

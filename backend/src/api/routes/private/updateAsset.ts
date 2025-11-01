@@ -5,7 +5,7 @@ import { authProcedure, router } from "../../../api/trpc.ts";
 
 export const UpdateAssetRouter = router({
     updateAsset: authProcedure(`loggedIn`).input(Validator.z.object({
-        assetId: Validator.zNumberIDTransform,
+        assetId: Validator.zNumberId,
         data: Asset.validator.pick({
             name: true,
             description: true,
@@ -19,7 +19,7 @@ export const UpdateAssetRouter = router({
         if (!asset.canEdit(ctx.user)) {
             throw new Error(`You are not allowed to edit this asset`);
         }
-        asset.updateAsset(input.data).then(updatedAsset => {
+        asset.updateAsset(input.data, ctx.user).then(updatedAsset => {
             return updatedAsset.getApiResponse();
         }).catch(err => {
             throw new Error(`Error updating asset: ${parseErrorMessage(err)}`);

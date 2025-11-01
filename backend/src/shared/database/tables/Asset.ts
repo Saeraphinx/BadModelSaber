@@ -262,12 +262,32 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
     }
     // #endregion
     // #region Edits
-    public updateAsset(data: Partial<Pick<AssetInfer, 'name' | 'description'>>): Promise<Asset> {
+    public updateAsset(data: Partial<Pick<AssetInfer, 'name' | 'description' | 'tags'>>, user: User): Promise<Asset> {
         if (data.name) {
             this.name = data.name;
         }
         if (data.description) {
             this.description = data.description;
+        }
+        if (data.tags) {
+            // get tags that are being added or removed
+            let newTags = data.tags.filter(tag => this.tags.includes(tag));
+            let removedTags = this.tags.filter(tag => data.tags?.includes(tag));
+            // only allow adding/removing internal tags if user has permission
+            if (
+                newTags.some(tag => tag.startsWith('protect_')) || 
+                newTags.some(tag => tag.startsWith(`internal_`)) || 
+                removedTags.some(tag => tag.startsWith('internal_')) ||
+                removedTags.some(tag => tag.startsWith('protect_'))
+            ) {
+                if (!user.roles.includes(UserPermissions.Allow_Internal_Tags)) {
+                    throw new Error(`You do not have permission to add or remove internal tags.`);
+                } else {
+                    this.tags = data.tags;
+                }
+            } else {
+                this.tags = data.tags;
+            }
         }
         Logger.debug(`Updating asset ${this.id} with data: ${JSON.stringify(data)}`);
         return this.save();

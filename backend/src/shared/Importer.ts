@@ -146,7 +146,7 @@ export async function importFromOldModelSaber(sendMessage: (messaage: string, ty
                     const format = asset.thumbnail.split('.').pop()?.toLowerCase() ?? 'png';
                     // convert to webp if video or too large
                     if (format === 'mp4' || format === 'webm' || (arrayBuffer.byteLength > 8 * 1024 * 1024 && format === 'gif')) {
-                        const oldFilePath = `${conversionStorage}/1.${format}`;
+                        const oldFilePath = `${conversionStorage}/${new Date().getTime()}.${format}`;
                         // if the thumbnail is a video, convert it to a webp image
                         fs.writeFileSync(oldFilePath, Buffer.from(arrayBuffer));
                         if (ffmpegPath.default) {
