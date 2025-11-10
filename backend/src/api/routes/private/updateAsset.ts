@@ -2,6 +2,7 @@ import { Asset, AssetRequest, LinkedAssetLinkType, User } from "../../../shared/
 import { Validator } from "../../../shared/Validator.ts";
 import { parseErrorMessage } from "../../../shared/Tools.ts";
 import { authProcedure, router } from "../../../api/trpc.ts";
+import { TRPCError } from "@trpc/server";
 
 export const UpdateAssetRouter = router({
     updateAsset: authProcedure(`loggedIn`).input(Validator.z.object({
@@ -23,6 +24,22 @@ export const UpdateAssetRouter = router({
             return updatedAsset.getApiResponse();
         }).catch(err => {
             throw new Error(`Error updating asset: ${parseErrorMessage(err)}`);
+        });
+    }),
+    submitForApproval: authProcedure(`loggedIn`).input(Validator.z.object({
+        assetId: Validator.zNumberId
+    })).mutation(async ({ input, ctx }) => {
+        const asset = await Asset.findByPk(input.assetId);
+        if (!asset) {
+            throw new TRPCError({ code: `NOT_FOUND`, message: `Asset not found` });
+        }
+        if (!asset.canEdit(ctx.user)) {
+            throw new TRPCError({ code: `FORBIDDEN`, message: `You are not allowed to edit this asset` });
+        }
+        return await asset.submitForApproval(ctx.user).then(updatedAsset => {
+            return updatedAsset.getApiResponse();
+        }).catch(err => {
+            throw new TRPCError({ code: `INTERNAL_SERVER_ERROR`, message: `Error submitting asset for approval: ${parseErrorMessage(err)}` });
         });
     }),
     linkAsset: authProcedure(`loggedIn`).input(Validator.z.object({

@@ -231,20 +231,20 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
     // #region Allowed to XYZ
     public static allowedToViewRoles(user: User | undefined | null): Status[] {
         if (!user) {
-            return [Status.Approved, Status.Pending]
+            return [Status.Verified, Status.Unverified, Status.Pending];
         }
 
         if (user.roles.includes(UserPermissions.View_All_Assets)) {
-            return [Status.Approved, Status.Pending, Status.Private, Status.Rejected];
+            return [Status.Verified, Status.Pending, Status.Private, Status.Removed, Status.Unverified];
         }
 
         // If the user is logged in, they can view all approved and pending assets (same as unlogged-in users)
-        return [Status.Approved, Status.Pending];
+        return [Status.Verified, Status.Unverified, Status.Pending];
     }
 
     public canView(user: User | null | undefined): boolean {
         if (!user) {
-            return this.status === Status.Approved || this.status === Status.Pending;
+            return this.status === Status.Verified || this.status === Status.Unverified || this.status === Status.Pending;
         }
 
         let allowedStatuses = Asset.allowedToViewRoles(user);
@@ -293,6 +293,33 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
         }
         Logger.debug(`Updating asset ${this.id} with data: ${JSON.stringify(data)}`);
         return this.save();
+    }
+
+    public async submitForApproval(reqBy: User): Promise<Asset> {
+        if (this.status !== Status.Private) {
+            throw new Error(`Only assets that are Private can be submitted for approval.`);
+        }
+        
+        let allowBypass = true;
+        switch (this.type) {
+            case AssetFileFormat.Avatar_Avatar:
+            case AssetFileFormat.Saber_Saber:
+            case AssetFileFormat.Platform_Plat:
+            case AssetFileFormat.Note_Bloq:
+                allowBypass = false;
+                break;
+            default:
+                allowBypass = true;
+                break; 
+        }
+
+        if (allowBypass) {
+            Logger.log(`Asset ${this.id} submitted for approval by user ${reqBy.id}, auto-approving due to asset type.`);
+            return this.setStatus(Status.Unverified, `Auto-approved upon submission due to asset type.`, reqBy);
+        } else {
+            Logger.log(`Asset ${this.id} submitted for approval by user ${reqBy.id}, sending to approval queue.`);
+            return this.setStatus(Status.Pending, `Submitted for approval.`, reqBy);
+        }
     }
 
     public async requestCollab(reqBy: User, userToCredit: User): Promise<AssetRequest> {
@@ -486,11 +513,11 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
 
         let alertType = AlertType.Generic
         switch (this.status) {
-            case Status.Rejected:
+            case Status.Removed:
             case Status.Private:
                 break;
             case Status.Pending:
-                if (newStatus !== Status.Approved) {
+                if (newStatus !== Status.Verified) {
                     // rejected from queue
                     alertType = AlertType.AssetRejected;
                 } else {
@@ -498,8 +525,8 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
                     alertType = AlertType.AssetApproved;
                 }
                 break;
-            case Status.Approved:
-                if (newStatus !== Status.Approved) {
+            case Status.Verified:
+                if (newStatus !== Status.Verified) {
                     alertType = AlertType.AssetRemoval
                     // verification revoked
                     break;

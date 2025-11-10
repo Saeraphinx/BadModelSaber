@@ -35,11 +35,18 @@ export enum AssetFileFormat {
     HSVConfig_JSON = 'hitscorevisualizer-config_json',
 }
     
+/*
+  Verified & Unverified should both be considered "approved" statuses.
+  The difference is that Unverified assets are newly approved assets that haven't been approved (and likely dont need to be) by a moderator yet.
+  Verified assets have been explicitly approved by a moderator.
+  Pending assets are waiting for initial approval by a moderator. This is for assets that need to be reviewed before being made public, such as asset bundles.
+*/
 export enum Status {
-    Private = 'private',
-    Pending = 'pending',
-    Approved = 'approved',
-    Rejected = 'rejected',
+    Private = 'private', // only uploader & collaborators can see
+    Pending = 'pending', // pending review by moderators (default for asset bundles)
+    Unverified = 'unverified', // approved but not yet verified by mods (default for everything else)
+    Verified = 'verified', // approved & verified by mods
+    Removed = 'removed', // rejected by moderators
 }
 
 export enum License {

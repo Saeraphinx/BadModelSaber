@@ -212,12 +212,6 @@
       </div>
       {@render dT_Regular(`Type`, typeData.combinedString)}
       {@render dT_Regular("File Size", `${(data.pageData.fileSize / 1024 / 1024).toFixed(2)} MB`)}
-      {#if data.pageData.status !== Status.Approved}
-        {@render dT_SingleBadge("Status", data.pageData.status, "destructive")}
-      {:else}
-        {@render dT_SingleBadge("Status", data.pageData.status, "default")}
-      {/if}
-
       {#if data.pageData.license}
         <div class="flex justify-between items-center">
           <span class="text-muted-foreground">License</span>
@@ -356,6 +350,23 @@
         <Button variant="destructive" href="/assets/{data.pageData.id}/report" disabled>
           <MegaphoneIcon />
           Report
+        </Button>
+      {/if}
+      {#if data.user && data.user.id === data.pageData.uploaderId && data.pageData.status === Status.Private}
+        <Button
+          variant="secondary"
+          onclick={() => {
+            trpc.UpdateAssetRouter.submitForApproval.mutate({ assetId: data.pageData.id })
+              .then(() => {
+                toast.success("Asset submitted for approval!");
+                approvalDialog?.showDialog(data.pageData.id, data.pageData.name);
+              })
+              .catch((err) => {
+                toast.error(`Failed to submit asset for approval: ${err.message}`);
+              });
+          }}>
+          <BadgeAlert />
+          Submit for Approval
         </Button>
       {/if}
       {#if data.user && data.user.roles.includes(UserPermissions.Approve_Assets)}
