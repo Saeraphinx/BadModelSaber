@@ -3,13 +3,15 @@
   import { Status, Tags, type AssetPublicAPIv3, type UserPublicAPIv3 } from "$lib/scripts/api/DBTypes";
   import { Badge } from "$shadcn/components/ui/badge";
   import Button from "$shadcn/components/ui/button/button.svelte";
-  import { BadgeAlert, BadgeCheck, BadgeX, Download, DownloadCloud, InfoIcon } from "@lucide/svelte";
+  import { BadgeAlert, BadgeCheck, BadgeX, Download, DownloadCloud, InfoIcon, CircleHelp } from "@lucide/svelte";
   import ApprovalDialog from "./ApprovalDialog.svelte";
   import { getAssetDownloadUrl, getOneClickUrl, getThumbnailUrl } from "$lib/scripts/utils/api";
   import type { ClassValue } from "svelte/elements";
   import { invalidate } from "$app/navigation";
   import { page } from "$app/state";
   import { cn } from "$shadcn/utils";
+  import * as HoverCard from "$shadcn/components/ui/hover-card";
+  import StatusHoverCard from "./StatusHoverCard.svelte";
 
   let props: {
     asset: AssetPublicAPIv3;
@@ -86,11 +88,17 @@
   </div>
 
   <!-- Status -->
-  <div title="{props.asset.status}" class="absolute top-0 right-0 p-3">
-    {#if props.asset.status === Status.Approved}
-      <BadgeCheck class="text-green-400" />
+  <div class="absolute top-0 right-0 p-3">
+    {#if props.asset.status === Status.Verified}
+      <StatusHoverCard status={props.asset.status}>
+        <BadgeCheck class="text-green-400" />
+      </StatusHoverCard>
     {:else if props.asset.status === Status.Pending}
       <BadgeAlert class="text-yellow-400" />
+    {:else if props.asset.status === Status.Unverified}
+      <StatusHoverCard status={props.asset.status}>
+        <CircleHelp class="text-white/80" />
+      </StatusHoverCard>
     {:else}
       <BadgeX class="text-red-400" />
     {/if}

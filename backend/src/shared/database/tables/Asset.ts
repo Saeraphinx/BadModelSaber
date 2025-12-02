@@ -190,7 +190,16 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
         statusHistory: z.array(z.object({
             status: z.enum(Status),
             reason: z.string().max(512),
-            timestamp: z.date(),
+            timestamp: z.preprocess((input) => {
+                if (typeof input === 'string') {
+                    const date = new Date(input);
+                    if (isNaN(date.getTime())) {
+                        return undefined; // Will fail .date() validation
+                    }
+                    return date;
+                }
+                return input;
+            }, z.date()),
             userId: z.string().refine(async (id) => await User.checkIfExists(id)), // User ID of the person who changed the status
         })),
         tags: z.array(z.enum(Tags)).default([]),
@@ -522,7 +531,7 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
                     alertType = AlertType.AssetRejected;
                 } else {
                     // approved from queue
-                    alertType = AlertType.AssetApproved;
+                    alertType = AlertType.AssetVerified;
                 }
                 break;
             case Status.Verified:
@@ -532,7 +541,8 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
                     break;
                 }
             default:
-                throw new Error(`Invalid status transition from ${this.status} to ${newStatus}`);
+                Logger.warn(`Unhandled status change from ${this.status} to ${newStatus} for asset ${this.id}`);
+                break;
         }
         if (sendAlert) {
             Webhooks.sendUpdateStatus(this, userPreformingAction, this.status, newStatus);

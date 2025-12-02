@@ -4,7 +4,7 @@ import { EnvConfig } from "./EnvConfig.ts";
 import { Logger } from "./Logger.ts";
 
 export enum WebhookType {
-    ApprovedLog = "approved-log",
+    VerifiedLog = "verified-log",
     StatusLog = "status-log",
 }
 
@@ -39,10 +39,10 @@ export class Webhooks {
 
         let color: ColorResolvable = 0x000; // Default to black
         switch (newStatus) {
-            case Status.Approved:
+            case Status.Verified:
                 color = Colors.Green;
                 break;
-            case Status.Rejected:
+            case Status.Removed:
                 color = Colors.Red;
                 break;
             case Status.Pending:
@@ -70,7 +70,7 @@ export class Webhooks {
             }],
         })
 
-        if (newStatus === Status.Approved && this.publicWebhook) {
+        if (newStatus === Status.Verified && this.publicWebhook) {
             let uploader = await asset.uploader;
             if (!uploader) {
                 Logger.warn(`Couldn't find uploader for ${asset.id}, cannot send public webhook.`);

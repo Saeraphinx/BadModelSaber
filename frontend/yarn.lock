@@ -558,10 +558,10 @@ axobject-query@^4.1.0:
   resolved "https://registry.yarnpkg.com/axobject-query/-/axobject-query-4.1.0.tgz#28768c76d0e3cff21bc62a9e2d0b6ac30042a1ee"
   integrity sha512-qIj0G9wZbMGNLjLmg1PT6v2mE9AH2zlnADJD/2tC6E00hgmhUOfEB6greHPAfLRSufHqROIUTkw6E+M3lH0PTQ==
 
-bits-ui@^2.8.6:
-  version "2.14.0"
-  resolved "https://registry.yarnpkg.com/bits-ui/-/bits-ui-2.14.0.tgz#d536618816444873b08acd146cfad0654e50f703"
-  integrity sha512-XKYLhsg7ThLXbhYldJHerAeAMKCoU9eSntYJIYJym9ah3rqL1cvg0yGBT/8e23I7RYsgh0F1pihaOJbuCJ0IJA==
+bits-ui@^2.11.0:
+  version "2.14.4"
+  resolved "https://registry.yarnpkg.com/bits-ui/-/bits-ui-2.14.4.tgz#4137da42fb5eed1df18477b1c4c0469470e1956c"
+  integrity sha512-W6kenhnbd/YVvur+DKkaVJ6GldE53eLewur5AhUCqslYQ0vjZr8eWlOfwZnMiPB+PF5HMVqf61vXBvmyrAmPWg==
   dependencies:
     "@floating-ui/core" "^1.7.1"
     "@floating-ui/dom" "^1.7.1"

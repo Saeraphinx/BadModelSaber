@@ -36,11 +36,12 @@
   import TagBadge from "$lib/components/assets/TagBadge.svelte";
   import Input from "$shadcn/components/ui/input/input.svelte";
   import Textarea from "$shadcn/components/ui/textarea/textarea.svelte";
-  import TagPicker from "$lib/components/forms/TagPicker.svelte";
+  import TagPickerDialog from "$lib/components/forms/TagPickerDialog.svelte";
   import { zAsset } from "$lib/scripts/api/validator.js";
   import { cn } from "$shadcn/utils";
   import LinkAssetDialog from "$lib/components/assets/LinkAssetDialog.svelte";
   import { invalidateAll } from "$app/navigation";
+  import AssetPreview from "$lib/components/assets/AssetPreview.svelte";
 
   let { data } = $props();
   const typeData = $derived.by(() => getAssetTypeData(data.pageData.type));
@@ -211,7 +212,12 @@
         </div>
       </div>
       {@render dT_Regular(`Type`, typeData.combinedString)}
-      {@render dT_Regular("File Size", `${(data.pageData.fileSize / 1024 / 1024).toFixed(2)} MB`)}
+      {#if data.pageData.fileSize > 1024 * 1024}
+        {@render dT_Regular("File Size", `${(data.pageData.fileSize / (1024 * 1024)).toFixed(2)} MB`)}
+      {:else}
+        {@render dT_Regular("File Size", `${(data.pageData.fileSize / 1024).toFixed(2)} KB`)}
+      {/if}
+      {@render dT_SingleBadge("Status", data.pageData.status.toLowerCase(), data.pageData.status === Status.Verified ? "default" : data.pageData.status === Status.Private ? "secondary" : "destructive")}
       {#if data.pageData.license}
         <div class="flex justify-between items-center">
           <span class="text-muted-foreground">License</span>
@@ -336,7 +342,7 @@
 <!-- #endregion -->
 
 {#snippet buttons(center = mobileView.current)}
-  <div class={cn("flex flex-row gap-2 flex-wrap", center ? "justify-center" : "justify-start")}>
+  <div class={cn("flex flex-row gap-2 flex-wrap items-center", center ? "justify-center" : "justify-start")}>
     {#if !isEditing}
       <Button variant="default" href={getAssetDownloadUrl(data.pageData)} download>
         <DownloadIcon />
@@ -353,21 +359,23 @@
         </Button>
       {/if}
       {#if data.user && data.user.id === data.pageData.uploaderId && data.pageData.status === Status.Private}
-        <Button
-          variant="secondary"
-          onclick={() => {
-            trpc.UpdateAssetRouter.submitForApproval.mutate({ assetId: data.pageData.id })
-              .then(() => {
-                toast.success("Asset submitted for approval!");
-                approvalDialog?.showDialog(data.pageData.id, data.pageData.name);
-              })
-              .catch((err) => {
-                toast.error(`Failed to submit asset for approval: ${err.message}`);
-              });
-          }}>
-          <BadgeAlert />
-          Submit for Approval
-        </Button>
+        <div class="animated-rainbow-border">
+          <Button
+            variant="secondary"
+            onclick={() => {
+              trpc.UpdateAssetRouter.submitForApproval.mutate({ assetId: data.pageData.id })
+                .then(() => {
+                  toast.success("Asset submitted for approval!");
+                  approvalDialog?.showDialog(data.pageData.id, data.pageData.name);
+                })
+                .catch((err) => {
+                  toast.error(`Failed to submit asset for approval: ${err.message}`);
+                });
+            }}>
+            <BadgeAlert />
+            Submit for Approval
+          </Button>
+        </div>
       {/if}
       {#if data.user && data.user.roles.includes(UserPermissions.Approve_Assets)}
         <Button
@@ -458,6 +466,9 @@
         <Separator class="my-4 w-full" />
         {@render description()}
         <Separator class="my-4 w-full" />
+        <span class="text-lg font-semibold">Asset Preview</span>
+        <AssetPreview asset={data.pageData} />
+        <Separator class="my-4 w-full" />
         {@render assetCarousel(relatedAssets, isRelatedLoading, `related`, "Related Assets:", "No related assets found.")}
         <Separator class="my-4 w-full" />
         {@render assetCarousel(authorAssets, isAuthorLoading, `author`, `Other assets by ${data.pageData.uploader?.displayName}:`, "No other assets found.")}
@@ -471,4 +482,37 @@
 
 <ApprovalPopup bind:this={approvalDialog} />
 <LinkAssetDialog bind:this={addRelatedDialog} />
-<TagPicker bind:open={openTagPicker} bind:selectedTags={editTags} type={data.pageData.type} />
+<TagPickerDialog bind:open={openTagPicker} bind:selectedTags={editTags} type={data.pageData.type} />
+
+<style>
+  @property --angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+.animated-rainbow-border {
+  position: relative;
+  background: white;
+  padding: 2px;
+  border-radius: 10px;
+  isolation: isolate; /* Creates a new stacking context */
+  overflow: hidden;
+}
+
+.animated-rainbow-border::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  background: conic-gradient(from var(--angle), red, orange, yellow, green, rgb(104, 104, 255), rgb(167, 53, 248), red);
+  border-radius: inherit;
+  z-index: -1;
+  animation: rotate 3s linear infinite;
+}
+
+@keyframes rotate {
+  to {
+    --angle: 360deg;
+  }
+}
+</style>

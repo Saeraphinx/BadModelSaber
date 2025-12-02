@@ -350,7 +350,7 @@ export async function importFromOldModelSaber(sendMessage: (messaage: string, ty
                 license: License.Custom,
                 licenseUrl: `https://modelsaber.com/info/unknown-license`,
                 uploaderId: user.id || `6`,
-                status: Status.Approved,
+                status: Status.Verified,
                 tags: tags as Tags[],
                 createdAt: new Date(asset.date),
             }).then((record) => {

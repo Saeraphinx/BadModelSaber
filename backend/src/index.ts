@@ -10,6 +10,7 @@ import { Sequelize } from "sequelize";
 import { importFromOldModelSaber } from "./shared/Importer.ts";
 import { generateOpenAPIDoc, loadExpressMiddleware, loadOpenApiMiddleware } from "./api/routers.ts";
 import swaggerUi from "swagger-ui-express";
+import { file } from "jszip";
 
 export async function init(overrideDbName: string = `public`) {
     console.log(`Initializing BadModelSaber...`);
@@ -28,10 +29,6 @@ export async function init(overrideDbName: string = `public`) {
     //await importFromOldModelSaber()
 
     const app = express();
-    app.use(cors({
-        origin: EnvConfig.server.corsOrigin,
-        credentials: EnvConfig.server.corsAllowCredentials,
-    }))
     //app.use(express.json());
     //app.use(express.urlencoded({ extended: false }));
     app.set(`trust proxy`, EnvConfig.server.trustProxy);
@@ -85,6 +82,16 @@ export async function init(overrideDbName: string = `public`) {
     });
     const apiRouter = express.Router();
     const fileRouter = express.Router();
+
+    apiRouter.use(cors({
+        origin: EnvConfig.server.corsOrigin,
+        credentials: EnvConfig.server.corsAllowCredentials,
+    }))
+
+    // todo: add seperate cors settings for fileRouter if needed
+    fileRouter.use(cors({
+        origin: `*`,
+    }))
 
     let apiDoc = generateOpenAPIDoc;
     apiDoc.servers = [{

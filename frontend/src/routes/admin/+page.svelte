@@ -12,7 +12,7 @@
   import { RefreshCwIcon } from "@lucide/svelte";
 
   // #region Alert
-  let alertType = $state(AlertType.AssetApproved);
+  let alertType = $state(AlertType.AssetVerified);
   let alertUserId = $state("");
   let alertAssetId = $state("");
   let alertRequestId = $state("");

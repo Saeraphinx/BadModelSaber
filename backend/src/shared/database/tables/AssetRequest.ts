@@ -243,12 +243,12 @@ export class AssetRequest extends Model<InferAttributes<AssetRequest>, InferCrea
                 refrencedAsset.addLink(otherAsset, obj.linkType);
                 break;
             case RequestType.Report:
-                refrencedAsset.setStatus(Status.Rejected, `Report ID ${this.id}`, userId, false);
+                refrencedAsset.setStatus(Status.Removed, `Report ID ${this.id}`, userId, false);
                 if (!silent) {
                     refrencedAsset.alertUploader({
                         type: AlertType.AssetRemoval,
                         header: `Your asset ${refrencedAsset.id} (${refrencedAsset.name}) has been removed.`,
-                        message: `Your asset has been removed due to a report. Please do not re-upload the asset. If you have any question, please contact the approval team.`
+                        message: `Your asset has been removed. Please do not re-upload the asset. If you have any question, please contact the approval team.`
                     });
                     this.alertReporter({
                         type: AlertType.RequestAccepted,

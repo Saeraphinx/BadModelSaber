@@ -5,7 +5,7 @@
   import Input from "$shadcn/components/ui/input/input.svelte";
   import Label from "$shadcn/components/ui/label/label.svelte";
   import Textarea from "$shadcn/components/ui/textarea/textarea.svelte";
-  import TagPicker from "$lib/components/forms/TagPicker.svelte";
+  import TagPicker from "$lib/components/forms/TagPickerDialog.svelte";
   import { DivideCircleIcon, TagIcon } from "@lucide/svelte";
   import TagBadge from "$lib/components/assets/TagBadge.svelte";
   import TypeSelector from "$lib/components/forms/TypeSelector.svelte";

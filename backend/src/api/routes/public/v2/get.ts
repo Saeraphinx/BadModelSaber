@@ -41,7 +41,7 @@ export const GetV2Router = router({
             where: {
                 id: { [Op.gte]: input.start, [Op.lte]: input.end ?? Number.MAX_SAFE_INTEGER },
                 type: convertedType,
-                status: Status.Approved,
+                status: Status.Verified,
                 ...filterOptions,
             },
             order: [[sortingData.type, sortingData.direction]],

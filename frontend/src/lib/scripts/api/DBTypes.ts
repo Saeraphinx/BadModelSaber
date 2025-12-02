@@ -142,7 +142,7 @@ export enum UserPermissions {
 }
 export enum AlertType {
     Generic = "generic", // Generic alert type, used for non-specific alerts
-    AssetApproved = "asset_approved", // Alert when an asset is approved
+    AssetVerified = "asset_verified", // Alert when an asset is approved
     AssetRejected = "asset_rejected", // Alert when an asset is rejected
     AssetRemoval = "asset_removal", // Alert when an asset is removed
     RequestAccepted = "request_accepted", // Alert when a request is accepted

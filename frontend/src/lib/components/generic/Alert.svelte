@@ -22,7 +22,7 @@
   let bgColor = $derived.by(() => {
     switch (alert.type) {
       case AlertType.RequestAccepted:
-      case AlertType.AssetApproved:
+      case AlertType.AssetVerified:
         return 'bg-green-800/20';
       case AlertType.AssetRejected:
         return 'bg-red-800/20';

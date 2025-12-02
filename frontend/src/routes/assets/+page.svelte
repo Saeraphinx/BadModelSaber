@@ -42,14 +42,14 @@
   let filterFileFormatVisible = $state<boolean>(true);
   let filterStatusVisible = $state<boolean>(true);
   let selectedFileFormats = $state<AssetFileFormat[]>([]);
-  let selectedStatuses = $state<Status[]>([Status.Approved]);
+  let selectedStatuses = $state<Status[]>([Status.Verified, Status.Unverified]);
   let searchQuery = $state<string>("");
   let assetStatuses = $derived.by(() => {
-    if (!data.user) return [Status.Approved];
+    if (!data.user) return [Status.Verified];
     if (data.user.roles.includes(UserPermissions.View_All_Assets)) {
       return Object.values(Status);
     }
-    return data.user.roles.includes(UserPermissions.View_Pending_Assets) ? [Status.Approved, Status.Pending] : [Status.Approved];
+    return data.user.roles.includes(UserPermissions.View_Pending_Assets) ? [Status.Verified, Status.Unverified, Status.Pending] : [Status.Verified, Status.Unverified];
   });
 
   // Filters Themselves
