@@ -16,7 +16,7 @@ export * from "./database/tables/Alert.ts";
 export * from "./database/tables/AssetRequest.ts";
 export * from "./database/DBExtras.ts";
 
-export type Migration = typeof  DatabaseManager.prototype.umzug._types.migration;
+export type Migration = typeof DatabaseManager.prototype.umzug._types.migration;
 
 export class DatabaseManager {
     public sequelize: Sequelize;
@@ -89,34 +89,43 @@ export class DatabaseManager {
         try {
             await this.sequelize.sync();
             Logger.log(`Database synced successfully.`);
-            this.adminUser = await User.findOrCreate({
-                where: { id: `5` },
-                defaults: {
-                    id: `5`,
-                    username: `system`,
-                    displayName: `System User`,
-                    bio: `hi :3\n\nThis user account is used for system operations and is not meant to be used by anyone.`,
-                    roles: [...Object.values(UserPermissions).filter(r => !r.startsWith(`cos_`)), UserPermissions.C_System], // no cosmetic roles except system
-                    sponsorUrl: [{
-                        platform: SponsorType.Patreon,
-                        url: `https://www.patreon.com/beatsabermoddinggroup`
-                    }],
-                    avatarUrl: `https://cdn.discordapp.com/embed/avatars/5.png`
-                }
-            }).then(([user, created]) => {
-                if (created) {
-                    Logger.info(`Admin user created: ${user.username} (${user.id})`)
-                }
-                return user
-            }).catch((err) => {
-                Logger.error(`Error creating admin user: ${err}`)
-                throw err
-            });
+            await this.createAdminUserIfNotExists()
             return this;
         } catch (error: any) {
             Logger.error(`Failed to sync database: ${parseErrorMessage(error)}`);
             process.exit(1);
         }
+    }
+
+    public async createAdminUserIfNotExists() {
+        this.adminUser = await User.findOrCreate({
+            where: { id: `5` },
+            defaults: {
+                id: `5`,
+                username: `system`,
+                displayName: `System User`,
+                bio: `hi :3\n\nThis user account is used for system operations and is not meant to be used by anyone.`,
+                roles: [...Object.values(UserPermissions).filter(r => !r.startsWith(`cos_`)), UserPermissions.C_System], // no cosmetic roles except system
+                sponsorUrl: [{
+                    platform: SponsorType.Patreon,
+                    url: `https://www.patreon.com/beatsabermoddinggroup`
+                }],
+                avatarUrl: `https://cdn.discordapp.com/embed/avatars/5.png`
+            }
+        }).then(([user, created]) => {
+            if (created) {
+                Logger.info(`Admin user created: ${user.username} (${user.id})`)
+            }
+            return user
+        }).catch((err) => {
+            Logger.error(`Error creating admin user: ${err}`)
+            throw err
+        });
+    }
+
+    public async createSchema(schemaName: string = this.schemaName) {
+        Logger.log(`Creating schema ${schemaName}...`);
+        await this.sequelize.query(`CREATE SCHEMA IF NOT EXISTS ${this.schemaName}`);
     }
 
     public async dropSchema() {

@@ -42,6 +42,7 @@
   import LinkAssetDialog from "$lib/components/assets/LinkAssetDialog.svelte";
   import { invalidateAll } from "$app/navigation";
   import AssetPreview from "$lib/components/assets/AssetPreview.svelte";
+  import StatusHoverCard from "$lib/components/assets/StatusHoverCard.svelte";
 
   let { data } = $props();
   const typeData = $derived.by(() => getAssetTypeData(data.pageData.type));
@@ -172,13 +173,6 @@
   {/if}
 {/snippet}
 
-{#snippet dT_SingleBadge(title: string = "Title", value: string = "", badgeVariant: "outline" | "default" | "secondary" | "destructive" = "outline")}
-  <div class="flex justify-between items-center">
-    <span class="text-muted-foreground pr-2">{title}</span>
-    <Badge variant={badgeVariant} class="capitalize">{value}</Badge>
-  </div>
-{/snippet}
-
 {#snippet dataTable()}
   <!-- Shows upload date, license, etc in a table format -->
   <div class="mt-4 w-full bg-card rounded-lg border border-border p-4">
@@ -217,7 +211,12 @@
       {:else}
         {@render dT_Regular("File Size", `${(data.pageData.fileSize / 1024).toFixed(2)} KB`)}
       {/if}
-      {@render dT_SingleBadge("Status", data.pageData.status.toLowerCase(), data.pageData.status === Status.Verified ? "default" : data.pageData.status === Status.Private ? "secondary" : "destructive")}
+      <div class="flex justify-between items-center">
+        <span class="text-muted-foreground pr-2">Status</span>
+        <StatusHoverCard status={data.pageData.status}>
+          <Badge variant={data.pageData.status ? `outline` : `default`} class="capitalize">{data.pageData.status}</Badge>
+        </StatusHoverCard>
+      </div>
       {#if data.pageData.license}
         <div class="flex justify-between items-center">
           <span class="text-muted-foreground">License</span>

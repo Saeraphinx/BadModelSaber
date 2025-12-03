@@ -7,16 +7,16 @@
     asset: AssetPublicAPIv3;
   } = $props();
 
-  let shouldLoadPreview = $state(false);
+  let isPreviewLoaded = $state(false);
   let previewType = $derived.by(() => {
     // Determine preview type based on asset type
     switch (props.asset.type) {
       case AssetFileFormat.Banner_Png:
-        shouldLoadPreview = true;
+        isPreviewLoaded = true;
         return "image";
       case AssetFileFormat.Sound_Mp3:
       case AssetFileFormat.Sound_Ogg:
-        shouldLoadPreview = true;
+        isPreviewLoaded = true;
         return "audio";
       case AssetFileFormat.HSVConfig_JSON:
         return "hsv";
@@ -35,6 +35,7 @@
       return await fetch(downloadUrl)
         .then(res => res.text())
         .then(data => {
+          isPreviewLoaded = true;
           return data;
         });
     }
@@ -52,7 +53,7 @@
   }
 </style>
 
-<div class="w-full h-full flex flex-col items-center justify-center ">
+<div class="w-full h-full flex {isPreviewLoaded ? `flex-col` : `flex-row p-2`} gap-2 items-center justify-center">
   {#if previewType === "image"}
     <img src={getAssetDownloadUrl(props.asset)} alt="Asset Preview" class="max-w-full max-h-full object-contain" />
   {:else if previewType === "audio"}
@@ -62,11 +63,11 @@
     </audio>
   {:else if previewType === "json" || previewType === "hsv"}
     {#if previewType === "hsv"}
-      <Button variant="outline" class="mb-4" href={`https://hsv-preview.netlify.app/?url=${encodeURIComponent(downloadUrl)}`} target="_blank">
+      <Button variant="outline" href={`https://hsv-preview.netlify.app/?url=${encodeURIComponent(downloadUrl)}`} target="_blank">
         Open HitScoreVisualizer Preview
       </Button>
     {/if}
-    {#if shouldLoadPreview}
+    {#if isPreviewLoaded}
       {#await fetchPreviewData()}
         Waiting for preview data...
       {:then data} 
@@ -80,7 +81,7 @@
         <p class="text-red-500">Failed to load preview data: {error.message}</p>
       {/await}
     {:else}
-      <Button variant="outline" onclick={() => shouldLoadPreview = true}>
+      <Button variant="outline" onclick={() => isPreviewLoaded = true}>
         Download & Load Preview
       </Button>
     {/if}

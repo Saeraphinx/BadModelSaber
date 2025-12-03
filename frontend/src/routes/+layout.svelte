@@ -200,7 +200,6 @@
     { href: "/", label: "Home" },
     { href: "/assets", label: "Assets" },
     { href: "https://bsmg.wiki/models", label: "Model Wiki" },
-    { href: "/about", label: "PC Guide" },
   ];
 </script>
 
@@ -228,10 +227,11 @@
   <div class="flex w-auto flex-row text-base justify-between">
     <!-- Logo -->
     <div class="flex items-center justify-center md:w-32 h-16 md:ml-16 ml-4 md:p-4">
+      <img src="/modelsaber-logo-web.svg" alt="ModelSaber Logo" class="h-8 w-8 mr-2" />
       <span class="text-xl font-bold">ModelSaber</span>
     </div>
     <!-- Navigation Bar -->
-    <div class="flex p-4 justify-center">
+    <div class="flex p-4 pt-3 justify-center">
       {#if showFullBar.current}
         {@render navbar_main("horizontal")}
       {/if}
@@ -328,6 +328,14 @@
                 Logout
               </DropdownMenu.Item>
             </button>
+            {#if data.user.roles.includes(UserPermissions.Administative_Tasks)}
+              <DropdownMenu.Separator />
+              <span class="text-xs text-muted-foreground text-center p-1">
+                Administrative Information<br>
+                Logged in as {data.user.displayName}<br>
+                {data.user.id}
+              </span>
+            {/if}
           </DropdownMenu.Content>
         </DropdownMenu.Root>
       {:else}

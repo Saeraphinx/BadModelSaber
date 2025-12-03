@@ -1,5 +1,4 @@
 import z from "zod/v4";
-import { DatabaseManager } from "../Database.ts";
 
 export enum SponsorType {
   GitHub = "github",
@@ -317,12 +316,3 @@ export const assetRequestPublicAPIv3Schema = z.object({
   createdAt: z.date(),
   updatedAt: z.date()
 })
-
-
-export class DatabaseHelper {
-  public static db: DatabaseManager;
-
-  constructor(db: DatabaseManager) {
-    DatabaseHelper.db = db;
-  }
-}

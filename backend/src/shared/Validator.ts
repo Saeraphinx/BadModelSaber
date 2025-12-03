@@ -19,7 +19,7 @@ export class Validator {
     }, z.boolean());
     public static zNumberId = z.number().int().positive();
     /**
-     * @deprecated Use z.number().int().positive() instead
+     * @deprecated Use z.number().int().positive() or zNumberId instead
      */
     public static zNumberIDTransform = z.transform((input, ctx) => {
         try {

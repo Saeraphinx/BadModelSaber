@@ -7,6 +7,7 @@ import test from 'node:test';
 import { parseErrorMessage } from '../shared/Tools.ts';
 import { ZodError } from 'zod/v4';
 import { fromZodError } from 'zod-validation-error';
+import { da } from 'zod/locales';
 
 // eslint-disable-next-line quotes
 declare module 'express-session' {
@@ -29,6 +30,7 @@ export async function createContext(opts: CreateExpressContextOptions) {
         req: opts.req,
         res: opts.res,
         userId: userId,
+        db: opts.req.database,
     };
 }
 

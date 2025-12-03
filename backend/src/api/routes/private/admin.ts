@@ -1,4 +1,3 @@
-import { Router } from "express";
 import { Alert, User, UserPermissions } from "../../../shared/Database.ts";
 import { Validator } from "../../../shared/Validator.ts";
 import z from "zod/v4";
@@ -6,7 +5,9 @@ import { dedupeArray } from "../../../shared/Tools.ts";
 import { authProcedure, router } from "../../../api/trpc.ts";
 import { Logger } from "../../../shared/Logger.ts";
 import { importFromOldModelSaber } from "../../../shared/Importer.ts";
-import { fstat } from "fs";
+import { TRPCError } from "@trpc/server";
+import { EnvConfig } from "../../../shared/EnvConfig.ts";
+import { createSchema } from "zod-openapi";
 
 export const AdminRouter = router({
     setRoles: authProcedure([UserPermissions.Manage_All_Users])
@@ -64,5 +65,37 @@ export const AdminRouter = router({
     getAdminLogs: authProcedure([UserPermissions.Administative_Tasks])
         .query(async ({ input, ctx }) => {
             return Logger.getLogs(new Date(Date.now() - 1000 * 60 * 5)); // last 5 minutes
+        }),
+    resetSchema: authProcedure([UserPermissions.Administative_Tasks])
+        .mutation(async ({ ctx }) => {
+            if (!EnvConfig.isDevMode) {
+                throw new TRPCError({ code: `FORBIDDEN`, message: `Cannot drop database schema in a non-development environment.` });
+            }
+            await ctx.db.dropSchema().catch((e) => {
+                Logger.error(`Error dropping database schema by admin user ${ctx.userId}: ${e}`);
+                throw new TRPCError({ code: `INTERNAL_SERVER_ERROR`, message: `Failed to drop database schema` });
+            });
+            await ctx.db.createSchema().catch((e) => {
+                Logger.error(`Error creating database schema by admin user ${ctx.userId}: ${e}`);
+                throw new TRPCError({ code: `INTERNAL_SERVER_ERROR`, message: `Failed to create database schema` });
+            });
+            await ctx.db.createAdminUserIfNotExists().catch((e) => {
+                Logger.error(`Error creating admin user after schema reset by admin user ${ctx.userId}: ${e}`);
+                throw new TRPCError({ code: `INTERNAL_SERVER_ERROR`, message: `Failed to create admin user` });
+            });
+            return { message: `Database schema reset successfully` };
+        }),
+    importFakeData: authProcedure([UserPermissions.Administative_Tasks])
+        .mutation(async ({ ctx }) => {
+            if (!EnvConfig.isDevMode) {
+                throw new TRPCError({ code: `FORBIDDEN`, message: `Cannot import fake data in a non-development environment.` });
+            }
+            ctx.db.importFakeData().then(() => {
+                Logger.log(`Fake data imported by admin user ${ctx.userId}`);
+                return { message: `Fake data imported successfully` };
+            }).catch((e) => {
+                Logger.error(`Error importing fake data by admin user ${ctx.userId}: ${e}`);
+                throw new TRPCError({ code: `INTERNAL_SERVER_ERROR`, message: `Failed to import fake data` });
+            });
         }),
 });

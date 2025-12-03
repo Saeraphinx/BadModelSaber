@@ -12,6 +12,13 @@ import { generateOpenAPIDoc, loadExpressMiddleware, loadOpenApiMiddleware } from
 import swaggerUi from "swagger-ui-express";
 import { file } from "jszip";
 
+    // eslint-disable-next-line quotes
+    declare module 'express-serve-static-core' {
+        interface Request {
+            database: DatabaseManager;
+        }
+    }
+
 export async function init(overrideDbName: string = `public`) {
     console.log(`Initializing BadModelSaber...`);
     EnvConfig.load();
@@ -19,14 +26,7 @@ export async function init(overrideDbName: string = `public`) {
     EnvConfig.server.authBypass ? Logger.warn(`Auth bypass is enabled. This should only be used in development or testing environments.`) : null;
     const schemaToUse = EnvConfig.isDevMode ? `dev_${overrideDbName}` : overrideDbName;
     const db = new DatabaseManager(schemaToUse);
-    if (EnvConfig.isDevMode) {
-        await db.dropSchema();
-    }
     await db.init();
-    if (EnvConfig.isDevMode) {
-        await db.importFakeData();
-    }
-    //await importFromOldModelSaber()
 
     const app = express();
     //app.use(express.json());
@@ -100,6 +100,10 @@ export async function init(overrideDbName: string = `public`) {
 
     apiRouter.use(`/docs`, swaggerUi.serve, swaggerUi.setup(apiDoc));
 
+    apiRouter.use(`/trpc`, (req, res, next) => {
+        req.database = db;
+        next();
+    });
     apiRouter.use(`/trpc`, loadExpressMiddleware);
     apiRouter.use(loadOpenApiMiddleware); // load all openapi routes
 
