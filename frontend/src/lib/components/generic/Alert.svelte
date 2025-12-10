@@ -57,10 +57,10 @@
 
 <div class={cn(`${bgColor} ${isVisible ? `` : `hidden`} rounded-xl p-4`,className)} {...restProps}>
   <div class="flex items-center justify-between">
-    <span class="font-semibold">{alert.header}</span>
+    <span class="font-semibold text-foreground">{alert.header}</span>
     <span class="text-sm text-gray-500">{new Date(alert.createdAt).toLocaleDateString()}</span>
   </div>
-  <p class="mt-1 text-sm">{alert.message}</p>
+  <p class="mt-1 text-sm text-muted-foreground">{alert.message}</p>
   <div class="mt-2 flex justify-end gap-2">
     {#if alert.assetId}
       <Button href={`/assets/${alert.assetId}`}>

@@ -117,10 +117,8 @@
   // #endregion KonamiListener
 
   // #region Theme
-  onMount(() => {
-    theme = (localStorage.getItem("theme") as typeof theme) || "system";
-    handleThemeChange();
-  });
+  theme = (localStorage.getItem("theme") as typeof theme) || "system";
+  handleThemeChange();
 
   function handleThemeChange() {
     if (theme === "system") {
