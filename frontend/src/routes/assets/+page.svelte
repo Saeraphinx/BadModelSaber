@@ -37,6 +37,10 @@
   let currentPage = $state(1);
   let selectedPageSizeString = $state(`24`);
   let selectedPageSize = $derived(Number(selectedPageSizeString));
+  let totalPages = $derived.by(() => {
+    if (!filteredAssets || filteredAssets.length === 0) return 1;
+    return Math.ceil(filteredAssets.length / selectedPageSize);
+  });
 
   // Filter Data
   let filterFileFormatVisible = $state<boolean>(true);
@@ -98,37 +102,37 @@
 </script>
 
 {#snippet pagination()}
-  <Pagination.Root
-    count={assetArray.length}
-    perPage={selectedPageSize}
-    bind:page={currentPage}
-    onPageChange={() => {
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    }}>
-    {#snippet children({ pages, currentPage })}
-      <Pagination.Content>
-        <Pagination.Item>
-          <Pagination.PrevButton />
-        </Pagination.Item>
-        {#each pages as page (page.key)}
-          {#if page.type === "ellipsis"}
-            <Pagination.Item>
-              <Pagination.Ellipsis />
-            </Pagination.Item>
-          {:else}
-            <Pagination.Item>
-              <Pagination.Link {page} isActive={currentPage === page.value}>
-                {page.value}
-              </Pagination.Link>
-            </Pagination.Item>
-          {/if}
-        {/each}
-        <Pagination.Item>
-          <Pagination.NextButton />
-        </Pagination.Item>
-      </Pagination.Content>
-    {/snippet}
-  </Pagination.Root>
+    <Pagination.Root
+      count={filteredAssets.length}
+      perPage={selectedPageSize}
+      bind:page={currentPage}
+      onPageChange={() => {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }}>
+      {#snippet children({ pages, currentPage })}
+        <Pagination.Content>
+          <Pagination.Item>
+            <Pagination.PrevButton />
+          </Pagination.Item>
+          {#each pages as page (page.key)}
+            {#if page.type === "ellipsis"}
+              <Pagination.Item>
+                <Pagination.Ellipsis />
+              </Pagination.Item>
+            {:else}
+              <Pagination.Item>
+                <Pagination.Link {page} isActive={currentPage === page.value}>
+                  {page.value}
+                </Pagination.Link>
+              </Pagination.Item>
+            {/if}
+          {/each}
+          <Pagination.Item>
+            <Pagination.NextButton />
+          </Pagination.Item>
+        </Pagination.Content>
+      {/snippet}
+    </Pagination.Root>
 {/snippet}
 
 {#snippet miniPagination()}
