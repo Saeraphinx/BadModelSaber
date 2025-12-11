@@ -5,7 +5,7 @@
   import { getContext, onMount, setContext } from "svelte";
   import { Button, buttonVariants } from "$shadcn/components/ui/button";
   import * as Avatar from "$shadcn/components/ui/avatar";
-  import { BellDotIcon, BellIcon, FileBadgeIcon, GitBranchIcon, Link2Icon, LogIn, LogOutIcon, Menu, MessageCircleQuestionIcon, PlusIcon, Settings, SunIcon, TrafficConeIcon, UserIcon } from "@lucide/svelte";
+  import { BellDotIcon, BellIcon, FileBadgeIcon, GitBranchIcon, Link2Icon, LogInIcon, LogOutIcon, Menu, MessageCircleQuestionIcon, PlusIcon, Settings, SunIcon, TrafficConeIcon, UserIcon, SettingsIcon } from "@lucide/svelte";
   import { MediaQuery } from "svelte/reactivity";
   import * as Popover from "$shadcn/components/ui/popover";
   import { page } from "$app/state";
@@ -26,6 +26,8 @@
   let { data, children } = $props();
   let theme: `system` | `light` | `dark` = $state("system");
   let showFullBar = new MediaQuery("min-width: 769px");
+  let isLoggedIn = $derived(!!(data.user && data.user.id));
+
   // #region KonamiListener
   onMount(() => {
     if (data.user && data.user.id && !data.user.roles.includes(UserPermissions.Create_Assets)) return;
@@ -65,14 +67,14 @@
         }
         inputSequence = []; // Reset the sequence after activation
         toast.info("Secret features unlocked!", {
-          description:
-            "If you enable these features, you will be able to access hidden content and features on ModelSaber. ModelSaber is not responsible for any damage caused by this content.",
+          description: "If you enable these features, you will be able to access hidden content and features on ModelSaber. ModelSaber is not responsible for any damage caused by this content.",
           duration: 60000,
           dismissable: true,
           action: {
             label: "Enable",
             onClick: () => {
-              trpc.konamiRouter.konami.mutate(`add`)
+              trpc.konamiRouter.konami
+                .mutate(`add`)
                 .then(() => {
                   toast.success("Secret features enabled!", {
                     description: "You can now access hidden content and features on ModelSaber. Use responsibly!",
@@ -101,7 +103,8 @@
   });
 
   function removeSecret() {
-    trpc.konamiRouter.konami.mutate(`remove`)
+    trpc.konamiRouter.konami
+      .mutate(`remove`)
       .then(() => {
         toast.info("Secret features disabled!", {
           description: "Access to hidden content and features has been revoked.",
@@ -143,22 +146,26 @@
 
   // #region Alerts
   let allAlerts = $state<AlertPublicAPIv3[]>(data.alerts);
-  let unreadAlerts = $derived(allAlerts.filter(alert => !alert.read));
+  let unreadAlerts = $derived(allAlerts.filter((alert) => !alert.read));
   let isPendingAlerts = $derived(unreadAlerts.length > 0);
   let openAlerts = $state(false);
   let showRead = $state(false);
-  async function updateAlerts() { // this is honestly a fucking mess but its what works for now
-    trpc.alertsRouter.getAlerts.query({read: showRead ? `true` : `false`}).then((val) => {
-      allAlerts = val;
-    }).catch((error) => {
-      toast.error("Failed to fetch read alerts.", {
-        description: error.message,
+  async function updateAlerts() {
+    // this is honestly a fucking mess but its what works for now
+    trpc.alertsRouter.getAlerts
+      .query({ read: showRead ? `true` : `false` })
+      .then((val) => {
+        allAlerts = val;
+      })
+      .catch((error) => {
+        toast.error("Failed to fetch read alerts.", {
+          description: error.message,
+        });
+        return [];
       });
-      return [];
-    });
   }
   // #endregion Alerts
-  
+
   // #region Toasts
   // Alert count toast
   onMount(() => {
@@ -196,11 +203,11 @@
     }
   });
   // #endregion Toasts
-  
+
   const links = [
-    { href: "/", label: "Home" },
-    { href: "/assets", label: "Assets" },
-    { href: "https://bsmg.wiki/models", label: "Model Wiki" },
+    { href: "/", label: "Home", target: "_self" },
+    { href: "/assets", label: "Assets", target: "_self" },
+    { href: "https://bsmg.wiki/models", label: "Model Wiki", target: "_blank" },
   ];
 </script>
 
@@ -209,7 +216,7 @@
     <NavigationMenu.List class="flex {orientation === 'vertical' ? 'flex-col' : 'flex-row'}">
       {#each links as link}
         <NavigationMenu.Item>
-          <NavigationMenu.Link href={link.href} class="text-base text-nowrap">
+          <NavigationMenu.Link href={link.href} target={link.target} class="text-base text-nowrap">
             {link.label}
           </NavigationMenu.Link>
         </NavigationMenu.Item>
@@ -255,15 +262,19 @@
         </Popover.Root>
       {/if}
       <!-- User Avatar or Login Button -->
-      {#if data.user && data.user.id}
-        <DropdownMenu.Root>
-          <DropdownMenu.Trigger class="p-2 rounded-full hover:bg-accent transition-colors duration-300">
+      <DropdownMenu.Root>
+        <DropdownMenu.Trigger class="p-2 rounded-full hover:bg-accent transition-colors duration-300">
+          {#if data.user}
             <Avatar.Root>
               <Avatar.Image src={data.user.avatarUrl} alt={data.user.displayName} />
               <Avatar.Fallback>{data.user.displayName}</Avatar.Fallback>
             </Avatar.Root>
-          </DropdownMenu.Trigger>
-          <DropdownMenu.Content class="mr-10 flex flex-col">
+          {:else}
+            <SettingsIcon />
+          {/if}
+        </DropdownMenu.Trigger>
+        <DropdownMenu.Content class="mr-10 flex flex-col">
+          {#if data.user}
             <a href="/users/me">
               <DropdownMenu.Item>
                 <UserIcon />
@@ -303,7 +314,7 @@
                 </DropdownMenu.Item>
               </button>
             {/if}
-            {#if data.user.roles.includes(UserPermissions.Create_Assets) }
+            {#if data.user.roles.includes(UserPermissions.Create_Assets)}
               <a href="/create">
                 <DropdownMenu.Item>
                   <PlusIcon />
@@ -312,44 +323,52 @@
               </a>
             {/if}
             <DropdownMenu.Separator />
-            <DropdownMenu.RadioGroup bind:value={theme} onValueChange={handleThemeChange}>
-              <DropdownMenu.Label>Theme</DropdownMenu.Label>
-              <DropdownMenu.RadioItem closeOnSelect={false} value="system">System</DropdownMenu.RadioItem>
-              <DropdownMenu.RadioItem closeOnSelect={false} value="dark">Dark</DropdownMenu.RadioItem>
-              <DropdownMenu.RadioItem closeOnSelect={false} value="light">Light</DropdownMenu.RadioItem>
-            </DropdownMenu.RadioGroup>
-            <DropdownMenu.Separator />
-            <button onclick={() => {
-              trpc.authRouter.logout.mutate({}).then(() => {
-                invalidateAll();
-              });
-            }}>
+          {/if}
+          <DropdownMenu.RadioGroup bind:value={theme} onValueChange={handleThemeChange}>
+            <DropdownMenu.Label>Theme</DropdownMenu.Label>
+            <DropdownMenu.RadioItem closeOnSelect={false} value="system">System</DropdownMenu.RadioItem>
+            <DropdownMenu.RadioItem closeOnSelect={false} value="dark">Dark</DropdownMenu.RadioItem>
+            <DropdownMenu.RadioItem closeOnSelect={false} value="light">Light</DropdownMenu.RadioItem>
+          </DropdownMenu.RadioGroup>
+          <DropdownMenu.Separator />
+          {#if isLoggedIn}
+            <button
+              onclick={() => {
+                trpc.authRouter.logout.mutate({}).then(() => {
+                  invalidateAll();
+                });
+              }}>
               <DropdownMenu.Item>
                 <LogOutIcon class="text-red-400" />
                 Logout
               </DropdownMenu.Item>
             </button>
-            {#if data.user.roles.includes(UserPermissions.Administative_Tasks)}
-              <DropdownMenu.Separator />
-              <span class="text-xs text-muted-foreground text-center p-1">
-                Administrative Information<br>
-                Logged in as {data.user.displayName}<br>
-                {data.user.id}
-              </span>
-            {/if}
-          </DropdownMenu.Content>
-        </DropdownMenu.Root>
-      {:else}
-        <Button variant="outline" class="text-base" onclick={async () => {
-          let url = await trpc.authRouter.discordAuthInit.query({
-            redirect: `${env.PUBLIC_BASE_URL}${page.url.pathname}`,
-          });
-          window.location.href = url.url;
-        }}>
-          <LogIn />
-          Login
-        </Button>
-      {/if}
+          {:else}
+            <button
+              onclick={async () => {
+                let url = await trpc.authRouter.discordAuthInit.query({
+                  redirect: `${env.PUBLIC_BASE_URL}${page.url.pathname}`,
+                });
+                window.location.href = url.url;
+              }}>
+              <DropdownMenu.Item>
+                <LogInIcon />
+                Login
+              </DropdownMenu.Item>
+            </button>
+          {/if}
+          <DropdownMenu.Separator />
+          <p class="text-xs text-muted-foreground text-center p-1"><a href="https://github.com/Saeraphinx/BadModelSaber" target="_blank">ModelSaber is Open Source!</a></p>
+          {#if data.user && data.user.roles.includes(UserPermissions.Administative_Tasks)}
+            <DropdownMenu.Separator />
+            <span class="text-xs text-muted-foreground text-center p-1">
+              Administrative Information<br />
+              Logged in as {data.user.displayName}<br />
+              {data.user.id}
+            </span>
+          {/if}
+        </DropdownMenu.Content>
+      </DropdownMenu.Root>
     </div>
   </div>
   <div class="px-4 text-base text-foreground">
@@ -371,7 +390,7 @@
           {/if}
         </Sheet.Description>
         <div class="flex items-center space-x-2">
-          <Switch id="show-read" bind:checked={showRead} onCheckedChange={updateAlerts}/>
+          <Switch id="show-read" bind:checked={showRead} onCheckedChange={updateAlerts} />
           <Label for="show-read">Show Read</Label>
         </div>
       </div>
@@ -385,14 +404,12 @@
         {:else}
           <p class="text-gray-500">No alerts available.</p>
         {/if}
+      {:else if unreadAlerts.length > 0}
+        {#each unreadAlerts as alert}
+          <Alert {alert} class="mb-2" />
+        {/each}
       {:else}
-        {#if unreadAlerts.length > 0}
-          {#each unreadAlerts as alert}
-            <Alert {alert} class="mb-2" />
-          {/each}
-        {:else}
-          <p class="text-gray-500">No unread alerts.</p>
-        {/if}
+        <p class="text-gray-500">No unread alerts.</p>
       {/if}
     </ScrollArea>
     <Sheet.Footer>

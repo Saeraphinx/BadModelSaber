@@ -92,7 +92,8 @@
       return;
     }
 
-    trpc.UpdateAssetRouter.updateAsset.mutate({
+    trpc.UpdateAssetRouter.updateAsset
+      .mutate({
         assetId: data.pageData.id,
         data: {
           name: editName,
@@ -129,23 +130,29 @@
 
   onMount(async () => {
     if (data.pageData.linkedIds.length > 0) {
-      trpc.assetsRouterV3.getMultipleAssetsById.query({ id: data.pageData.linkedIds.map(li => li.id).splice(0,20) }).then((res) => {
-        relatedAssets = res ? Object.values(res) : [];
-        isRelatedLoading = false;
-      }).catch((err) => {
-        toast.error(`Failed to load related assets: ${err.message}`);
-        isRelatedLoading = false;
-      });
+      trpc.assetsRouterV3.getMultipleAssetsById
+        .query({ id: data.pageData.linkedIds.map((li) => li.id).splice(0, 20) })
+        .then((res) => {
+          relatedAssets = res ? Object.values(res) : [];
+          isRelatedLoading = false;
+        })
+        .catch((err) => {
+          toast.error(`Failed to load related assets: ${err.message}`);
+          isRelatedLoading = false;
+        });
     } else {
       isRelatedLoading = false;
     }
-    trpc.userRouterV3.getAssetsByUserId.query({ id: data.pageData.uploaderId, limit: 20}).then((res) => {
+    trpc.userRouterV3.getAssetsByUserId
+      .query({ id: data.pageData.uploaderId, limit: 20 })
+      .then((res) => {
         authorAssets = res.assets.filter((i) => i.id !== data.pageData.id) || [];
         isAuthorLoading = false;
-    }).catch((err) => {
-      toast.error(`Failed to load author's other assets: ${err.message}`);
-      isAuthorLoading = false;
-    });
+      })
+      .catch((err) => {
+        toast.error(`Failed to load author's other assets: ${err.message}`);
+        isAuthorLoading = false;
+      });
   });
 
   $effect(() => {
@@ -221,9 +228,7 @@
         <div class="flex justify-between items-center">
           <span class="text-muted-foreground">License</span>
           {#if data.pageData.licenseUrl}
-            <a href={data.pageData.licenseUrl} target="_blank" rel="noopener noreferrer" class="font-medium text-primary hover:underline">
-              Custom License...
-            </a>
+            <a href={data.pageData.licenseUrl} target="_blank" rel="noopener noreferrer" class="font-medium text-primary hover:underline"> Custom License... </a>
           {:else}
             <span class="font-medium">{data.pageData.license.toLocaleUpperCase()}</span>
           {/if}
@@ -283,7 +288,7 @@
       {/each}
     </Carousel.Content>
     {#if iconApi && data.pageData.icons.length > 1}
-      <CarouselNavigator api={iconApi} />
+      <CarouselNavigator api={iconApi} numberOfDots={data.pageData.icons.length} />
     {/if}
   </Carousel.Root>
 {/snippet}
@@ -362,7 +367,8 @@
           <Button
             variant="secondary"
             onclick={() => {
-              trpc.UpdateAssetRouter.submitForApproval.mutate({ assetId: data.pageData.id })
+              trpc.UpdateAssetRouter.submitForApproval
+                .mutate({ assetId: data.pageData.id })
                 .then(() => {
                   toast.success("Asset submitted for approval!");
                   approvalDialog?.showDialog(data.pageData.id, data.pageData.name);
@@ -485,33 +491,33 @@
 
 <style>
   @property --angle {
-  syntax: '<angle>';
-  initial-value: 0deg;
-  inherits: false;
-}
-
-.animated-rainbow-border {
-  position: relative;
-  background: white;
-  padding: 2px;
-  border-radius: 10px;
-  isolation: isolate; /* Creates a new stacking context */
-  overflow: hidden;
-}
-
-.animated-rainbow-border::before {
-  content: '';
-  position: absolute;
-  inset: -1px;
-  background: conic-gradient(from var(--angle), red, orange, yellow, green, rgb(104, 104, 255), rgb(167, 53, 248), red);
-  border-radius: inherit;
-  z-index: -1;
-  animation: rotate 3s linear infinite;
-}
-
-@keyframes rotate {
-  to {
-    --angle: 360deg;
+    syntax: "<angle>";
+    initial-value: 0deg;
+    inherits: false;
   }
-}
+
+  .animated-rainbow-border {
+    position: relative;
+    background: white;
+    padding: 2px;
+    border-radius: 10px;
+    isolation: isolate; /* Creates a new stacking context */
+    overflow: hidden;
+  }
+
+  .animated-rainbow-border::before {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    background: conic-gradient(from var(--angle), red, orange, yellow, green, rgb(104, 104, 255), rgb(167, 53, 248), red);
+    border-radius: inherit;
+    z-index: -1;
+    animation: rotate 3s linear infinite;
+  }
+
+  @keyframes rotate {
+    to {
+      --angle: 360deg;
+    }
+  }
 </style>

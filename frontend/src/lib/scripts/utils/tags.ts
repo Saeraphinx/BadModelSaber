@@ -1,22 +1,25 @@
 import type { ClassValue } from "svelte/elements";
 import { AssetFileFormat, Tags } from "../api/DBTypes";
 
-export function getTagData(tag: Tags, assetType: AssetFileFormat, shouldShowInternal: boolean = false): { category: string, outlineColor: ClassValue, disabled: boolean } {
+export function getTagData(tag: Tags, assetType: AssetFileFormat, shouldShowInternal: boolean = false): { category: string, outlineColor: ClassValue, disabled: boolean, animated: boolean } {
   let splitType = assetType.split("_");
   let type = splitType[0];
   let format = splitType[1];
   let category: string = "General";
   let intClass: ClassValue = `bg-[#333333]`; // Default class
   let disabled = false;
+  let animated = false;
   //#region colors
   switch (tag) {
     case Tags.CustomColors:
       intClass = `bg-linear-to-r from-[#ff3030] via-[#F0F] to-[#3702fF]`;
+      animated = true;
       break;
     case Tags.CustomTrails:
     case Tags.CustomBombs:
     case Tags.CustomArrows:
-      intClass = `bg-linear-to-tr from-[#ff3030] via-[#FF0] to-[#00F0a7]`;
+      intClass = `bg-linear-to-r from-[#ff3030] via-[#FF0] to-[#00F0a7]`;
+      animated = true;
       break;
     case Tags.Pride:
       intClass = `bg-pride`;
@@ -133,6 +136,7 @@ export function getTagData(tag: Tags, assetType: AssetFileFormat, shouldShowInte
   return {
     category,
     outlineColor: intClass,
+    animated, 
     disabled,
   };
 }

@@ -25,7 +25,7 @@
   });
 </script>
 
-<div class="flex items-center justify-center p-0.5 rounded-lg {intClass}">
+<div class={cn(`flex items-center justify-center p-0.5 rounded-lg`, intClass)}>
   <Badge {variant} class={className} {...restProps}>
     {tag}
     {#if children}
