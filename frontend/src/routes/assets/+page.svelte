@@ -37,10 +37,6 @@
   let currentPage = $state(1);
   let selectedPageSizeString = $state(`24`);
   let selectedPageSize = $derived(Number(selectedPageSizeString));
-  let totalPages = $derived.by(() => {
-    if (!filteredAssets || filteredAssets.length === 0) return 1;
-    return Math.ceil(filteredAssets.length / selectedPageSize);
-  });
 
   // Filter Data
   let filterFileFormatVisible = $state<boolean>(true);
