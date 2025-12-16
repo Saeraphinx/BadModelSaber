@@ -2,7 +2,7 @@
 import { AssetRequest, AssetRequestInfer, RequestType, UserPermissions } from "../../../shared/Database.ts";
 import { Validator } from "../../../shared/Validator.ts";
 import { WhereOptions } from "sequelize";
-import { authProcedure, router } from "../../../api/trpc.ts";
+import { authProcedure, router } from "../../trpc.ts";
 
 export const RequestRouter = router({
     request: authProcedure(`loggedIn`).input(Validator.z.object({

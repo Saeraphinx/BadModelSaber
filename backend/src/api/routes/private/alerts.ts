@@ -4,7 +4,7 @@ import { Validator } from "../../../shared/Validator.ts";
 import { parseErrorMessage } from "../../../shared/Tools.ts";
 import { Logger } from "../../../shared/Logger.ts";
 import { WhereOptions } from "sequelize";
-import { authProcedure, router } from "../../../api/trpc.ts";
+import { authProcedure, router } from "../../trpc.ts";
 import { TRPCError } from "@trpc/server";
 
 export const alertsRouter = router({

@@ -1,10 +1,10 @@
 import { Router } from "express";
 import { Validator } from "../../../../shared/Validator.ts";
 import { Asset, AssetInfer, User } from "../../../../shared/Database.ts";
-import { Op, WhereOptions } from "sequelize";
+import { Op, Sequelize, WhereOptions } from "sequelize";
 import { parseErrorMessage } from "../../../../shared/Tools.ts";
-import { AssetPublicAPIv3, assetPublicAPIv3Schema } from "../../../../shared/database/DBExtras.ts";
-import { authProcedure, router } from "../../../../api/trpc.ts";
+import { AssetPublicAPIv3, assetPublicAPIv3Schema, Status, Tags } from "../../../../shared/database/DBExtras.ts";
+import { authProcedure, router } from "../../../trpc.ts";
 import { TRPCError } from "@trpc/server";
 
 export const assetsRouterV3 = router({
@@ -102,7 +102,31 @@ export const assetsRouterV3 = router({
             }
             console.log(response);
             return response;
+        }),
+    getFrontPageAssets: authProcedure(`anyCheckAuth`)
+        .output(Validator.z.array(assetPublicAPIv3Schema))
+        .query(async ({ ctx }) => {
+            try {
+                const assets = await Asset.findAll({
+                    where: {
+                        status: Status.Verified,
+                    },
+                    limit: 20,
+                    order: [
+                        [Sequelize.fn('array_position', Sequelize.col('tags'), Tags.Featured), 'ASC'],
+                        [Sequelize.fn('array_position', Sequelize.col('tags'), Tags.Contest), 'ASC'],
+                        ['createdAt', 'DESC']
+                    ],
+                    include: { all: true }
+                });
+                let response = await Promise.all(assets.map(asset => asset.getApiV3Response()));
+                return response;
+            } catch (err) {
+                console.error(err);
+                throw new TRPCError({ code: `INTERNAL_SERVER_ERROR`, message: `Error fetching front page assets: ${parseErrorMessage(err)}` });
+            }
         })
+
 });
 
 /*

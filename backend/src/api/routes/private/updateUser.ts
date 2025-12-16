@@ -2,7 +2,7 @@ import { Asset, AssetRequest, LinkedAssetLinkType, RequestType, User, UserPermis
 import { Validator } from "../../../shared/Validator.ts";
 import { request } from "http";
 import { parseErrorMessage } from "../../../shared/Tools.ts";
-import { authProcedure, router } from "../../../api/trpc.ts";
+import { authProcedure, router } from "../../trpc.ts";
 
 export const konamiRouter = router({
     konami: authProcedure(`loggedIn`).input(Validator.z.enum([`add`, `remove`])).mutation(async ({input, ctx}) => {

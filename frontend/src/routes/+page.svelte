@@ -12,12 +12,8 @@
 
   let recentlyUploadedVerified: AssetPublicAPIv3[] = $state([]);
   onMount(async () => {
-    trpc.assetsRouterV3.getAssets.query({
-      limit: 30,
-      page: 1,
-      status: Status.Verified,
-    }).then((data) => {
-      recentlyUploadedVerified = data.assets;
+    trpc.assetsRouterV3.getFrontPageAssets.query().then((data) => {
+      recentlyUploadedVerified = data;
     });
   });
 </script>

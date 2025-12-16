@@ -1,7 +1,7 @@
 import { Asset, Status, UserPermissions } from "../../../shared/Database.ts";
 import { Validator } from "../../../shared/Validator.ts";
 import { parseErrorMessage } from "../../../shared/Tools.ts";
-import { authProcedure, router } from "../../../api/trpc.ts";
+import { authProcedure, router } from "../../trpc.ts";
 
 export const approvalRouter = router({
     approveAsset: authProcedure([UserPermissions.Approve_Assets]).input(Validator.z.object({

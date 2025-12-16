@@ -205,8 +205,8 @@
   // #endregion Toasts
 
   const links = [
-    { href: "/", label: "Home", target: "_self" },
-    { href: "/assets", label: "Assets", target: "_self" },
+    { href: "/", label: "Home", target: undefined },
+    { href: "/assets", label: "Assets", target: undefined },
     { href: "https://bsmg.wiki/models", label: "Model Wiki", target: "_blank" },
   ];
 </script>

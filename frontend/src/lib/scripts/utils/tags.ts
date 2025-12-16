@@ -65,7 +65,7 @@ export function getTagData(tag: Tags, assetType: AssetFileFormat, shouldShowInte
 
     case Tags.Featured:
     case Tags.Contest:
-      intClass = `bg-[#3b397a]`;
+      intClass = `bg-[#7f65ee]`;
       break;
     default:
       intClass = `bg-[#333333]`;
@@ -110,7 +110,7 @@ export function getTagData(tag: Tags, assetType: AssetFileFormat, shouldShowInte
 
     case Tags.Featured:
     case Tags.Contest:
-      category = "Special";
+      category = "Protected/Internal";
       disabled = !shouldShowInternal;
       break;
     case Tags.Pride:

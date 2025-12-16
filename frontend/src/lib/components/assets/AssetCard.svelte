@@ -1,7 +1,5 @@
 <script lang="ts">
-  import { assets } from "$app/paths";
   import { Status, Tags, type AssetPublicAPIv3, type UserPublicAPIv3 } from "$lib/scripts/api/DBTypes";
-  import { Badge } from "$shadcn/components/ui/badge";
   import Button from "$shadcn/components/ui/button/button.svelte";
   import { BadgeAlert, BadgeCheck, BadgeX, Download, DownloadCloud, InfoIcon, CircleHelp } from "@lucide/svelte";
   import ApprovalDialog from "./ApprovalDialog.svelte";
@@ -10,8 +8,8 @@
   import { invalidate } from "$app/navigation";
   import { page } from "$app/state";
   import { cn } from "$shadcn/utils";
-  import * as HoverCard from "$shadcn/components/ui/hover-card";
   import StatusHoverCard from "./StatusHoverCard.svelte";
+  import DownloadButton from "./DownloadButton.svelte";
 
   let props: {
     asset: AssetPublicAPIv3;
@@ -78,12 +76,12 @@
       <Button variant="ghost" data-sveltekit-reload href="/assets/{props.asset.id}" size="icon" title="Goto Asset Page">
         <InfoIcon />
       </Button>
-      <Button variant="ghost" href={downloadUrl} size="icon" title="Download">
+      <DownloadButton variant="ghost" href={downloadUrl} size="icon" title="Download">
         <Download />
-      </Button>
-      <Button variant="ghost" href={oneClickUrl} size="icon" title="OneClick Install">
+      </DownloadButton>
+      <DownloadButton variant="ghost" href={oneClickUrl} size="icon" title="OneClick Install">
         <DownloadCloud />
-      </Button>
+      </DownloadButton>
     </div>
   </div>
 

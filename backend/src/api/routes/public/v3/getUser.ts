@@ -4,7 +4,7 @@ import { Asset, AssetInfer, User } from "../../../../shared/Database.ts";
 import { Op, WhereOptions } from "sequelize";
 import { parseErrorMessage } from "../../../../shared/Tools.ts";
 import { AssetPublicAPIv3, userPublicAPIv3Schema } from "../../../../shared/database/DBExtras.ts";
-import { authProcedure, router } from "../../../../api/trpc.ts";
+import { authProcedure, router } from "../../../trpc.ts";
 
 export const userRouterV3 = router({
     getMe: authProcedure(`loggedIn`)

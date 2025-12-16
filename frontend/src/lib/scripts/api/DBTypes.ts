@@ -1,40 +1,40 @@
 import z from "zod/v4";
 
 export enum SponsorType {
-    GitHub = "github",
-    KoFi = "ko-fi",
-    Patreon = "patreon",
+  GitHub = "github",
+  KoFi = "ko-fi",
+  Patreon = "patreon",
 }
 
 // #region Asset Enums
 export enum AssetFileFormat {
-    // sabers
-    Saber_Wacker = 'saber_wacker',
-    Saber_Saber = 'saber_saber',
+  // sabers
+  Saber_Wacker = 'saber_wacker',
+  Saber_Saber = 'saber_saber',
 
-    Avatar_Avatar = 'avatar_avatar',
+  Avatar_Avatar = 'avatar_avatar',
 
-    Platform_Plat = 'platform_plat',
+  Platform_Plat = 'platform_plat',
 
-    Note_Bloq = 'note_bloq',
-    Note_Cyoob = 'note_cyoob',
+  Note_Bloq = 'note_bloq',
+  Note_Cyoob = 'note_cyoob',
 
-    Wall_Pixie = 'wall_pixie',
-    Wall_Box = 'wall_box',
+  Wall_Pixie = 'wall_pixie',
+  Wall_Box = 'wall_box',
 
-    HealthBar_Energy = 'health-bar_energy',
+  HealthBar_Energy = 'health-bar_energy',
 
-    Sound_Ogg = 'sound_ogg',
-    Sound_Mp3 = 'sound_mp3',
+  Sound_Ogg = 'sound_ogg',
+  Sound_Mp3 = 'sound_mp3',
 
-    Banner_Png = 'banner_png',
+  Banner_Png = 'banner_png',
 
-    ChromaEnv_JSON = 'chroma-environment_json',
-    Camera2Config_JSON = 'camera2-config_json',
-    CountersPlusConfig_JSON = 'counters-plus-config_json',
-    HSVConfig_JSON = 'hitscorevisualizer-config_json',
+  ChromaEnv_JSON = 'chroma-environment_json',
+  Camera2Config_JSON = 'camera2-config_json',
+  CountersPlusConfig_JSON = 'counters-plus-config_json',
+  HSVConfig_JSON = 'hitscorevisualizer-config_json',
 }
-    
+
 /*
   Verified & Unverified should both be considered "approved" statuses.
   The difference is that Unverified assets are newly approved assets that haven't been approved (and likely dont need to be) by a moderator yet.
@@ -42,117 +42,119 @@ export enum AssetFileFormat {
   Pending assets are waiting for initial approval by a moderator. This is for assets that need to be reviewed before being made public, such as asset bundles.
 */
 export enum Status {
-    Private = 'private', // only uploader & collaborators can see
-    Pending = 'pending', // pending review by moderators (default for asset bundles)
-    Unverified = 'unverified', // approved but not yet verified by mods (default for everything else)
-    Verified = 'verified', // approved & verified by mods
-    Removed = 'removed', // rejected by moderators
+  Private = 'private', // only uploader & collaborators can see
+  Pending = 'pending', // pending review by moderators (default for asset bundles)
+  Unverified = 'unverified', // approved but not yet verified by mods (default for everything else)
+  Verified = 'verified', // approved & verified by mods
+  Removed = 'removed', // rejected by moderators
 }
 
 export enum License {
-    CC0 = "cc0-1.0",
-    CC40_BY = "cc4.0-by",
-    CC40_BY_SA = "cc4.0-by-sa",
-    CC40_BY_ND = "cc4.0-by-nd",
-    CC40_BY_NC = "cc4.0-by-nc",
-    CC40_BY_NC_SA = "cc4.0-by-nc-sa",
-    CC40_BY_NC_ND = "cc4.0-by-nc-nd",
-    Custom = "custom"
+  CC0 = "cc0-1.0",
+  CC40_BY = "cc4.0-by",
+  CC40_BY_SA = "cc4.0-by-sa",
+  CC40_BY_ND = "cc4.0-by-nd",
+  CC40_BY_NC = "cc4.0-by-nc",
+  CC40_BY_NC_SA = "cc4.0-by-nc-sa",
+  CC40_BY_NC_ND = "cc4.0-by-nc-nd",
+  Custom = "custom"
 }
 
 export enum LinkedAssetLinkType {
-    Older = 'older', // e.g. a newer version of the asset
-    Newer = 'newer', // e.g. an older version of the asset
-    AltFormat = 'altFormat', // e.g. a different format of the same asset (e.g. .saber and .wacker)
-    Alternate = 'alternate', // e.g. an alternate version of the asset (e.g. a different color scheme)
+  Older = 'older', // e.g. a newer version of the asset
+  Newer = 'newer', // e.g. an older version of the asset
+  AltFormat = 'altFormat', // e.g. a different format of the same asset (e.g. .saber and .wacker)
+  Alternate = 'alternate', // e.g. an alternate version of the asset (e.g. a different color scheme)
 }
 
 export enum Tags {
-    // features
-    CustomColors = 'Custom Colors', // all really
-    CustomTrails = 'Custom Trails', //sabers
-    CustomBombs = 'Custom Bombs', // notes
-    CustomArrows = 'Custom Arrows', // notes
+  // features
+  CustomColors = 'Custom Colors', // all really
+  CustomTrails = 'Custom Trails', //sabers
+  CustomBombs = 'Custom Bombs', // notes
+  CustomArrows = 'Custom Arrows', // notes
 
-    AudioLink = 'AudioLink', // sabers
-    Reactive = 'Reactive', // sabers/platforms
-    Animations = 'Animations', // sabers/platforms
-    Sounds = 'Sounds', // sabers/platforms w/ audio
+  AudioLink = 'AudioLink', // sabers
+  Reactive = 'Reactive', // sabers/platforms
+  Animations = 'Animations', // sabers/platforms
+  Sounds = 'Sounds', // sabers/platforms w/ audio
 
-    FBT = 'FBT', // asset
-    Cloth = 'Cloth',
-    DynamicBones = 'Dynamic Bones',
-    Shaders = 'Shader Replacement',
-    NSFW = 'NSFW',
+  FBT = 'FBT', // asset
+  Cloth = 'Cloth',
+  DynamicBones = 'Dynamic Bones',
+  Shaders = 'Shader Replacement',
+  NSFW = 'NSFW',
 
-    // types/genres
-    Meme = 'Meme',
-    Thin = 'Thin', // sabers
-    Large = 'Large', // sabers
-    Acc = 'Acc',
-    Particles = 'Particles', // sabers
-    Sword = 'Sword', // sabers
-    Simple = 'Simple', // sabers
-    VideoGame = 'Video Game',
-    Anime = 'Anime',
-    Pride = 'Pride',
-    Pro = 'Pro',
-    Halloween = 'Halloween',
-    Holiday = 'Holiday',
-    Christmas = 'Christmas',
+  // types/genres
+  Meme = 'Meme',
+  Thin = 'Thin', // sabers
+  Large = 'Large', // sabers
+  Acc = 'Acc',
+  Particles = 'Particles', // sabers
+  Sword = 'Sword', // sabers
+  Simple = 'Simple', // sabers
+  VideoGame = 'Video Game',
+  Anime = 'Anime',
+  Pride = 'Pride',
+  Pro = 'Pro',
+  Halloween = 'Halloween',
+  Holiday = 'Holiday',
+  Christmas = 'Christmas',
 
-    Underswing = 'Underswing', // hsv
-    TimeDependence = 'Time Dependence', // hsv
-    Hitsound = 'Hitsound', // sounds
-    BadHitsound = 'BadCut Hitsound', // sounds
-    MenuClick = 'Menu Click', // sounds
-    FirstPerson = 'First Person', // camera2
-    ThirdPerson = 'Third Person', // camera2
+  Underswing = 'Underswing', // hsv
+  TimeDependence = 'Time Dependence', // hsv
+  Hitsound = 'Hitsound', // sounds
+  BadHitsound = 'BadCut Hitsound', // sounds
+  MenuClick = 'Menu Click', // sounds
+  FirstPerson = 'First Person', // camera2
+  ThirdPerson = 'Third Person', // camera2
 
-    Contest = 'Contest',
-    
-    Featured = 'Featured',
+  // protected tags
+  Contest = 'Contest',
+
+  // internal tags
+  Featured = 'Featured',
 }
 // #endregion Asset Enums
 
 // #region Alert & Reqeust & User Enums
 export enum UserPermissions {
-    // actual permissions
-    View_Pending_Assets = "view_pending_assets", // User can view & search pending assets
-    View_All_Assets = "view_all_assets", // User can view & search all assets, including private ones
-    Approve_Assets = "approve_assets", // User can approve/reject pending assets
-    Edit_Any_Asset = "edit_any_asset", // User can edit any asset, regardless of ownership
-    Allow_Internal_Tags = "allow_internal_tags", // User can add internal tags to assets
+  // actual permissions
+  View_Pending_Assets = "view_pending_assets", // User can view & search pending assets
+  View_All_Assets = "view_all_assets", // User can view & search all assets, including private ones
+  Approve_Assets = "approve_assets", // User can approve/reject pending assets
+  Edit_Any_Asset = "edit_any_asset", // User can edit any asset, regardless of ownership
+  Allow_Internal_Tags = "allow_internal_tags", // User can add internal tags to assets
 
-    View_All_Reports = "view_all_reports", // User can view all asset reports
-    Manage_All_Reports = "manage_all_reports", // User can manage (resolve) asset reports
+  View_All_Reports = "view_all_reports", // User can view all asset reports
+  Manage_All_Reports = "manage_all_reports", // User can manage (resolve) asset reports
 
-    Manage_NonMod_Users = "manage_nonmod_users", // User can manage non-admin users (e.g. ban users)
-    Manage_All_Users = "manage_all_users", // User can manage admin users w/o restrictions
-    Create_Assets = "create_assets", // User can upload/create assets
-    Administative_Tasks = "administrative_tasks", // User can perform high-level admin tasks
+  Manage_NonMod_Users = "manage_nonmod_users", // User can manage non-admin users (e.g. ban users)
+  Manage_All_Users = "manage_all_users", // User can manage admin users w/o restrictions
+  Create_Assets = "create_assets", // User can upload/create assets
+  Administative_Tasks = "administrative_tasks", // User can perform high-level admin tasks
 
-    // cosmetic roles for badges only
-    C_Developer = "cos_developer", // User is a developer of the site
-    C_Moderator = "cos_moderator", // User is a moderator of the site
-    C_Admin = "cos_admin", // User is an admin of the site
-    C_BSMG_Staff = "cos_bsmg_staff", // User is a member of the BSMG staff
-    C_Modeler = "cos_modeler", // User is a recognized modeler on ModelSaber
-    C_System = "cos_system", // User is a system account
+  // cosmetic roles for badges only
+  C_Developer = "cos_developer", // User is a developer of the site
+  C_Moderator = "cos_moderator", // User is a moderator of the site
+  C_Admin = "cos_admin", // User is an admin of the site
+  C_BSMG_Staff = "cos_bsmg_staff", // User is a member of the BSMG staff
+  C_Modeler = "cos_modeler", // User is a recognized modeler on ModelSaber
+  C_System = "cos_system", // User is a system account
 }
 export enum AlertType {
-    Generic = "generic", // Generic alert type, used for non-specific alerts
-    AssetVerified = "asset_verified", // Alert when an asset is approved
-    AssetRejected = "asset_rejected", // Alert when an asset is rejected
-    AssetRemoval = "asset_removal", // Alert when an asset is removed
-    RequestAccepted = "request_accepted", // Alert when a request is accepted
-    RequestDeclined = "request_declined", // Alert when a request is declined
+  Generic = "generic", // Generic alert type, used for non-specific alerts
+  AssetVerified = "asset_verified", // Alert when an asset is approved
+  AssetRejected = "asset_rejected", // Alert when an asset is rejected
+  AssetRemoval = "asset_removal", // Alert when an asset is removed
+  RequestAccepted = "request_accepted", // Alert when a request is accepted
+  RequestDeclined = "request_declined", // Alert when a request is declined
 }
 
 export enum RequestType {
-    Credit = "credit", // Request to credit the user for an asset
-    Link = "link", // Request to add an asset to linkedIds that the author is not the uploader of
-    Report = "report", // Request to report an asset for a specific reason
+  Credit = "credit", // Request to credit the user for an asset
+  Link = "link", // Request to add an asset to linkedIds that the author is not the uploader of
+  Report = "report", // Request to report an asset for a specific reason
 }
 // #endregion Alert Enums
 
@@ -186,17 +188,17 @@ export const assetPublicAPIv2Schema = z.object({
 
 export type AssetPublicAPIv1 = z.infer<typeof assetPublicAPIv1Schema>;
 export const assetPublicAPIv1Schema = assetPublicAPIv2Schema.pick({
-    tags: true,
-    type: true,
-    name: true,
-    author: true,
-    hash: true,
-    bsaber: true,
-    download: true,
-    install_link: true,
-    date: true
+  tags: true,
+  type: true,
+  name: true,
+  author: true,
+  hash: true,
+  bsaber: true,
+  download: true,
+  install_link: true,
+  date: true
 }).extend({
-    image: z.string()
+  image: z.string()
 });
 
 // #region Asset Enums
@@ -207,7 +209,16 @@ export type StatusHistory = z.infer<typeof statusHistorySchema>;
 export const statusHistorySchema = z.object({
   status: statusSchema,
   reason: z.string(),
-  timestamp: z.date(),
+  timestamp: z.preprocess((input) => {
+    if (typeof input === 'string') {
+      const date = new Date(input);
+      if (isNaN(date.getTime())) {
+        return undefined; // Will fail .date() validation
+      }
+      return date;
+    }
+    return input;
+  }, z.date()),
   userId: z.string()
 })
 export const linkedAssetLinkTypeSchema = z.enum(LinkedAssetLinkType)
@@ -224,7 +235,16 @@ export type RequestMessage = z.infer<typeof requestMessageSchema>;
 export const requestMessageSchema = z.object({
   userId: z.string(),
   message: z.string(),
-  timestamp: z.date()
+  timestamp: z.preprocess((input) => {
+    if (typeof input === 'string') {
+      const date = new Date(input);
+      if (isNaN(date.getTime())) {
+        return undefined; // Will fail .date() validation
+      }
+      return date;
+    }
+    return input;
+  }, z.date()),
 })
 
 export type UserPublicAPIv3 = z.infer<typeof userPublicAPIv3Schema>;

@@ -43,6 +43,7 @@
   import { invalidateAll } from "$app/navigation";
   import AssetPreview from "$lib/components/assets/AssetPreview.svelte";
   import StatusHoverCard from "$lib/components/assets/StatusHoverCard.svelte";
+  import DownloadButton from "$lib/components/assets/DownloadButton.svelte";
 
   let { data } = $props();
   const typeData = $derived.by(() => getAssetTypeData(data.pageData.type));
@@ -348,14 +349,14 @@
 {#snippet buttons(center = mobileView.current)}
   <div class={cn("flex flex-row gap-2 flex-wrap items-center", center ? "justify-center" : "justify-start")}>
     {#if !isEditing}
-      <Button variant="default" href={getAssetDownloadUrl(data.pageData)} download>
+      <DownloadButton shouldShowWarning={data.pageData.status != Status.Verified} variant="default" href={getAssetDownloadUrl(data.pageData)} download>
         <DownloadIcon />
         Download
-      </Button>
-      <Button variant="outline" href={getOneClickUrl(data.pageData)}>
+      </DownloadButton>
+      <DownloadButton variant="outline" href={getOneClickUrl(data.pageData)}>
         <CloudDownloadIcon />
         OneClick Install
-      </Button>
+      </DownloadButton>
       {#if allowedToReport}
         <Button variant="destructive" href="/assets/{data.pageData.id}/report" disabled>
           <MegaphoneIcon />
@@ -371,7 +372,6 @@
                 .mutate({ assetId: data.pageData.id })
                 .then(() => {
                   toast.success("Asset submitted for approval!");
-                  approvalDialog?.showDialog(data.pageData.id, data.pageData.name);
                 })
                 .catch((err) => {
                   toast.error(`Failed to submit asset for approval: ${err.message}`);
@@ -487,7 +487,7 @@
 
 <ApprovalPopup bind:this={approvalDialog} />
 <LinkAssetDialog bind:this={addRelatedDialog} />
-<TagPickerDialog bind:open={openTagPicker} bind:selectedTags={editTags} type={data.pageData.type} />
+<TagPickerDialog bind:open={openTagPicker} bind:selectedTags={editTags} showInternalTags={data.user?.roles.includes(UserPermissions.Allow_Internal_Tags)} type={data.pageData.type} />
 
 <style>
   @property --angle {

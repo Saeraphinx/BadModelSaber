@@ -109,8 +109,10 @@ export enum Tags {
   FirstPerson = 'First Person', // camera2
   ThirdPerson = 'Third Person', // camera2
 
+  // protected tags
   Contest = 'Contest',
 
+  // internal tags
   Featured = 'Featured',
 }
 // #endregion Asset Enums

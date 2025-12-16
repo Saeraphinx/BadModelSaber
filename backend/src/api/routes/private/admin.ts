@@ -2,7 +2,7 @@ import { Alert, User, UserPermissions } from "../../../shared/Database.ts";
 import { Validator } from "../../../shared/Validator.ts";
 import z from "zod/v4";
 import { dedupeArray } from "../../../shared/Tools.ts";
-import { authProcedure, router } from "../../../api/trpc.ts";
+import { authProcedure, router } from "../../trpc.ts";
 import { Logger } from "../../../shared/Logger.ts";
 import { importFromOldModelSaber } from "../../../shared/Importer.ts";
 import { TRPCError } from "@trpc/server";

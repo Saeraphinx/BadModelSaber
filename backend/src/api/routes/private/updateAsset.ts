@@ -1,7 +1,7 @@
 import { Asset, AssetRequest, LinkedAssetLinkType, User } from "../../../shared/Database.ts";
 import { Validator } from "../../../shared/Validator.ts";
 import { parseErrorMessage } from "../../../shared/Tools.ts";
-import { authProcedure, router } from "../../../api/trpc.ts";
+import { authProcedure, router } from "../../trpc.ts";
 import { TRPCError } from "@trpc/server";
 
 export const UpdateAssetRouter = router({
