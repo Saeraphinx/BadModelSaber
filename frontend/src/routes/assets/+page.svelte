@@ -53,7 +53,8 @@
   });
 
   // Filters Themselves
-  let filteredAssets = $derived.by(() => { // Filter Only
+  let filteredAssets = $derived.by(() => {
+    // Filter Only
     if (!assetArray || assetArray.length === 0) return [];
 
     let searchOut = searchQuery.length >= 1 ? searchEngine?.search(searchQuery) || assetArray : assetArray;
@@ -64,7 +65,8 @@
       return matchesFormat && matchesStatus;
     });
   });
-  let currentAssetArray = $derived.by(() => { // Filter + Pagination
+  let currentAssetArray = $derived.by(() => {
+    // Filter + Pagination
     if (!filteredAssets || filteredAssets.length === 0) return [];
     let start = (currentPage - 1) * selectedPageSize;
     return filteredAssets.slice(start, start + selectedPageSize);
@@ -73,7 +75,8 @@
   // Asset Fetch
   async function fetchAssets() {
     assetsLoading = true;
-    let assets = await trpc.assetsRouterV3.getAssets.query({})
+    let assets = await trpc.assetsRouterV3.getAssets
+      .query({})
       .then((response) => {
         return response.assets;
       })
@@ -98,37 +101,37 @@
 </script>
 
 {#snippet pagination()}
-    <Pagination.Root
-      count={filteredAssets.length}
-      perPage={selectedPageSize}
-      bind:page={currentPage}
-      onPageChange={() => {
-        window.scrollTo({ top: 0, behavior: "smooth" });
-      }}>
-      {#snippet children({ pages, currentPage })}
-        <Pagination.Content>
-          <Pagination.Item>
-            <Pagination.PrevButton />
-          </Pagination.Item>
-          {#each pages as page (page.key)}
-            {#if page.type === "ellipsis"}
-              <Pagination.Item>
-                <Pagination.Ellipsis />
-              </Pagination.Item>
-            {:else}
-              <Pagination.Item>
-                <Pagination.Link {page} isActive={currentPage === page.value}>
-                  {page.value}
-                </Pagination.Link>
-              </Pagination.Item>
-            {/if}
-          {/each}
-          <Pagination.Item>
-            <Pagination.NextButton />
-          </Pagination.Item>
-        </Pagination.Content>
-      {/snippet}
-    </Pagination.Root>
+  <Pagination.Root
+    count={filteredAssets.length}
+    perPage={selectedPageSize}
+    bind:page={currentPage}
+    onPageChange={() => {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }}>
+    {#snippet children({ pages, currentPage })}
+      <Pagination.Content>
+        <Pagination.Item>
+          <Pagination.PrevButton />
+        </Pagination.Item>
+        {#each pages as page (page.key)}
+          {#if page.type === "ellipsis"}
+            <Pagination.Item>
+              <Pagination.Ellipsis />
+            </Pagination.Item>
+          {:else}
+            <Pagination.Item>
+              <Pagination.Link {page} isActive={currentPage === page.value}>
+                {page.value}
+              </Pagination.Link>
+            </Pagination.Item>
+          {/if}
+        {/each}
+        <Pagination.Item>
+          <Pagination.NextButton />
+        </Pagination.Item>
+      </Pagination.Content>
+    {/snippet}
+  </Pagination.Root>
 {/snippet}
 
 {#snippet miniPagination()}
@@ -181,7 +184,8 @@
       </Collapsible.Content>
     </div>
   </Collapsible.Root>
-  {#if assetStatuses.length > 1} <!-- Only show status filter if there are multiple statuses available for filtering -->
+  {#if assetStatuses.length > 1}
+    <!-- Only show status filter if there are multiple statuses available for filtering -->
     <Collapsible.Root bind:open={filterStatusVisible} class="mt-4">
       <div class="flex flex-col bg-card rounded-2xl min-w-56 w-full py-2 px-4">
         <Collapsible.Trigger class="flex items-center justify-between w-full">

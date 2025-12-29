@@ -1,8 +1,9 @@
 
-import { AssetRequest, AssetRequestInfer, RequestType, UserPermissions } from "../../../shared/Database.ts";
+import { Asset, AssetRequest, AssetRequestInfer, RequestType, UserPermissions } from "../../../shared/Database.ts";
 import { Validator } from "../../../shared/Validator.ts";
 import { WhereOptions } from "sequelize";
 import { authProcedure, router } from "../../trpc.ts";
+import { TRPCError } from "@trpc/server";
 
 export const RequestRouter = router({
     request: authProcedure(`loggedIn`).input(Validator.z.object({
@@ -102,7 +103,7 @@ export const RequestRouter = router({
         return { message: `Message added successfully` };
     }),
     handleRequest: authProcedure(`loggedIn`).input(Validator.z.object({
-        id: Validator.zNumberIDTransform,
+        id: Validator.zNumberId,
         action: Validator.z.enum([`accept`, `decline`]),
     })).mutation(async ({ input, ctx }) => {
         const assetReq = await AssetRequest.findByPk(input.id);
@@ -120,6 +121,18 @@ export const RequestRouter = router({
             return { message: `Request declined successfully` };
         }
         throw new Error(`Invalid action`);
+    }),
+    reportAsset: authProcedure(`loggedIn`).input(Validator.z.object({
+        assetId: Validator.zNumberId,
+        reason: Validator.z.string().min(3).max(1000),
+    })).mutation(async ({ input, ctx }) => {
+        let asset = await Asset.findByPk(input.assetId);
+        if (!asset) {
+            throw new TRPCError({ code: `NOT_FOUND`, message: `Asset not found` });
+        }
+
+        let assetReq = await asset.report(ctx.user, input.reason);
+        return assetReq.getAPIResponse();
     })
 });
 

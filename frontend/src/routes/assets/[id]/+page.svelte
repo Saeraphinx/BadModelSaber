@@ -44,6 +44,7 @@
   import AssetPreview from "$lib/components/assets/AssetPreview.svelte";
   import StatusHoverCard from "$lib/components/assets/StatusHoverCard.svelte";
   import DownloadButton from "$lib/components/assets/DownloadButton.svelte";
+  import ReportDialog from "$lib/components/assets/ReportDialog.svelte";
 
   let { data } = $props();
   const typeData = $derived.by(() => getAssetTypeData(data.pageData.type));
@@ -53,6 +54,7 @@
   let relatedApi = $state<CarouselAPI>();
   let authorApi = $state<CarouselAPI>();
   let approvalDialog: ApprovalPopup;
+  let reportDialog: ReportDialog;
   let addRelatedDialog: LinkAssetDialog;
 
   // #region Report
@@ -358,7 +360,9 @@
         OneClick Install
       </DownloadButton>
       {#if allowedToReport}
-        <Button variant="destructive" href="/assets/{data.pageData.id}/report" disabled>
+        <Button variant="destructive" href="/assets/{data.pageData.id}/report" onclick={() => {
+          reportDialog?.showDialog(data.pageData.id, data.pageData.name);
+        }}>
           <MegaphoneIcon />
           Report
         </Button>
@@ -488,6 +492,7 @@
 <ApprovalPopup bind:this={approvalDialog} />
 <LinkAssetDialog bind:this={addRelatedDialog} />
 <TagPickerDialog bind:open={openTagPicker} bind:selectedTags={editTags} showInternalTags={data.user?.roles.includes(UserPermissions.Allow_Internal_Tags)} type={data.pageData.type} />
+<ReportDialog bind:this={reportDialog} />
 
 <style>
   @property --angle {

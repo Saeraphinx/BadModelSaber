@@ -31,6 +31,7 @@ export class DatabaseManager {
         }
         this.schemaName = useAltSchema || `public`;
         this.schemaName = this.schemaName.toLowerCase();
+        Logger.log(`Using schema: ${this.schemaName}`);
         this.sequelize = new Sequelize(EnvConfig.database.connectionString, {
             dialect: `postgres`,
             //logging: (msg) => fs.writeFileSync(`test.log`, msg.replaceAll(`\n`, `\\n`).replaceAll(`Executing (default): `, ``) + `\n`, { flag: `a` }),

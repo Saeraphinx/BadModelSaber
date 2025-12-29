@@ -7,7 +7,6 @@ import { Logger } from "../../../shared/Logger.ts";
 import { importFromOldModelSaber } from "../../../shared/Importer.ts";
 import { TRPCError } from "@trpc/server";
 import { EnvConfig } from "../../../shared/EnvConfig.ts";
-import { createSchema } from "zod-openapi";
 
 export const AdminRouter = router({
     setRoles: authProcedure([UserPermissions.Manage_All_Users])

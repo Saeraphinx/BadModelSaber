@@ -226,6 +226,23 @@
           toast.error("Failed to start import.");
         });
       }}>Import Old ModelSaber Data</Button>
+      <Button variant="destructive" class="mt-4 mb-2 w-full" onclick={() => {
+        trpc.AdminRouter.resetSchema.mutate().then(() => {
+          toast.success("Schema reset started.");
+        }).catch((err) => {
+          console.error(err);
+          toast.error("Failed to start schema reset.");
+        });
+
+      }}>Reset Database Schema</Button>
+      <Button variant="destructive" class="mt-4 mb-2 w-full" onclick={() => {
+        trpc.AdminRouter.importFakeData.mutate().then(() => {
+          toast.success("Fake data import started.");
+        }).catch((err) => {
+          console.error(err);
+          toast.error("Failed to start fake data import.");
+        });
+      }}>Import Fake Data</Button>
     </div>
   </div>
 </div>
