@@ -1,3 +1,4 @@
+import { m } from "$lib/paraglide/messages";
 import { AssetFileFormat, UserPermissions } from "../api/DBTypes";
 
 export function capitalizeFirstLetter(str: any): string {
@@ -21,12 +22,6 @@ export function getAssetTypeString(type: AssetFileFormat): string {
   }
 }
 
-function toTitleCase(str: string): string {
-    return str.replace(/\w\S*/g, (txt) => {
-        return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
-    });
-}
-
 export function getAssetTypeData(format: AssetFileFormat): {
   rawString: AssetFileFormat;
   formatString: string;
@@ -35,7 +30,7 @@ export function getAssetTypeData(format: AssetFileFormat): {
 } {
   let type = format.split('_')[0].replaceAll('-', ' ');
   let fileFormat = `.${format.split('_')[1].toLowerCase()}`;
-  let capitalType = toTitleCase(type);
+  let capitalType = capitalizeFirstLetter(type);
 
   switch (format) {
     case AssetFileFormat.HSVConfig_JSON:
@@ -103,7 +98,7 @@ export function getRoleData(role: string): {
       return {
         bgColor: 'bg-red-500',
         textColor: 'text-white',
-        text: 'Admin',
+        text: m["enums.roles.admin"](),
         value: UserPermissions.C_Admin,
         hidden: false,
       }
@@ -111,7 +106,7 @@ export function getRoleData(role: string): {
       return {
         bgColor: 'bg-pink-500',
         textColor: 'text-white',
-        text: 'ModelSaber Developer',
+        text: m["enums.roles.developer"](),
         value: UserPermissions.C_Developer,
         hidden: false,
       }
@@ -119,7 +114,7 @@ export function getRoleData(role: string): {
       return {
         bgColor: 'bg-blue-500',
         textColor: 'text-black',
-        text: 'Moderator',
+        text: m["enums.roles.moderator"](),
         value: UserPermissions.C_Moderator,
         hidden: false,
       }
@@ -127,7 +122,7 @@ export function getRoleData(role: string): {
       return {
         bgColor: 'bg-[#3b397a]',
         textColor: 'text-white',
-        text: 'BSMG Staff',
+        text: m["enums.roles.bsmgStaff"](),
         value: UserPermissions.C_BSMG_Staff,
         hidden: false,
       }
@@ -135,7 +130,7 @@ export function getRoleData(role: string): {
       return {
         bgColor: 'bg-[#59d8f0]',
         textColor: 'text-black',
-        text: '3D Modeler',
+        text: m["enums.roles.3dArtist"](),
         value: UserPermissions.C_Modeler,
         hidden: false,
       }
@@ -143,7 +138,7 @@ export function getRoleData(role: string): {
       return {
         bgColor: 'bg-gray-800',
         textColor: 'text-white',
-        text: 'System Account',
+        text: m["enums.roles.system"](),
         value: UserPermissions.C_System,
         hidden: false,
       }
@@ -151,7 +146,7 @@ export function getRoleData(role: string): {
       return {
         bgColor: 'bg-gray-500',
         textColor: 'text-white',
-        text: 'Unknown Role',
+        text: m["enums.roles.unkown"](),
         value: undefined,
         hidden: true,
       }; // Default color for unknown roles

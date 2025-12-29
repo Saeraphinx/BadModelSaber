@@ -1,0 +1,81 @@
+{
+  "$schema": "https://inlang.com/schema/inlang-message-format",
+
+  "name": "ModelSaber",
+  "homepage": {
+    "title": "@:name",
+    "subtitle": "A collection of various assets for use within Beat Saber.",
+    "browseButton": "Browse Assets",
+    "wikiButton": "Model Wiki"
+  },
+  "browseAssets": {
+    "typeCategories": {
+      "sabers": "Sabers",
+      "notes": "Notes",
+      "walls": "Walls",
+      "configs": "Configs",
+      "other": "Other"
+    }
+  },
+  "assetPage": {
+    "cardhover": {
+      "goToAsset": "Go to Asset Page",
+      "updateStatus": "Update Status",
+      "openApprovalDialog": "Open Approval Dialog"
+    },
+    "buttons": {
+      "download": "Download",
+      "oneClickInstall": "OneClick Install",
+      "approvalDialog": "Approval Dialog",
+      "submitForApproval": "Submit for Approval",
+      "report": "Report"
+    },
+    "preview": "Asset Preview",
+    "carousels": {
+      "addRelatedAsset": "Add Related Asset",
+      "relatedAssets": "Related Assets",
+      "relatedAssetsNoneFound": "No related assets found.",
+      "authorAssets": "Other assets by {name}",
+      "authorAssetsNoneFound": "No other assets found by {name}."
+    },
+    "dataTable": {
+      "uploadedBy": "Uploaded by",
+      "tags": "Tags",
+      "fileSize": "File Size",
+      "status": "Status",
+      "license": "License",
+      "uploadAt": "Upload at",
+      "lastUpdated": "Last Updated",
+      "fileHash": "File Hash"
+    }
+  },
+  "enums": {
+    "assetStatus": {
+      "private": "Private",
+      "pending": "Pending",
+      "unverified": "Unverified",
+      "verified": "Verified",
+      "removed": "Removed"
+    },
+    "roles": {
+      "admin": "ModelSaber Admin",
+      "developer": "ModelSaber Developer",
+      "moderator": "Moderator",
+      "bsmgStaff": "BSMG Staff",
+      "3dArtist": "3D Artist",
+      "system": "System Account",
+      "unkown": "Unknown Role"
+    }
+  },
+  "dialogs": {
+    "edit": "Edit",
+    "saveChanges": "Save Changes",
+    "discardChanges": "Discard Changes",
+    "approvalDialog": {
+      "title": "Update Status for {name}",
+      "description": "Select the new status for the asset \"{name}\". Click save to apply the changes.",
+      "reasonWillBeVisible": "This reason will be visible to the author of {name}.",
+      "reasonPlaceholder": "Enter reason for status change (optional)"
+    }
+  }
+}

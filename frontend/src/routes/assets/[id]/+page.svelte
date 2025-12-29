@@ -45,6 +45,7 @@
   import StatusHoverCard from "$lib/components/assets/StatusHoverCard.svelte";
   import DownloadButton from "$lib/components/assets/DownloadButton.svelte";
   import ReportDialog from "$lib/components/assets/ReportDialog.svelte";
+  import { m } from "$lib/paraglide/messages.js";
 
   let { data } = $props();
   const typeData = $derived.by(() => getAssetTypeData(data.pageData.type));
@@ -303,7 +304,7 @@
       {#if apiType === "related" && isEditing}
         <Button onclick={() => addRelatedDialog?.showDialog(data.pageData.id)}>
           <PlusIcon />
-          Add Related Asset
+          {m["asset.carousels.addRelatedAsset"]()}
         </Button>
       {/if}
     </div>
@@ -347,24 +348,24 @@
   </div>
 {/snippet}
 <!-- #endregion -->
-
+<!-- #region Buttons -->
 {#snippet buttons(center = mobileView.current)}
   <div class={cn("flex flex-row gap-2 flex-wrap items-center", center ? "justify-center" : "justify-start")}>
     {#if !isEditing}
       <DownloadButton shouldShowWarning={data.pageData.status != Status.Verified} variant="default" href={getAssetDownloadUrl(data.pageData)} download>
         <DownloadIcon />
-        Download
+        {m["asset.buttons.download"]()}
       </DownloadButton>
       <DownloadButton variant="outline" href={getOneClickUrl(data.pageData)}>
         <CloudDownloadIcon />
-        OneClick Install
+        {m["asset.buttons.oneClickInstall"]()}
       </DownloadButton>
       {#if allowedToReport}
-        <Button variant="destructive" href="/assets/{data.pageData.id}/report" onclick={() => {
+        <Button variant="destructive" onclick={() => {
           reportDialog?.showDialog(data.pageData.id, data.pageData.name);
         }}>
           <MegaphoneIcon />
-          Report
+          {m["asset.buttons.report"]()}
         </Button>
       {/if}
       {#if data.user && data.user.id === data.pageData.uploaderId && data.pageData.status === Status.Private}
@@ -382,7 +383,7 @@
                 });
             }}>
             <BadgeAlert />
-            Submit for Approval
+            {m["asset.buttons.submitForApproval"]()}
           </Button>
         </div>
       {/if}
@@ -393,7 +394,7 @@
             approvalDialog?.showDialog(data.pageData.id, data.pageData.name);
           }}>
           <BadgeAlert />
-          Approval Dialog
+          {m["asset.buttons.approvalDialog"]()}
         </Button>
       {/if}
     {/if}
@@ -405,7 +406,8 @@
           onclick={() => {
             saveChanges();
           }}>
-          Submit Changes</Button>
+          {m["dialogs.saveChanges"]()}
+        </Button>
         <Button
           variant="secondary"
           onclick={() => {
@@ -414,7 +416,7 @@
             editDescription = data.pageData.description || "";
             editTags = (data.pageData.tags as Tags[]) || [];
           }}>
-          Discard Changes
+          {m["dialogs.discardChanges"]()}
         </Button>
       {:else}
         <Button
@@ -423,12 +425,13 @@
             isEditing = !isEditing;
           }}>
           <Edit />
-          Edit
+          {m["dialogs.edit"]()}
         </Button>
       {/if}
     {/if}
   </div>
 {/snippet}
+<!-- #endregion -->
 
 <!-- #region Editable Fields -->
 {#snippet title(center = mobileView.current)}
@@ -475,12 +478,12 @@
         <Separator class="my-4 w-full" />
         {@render description()}
         <Separator class="my-4 w-full" />
-        <span class="text-lg font-semibold">Asset Preview</span>
+        <span class="text-lg font-semibold">{ m["asset.preview"]()}</span>
         <AssetPreview asset={data.pageData} />
         <Separator class="my-4 w-full" />
-        {@render assetCarousel(relatedAssets, isRelatedLoading, `related`, "Related Assets:", "No related assets found.")}
+        {@render assetCarousel(relatedAssets, isRelatedLoading, `related`, m["asset.carousels.relatedAssets"](), m["asset.carousels.relatedAssetsNoneFound"]())}
         <Separator class="my-4 w-full" />
-        {@render assetCarousel(authorAssets, isAuthorLoading, `author`, `Other assets by ${data.pageData.uploader?.displayName}:`, "No other assets found.")}
+        {@render assetCarousel(authorAssets, isAuthorLoading, `author`, m["asset.carousels.authorAssets"]({ name: data.pageData.uploader?.displayName ?? ``}), m["asset.carousels.authorAssetsNoneFound"]({ name: data.pageData.uploader?.displayName ?? ``}))}
         {#if mobileView.current}
           {@render dataTable()}
         {/if}

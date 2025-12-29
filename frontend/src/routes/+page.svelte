@@ -9,6 +9,7 @@
   import AutoScroll from "embla-carousel-auto-scroll"
   import { ExternalLinkIcon } from "@lucide/svelte";
   import Separator from "$shadcn/components/ui/separator/separator.svelte";
+  import { m } from "$lib/paraglide/messages";
 
   let recentlyUploadedVerified: AssetPublicAPIv3[] = $state([]);
   onMount(async () => {
@@ -21,10 +22,10 @@
 <div class="flex flex-col align-middle justify-center-safe items-center h-screen-nav min-h-[300px]">
   <img src="/modelsaber-logo-web.svg" alt="ModelSaber Logo" class="h-24 w-24" />
   <h1 class="text-4xl font-bold">ModelSaber</h1>
-  <p class="text-lg text-gray-500">A collection of various assets for use within Beat Saber</p>
+  <p class="text-lg text-gray-500">{ m["homepage.subtitle"]()}</p>
   <div>
-    <Button class="mt-2" href="/assets">Browse Assets</Button>
-    <Button class="mt-2 ml-2" variant="outline" href="https://bsmg.wiki/models">Model Wiki <ExternalLinkIcon /></Button>
+    <Button class="mt-2" href="/assets">{ m["homepage.browseButton"]()}</Button>
+    <Button class="mt-2 ml-2" variant="outline" href="https://bsmg.wiki/models">{m["homepage.wikiButton"]()} <ExternalLinkIcon /></Button>
   </div>
   <Separator class="my-6 mx-[25%]" />
   <div class="max-w-screen">

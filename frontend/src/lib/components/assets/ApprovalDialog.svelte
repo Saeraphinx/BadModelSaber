@@ -1,5 +1,6 @@
 <script lang="ts">
   import { invalidateAll } from "$app/navigation";
+  import { m } from "$lib/paraglide/messages";
   import { Status } from "$lib/scripts/api/DBTypes";
   import { trpc } from "$lib/scripts/utils/api";
   import { Button, buttonVariants } from "$shadcn/components/ui/button/index.js";
@@ -22,6 +23,8 @@
   let visible = $state<boolean>(false);
 
   export function showDialog(p_id: number, p_name: string) {
+    reason = "";
+    selectedStatus = statuses[0].value;
     id = p_id;
     name = p_name;
     visible = true;
@@ -58,8 +61,8 @@
 <Dialog.Root bind:open={visible} >
   <Dialog.Content class="sm:max-w-[425px]">
     <Dialog.Header>
-      <Dialog.Title>Update Status for {name}</Dialog.Title>
-      <Dialog.Description>Make changes to your profile here. Click save when you're done.</Dialog.Description>
+      <Dialog.Title>{ m["approvalDialog.title"]({ name }) }</Dialog.Title>
+      <Dialog.Description>{ m["approvalDialog.description"]({ name })}</Dialog.Description>
     </Dialog.Header>
     <div class="flex flex-row">
       <RadioGroup.Root>
@@ -73,15 +76,16 @@
       <div class="flex flex-col w-full ml-4">
         <Input
           type="text"
-          placeholder="Reason for change"
+          placeholder={ m["approvalDialog.reasonPlaceholder"]() }
           class="w-full"
           bind:value={reason}
         />
-        <p class="text-sm text-muted-foreground mt-1">This will be visible to the user.</p>
+        <p class="text-sm text-muted-foreground mt-1">{ m["approvalDialog.reasonWillBeVisible"]({ name }) }</p>
       </div>
     </div>
     <Dialog.Footer>
-      <Button type="submit" onclick={handleSubmit}>Save changes</Button>
+      <Button variant="ghost" onclick={() => (visible = false)}>{ m["approvalDialog.cancelButton"] }</Button>
+      <Button type="submit" onclick={handleSubmit}>{ m["approvalDialog.saveButton"] }</Button>
     </Dialog.Footer>
   </Dialog.Content>
 </Dialog.Root>
