@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { m } from "$lib/paraglide/messages";
   import { AssetFileFormat, type AssetPublicAPIv3 } from "$lib/scripts/api/DBTypes";
   import { getAssetDownloadUrl } from "$lib/scripts/utils/api";
   import Button from "$shadcn/components/ui/button/button.svelte";
@@ -59,33 +60,33 @@
   {:else if previewType === "audio"}
     <audio controls class="w-full">
       <source src={getAssetDownloadUrl(props.asset)} />
-      Your browser does not support the audio element.
+      {m["assets.preview.noAudioSupport"]()}
     </audio>
   {:else if previewType === "json" || previewType === "hsv"}
     {#if previewType === "hsv"}
       <Button variant="outline" href={`https://hsv-preview.netlify.app/?url=${encodeURIComponent(downloadUrl)}`} target="_blank">
-        Open HitScoreVisualizer Preview
+        {m["assets.preview.openHSVPreviewer"]()}
       </Button>
     {/if}
     {#if isPreviewLoaded}
       {#await fetchPreviewData()}
-        Waiting for preview data...
+        {m["assets.preview.waitingForData"]()}
       {:then data} 
-        <p class="sr-only">This preview only shows the content within the file. If you wish to read it, please <a href={downloadUrl}>download the file</a> and open it with your system.</p>
+        <p class="sr-only">{@html m["assets.preview.textOnlySr"]({ downloadUrl })}</p>
         <ol class="text-sm max-h-96 w-full overflow-auto p-2 bg-muted rounded-2xl whitespace-pre font-mono list-decimal" aria-hidden="true">
           {#each data?.split(`\n`) as line}
             <li>{line}</li>
           {/each} 
         </ol>
       {:catch error}
-        <p class="text-red-500">Failed to load preview data: {error.message}</p>
+        <p class="text-red-500">{m["assets.preview.failedToLoadError"]({ error: error.message })}</p>
       {/await}
     {:else}
       <Button variant="outline" onclick={() => isPreviewLoaded = true}>
-        Download & Load Preview
+        {m["assets.preview.downloadAndLoadPreview"]()}
       </Button>
     {/if}
   {:else}
-    <p class="text-muted-foreground">No preview available for this asset type.</p>
+    <p class="text-muted-foreground">{m["assets.preview.noPreviewAvailable"]()}</p>
   {/if}
 </div>

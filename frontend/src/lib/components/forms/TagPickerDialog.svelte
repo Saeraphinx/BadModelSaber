@@ -8,6 +8,7 @@
   import type { ClassValue } from "svelte/elements";
   import * as Dialog from "$shadcn/components/ui/dialog";
   import { ScrollArea } from "$shadcn/components/ui/scroll-area";
+  import { m } from "$lib/paraglide/messages";
 
   let {
     type = AssetFileFormat.Note_Bloq,
@@ -38,7 +39,7 @@
   });
   let typeCount = $derived.by(() => {
     let count = 0;
-    let typeSpecificTags = allTags.filter(({ data }) => data.category === "Type-Specific").map(({ tag }) => tag);
+    let typeSpecificTags = allTags.filter(({ data }) => data.category === m["enums.tagCategories.typeSpecific"]()).map(({ tag }) => tag);
     selectedTags.forEach((tag) => {
       if (typeSpecificTags.includes(tag)) count++;
     });

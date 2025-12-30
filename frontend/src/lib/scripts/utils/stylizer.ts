@@ -1,11 +1,16 @@
 import { m } from "$lib/paraglide/messages";
-import { AssetFileFormat, UserPermissions } from "../api/DBTypes";
+import { AssetFileFormat, Status, UserPermissions } from "../api/DBTypes";
 
 export function capitalizeFirstLetter(str: any): string {
   if (!str) return ``; // Handle empty strings
   if (typeof str !== 'string') return ``; // Ensure input is a string
   return str.charAt(0).toUpperCase() + str.slice(1);
 }
+
+export function getStatusString(status: Status): string {
+  return m[`enums.status.${status}`]();
+}
+
 
 export function getAssetTypeString(type: AssetFileFormat): string {
   switch (type) {
@@ -29,8 +34,14 @@ export function getAssetTypeData(format: AssetFileFormat): {
   combinedString: string;
 } {
   let type = format.split('_')[0].replaceAll('-', ' ');
+  let translatedType = type;
+  try {
+    // @ts-expect-error
+    translatedType = m[`enums.assetTypes.singular.${type}`]();
+  } catch (e) {
+    translatedType = capitalizeFirstLetter(type);
+  }
   let fileFormat = `.${format.split('_')[1].toLowerCase()}`;
-  let capitalType = capitalizeFirstLetter(type);
 
   switch (format) {
     case AssetFileFormat.HSVConfig_JSON:
@@ -44,8 +55,8 @@ export function getAssetTypeData(format: AssetFileFormat): {
       return {
         rawString: format,
         formatString: fileFormat,
-        typeString: capitalType,
-        combinedString: `${capitalType} (${fileFormat})`,
+        typeString: translatedType,
+        combinedString: `${translatedType} (${fileFormat})`,
       };
   }
 }
@@ -53,7 +64,7 @@ export function getAssetTypeData(format: AssetFileFormat): {
 export function getAssetTypeCategories(): Map<string, ReturnType<typeof getAssetTypeData>[]> {
   let categories: Map<string, ReturnType<typeof getAssetTypeData>[]> = new Map();
   for (let format in AssetFileFormat) {
-    let type = `${format.split('_')[0].replaceAll('-', ' ')}s`; // Pluralize type
+    let type = `${format.split('_')[0].replaceAll('-', ' ')}`; // Pluralize type
     let category = categories.get(type) ?? [];
     category.push(getAssetTypeData(AssetFileFormat[format as keyof typeof AssetFileFormat]));
     categories.set(type, category);
@@ -81,6 +92,32 @@ export function getAssetTypeCategories(): Map<string, ReturnType<typeof getAsset
       category.push(format);
       categories.set('Other', category);
     }
+  }
+
+  let sabers = categories.get('Sabers');
+  if (sabers) {
+    categories.delete('Sabers');
+    categories.set(m["enums.assetTypes.plurals.saber"](), sabers);
+  } 
+  let notes = categories.get('Notes');
+  if (notes) {
+    categories.delete('Notes');
+    categories.set(m["enums.assetTypes.plurals.note"](), notes);
+  }
+  let walls = categories.get('Walls');
+  if (walls) {
+    categories.delete('Walls');
+    categories.set(m["enums.assetTypes.plurals.wall"](), walls);
+  }
+  let configs = categories.get('Configs');
+  if (configs) {
+    categories.delete('Configs');
+    categories.set(m["enums.assetTypes.plurals.config"](), configs);
+  }
+  let other = categories.get('Other');
+  if (other) {
+    categories.delete('Other');
+    categories.set(m["enums.assetTypes.plurals.other"](), other);
   }
 
   return categories;
@@ -146,7 +183,7 @@ export function getRoleData(role: string): {
       return {
         bgColor: 'bg-gray-500',
         textColor: 'text-white',
-        text: m["enums.roles.unkown"](),
+        text: m["enums.roles.unknown"](),
         value: undefined,
         hidden: true,
       }; // Default color for unknown roles

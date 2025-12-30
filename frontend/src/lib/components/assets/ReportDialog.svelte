@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { m } from "$lib/paraglide/messages";
   import { trpc } from "$lib/scripts/utils/api";
   import { Button } from "$shadcn/components/ui/button";
   import * as Dialog from "$shadcn/components/ui/dialog";
@@ -43,15 +44,15 @@
 <Dialog.Root bind:open={visible}>
   <Dialog.Content class="sm:max-w-[425px]">
     <Dialog.Header>
-      <Dialog.Title>Report {name}</Dialog.Title>
-      <Dialog.Description>Please let us know why you are reporting this asset </Dialog.Description>
+      <Dialog.Title>{m["dialogs.reportDialog.title"]({ name })}</Dialog.Title>
+      <Dialog.Description>{m["dialogs.reportDialog.description"]()}</Dialog.Description>
     </Dialog.Header>
     <div class="flex flex-row">
-      <Input type="text" bind:value={reason} placeholder="Reason for report" />
+      <Input type="text" bind:value={reason} placeholder={m["dialogs.reportDialog.reasonPlaceholder"]()} />
     </div>
     <Dialog.Footer>
-      <Button variant="ghost" onclick={() => (visible = false)}>Cancel</Button>
-      <Button type="submit" onclick={handleSubmit}>Save changes</Button>
+      <Button variant="ghost" onclick={() => (visible = false)}>{m["dialogs.cancel"]()}</Button>
+      <Button type="submit" onclick={handleSubmit}>{m["dialogs.submit"]()}</Button>
     </Dialog.Footer>
   </Dialog.Content>
 </Dialog.Root>

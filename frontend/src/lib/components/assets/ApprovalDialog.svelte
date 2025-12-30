@@ -3,6 +3,7 @@
   import { m } from "$lib/paraglide/messages";
   import { Status } from "$lib/scripts/api/DBTypes";
   import { trpc } from "$lib/scripts/utils/api";
+  import { getStatusString } from "$lib/scripts/utils/stylizer";
   import { Button, buttonVariants } from "$shadcn/components/ui/button/index.js";
   import * as Dialog from "$shadcn/components/ui/dialog/index.js";
   import { Input } from "$shadcn/components/ui/input/index.js";
@@ -12,7 +13,7 @@
 
  let statuses = Object.values(Status).map((status) => ({
     value: status,
-    label: status,
+    label: getStatusString(status),
   }));
 
   let selectedStatus = $state(statuses[0].value);
@@ -61,8 +62,8 @@
 <Dialog.Root bind:open={visible} >
   <Dialog.Content class="sm:max-w-[425px]">
     <Dialog.Header>
-      <Dialog.Title>{ m["approvalDialog.title"]({ name }) }</Dialog.Title>
-      <Dialog.Description>{ m["approvalDialog.description"]({ name })}</Dialog.Description>
+      <Dialog.Title>{ m["dialogs.approvalDialog.title"]({ name }) }</Dialog.Title>
+      <Dialog.Description>{ m["dialogs.approvalDialog.description"]({ name })}</Dialog.Description>
     </Dialog.Header>
     <div class="flex flex-row">
       <RadioGroup.Root>
@@ -76,16 +77,16 @@
       <div class="flex flex-col w-full ml-4">
         <Input
           type="text"
-          placeholder={ m["approvalDialog.reasonPlaceholder"]() }
+          placeholder={ m["dialogs.approvalDialog.reasonPlaceholder"]() }
           class="w-full"
           bind:value={reason}
         />
-        <p class="text-sm text-muted-foreground mt-1">{ m["approvalDialog.reasonWillBeVisible"]({ name }) }</p>
+        <p class="text-sm text-muted-foreground mt-1">{ m["dialogs.approvalDialog.reasonWillBeVisible"]({ name }) }</p>
       </div>
     </div>
     <Dialog.Footer>
-      <Button variant="ghost" onclick={() => (visible = false)}>{ m["approvalDialog.cancelButton"] }</Button>
-      <Button type="submit" onclick={handleSubmit}>{ m["approvalDialog.saveButton"] }</Button>
+      <Button variant="ghost" onclick={() => (visible = false)}>{ m["dialogs.cancel"] }</Button>
+      <Button type="submit" onclick={handleSubmit}>{ m["dialogs.submit"] }</Button>
     </Dialog.Footer>
   </Dialog.Content>
 </Dialog.Root>

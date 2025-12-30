@@ -7,6 +7,7 @@ export enum SponsorType {
 }
 
 // #region Asset Enums
+// Changes to this enum should be made note of and checked for in translation documents if needed
 export enum AssetFileFormat {
   // sabers
   Saber_Wacker = 'saber_wacker',
@@ -41,6 +42,7 @@ export enum AssetFileFormat {
   Verified assets have been explicitly approved by a moderator.
   Pending assets are waiting for initial approval by a moderator. This is for assets that need to be reviewed before being made public, such as asset bundles.
 */
+// Changes to this enum should be mirrored in translation documents
 export enum Status {
   Private = 'private', // only uploader & collaborators can see
   Pending = 'pending', // pending review by moderators (default for asset bundles)
@@ -67,12 +69,13 @@ export enum LinkedAssetLinkType {
   Alternate = 'alternate', // e.g. an alternate version of the asset (e.g. a different color scheme)
 }
 
+// Changes to this enum should be mirrored in translation documents
 export enum Tags {
   // features
-  CustomColors = 'Custom Colors', // all really
-  CustomTrails = 'Custom Trails', //sabers
-  CustomBombs = 'Custom Bombs', // notes
-  CustomArrows = 'Custom Arrows', // notes
+  CustomColors = 'CustomColors', // all really
+  CustomTrails = 'CustomTrails', //sabers
+  CustomBombs = 'CustomBombs', // notes
+  CustomArrows = 'CustomArrows', // notes
 
   AudioLink = 'AudioLink', // sabers
   Reactive = 'Reactive', // sabers/platforms
@@ -81,8 +84,8 @@ export enum Tags {
 
   FBT = 'FBT', // asset
   Cloth = 'Cloth',
-  DynamicBones = 'Dynamic Bones',
-  Shaders = 'Shader Replacement',
+  DynamicBones = 'DynamicBones',
+  Shaders = 'ShaderReplacement',
   NSFW = 'NSFW',
 
   // types/genres
@@ -93,7 +96,7 @@ export enum Tags {
   Particles = 'Particles', // sabers
   Sword = 'Sword', // sabers
   Simple = 'Simple', // sabers
-  VideoGame = 'Video Game',
+  VideoGame = 'VideoGame',
   Anime = 'Anime',
   Pride = 'Pride',
   Pro = 'Pro',
@@ -102,12 +105,12 @@ export enum Tags {
   Christmas = 'Christmas',
 
   Underswing = 'Underswing', // hsv
-  TimeDependence = 'Time Dependence', // hsv
+  TimeDependence = 'TimeDependence', // hsv
   Hitsound = 'Hitsound', // sounds
-  BadHitsound = 'BadCut Hitsound', // sounds
-  MenuClick = 'Menu Click', // sounds
-  FirstPerson = 'First Person', // camera2
-  ThirdPerson = 'Third Person', // camera2
+  BadHitsound = 'BadCutHitsound', // sounds
+  MenuClick = 'MenuClick', // sounds
+  FirstPerson = 'FirstPerson', // camera2
+  ThirdPerson = 'ThirdPerson', // camera2
 
   // protected tags
   Contest = 'Contest',

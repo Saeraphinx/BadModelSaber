@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { m } from "$lib/paraglide/messages";
   import { Button, type ButtonProps } from "$shadcn/components/ui/button";
   import * as Dialog from "$shadcn/components/ui/dialog";
   import { onMount, type Snippet } from "svelte";
@@ -39,7 +40,7 @@
   {#if children}
     {@render children()}
   {:else}
-    Download
+    {m["assets.buttons.download"]()}
   {/if}
 </Button>
 
@@ -51,20 +52,18 @@
   <Dialog.Root bind:open={dialogVisible}>
     <Dialog.Content class="">
       <Dialog.Header>
-        <Dialog.Title>Download unverified asset?</Dialog.Title>
+        <Dialog.Title>{m["dialogs.downloadDialog.title"]()}</Dialog.Title>
       </Dialog.Header>
-      <p class="text-md">
-        This asset has <b>not</b> been verified by the ModelSaber team. It might contain malware or cause issues with your game.<br><span class="text-orange-400">Use at your own risk!</span>
-      </p>
-      <p class="text-sm text-muted-foreground">If you'd like to never see this warning again, please click the "Don't show again" button </p>
+      <p class="text-md">{m["dialogs.downloadDialog.description"]()}</p>
+      <p class="text-sm text-muted-foreground">{m["dialogs.downloadDialog.neverShowAgain"]}</p>
       <Dialog.Footer>
         <Button variant="ghost" onclick={() => {
           localStorage.setItem("suppressUnverifiedDownloadWarning", "true");
           dialogVisible = false;
           shouldShowWarning = false;
-        }}>Don't show again</Button>
-        <Button variant="outline" onclick={() => (dialogVisible = false)}>Cancel</Button>
-        <Button href={href} onclick={() => (dialogVisible = false)}>Download Once</Button>
+        }}>{m["dialogs.dontShowAgain"]}</Button>
+        <Button variant="outline" onclick={() => (dialogVisible = false)}>{m["dialogs.cancel"]()}</Button>
+        <Button href={href} onclick={() => (dialogVisible = false)}>{m["dialogs.downloadDialog.proceed"]()}</Button>
       </Dialog.Footer>
     </Dialog.Content>
   </Dialog.Root>

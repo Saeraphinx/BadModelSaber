@@ -69,10 +69,10 @@ export enum LinkedAssetLinkType {
 
 export enum Tags {
   // features
-  CustomColors = 'Custom Colors', // all really
-  CustomTrails = 'Custom Trails', //sabers
-  CustomBombs = 'Custom Bombs', // notes
-  CustomArrows = 'Custom Arrows', // notes
+  CustomColors = 'CustomColors', // all really
+  CustomTrails = 'CustomTrails', //sabers
+  CustomBombs = 'CustomBombs', // notes
+  CustomArrows = 'CustomArrows', // notes
 
   AudioLink = 'AudioLink', // sabers
   Reactive = 'Reactive', // sabers/platforms
@@ -81,8 +81,8 @@ export enum Tags {
 
   FBT = 'FBT', // asset
   Cloth = 'Cloth',
-  DynamicBones = 'Dynamic Bones',
-  Shaders = 'Shader Replacement',
+  DynamicBones = 'DynamicBones',
+  Shaders = 'ShaderReplacement',
   NSFW = 'NSFW',
 
   // types/genres
@@ -93,7 +93,7 @@ export enum Tags {
   Particles = 'Particles', // sabers
   Sword = 'Sword', // sabers
   Simple = 'Simple', // sabers
-  VideoGame = 'Video Game',
+  VideoGame = 'VideoGame',
   Anime = 'Anime',
   Pride = 'Pride',
   Pro = 'Pro',
@@ -102,12 +102,12 @@ export enum Tags {
   Christmas = 'Christmas',
 
   Underswing = 'Underswing', // hsv
-  TimeDependence = 'Time Dependence', // hsv
+  TimeDependence = 'TimeDependence', // hsv
   Hitsound = 'Hitsound', // sounds
-  BadHitsound = 'BadCut Hitsound', // sounds
-  MenuClick = 'Menu Click', // sounds
-  FirstPerson = 'First Person', // camera2
-  ThirdPerson = 'Third Person', // camera2
+  BadHitsound = 'BadCutHitsound', // sounds
+  MenuClick = 'MenuClick', // sounds
+  FirstPerson = 'FirstPerson', // camera2
+  ThirdPerson = 'ThirdPerson', // camera2
 
   // protected tags
   Contest = 'Contest',

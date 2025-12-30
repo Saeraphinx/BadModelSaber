@@ -9,6 +9,7 @@ To run the server, you must have a instance of PostgreSQL & a database ready for
 3. Copy the `docker-compose.example.yml` file to `docker-compose.yml` and fill in the environment variables.
 4. Run `docker-compose up -d` to start the server.
 ### Setting up the server locally
+Both the frontend and backend use `yarn` as their package manager. You can start both by running `yarn dev` in their respective folders.
 1. Clone the repository.
 2. Navigate to the `backend` folder.
 3. Install the dependencies using `yarn`.
@@ -18,3 +19,5 @@ To run the server, you must have a instance of PostgreSQL & a database ready for
 7. Copy the `.default.env` file to `.env`.
 ## Data Storage
 The backend server stores all of its data in a folder called `storage`. If you are using docker, this folder is located at `/app/storage`. If you are running the server locally, it is located in the root directory of the backend folder (same folder that `build` & `src` are).
+## Translations
+The frontend uses Inlang/Paraglide for translations. All translation files are located in `frontend/src/lib/paraglide/messages/`. Translations are built when running `yarn install` in the frontend folder, but you can also run `yarn i18n` to rebuild them. 

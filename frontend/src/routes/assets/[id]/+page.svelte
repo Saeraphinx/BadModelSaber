@@ -32,7 +32,7 @@
   import ApprovalPopup from "$lib/components/assets/ApprovalDialog.svelte";
   import { onMount } from "svelte";
   import { toast } from "svelte-sonner";
-  import { getAssetTypeData } from "$lib/scripts/utils/stylizer";
+  import { getAssetTypeData, getStatusString } from "$lib/scripts/utils/stylizer";
   import TagBadge from "$lib/components/assets/TagBadge.svelte";
   import Input from "$shadcn/components/ui/input/input.svelte";
   import Textarea from "$shadcn/components/ui/textarea/textarea.svelte";
@@ -189,17 +189,17 @@
   <div class="mt-4 w-full bg-card rounded-lg border border-border p-4">
     <div class="flex flex-col gap-3 overflow-hidden">
       <div class="flex justify-between items-center">
-        <span class="text-muted-foreground">Uploaded By</span>
+        <span class="text-muted-foreground">{m["assets.dataTable.uploadedBy"]()}</span>
         <a href="/users/{data.pageData.uploaderId}" class="font-medium text-primary hover:underline">{data.pageData.uploader?.displayName}</a>
       </div>
       <div class="flex justify-between items-center">
-        <span class="text-muted-foreground">Tags</span>
+        <span class="text-muted-foreground">{m["assets.dataTable.tags"]()}</span>
         <div class="flex flex-wrap gap-1 max-w-[70%] justify-end">
           {#if !isEditing}
             {#each data.pageData.tags as tag}
               <TagBadge tag={tag as Tags} />
             {:else}
-              <span class="text-muted-foreground">No tags selected.</span>
+              <span class="text-muted-foreground">{m["assets.dataTable.noTags"]()}</span>
             {/each}
           {:else}
             {#each editTags as tag}
@@ -216,23 +216,23 @@
           {/if}
         </div>
       </div>
-      {@render dT_Regular(`Type`, typeData.combinedString)}
+      {@render dT_Regular(m["assets.dataTable.type"](), typeData.combinedString)}
       {#if data.pageData.fileSize > 1024 * 1024}
-        {@render dT_Regular("File Size", `${(data.pageData.fileSize / (1024 * 1024)).toFixed(2)} MB`)}
+        {@render dT_Regular(m["assets.dataTable.fileSize"](), `${(data.pageData.fileSize / (1024 * 1024)).toFixed(2)} MB`)}
       {:else}
-        {@render dT_Regular("File Size", `${(data.pageData.fileSize / 1024).toFixed(2)} KB`)}
+        {@render dT_Regular(m["assets.dataTable.fileSize"](), `${(data.pageData.fileSize / 1024).toFixed(2)} KB`)}
       {/if}
       <div class="flex justify-between items-center">
-        <span class="text-muted-foreground pr-2">Status</span>
+        <span class="text-muted-foreground pr-2">{m["assets.dataTable.status"]}</span>
         <StatusHoverCard status={data.pageData.status}>
-          <Badge variant={data.pageData.status ? `outline` : `default`} class="capitalize">{data.pageData.status}</Badge>
+          <Badge variant={data.pageData.status ? `outline` : `default`} class="capitalize">{getStatusString(data.pageData.status)}</Badge>
         </StatusHoverCard>
       </div>
       {#if data.pageData.license}
         <div class="flex justify-between items-center">
-          <span class="text-muted-foreground">License</span>
+          <span class="text-muted-foreground">{m["assets.dataTable.license"]()}</span>
           {#if data.pageData.licenseUrl}
-            <a href={data.pageData.licenseUrl} target="_blank" rel="noopener noreferrer" class="font-medium text-primary hover:underline"> Custom License... </a>
+            <a href={data.pageData.licenseUrl} target="_blank" rel="noopener noreferrer" class="font-medium text-primary hover:underline">{m["assets.dataTable.customLicense"]}</a>
           {:else}
             <span class="font-medium">{data.pageData.license.toLocaleUpperCase()}</span>
           {/if}
@@ -240,14 +240,14 @@
       {/if}
       {#if data.pageData.sourceUrl}
         <div class="flex justify-between items-center">
-          <span class="text-muted-foreground">Source</span>
-          <a href={data.pageData.sourceUrl} target="_blank" rel="noopener noreferrer" class="font-medium text-primary hover:underline">View Source</a>
+          <span class="text-muted-foreground">{m["assets.dataTable.source"]()}</span>
+          <a href={data.pageData.sourceUrl} target="_blank" rel="noopener noreferrer" class="font-medium text-primary hover:underline">{m["assets.dataTable.viewSource"]()}</a>
         </div>
       {/if}
-      {@render dT_Regular("Uploaded", new Date(data.pageData.createdAt).toLocaleString())}
-      {@render dT_Regular("Last Updated", new Date(data.pageData.updatedAt).toLocaleString())}
+      {@render dT_Regular(m["assets.dataTable.uploadAt"](), new Date(data.pageData.createdAt).toLocaleString())}
+      {@render dT_Regular(m["assets.dataTable.lastUpdated"](), new Date(data.pageData.updatedAt).toLocaleString())}
       <div class="flex justify-between items-center overflow-ellipsis">
-        <span class="text-muted-foreground">File Hash</span>
+        <span class="text-muted-foreground">{m["assets.dataTable.fileHash"]}</span>
         <div class="flex flex-row items-center gap-2 justify-end max-w-[70%]">
           <div class="block overflow-ellipsis overflow-hidden whitespace-nowrap max-w-full">
             <span class="font-mono w-full" title={data.pageData.fileHash}>{data.pageData.fileHash}</span>
@@ -283,8 +283,8 @@
             <img src={`${getThumbnailUrl(data.pageData.id, icon)}`} alt="Icon for {data.pageData.name}" class="w-full h-full rounded-2xl transition-all duration-300 {isBlurred ? `blur-2xl` : ``}" />
             {#if isBlurred}
               <div class="flex flex-col absolute top-0 left-0 w-full h-full justify-center items-center">
-                <p class="text-green">This asset has the NSFW tag.</p>
-                <Button onclick={() => (isBlurred = false)}>Unhide</Button>
+                <p class="text-green">{m["assets.nsfwWarning"]()}</p>
+                <Button onclick={() => (isBlurred = false)}>{m["assets.buttons.unhide"]()}</Button>
               </div>
             {/if}
           </div>
@@ -304,7 +304,7 @@
       {#if apiType === "related" && isEditing}
         <Button onclick={() => addRelatedDialog?.showDialog(data.pageData.id)}>
           <PlusIcon />
-          {m["asset.carousels.addRelatedAsset"]()}
+          {m["assets.carousels.addRelatedAsset"]()}
         </Button>
       {/if}
     </div>
@@ -354,18 +354,18 @@
     {#if !isEditing}
       <DownloadButton shouldShowWarning={data.pageData.status != Status.Verified} variant="default" href={getAssetDownloadUrl(data.pageData)} download>
         <DownloadIcon />
-        {m["asset.buttons.download"]()}
+        {m["assets.buttons.download"]()}
       </DownloadButton>
       <DownloadButton variant="outline" href={getOneClickUrl(data.pageData)}>
         <CloudDownloadIcon />
-        {m["asset.buttons.oneClickInstall"]()}
+        {m["assets.buttons.oneClickInstall"]()}
       </DownloadButton>
       {#if allowedToReport}
         <Button variant="destructive" onclick={() => {
           reportDialog?.showDialog(data.pageData.id, data.pageData.name);
         }}>
           <MegaphoneIcon />
-          {m["asset.buttons.report"]()}
+          {m["assets.buttons.report"]()}
         </Button>
       {/if}
       {#if data.user && data.user.id === data.pageData.uploaderId && data.pageData.status === Status.Private}
@@ -383,7 +383,7 @@
                 });
             }}>
             <BadgeAlert />
-            {m["asset.buttons.submitForApproval"]()}
+            {m["assets.buttons.submitForApproval"]()}
           </Button>
         </div>
       {/if}
@@ -394,7 +394,7 @@
             approvalDialog?.showDialog(data.pageData.id, data.pageData.name);
           }}>
           <BadgeAlert />
-          {m["asset.buttons.approvalDialog"]()}
+          {m["assets.buttons.approvalDialog"]()}
         </Button>
       {/if}
     {/if}
@@ -478,12 +478,12 @@
         <Separator class="my-4 w-full" />
         {@render description()}
         <Separator class="my-4 w-full" />
-        <span class="text-lg font-semibold">{ m["asset.preview"]()}</span>
+        <span class="text-lg font-semibold">{ m["assets.previewTitle"]()}</span>
         <AssetPreview asset={data.pageData} />
         <Separator class="my-4 w-full" />
-        {@render assetCarousel(relatedAssets, isRelatedLoading, `related`, m["asset.carousels.relatedAssets"](), m["asset.carousels.relatedAssetsNoneFound"]())}
+        {@render assetCarousel(relatedAssets, isRelatedLoading, `related`, m["assets.carousels.relatedAssets"](), m["assets.carousels.relatedAssetsNoneFound"]())}
         <Separator class="my-4 w-full" />
-        {@render assetCarousel(authorAssets, isAuthorLoading, `author`, m["asset.carousels.authorAssets"]({ name: data.pageData.uploader?.displayName ?? ``}), m["asset.carousels.authorAssetsNoneFound"]({ name: data.pageData.uploader?.displayName ?? ``}))}
+        {@render assetCarousel(authorAssets, isAuthorLoading, `author`, m["assets.carousels.authorAssets"]({ name: data.pageData.uploader?.displayName ?? ``}), m["assets.carousels.authorAssetsNoneFound"]({ name: data.pageData.uploader?.displayName ?? ``}))}
         {#if mobileView.current}
           {@render dataTable()}
         {/if}

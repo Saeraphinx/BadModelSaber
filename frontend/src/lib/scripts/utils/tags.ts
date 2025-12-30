@@ -1,7 +1,8 @@
 import type { ClassValue } from "svelte/elements";
 import { AssetFileFormat, Tags } from "../api/DBTypes";
+import { m } from "$lib/paraglide/messages";
 
-export function getTagData(tag: Tags, assetType: AssetFileFormat, shouldShowInternal: boolean = false): { category: string, outlineColor: ClassValue, disabled: boolean, animated: boolean } {
+export function getTagData(tag: Tags, assetType: AssetFileFormat, shouldShowInternal: boolean = false): { translatedTag: string, category: string, outlineColor: ClassValue, disabled: boolean, animated: boolean } {
   let splitType = assetType.split("_");
   let type = splitType[0];
   let format = splitType[1];
@@ -9,7 +10,7 @@ export function getTagData(tag: Tags, assetType: AssetFileFormat, shouldShowInte
   let intClass: ClassValue = `bg-[#333333]`; // Default class
   let disabled = false;
   let animated = false;
-  //#region colors
+  // #region colors
   switch (tag) {
     case Tags.CustomColors:
       intClass = `bg-linear-to-r from-[#ff3030] via-[#F0F] to-[#3702fF]`;
@@ -72,7 +73,6 @@ export function getTagData(tag: Tags, assetType: AssetFileFormat, shouldShowInte
       break;
   }
   //#endregion colors
-
   // #region categories & disabled
   switch (tag) {
     case Tags.CustomColors:
@@ -92,25 +92,25 @@ export function getTagData(tag: Tags, assetType: AssetFileFormat, shouldShowInte
         disabled = true;
       }
     case Tags.NSFW:
-      category = "Features";
+      category = m["enums.tagCategories.features"]();
       break;
 
     case Tags.Hitsound:
     case Tags.BadHitsound:
     case Tags.MenuClick:
-      category = "Type-Specific";
+      category = m["enums.tagCategories.typeSpecific"]();
       if (type !== `sound`) disabled = true;
       break;
 
     case Tags.FirstPerson:
     case Tags.ThirdPerson:
       if (type !== `camera2`) disabled = true;
-      category = "Type-Specific";
+      category = m["enums.tagCategories.typeSpecific"]();
       break;
 
     case Tags.Featured:
     case Tags.Contest:
-      category = "Protected/Internal";
+      category = m["enums.tagCategories.internal"]();
       disabled = !shouldShowInternal;
       break;
     case Tags.Pride:
@@ -129,11 +129,12 @@ export function getTagData(tag: Tags, assetType: AssetFileFormat, shouldShowInte
     case Tags.Underswing:
     case Tags.TimeDependence:
     default:
-      category = "General";
+      category = m["enums.tagCategories.general"]();
       break;
   }
   // #endregion categories & disabled
   return {
+    translatedTag: m[`enums.tags.${tag}`](),
     category,
     outlineColor: intClass,
     animated, 

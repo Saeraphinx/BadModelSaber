@@ -3,7 +3,7 @@
   import { getTagData } from "$lib/scripts/utils/tags";
   import { Badge } from "$shadcn/components/ui/badge";
   import { cn } from "$shadcn/utils";
-  import { onMount, type Snippet } from "svelte";
+  import { type Snippet } from "svelte";
   import type { ClassValue } from "svelte/elements";
 
   let { 
@@ -20,14 +20,12 @@
     restProps?: HTMLDivElement 
   } = $props();
 
-  let intClass: ClassValue = $derived.by(() => {
-    return getTagData(tag, AssetFileFormat.Banner_Png).outlineColor; 
-  });
+  let tagData = $derived.by(() => getTagData(tag, AssetFileFormat.Avatar_Avatar));
 </script>
 
-<div class={cn(`flex items-center justify-center p-0.5 rounded-lg`, intClass)}>
+<div class={cn(`flex items-center justify-center p-0.5 rounded-lg`, tagData.outlineColor)}>
   <Badge {variant} class={className} {...restProps}>
-    {tag}
+    {tagData.translatedTag}
     {#if children}
       {@render children()}
     {/if}

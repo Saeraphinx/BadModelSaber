@@ -1,5 +1,6 @@
 <script lang="ts">
   import { env } from "$env/dynamic/public";
+  import { m } from "$lib/paraglide/messages";
   import { LinkedAssetLinkType } from "$lib/scripts/api/DBTypes";
   import { parseErrorMessage, trpc } from "$lib/scripts/utils/api";
   import { Button } from "$shadcn/components/ui/button";
@@ -19,14 +20,14 @@
   let selectedLinkType = $state<LinkedAssetLinkType>(LinkedAssetLinkType.Alternate);
   
   let linkTypes = [
-    { value: LinkedAssetLinkType.AltFormat, label: "Alternate Format", description: `Same asset in a different file format (e.g. a saber in the .saber and .wacker formats)` },
-    { value: LinkedAssetLinkType.Alternate, label: "Alternate Design", description: `A different design or version of the same asset (e.g. a saber with a different color scheme or model)` },
-    { value: LinkedAssetLinkType.Newer, label: "Newer Version", description: `A more recent version of the asset, typically with improvements or updates` },
-    { value: LinkedAssetLinkType.Older, label: "Older Version", description: `A previous version of of the asset released before the current one` },
+    { value: LinkedAssetLinkType.AltFormat, label: m["dialogs.linkAssetDialog.linkTypes.altFormat.title"](), description: m["dialogs.linkAssetDialog.linkTypes.altFormat.description"]() },
+    { value: LinkedAssetLinkType.Alternate, label: m["dialogs.linkAssetDialog.linkTypes.altDesign.title"](), description: m["dialogs.linkAssetDialog.linkTypes.altDesign.description"]() },
+    { value: LinkedAssetLinkType.Newer, label: m["dialogs.linkAssetDialog.linkTypes.newerVersion.title"], description: m["dialogs.linkAssetDialog.linkTypes.newerVersion.description"]() },
+    { value: LinkedAssetLinkType.Older, label: m["dialogs.linkAssetDialog.linkTypes.olderVersion.title"], description: m["dialogs.linkAssetDialog.linkTypes.olderVersion.description"]() }
   ]
   let selectedLinkTypeObj = $derived.by(() => {
     let found = linkTypes.find(lt => lt.value === selectedLinkType);
-    return found ? found : { value: undefined, label: "Select Link Type", description: `` };
+    return found ? found : { value: undefined, label: m["dialogs.linkAssetDialog.selectLinkType"](), description: `` };
   });
   
   export function showDialog(id: number) {
@@ -70,12 +71,12 @@
 <Dialog.Root bind:open={visible}>
   <Dialog.Content class="sm:max-w-[425px]">
     <Dialog.Header>
-      <Dialog.Title>Add a Related Asset</Dialog.Title>
-      <Dialog.Description></Dialog.Description>
+      <Dialog.Title>{m["dialogs.linkAssetDialog.title"]()}</Dialog.Title>
+      <Dialog.Description>{m["dialogs.linkAssetDialog.description"]()}</Dialog.Description>
     </Dialog.Header>
     <div class="flex flex-col">
       <Select.Root type="single" bind:value={selectedLinkType}>
-        <Label class="mb-2">Link Type</Label>
+        <Label class="mb-2">{m["dialogs.linkAssetDialog.linkType"]()}</Label>
         <Select.Trigger class="w-full">{selectedLinkTypeObj.label}</Select.Trigger>
         <Select.Content>
           {#each linkTypes as item}
@@ -85,7 +86,7 @@
       </Select.Root>
       <span class="text-xs text-secondary-foreground/50 mt-1 mx-1">{selectedLinkTypeObj.description}</span>
       <div class="flex flex-col mt-4">
-        <Label class="mb-2">Asset URL</Label>
+        <Label class="mb-2">{m["dialogs.linkAssetDialog.assetUrl"]()}</Label>
         <Input bind:value={idToLinkTo} type="text" placeholder="{env.PUBLIC_BASE_URL}/asset/1234" class="w-full" />
       </div>
     </div>
@@ -94,7 +95,7 @@
         {#if showLoading}
           <LoaderIcon class="animate-spin mr-2" />
         {/if}
-        <Button type="submit" disabled={showLoading} onclick={handleSubmit}>Save changes</Button>
+        <Button type="submit" disabled={showLoading} onclick={handleSubmit}>{m["dialogs.saveChanges"]()}</Button>
       </div>
     </Dialog.Footer>
   </Dialog.Content>

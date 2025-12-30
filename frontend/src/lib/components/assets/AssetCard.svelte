@@ -70,17 +70,17 @@
     <!-- Buttons -->
     <div class="absolute flex bottom-2 right-2 backdrop-blur-sm bg-white/40 dark:bg-gray-800/20 rounded-md text-black dark:text-white transition-all duration-300">
       {#if props.approvalDialog}
-        <Button variant="ghost" size="icon" title={m["hover.openApprovalDialog"]()} onclick={() => props.approvalDialog?.showDialog(props.asset.id, props.asset.name)}>
+        <Button variant="ghost" size="icon" title={m["assets.cardhover.openApprovalDialog"]()} onclick={() => props.approvalDialog?.showDialog(props.asset.id, props.asset.name)}>
           <BadgeAlert />
         </Button>
       {/if}
-      <Button variant="ghost" data-sveltekit-reload href="/assets/{props.asset.id}" size="icon" title={m["hover.goToAsset"]()}>
+      <Button variant="ghost" data-sveltekit-reload href="/assets/{props.asset.id}" size="icon" title={m["assets.cardhover.goToAsset"]()}>
         <InfoIcon />
       </Button>
-      <DownloadButton variant="ghost" href={downloadUrl} size="icon" title={m["download"]()}>
+      <DownloadButton variant="ghost" href={downloadUrl} size="icon" title={m["assets.buttons.download"]()}>
         <Download />
       </DownloadButton>
-      <DownloadButton variant="ghost" href={oneClickUrl} size="icon" title={m["oneClickInstall"]()}>
+      <DownloadButton variant="ghost" href={oneClickUrl} size="icon" title={m["assets.buttons.oneClickInstall"]()}>
         <DownloadCloud />
       </DownloadButton>
     </div>
