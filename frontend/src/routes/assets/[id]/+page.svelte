@@ -223,7 +223,7 @@
         {@render dT_Regular(m["assets.dataTable.fileSize"](), `${(data.pageData.fileSize / 1024).toFixed(2)} KB`)}
       {/if}
       <div class="flex justify-between items-center">
-        <span class="text-muted-foreground pr-2">{m["assets.dataTable.status"]}</span>
+        <span class="text-muted-foreground pr-2">{m["assets.dataTable.status"]()}</span>
         <StatusHoverCard status={data.pageData.status}>
           <Badge variant={data.pageData.status ? `outline` : `default`} class="capitalize">{getStatusString(data.pageData.status)}</Badge>
         </StatusHoverCard>
@@ -232,7 +232,7 @@
         <div class="flex justify-between items-center">
           <span class="text-muted-foreground">{m["assets.dataTable.license"]()}</span>
           {#if data.pageData.licenseUrl}
-            <a href={data.pageData.licenseUrl} target="_blank" rel="noopener noreferrer" class="font-medium text-primary hover:underline">{m["assets.dataTable.customLicense"]}</a>
+            <a href={data.pageData.licenseUrl} target="_blank" rel="noopener noreferrer" class="font-medium text-primary hover:underline">{m["assets.dataTable.customLicense"]()}</a>
           {:else}
             <span class="font-medium">{data.pageData.license.toLocaleUpperCase()}</span>
           {/if}
@@ -247,7 +247,7 @@
       {@render dT_Regular(m["assets.dataTable.uploadAt"](), new Date(data.pageData.createdAt).toLocaleString())}
       {@render dT_Regular(m["assets.dataTable.lastUpdated"](), new Date(data.pageData.updatedAt).toLocaleString())}
       <div class="flex justify-between items-center overflow-ellipsis">
-        <span class="text-muted-foreground">{m["assets.dataTable.fileHash"]}</span>
+        <span class="text-muted-foreground">{m["assets.dataTable.fileHash"]()}</span>
         <div class="flex flex-row items-center gap-2 justify-end max-w-[70%]">
           <div class="block overflow-ellipsis overflow-hidden whitespace-nowrap max-w-full">
             <span class="font-mono w-full" title={data.pageData.fileHash}>{data.pageData.fileHash}</span>

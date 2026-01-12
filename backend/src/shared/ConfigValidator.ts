@@ -1,5 +1,4 @@
 //#region HitScoreVisualizer
-import { features } from "process"
 import { z } from "zod"
 export const HitScoreVisualizerJudgementSchema = z.object({
   threshold: z.number(),

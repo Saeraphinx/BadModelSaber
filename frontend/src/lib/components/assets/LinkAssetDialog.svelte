@@ -22,8 +22,8 @@
   let linkTypes = [
     { value: LinkedAssetLinkType.AltFormat, label: m["dialogs.linkAssetDialog.linkTypes.altFormat.title"](), description: m["dialogs.linkAssetDialog.linkTypes.altFormat.description"]() },
     { value: LinkedAssetLinkType.Alternate, label: m["dialogs.linkAssetDialog.linkTypes.altDesign.title"](), description: m["dialogs.linkAssetDialog.linkTypes.altDesign.description"]() },
-    { value: LinkedAssetLinkType.Newer, label: m["dialogs.linkAssetDialog.linkTypes.newerVersion.title"], description: m["dialogs.linkAssetDialog.linkTypes.newerVersion.description"]() },
-    { value: LinkedAssetLinkType.Older, label: m["dialogs.linkAssetDialog.linkTypes.olderVersion.title"], description: m["dialogs.linkAssetDialog.linkTypes.olderVersion.description"]() }
+    { value: LinkedAssetLinkType.Newer, label: m["dialogs.linkAssetDialog.linkTypes.newerVersion.title"](), description: m["dialogs.linkAssetDialog.linkTypes.newerVersion.description"]() },
+    { value: LinkedAssetLinkType.Older, label: m["dialogs.linkAssetDialog.linkTypes.olderVersion.title"](), description: m["dialogs.linkAssetDialog.linkTypes.olderVersion.description"]() }
   ]
   let selectedLinkTypeObj = $derived.by(() => {
     let found = linkTypes.find(lt => lt.value === selectedLinkType);

@@ -1,0 +1,62 @@
+{
+    "folders": [
+        {
+            "name": "frontend",
+            "path": "./frontend",
+        }, {
+            "name": "backend",
+            "path": "./backend",
+        },
+        {
+            "name": "workspace-root",
+            "path": "."
+        }
+    ],
+    "extensions": {
+        "recommendations": [
+            "svelte.svelte-vscode",
+            "inlang.vs-code-extension"
+        ]
+    },
+    "settings": {
+        "files.exclude": {
+            "**/.git": true,
+            "**/.svn": true,
+            "**/.hg": true,
+            "**/.DS_Store": true,
+            "**/Thumbs.db": true,
+            "**/.svelte-kit": true,
+        }
+    },
+    "launch": {
+        "version": "0.2.0",
+        "configurations": [
+            {
+                "type": "node",
+                "request": "launch",
+                "name": "Run backend yarn script: dev",
+                "cwd": "${workspaceFolder:backend}",
+                "runtimeExecutable": "yarn",
+                "runtimeArgs": [
+                    "run",
+                    "dev"
+                ],
+                "console": "integratedTerminal"
+            },
+            {
+                "type": "node-terminal",
+                "request": "launch",
+                "name": "Run frontend yarn script: dev",
+                "cwd": "${workspaceFolder:frontend}",
+                "command": "yarn run dev",
+            }
+        ],
+        "compounds": [{
+            "name": "Run Backend & Frontend",
+            "configurations": [
+                "Run backend yarn script: dev",
+                "Run frontend yarn script: dev"
+            ]
+        }]
+    }
+}

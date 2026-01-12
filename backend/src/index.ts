@@ -68,7 +68,10 @@ export async function init(overrideDbName: string = `public`) {
     // #endregion
 
     // #region Register routes
-    app.use((req, res, next) => {
+    const apiRouter = express.Router();
+    const fileRouter = express.Router();
+
+    apiRouter.use((req, res, next) => {
         Logger.log(`${req.method} ${req.originalUrl} - ${req.ip} - Session: ${req.sessionID} - Auth: ${req.session['userId'] ? req.session['userId'] : `No`}`, LogLevel.Http);
         if (!EnvConfig.isProduction && EnvConfig.server.authBypass && !req.session['userId']) {
             if (typeof EnvConfig.server.authBypass === `boolean`) {
@@ -80,8 +83,6 @@ export async function init(overrideDbName: string = `public`) {
         }
         next();
     });
-    const apiRouter = express.Router();
-    const fileRouter = express.Router();
 
     apiRouter.use(cors({
         origin: EnvConfig.server.corsOrigin,

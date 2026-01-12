@@ -1,12 +1,71 @@
 {
   "$schema": "https://inlang.com/schema/inlang-message-format",
-
   "name": "ModelSaber",
   "homepage": {
-    "title": "@:name",
+    "title": "ModelSaber",
     "subtitle": "A collection of various assets for use within Beat Saber.",
     "browseButton": "Browse Assets",
     "wikiButton": "Model Wiki"
+  },
+  "layout": {
+    "navbar": {
+      "home": "Home",
+      "assets": "Assets",
+      "modelWiki": "Model Wiki"
+    },
+    "userMenu": {
+      "profile": "Profile",
+      "alerts": "Alerts",
+      "requests": "Requests",
+      "adminPanel": "Admin Panel",
+      "disableSecretFeatures": "Disable Secret Features",
+      "createAsset": "Create Asset",
+      "options": "Options",
+      "theme": "Theme",
+      "system": "System",
+      "light": "Light",
+      "dark": "Dark",
+      "language": "Language",
+      "logout": "Logout",
+      "login": "Login",
+      "modelsaberOpenSource": "ModelSaber is Open Source!"
+    },
+    "alertSidebar": {
+      "readAlerts": [
+        {
+          "declarations": [ 
+            "input count",
+            "local countPlural = count: plural"
+          ],
+          "selectors": [
+            "countPlural"
+          ],
+          "match": {
+            "countPlural=one": "You have {count} alert.",
+            "countPlural=other": "You have {count} alerts."
+          }
+        }
+      ],
+      "unreadAlerts": [
+        {
+          "declarations": [ 
+            "input count",
+            "local countPlural = count: plural"
+          ],
+          "selectors": [
+            "countPlural"
+          ],
+          "match": {
+            "countPlural=one": "You have {count} unread alert.",
+            "countPlural=other": "You have {count} unread alerts."
+          }
+        }
+      ],
+      "markAllRead": "Mark all as read",
+      "showRead": "Show read alerts",
+      "noAlertsAvailable": "No alerts available.",
+      "noUnreadAlerts": "No unread alerts."
+    }
   },
   "assets": {
     "cardhover": {
@@ -15,13 +74,13 @@
       "openApprovalDialog": "Open Approval Dialog"
     },
     "statusHover": {
-      "verified" : {
+      "verified": {
         "title": "This asset has been verified by the ModelSaber team and <span class=\"text-green-600\">is safe to use!</span>",
         "description": "Verified assets have been checked for malware and are safe to use. Look for the green checkmark!"
       },
-      "unverified" : {
+      "unverified": {
         "title": "This asset has <b>not</b> been verified by the ModelSaber team. <span class=\"text-orange-400\">Use at your own risk!</span>",
-        "description": "Unverified assets have not been checked for malware. Be cautious when downloading and using these assets. @:assets.statusHover.verified.description"
+        "description": "Unverified assets have not been checked for malware. Be cautious when downloading and using these assets."
       }
     },
     "buttons": {
@@ -122,7 +181,7 @@
       "Featured": "Featured",
       "Unknown": "Unknown"
     },
-    "tagCategories" : {
+    "tagCategories": {
       "features": "Features",
       "general": "General",
       "internal": "Protected / Internal",
@@ -160,6 +219,7 @@
     "dontShowAgain": "Don't show again",
     "cancel": "Cancel",
     "submit": "Submit",
+    "close": "Close",
     "approvalDialog": {
       "title": "Update Status for {name}",
       "description": "Select the new status for the asset \"{name}\". Click save to apply the changes.",

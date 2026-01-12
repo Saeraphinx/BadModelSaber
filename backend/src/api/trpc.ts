@@ -3,11 +3,9 @@ import { type CreateExpressContextOptions, createExpressMiddleware } from '@trpc
 import { User, UserPermissions } from '../shared/Database.ts';
 import { OpenApiMeta } from 'trpc-to-openapi';
 import SuperJSON from 'superjson';
-import test from 'node:test';
 import { parseErrorMessage } from '../shared/Tools.ts';
 import { ZodError } from 'zod/v4';
-import { fromZodError } from 'zod-validation-error';
-import { da } from 'zod/locales';
+
 
 // eslint-disable-next-line quotes
 declare module 'express-session' {
@@ -20,7 +18,7 @@ declare module 'express-session' {
  * Creates context for an incoming request
  * @see https://trpc.io/docs/v11/context
  */
-export async function createContext(opts: CreateExpressContextOptions) {
+export function createContext(opts: CreateExpressContextOptions) {
     let userId = undefined;
     if (opts.req.session?.userId) {
         userId = opts.req.session.userId;
@@ -53,6 +51,8 @@ const t = initTRPC.context<Context>().meta<OpenApiMeta>().create({
     };
   },
 });
+
+export const createCallerFactory = t.createCallerFactory;
 export const router = t.router;
 export const publicProcedure = t.procedure;
 
@@ -90,6 +90,7 @@ function dummyAnyLoggedIn() {
         });
     });
 }
+
 
 type ProcedureReturn = ReturnType<
     typeof dummyNoAuth | typeof dummyLoggedIn | typeof dummyAnyLoggedIn

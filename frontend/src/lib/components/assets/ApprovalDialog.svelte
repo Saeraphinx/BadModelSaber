@@ -85,8 +85,8 @@
       </div>
     </div>
     <Dialog.Footer>
-      <Button variant="ghost" onclick={() => (visible = false)}>{ m["dialogs.cancel"] }</Button>
-      <Button type="submit" onclick={handleSubmit}>{ m["dialogs.submit"] }</Button>
+      <Button variant="ghost" onclick={() => (visible = false)}>{ m["dialogs.cancel"]() }</Button>
+      <Button type="submit" onclick={handleSubmit}>{ m["dialogs.submit"]() }</Button>
     </Dialog.Footer>
   </Dialog.Content>
 </Dialog.Root>

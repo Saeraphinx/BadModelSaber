@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 
-import { Alert, AlertType, Asset, AssetFileFormat, DatabaseManager, License, LinkedAssetLinkType, SponserUrl, SponsorType, Status, Tags, User, UserPermissions } from '../src/shared/Database.ts';
+import { Alert, AlertType, Asset, AssetFileFormat, DatabaseManager, License, LinkedAssetLinkType, SponsorType, SponsorUrl, Status, Tags, User, UserPermissions } from '../src/shared/Database.ts';
 import { de, faker } from '@faker-js/faker';
 import { EnvConfig } from '../src/shared/EnvConfig.ts';
 import { Op } from 'sequelize';
@@ -23,7 +23,7 @@ export async function generateFakeData() {
 
     let users: User[] = []
 
-    let sponserUrls: SponserUrl[] = [
+    let sponserUrls: SponsorUrl[] = [
         { platform: SponsorType.Patreon, url: `https://www.patreon.com/beatsabermoddinggroup` },
         { platform: SponsorType.KoFi, url: `https://ko-fi.com/BadModelSaber` },
         { platform: SponsorType.GitHub, url: `https://github.com/Saeraphinx/support` },
@@ -65,6 +65,7 @@ export async function generateFakeData() {
                     license: License.CC0,
                     licenseUrl: null,
                     sourceUrl: null,
+                    fileSafeName: `${faker.lorem.words(1)}.${type.toLowerCase()}`,
                     fileHash: faker.git.commitSha(),
                     fileSize: faker.number.int({ min: 1000, max: 1000000 }),
                     iconNames: faker.helpers.arrayElements(testIcons, { min: 1, max: 5 }),

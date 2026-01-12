@@ -5,7 +5,7 @@
   import { getContext, onMount, setContext } from "svelte";
   import { Button, buttonVariants } from "$shadcn/components/ui/button";
   import * as Avatar from "$shadcn/components/ui/avatar";
-  import { BellDotIcon, BellIcon, FileBadgeIcon, GitBranchIcon, Link2Icon, LogInIcon, LogOutIcon, Menu, MessageCircleQuestionIcon, PlusIcon, Settings, SunIcon, TrafficConeIcon, UserIcon, SettingsIcon } from "@lucide/svelte";
+  import { BellDotIcon, BellIcon, FileBadgeIcon, GitBranchIcon, Link2Icon, LogInIcon, LogOutIcon, Menu, MessageCircleQuestionIcon, PlusIcon, Settings, SunIcon, TrafficConeIcon, UserIcon, SettingsIcon, SunMoonIcon, LanguagesIcon } from "@lucide/svelte";
   import { MediaQuery } from "svelte/reactivity";
   import * as Popover from "$shadcn/components/ui/popover";
   import { page } from "$app/state";
@@ -22,6 +22,8 @@
   import ScrollArea from "$shadcn/components/ui/scroll-area/scroll-area.svelte";
   import { trpc } from "$lib/scripts/utils/api";
   import { invalidateAll } from "$app/navigation";
+  import { getLocale } from "$lib/paraglide/runtime";
+  import { m } from "$lib/paraglide/messages";
 
   let { data, children } = $props();
   let theme: `system` | `light` | `dark` = $state("system");
@@ -204,10 +206,15 @@
   });
   // #endregion Toasts
 
+  let currentLocale = getLocale();
+  const availableLocales = [
+    ["en", "English"],
+  ];
+
   const links = [
-    { href: "/", label: "Home", target: undefined },
-    { href: "/assets", label: "Assets", target: undefined },
-    { href: "https://bsmg.wiki/models", label: "Model Wiki", target: "_blank" },
+    { href: "/", label: m["layout.navbar.home"](), target: undefined },
+    { href: "/assets", label: m["layout.navbar.assets"](), target: undefined },
+    { href: "https://bsmg.wiki/models", label: m["layout.navbar.modelWiki"](), target: "_blank" },
   ];
 </script>
 
@@ -234,10 +241,12 @@
 <div>
   <div class="flex w-auto flex-row text-base justify-between">
     <!-- Logo -->
-    <div class="flex items-center justify-center md:w-32 h-16 md:ml-16 ml-4 md:p-4">
-      <img src="/modelsaber-logo-web.svg" alt="ModelSaber Logo" class="h-8 w-8 mr-2" />
-      <span class="text-xl font-bold">ModelSaber</span>
-    </div>
+    <a href="/">
+      <div class="flex items-center justify-center md:w-32 h-16 md:ml-16 ml-4 md:p-4">
+        <img src="/modelsaber-logo-web.svg" alt="ModelSaber Logo" class="h-8 w-8 mr-2" />
+        <span class="text-xl font-bold">{m.name()}</span>
+      </div>
+    </a>
     <!-- Navigation Bar -->
     <div class="flex p-4 pt-3 justify-center">
       {#if showFullBar.current}
@@ -278,13 +287,13 @@
             <a href="/users/me">
               <DropdownMenu.Item>
                 <UserIcon />
-                Profile
+                {m["layout.userMenu.profile"]()}
               </DropdownMenu.Item>
             </a>
             <button onclick={() => (openAlerts = true)}>
               <DropdownMenu.Item>
                 <BellIcon />
-                Alerts
+                {m["layout.userMenu.alerts"]()}
                 {#if isPendingAlerts}
                   <Badge class="ml-1" variant="destructive">
                     {allAlerts.length}
@@ -295,14 +304,14 @@
             <a href="/requests">
               <DropdownMenu.Item>
                 <MessageCircleQuestionIcon />
-                Requests
+                {m["layout.userMenu.requests"]()}
               </DropdownMenu.Item>
             </a>
             {#if data.user.roles.includes(UserPermissions.Manage_NonMod_Users) || data.user.roles.includes(UserPermissions.Manage_All_Users)}
               <a href="/admin">
                 <DropdownMenu.Item>
                   <Settings />
-                  Admin Panel
+                  {m["layout.userMenu.adminPanel"]()}
                 </DropdownMenu.Item>
               </a>
             {/if}
@@ -310,7 +319,7 @@
               <button onclick={removeSecret}>
                 <DropdownMenu.Item>
                   <TrafficConeIcon class="text-orange-500" />
-                  Disable Secret Features
+                  {m["layout.userMenu.disableSecretFeatures"]()}
                 </DropdownMenu.Item>
               </button>
             {/if}
@@ -318,18 +327,43 @@
               <a href="/create">
                 <DropdownMenu.Item>
                   <PlusIcon />
-                  Create Asset
+                  {m["layout.userMenu.createAsset"]()}
                 </DropdownMenu.Item>
               </a>
             {/if}
             <DropdownMenu.Separator />
           {/if}
-          <DropdownMenu.RadioGroup bind:value={theme} onValueChange={handleThemeChange}>
-            <DropdownMenu.Label>Theme</DropdownMenu.Label>
-            <DropdownMenu.RadioItem closeOnSelect={false} value="system">System</DropdownMenu.RadioItem>
-            <DropdownMenu.RadioItem closeOnSelect={false} value="dark">Dark</DropdownMenu.RadioItem>
-            <DropdownMenu.RadioItem closeOnSelect={false} value="light">Light</DropdownMenu.RadioItem>
-          </DropdownMenu.RadioGroup>
+          <p class="p-1 text-sm">{m["layout.userMenu.options"]}</p>
+          <DropdownMenu.Sub>
+            <DropdownMenu.SubTrigger>
+              <SunMoonIcon />
+              {m["layout.userMenu.theme"]}
+            </DropdownMenu.SubTrigger>
+            <DropdownMenu.SubContent class="">
+              <DropdownMenu.RadioGroup bind:value={theme} onValueChange={handleThemeChange}>
+                <DropdownMenu.Label>{m["layout.userMenu.theme"]}</DropdownMenu.Label>
+                <DropdownMenu.RadioItem closeOnSelect={false} value="system">{m["layout.userMenu.system"]}</DropdownMenu.RadioItem>
+                <DropdownMenu.RadioItem closeOnSelect={false} value="dark">{m["layout.userMenu.dark"]}</DropdownMenu.RadioItem>
+                <DropdownMenu.RadioItem closeOnSelect={false} value="light">{m["layout.userMenu.light"]}</DropdownMenu.RadioItem>
+              </DropdownMenu.RadioGroup>
+            </DropdownMenu.SubContent>
+          </DropdownMenu.Sub>
+          <DropdownMenu.Sub>
+            <DropdownMenu.SubTrigger>
+              <LanguagesIcon />
+              {m["layout.userMenu.language"]}
+            </DropdownMenu.SubTrigger>
+            <DropdownMenu.SubContent class="">
+              <DropdownMenu.RadioGroup value={currentLocale} onValueChange={(val) => {
+                setContext("locale", val);
+              }}>
+                <DropdownMenu.Label>{m["layout.userMenu.language"]}</DropdownMenu.Label>
+                {#each availableLocales as [code, name]}
+                  <DropdownMenu.RadioItem closeOnSelect={true} value={code}>{name}</DropdownMenu.RadioItem>
+                {/each}
+              </DropdownMenu.RadioGroup>
+            </DropdownMenu.SubContent>
+          </DropdownMenu.Sub>
           <DropdownMenu.Separator />
           {#if isLoggedIn}
             <button
@@ -340,7 +374,7 @@
               }}>
               <DropdownMenu.Item>
                 <LogOutIcon class="text-red-400" />
-                Logout
+                {m["layout.userMenu.logout"]()}
               </DropdownMenu.Item>
             </button>
           {:else}
@@ -353,12 +387,12 @@
               }}>
               <DropdownMenu.Item>
                 <LogInIcon />
-                Login
+                {m["layout.userMenu.login"]()}
               </DropdownMenu.Item>
             </button>
           {/if}
           <DropdownMenu.Separator />
-          <p class="text-xs text-muted-foreground text-center p-1"><a href="https://github.com/Saeraphinx/BadModelSaber" target="_blank">ModelSaber is Open Source!</a></p>
+          <p class="text-xs text-muted-foreground text-center p-1"><a href="https://github.com/Saeraphinx/BadModelSaber" target="_blank">{m["layout.userMenu.modelsaberOpenSource"]()}</a></p>
           {#if data.user && data.user.roles.includes(UserPermissions.Administative_Tasks)}
             <DropdownMenu.Separator />
             <span class="text-xs text-muted-foreground text-center p-1">
@@ -380,18 +414,18 @@
 <Sheet.Root bind:open={openAlerts}>
   <Sheet.Content class="grid grid-rows-[auto_1fr_auto] h-full">
     <Sheet.Header>
-      <Sheet.Title class="text-lg font-semibold">Alerts</Sheet.Title>
+      <Sheet.Title class="text-lg font-semibold">{m["layout.userMenu.alerts"]}</Sheet.Title>
       <div class="flex flex-row justify-between items-center">
         <Sheet.Description class="text-sm text-gray-500">
           {#if showRead}
-            You have {allAlerts.length} alert{unreadAlerts.length === 1 ? `` : `s`}.
+            {m["layout.alertSidebar.readAlerts"]({ count: allAlerts.length })}
           {:else}
-            You have {unreadAlerts.length} unread alert{unreadAlerts.length === 1 ? `` : `s`}.
+            {m["layout.alertSidebar.unreadAlerts"]({ count: unreadAlerts.length })}
           {/if}
         </Sheet.Description>
         <div class="flex items-center space-x-2">
           <Switch id="show-read" bind:checked={showRead} onCheckedChange={updateAlerts} />
-          <Label for="show-read">Show Read</Label>
+          <Label for="show-read">{m["layout.alertSidebar.showRead"]()}</Label>
         </div>
       </div>
     </Sheet.Header>
@@ -402,18 +436,18 @@
             <Alert {alert} class="mb-2" />
           {/each}
         {:else}
-          <p class="text-gray-500">No alerts available.</p>
+          <p class="text-gray-500">{m["layout.alertSidebar.noAlertsAvailable"]}</p>
         {/if}
       {:else if unreadAlerts.length > 0}
         {#each unreadAlerts as alert}
           <Alert {alert} class="mb-2" />
         {/each}
       {:else}
-        <p class="text-gray-500">No unread alerts.</p>
+        <p class="text-gray-500">{m["layout.alertSidebar.noUnreadAlerts"]}</p>
       {/if}
     </ScrollArea>
     <Sheet.Footer>
-      <Sheet.Close class={buttonVariants({ variant: "outline" })}>Close</Sheet.Close>
+      <Sheet.Close class={buttonVariants({ variant: "outline" })}>{m["dialogs.close"]}</Sheet.Close>
     </Sheet.Footer>
   </Sheet.Content>
 </Sheet.Root>

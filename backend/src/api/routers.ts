@@ -4,7 +4,7 @@ import { RequestRouter } from './routes/private/requests.ts';
 import { UpdateAssetRouter } from './routes/private/updateAsset.ts';
 import { userRouterV3 } from './routes/public/v3/getUser.ts';
 import { assetsRouterV3 } from './routes/public/v3/getAsset.ts';
-import { createContext, router } from './trpc.ts';
+import { createCallerFactory, createContext, router } from './trpc.ts';
 import { AdminRouter } from './routes/private/admin.ts';
 import { createExpressMiddleware } from '@trpc/server/adapters/express';
 import { createOpenApiExpressMiddleware, generateOpenApiDocument } from 'trpc-to-openapi';
@@ -30,6 +30,7 @@ const appRouter = router({
     statusRouter
 });
 
+export const createCaller = createCallerFactory(appRouter);
 export type AppRouter = typeof appRouter;
 export const loadExpressMiddleware = createExpressMiddleware({
     router: appRouter,

@@ -55,13 +55,13 @@
         <Dialog.Title>{m["dialogs.downloadDialog.title"]()}</Dialog.Title>
       </Dialog.Header>
       <p class="text-md">{m["dialogs.downloadDialog.description"]()}</p>
-      <p class="text-sm text-muted-foreground">{m["dialogs.downloadDialog.neverShowAgain"]}</p>
+      <p class="text-sm text-muted-foreground">{m["dialogs.downloadDialog.neverShowAgain"]()}</p>
       <Dialog.Footer>
         <Button variant="ghost" onclick={() => {
           localStorage.setItem("suppressUnverifiedDownloadWarning", "true");
           dialogVisible = false;
           shouldShowWarning = false;
-        }}>{m["dialogs.dontShowAgain"]}</Button>
+        }}>{m["dialogs.dontShowAgain"]()}</Button>
         <Button variant="outline" onclick={() => (dialogVisible = false)}>{m["dialogs.cancel"]()}</Button>
         <Button href={href} onclick={() => (dialogVisible = false)}>{m["dialogs.downloadDialog.proceed"]()}</Button>
       </Dialog.Footer>
