@@ -3,7 +3,6 @@ import { CreationOptional, InferAttributes, InferCreationAttributes } from "sequ
 import { AlertType, SponsorUrl, UserPublicAPIv3, UserPermissions } from "../DBExtras.ts";
 import { Alert } from "./Alert.ts";
 import { Logger } from "../../Logger.ts";
-import { Col } from "sequelize/lib/utils";
 
 export type UserInfer = InferAttributes<User>;
 @Table({
@@ -29,7 +28,7 @@ export class User extends Model<InferAttributes<User>, InferCreationAttributes<U
         allowNull: false,
         defaultValue: "",
     })
-    declare displayName: string;
+    declare displayName: CreationOptional<string>;
     @Column({
         type: DataType.TEXT,
         allowNull: false,
@@ -47,7 +46,7 @@ export class User extends Model<InferAttributes<User>, InferCreationAttributes<U
         allowNull: false,
         defaultValue: "https://cdn.discordapp.com/embed/avatars/0.png",
     })
-    declare avatarUrl: string;
+    declare avatarUrl: CreationOptional<string>;
 
     @Column({
         type: DataType.ARRAY(DataType.STRING),

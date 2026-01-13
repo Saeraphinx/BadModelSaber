@@ -6,7 +6,7 @@ import { authProcedure, router } from "../../trpc.ts";
 import { TRPCError } from "@trpc/server";
 
 export const RequestRouter = router({
-    request: authProcedure(`loggedIn`).input(Validator.z.object({
+    getRequests: authProcedure(`loggedIn`).input(Validator.z.object({
         includeActioned: Validator.z.boolean().optional().default(false),
         assetId: Validator.zNumberId.optional()
     })).query(async ({ input, ctx }) => {

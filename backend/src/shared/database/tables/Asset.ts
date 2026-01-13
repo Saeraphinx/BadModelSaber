@@ -275,7 +275,7 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
         Tags.Featured,
         Tags.Contest,
     ];
-    public updateAsset(data: Partial<Pick<AssetInfer, 'name' | 'description' | 'tags'>>, user: User): Promise<Asset> {
+    public async updateAsset(data: Partial<Pick<AssetInfer, 'name' | 'description' | 'tags'>>, user: User): Promise<Asset> {
         if (data.name) {
             this.name = data.name;
         }
@@ -284,8 +284,8 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
         }
         if (data.tags) {
             // get tags that are being added or removed
-            let newTags = data.tags.filter(tag => this.tags.includes(tag));
-            let removedTags = this.tags.filter(tag => data.tags?.includes(tag));
+            let newTags = data.tags.filter(tag => !this.tags.includes(tag));
+            let removedTags = this.tags.filter(tag => !data.tags!.includes(tag));
             // only allow adding/removing internal tags if user has permission
             if (
                 newTags.some(tag => Asset.protectedTags.includes(tag)) || 
@@ -301,7 +301,7 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
             }
         }
         Logger.debug(`Updating asset ${this.id} with data: ${JSON.stringify(data)}`);
-        return this.save();
+        return await this.save();
     }
 
     public async submitForApproval(reqBy: User): Promise<Asset> {
@@ -324,10 +324,10 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
 
         if (allowBypass) {
             Logger.log(`Asset ${this.id} submitted for approval by user ${reqBy.id}, auto-approving due to asset type.`);
-            return this.setStatus(Status.Unverified, `Auto-approved upon submission due to asset type.`, reqBy);
+            return this.setStatus(Status.Unverified, `Auto-approved upon submission due to asset type.`, reqBy, false);
         } else {
             Logger.log(`Asset ${this.id} submitted for approval by user ${reqBy.id}, sending to approval queue.`);
-            return this.setStatus(Status.Pending, `Submitted for approval.`, reqBy);
+            return this.setStatus(Status.Pending, `Submitted for approval.`, reqBy, false);
         }
     }
 
@@ -353,13 +353,14 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
         }
 
         Logger.log(`Creating credit request for asset ${this.id} by user ${reqBy.id} to credit user ${userToCredit.id}`);
+        // note that alert is not needed as requests are treated like alerts
         return await AssetRequest.create({
             refrencedAssetId: this.id,
             requesterId: reqBy.id,
             requestResponseBy: userToCredit.id,
             requestType: RequestType.Credit,
             objectToAdd: userToCredit.id,
-        });
+        })
     }
 
     public async requestLink(reqBy: User, assetToLink: Asset, type: LinkedAssetLinkType) {
@@ -598,8 +599,8 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
         if (name.length > 120) {
             name = name.substring(0, 120);
         }
-        name = name.replace(this.invalidFileNameChars, '_');
-        name = name.replace(this.invalidFileNameWin, '');
+        name = name.replaceAll(this.invalidFileNameChars, '_');
+        name = name.replaceAll(this.invalidFileNameWin, '');
         return name;
     }
 

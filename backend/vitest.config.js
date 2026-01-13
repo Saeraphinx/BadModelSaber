@@ -1,4 +1,5 @@
 import { defineConfig } from 'vitest/config';
+import { parseErrorMessage } from './src/shared/Tools';
 
 export default defineConfig({
     test: {
@@ -9,5 +10,8 @@ export default defineConfig({
         testTimeout: 15000,
         hookTimeout: 30000,
         pool: `forks`,
+        provide: {
+            postgresUrl: ""
+        },
     }
 });

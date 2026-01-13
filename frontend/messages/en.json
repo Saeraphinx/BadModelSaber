@@ -68,6 +68,10 @@
     }
   },
   "assets": {
+    "browsePage": {
+
+      
+    }
     "cardhover": {
       "goToAsset": "Go to Asset Page",
       "updateStatus": "Update Status",

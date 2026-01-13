@@ -141,7 +141,7 @@ export class AssetRequest extends Model<InferAttributes<AssetRequest>, InferCrea
         deletedAt: z.date().nullable().optional(),
     }).refine((data) => {
         // Ensure that if the requestType is Report, objectToAdd must be null
-        return data.requestType === RequestType.Report && data.objectToAdd !== null
+        return !(data.requestType === RequestType.Report && data.objectToAdd !== null)
     }, {
         message: `If requestType is Report, objectToAdd must be null`,
     }).refine((data) => {

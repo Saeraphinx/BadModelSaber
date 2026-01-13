@@ -19,8 +19,9 @@
   import { getContext, onMount } from "svelte";
   import ApprovalPopup from "$lib/components/assets/ApprovalDialog.svelte";
   import { toast } from "svelte-sonner";
-  import { capitalizeFirstLetter, getAssetTypeCategories, getAssetTypeString } from "$lib/scripts/utils/stylizer.js";
+  import { capitalizeFirstLetter, getAssetTypeCategories, getAssetTypeString, getStatusString } from "$lib/scripts/utils/stylizer.js";
   import { trpc } from "$lib/scripts/utils/api.js";
+  import { m } from "$lib/paraglide/messages.js";
 
   let { data } = $props();
   // Generic Page Data
@@ -189,7 +190,7 @@
     <Collapsible.Root bind:open={filterStatusVisible} class="mt-4">
       <div class="flex flex-col bg-card rounded-2xl min-w-56 w-full py-2 px-4">
         <Collapsible.Trigger class="flex items-center justify-between w-full">
-          <span class="text-lg font-semibold">Status</span>
+          <span class="text-lg font-semibold">{m["stat"]}</span>
           <ChevronRight class="h-4 w-4 transition-transform {filterStatusVisible ? `rotate-90` : ``}" />
         </Collapsible.Trigger>
         <Collapsible.Content class="my-2">
@@ -207,7 +208,7 @@
                 checked={selectedStatuses.includes(status)}
                 value={status}
                 id={status} />
-              <Label for={status}>{capitalizeFirstLetter(status)}</Label>
+              <Label for={status}>{getStatusString(status)}</Label>
             </div>
           {/each}
         </Collapsible.Content>

@@ -5,9 +5,9 @@ import { de, faker } from '@faker-js/faker';
 import { EnvConfig } from '../src/shared/EnvConfig.ts';
 import { Op } from 'sequelize';
 
-export async function generateFakeData() {
-    EnvConfig.load();
-    let db = new DatabaseManager(`generateFakeData`);
+export async function generateFakeData(connectionString?: string): Promise<boolean> {
+    //EnvConfig.load();
+    let db = new DatabaseManager(`generateFakeData`, connectionString);
     await db.init();
 
     const testIcons = [
