@@ -24,15 +24,16 @@ export class DatabaseManager {
     public schemaName: string;
     public adminUser: User | undefined;
 
-    constructor(useAltSchema?: string) {
+    constructor(useAltSchema?: string, connectionString: string = EnvConfig.database.connectionString) {
         Logger.log(`Creating DatabaseManager...`);
-        if (!EnvConfig.database.connectionString) {
-            throw new Error(`Database connection string is not set in environment variables.`);
+        if (!connectionString) {
+            throw new Error(`Database connection string is not set.`);
         }
         this.schemaName = useAltSchema || `public`;
         this.schemaName = this.schemaName.toLowerCase();
         Logger.log(`Using schema: ${this.schemaName}`);
-        this.sequelize = new Sequelize(EnvConfig.database.connectionString, {
+
+        this.sequelize = new Sequelize(connectionString, {
             dialect: `postgres`,
             //logging: (msg) => fs.writeFileSync(`test.log`, msg.replaceAll(`\n`, `\\n`).replaceAll(`Executing (default): `, ``) + `\n`, { flag: `a` }),
             logging: false,

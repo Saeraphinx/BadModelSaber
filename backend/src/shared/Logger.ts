@@ -9,7 +9,7 @@ export class Logger {
         let transports: Winston.transport[] = [];
 
         let consoleLevel = `consoleInfo`;
-        if (process.env.NODE_ENV == `test`) {
+        if (EnvConfig.isTestMode) {
            consoleLevel = `warn`;
         } else if (EnvConfig.isDevMode || process.env.LOG_LEVEL === `debug`) {
            consoleLevel = `http`;

@@ -1,12 +1,14 @@
 import * as fs from "fs";
 import { generateFakeData } from "./generateFakeData.ts";
-import path from "path";
+import { EnvConfig } from "../src/shared/EnvConfig.ts";
 
 export default async function () {
+    EnvConfig.load();
     process.env.NODE_ENV = `test`;
     process.env.STORAGE_UPLOADS="./test/temp/uploads"
     process.env.STORAGE_ICONS="./test/temp/icons"
     process.env.STORAGE_LOGS="./test/temp/logs"
+
     if (!fs.existsSync(`./storage/fakeData.json`)) {
         console.log(`No test data found, generating fake data...`);
         await generateFakeData().then(() => {

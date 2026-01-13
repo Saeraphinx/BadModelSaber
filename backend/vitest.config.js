@@ -7,6 +7,7 @@ export default defineConfig({
         reporters: process.env.GITHUB_ACTIONS ? [`github-actions`, [`verbose`, { summary: true }]] : [ [`default`, { summary: false }] ],
         mockReset: true,
         testTimeout: 15000,
+        hookTimeout: 30000,
         pool: `forks`,
     }
 });

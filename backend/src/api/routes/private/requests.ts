@@ -8,7 +8,7 @@ import { TRPCError } from "@trpc/server";
 export const RequestRouter = router({
     request: authProcedure(`loggedIn`).input(Validator.z.object({
         includeActioned: Validator.z.boolean().optional().default(false),
-        assetId: Validator.zNumberIDTransform.optional()
+        assetId: Validator.zNumberId.optional()
     })).query(async ({ input, ctx }) => {
         let isElevated = ctx.user.roles.includes(UserPermissions.Manage_All_Reports);
         const whereOptions: WhereOptions<AssetRequestInfer> = {};
@@ -76,7 +76,7 @@ export const RequestRouter = router({
         return { incoming: incoming ?? 0, outgoing: outgoing ?? 0, reports: reports ?? null };
     }),
     getRequest: authProcedure(`loggedIn`).input(Validator.z.object({
-        id: Validator.zNumberIDTransform,
+        id: Validator.zNumberId,
     })).query(async ({ input, ctx }) => {
         let isElevated = ctx.user.roles.includes(UserPermissions.View_All_Reports);
         const assetReq = await AssetRequest.findByPk(input.id, { include: { all: true }});
@@ -89,7 +89,7 @@ export const RequestRouter = router({
         return assetReq.getAPIResponse();
     }),
     addMessage: authProcedure(`loggedIn`).input(Validator.z.object({
-        id: Validator.zNumberIDTransform,
+        id: Validator.zNumberId,
         message: Validator.z.string().min(1)
     })).mutation(async ({ input, ctx }) => {
         const assetReq = await AssetRequest.findByPk(input.id);
