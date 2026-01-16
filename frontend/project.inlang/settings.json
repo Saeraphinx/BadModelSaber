@@ -2,6 +2,9 @@
   "$schema": "https://inlang.com/schema/project-settings",
   "baseLocale": "en",
   "sourceLanguageTag": "en",
+  "languageTags": [
+    "en"
+  ],
   "locales": [
     "en"
   ],
@@ -12,5 +15,5 @@
   "plugin.inlang.messageFormat": {
     "pathPattern": "./messages/{locale}.json"
   },
-  "telemetry": "off",
+  "telemetry": "off"
 }
