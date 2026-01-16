@@ -13,6 +13,7 @@
   import { redirect } from "@sveltejs/kit";
   import { toast } from "svelte-sonner";
   import { zAsset } from "$lib/scripts/api/validator";
+  import { m } from "$lib/paraglide/messages";
 
   let type = $state(AssetFileFormat.Note_Bloq);
   let name = $state("");
@@ -78,8 +79,8 @@
 </script>
 
 <div class="flex flex-col text-center w-full p-4">
-  <h1 class="text-2xl font-bold mb-4">Create Asset</h1>
-  <p class="text-base mb-4">Please fill out the form below to create a new asset.</p>
+  <h1 class="text-2xl font-bold mb-4">{m["assets.upload.createAsset"]()}</h1>
+  <p class="text-base mb-4">{m["assets.upload.createAssetSubtitle"]()}</p>
 </div>
 
 <div class="flex flex-row flex-wrap justify-center p-4 gap-4">
@@ -87,35 +88,35 @@
     <!-- left side -->
     <div class="flex flex-col justify-center w-full max-w-md p-4 gap-2 bg-card rounded-lg shadow-md">
       <span>
-        <Label class="p-1 pb-2" for="type">Type</Label>
+        <Label class="p-1 pb-2" for="type">{m["assets.dataTable.type"]()}</Label>
         <TypeSelector bind:value={type} id="type" class="w-full" />
       </span>
       <span>
-        <Label class="p-1 pb-2" for="name">Name</Label>
+        <Label class="p-1 pb-2" for="name">{m["assets.dataTable.name"]()}</Label>
         <Input bind:value={name} aria-invalid={!zAsset.shape.name.safeParse(name).success} id="name" />
       </span>
       <span>
-        <Label class="p-1 pb-2" for="description">Description</Label>
+        <Label class="p-1 pb-2" for="description">{m["assets.dataTable.description"]()}</Label>
         <Textarea class="min-h-32" bind:value={description} aria-invalid={!zAsset.shape.description.safeParse(description).success} id="description" />
       </span>
       <span>
-        <Label class="p-1 pb-2" for="license">License</Label>
+        <Label class="p-1 pb-2" for="license">{m["assets.dataTable.license"]()}</Label>
         <LicenseSelector bind:value={license} id="license" />
       </span>
       {#if license === "custom"}
         <span>
-          <Label class="p-1 pb-2" for="custom-license">Custom License</Label>
+          <Label class="p-1 pb-2" for="custom-license">{m["assets.dataTable.customLicense"]()}</Label>
           <Input bind:value={customLicense} aria-invalid={!zAsset.shape.licenseUrl.safeParse(customLicense).success} id="custom-license" />
         </span>
       {/if}
       <span>
-        <Label class="p-1 pb-2" for="tags">Tags</Label>
+        <Label class="p-1 pb-2" for="tags">{m["assets.dataTable.tags"]}</Label>
         <div class="flex flex-row items-center justify-between">
           <div class="flex flex-wrap gap-2 pl-1">
             {#each tags as tag}
               <TagBadge {tag} />
             {:else}
-              <span class="text-muted-foreground">No tags selected.</span>
+              <span class="text-muted-foreground">{m["assets.dataTable.noTags"]}</span>
             {/each}
           </div>
           <Button variant="secondary" onclick={() => openTagPicker = true}>
@@ -129,21 +130,21 @@
   <div class="flex flex-col w-full max-w-md">
     <!-- right side -->
     <div class="flex flex-col justify-center w-full max-w-md p-4 bg-card rounded-lg shadow-md">
-      <p>Thumbnails:</p>
+      <p>{m["assets.upload.thumbnailRuleListHeader"]()}</p>
       <ul class="list-disc ml-6">
-        <li>Must have a 1x1 aspect ratio.</li>
-        <li>Must be tasteful and appropiate.</li>
-        <li>Thumbnails must be at least 512 by 512 pixels.</li>
-        <li>Can be of the image types .png, .jpeg, .webp, and .gif.</li>
+        <li>{m["assets.upload.thumbnailRuleList1"]()}</li>
+        <li>{m["assets.upload.thumbnailRuleList2"]()}</li>
+        <li>{m["assets.upload.thumbnailRuleList3"]()}</li>
+        <li>{m["assets.upload.thumbnailRuleList4"]()}</li>
       </ul>
     </div>
     <div class="flex flex-col justify-center w-full max-w-md p-4 bg-card rounded-lg shadow-md mt-4">
       <!-- value is the first file in the files array -->
-      <Label class="p-1 pb-2" for="thumbnail">Thumbnail</Label>
+      <Label class="p-1 pb-2" for="thumbnail">{m["assets.upload.thumbnail"]()}</Label>
       <Input id="thumbnail" type="file" bind:files={thumbnails} accept=".png,.jpeg,.webp,.gif" multiple />
-      <p class="text-sm text-muted-foreground mt-2 pl-1">Please ensure your thumbnail meets the requirements above.</p>
+      <p class="text-sm text-muted-foreground mt-2 pl-1">P{m["assets.upload.thumbnailFooter"]()}</p>
       <span class="h-4"></span>
-      <Label class="p-1 pb-2" for="zip">Asset</Label>
+      <Label class="p-1 pb-2" for="zip">{m["assets.asset"]()}</Label>
       <Input
         bind:files={asset}
         class=""
@@ -152,10 +153,10 @@
         accept={Object.values(AssetFileFormat)
           .map((f) => f.split(`_`)[1])
           .join(`,.`)} />
-      <p class="text-sm text-muted-foreground mt-2 pl-1">Please ensure that you have the rights to upload this asset to ModelSaber.</p>
+      <p class="text-sm text-muted-foreground mt-2 pl-1">{m["assets.upload.ensureRights"]()}</p>
     </div>
     <div class="flex flex-col justify-center w-full max-w-md p-4 bg-card rounded-lg shadow-md mt-4">
-      <Button onclick={submitAsset} class="w-full">Submit</Button>
+      <Button onclick={submitAsset} class="w-full">{m["dialogs.submit"]()}</Button>
     </div>
   </div>
 </div>

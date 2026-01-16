@@ -140,7 +140,11 @@
     <Button variant="outline" size="icon" onclick={() => (currentPage > 1 ? currentPage-- : null)}>
       <ChevronLeft class="h-4 w-4" />
     </Button>
-    <span class="text-sm whitespace-nowrap mx-2">{(currentPage - 1) * selectedPageSize + 1}-{selectedPageSize * currentPage > filteredAssets.length ? filteredAssets.length : selectedPageSize * currentPage} of {filteredAssets.length}</span>
+    <span class="text-sm whitespace-nowrap mx-2">{m["assets.search.xToYOfZAssets"]({
+      start: (currentPage - 1) * selectedPageSize + 1,
+      end: selectedPageSize * currentPage > filteredAssets.length ? filteredAssets.length : selectedPageSize * currentPage,
+      total: filteredAssets.length
+    })}</span>
     <Button variant="outline" size="icon" onclick={() => currentPage++}>
       <ChevronRight class="h-4 w-4" />
     </Button>
@@ -152,7 +156,7 @@
   <Collapsible.Root bind:open={filterFileFormatVisible}>
     <div class="flex flex-col bg-card rounded-2xl min-w-56 w-full py-2 px-4">
       <Collapsible.Trigger class="flex items-center justify-between w-full">
-        <span class="text-lg font-semibold">File Format</span>
+        <span class="text-lg font-semibold">{m["assets.dataTable.type"]()}</span>
         <ChevronRight class="h-4 w-4 transition-transform {filterFileFormatVisible ? `rotate-90` : ``}" />
       </Collapsible.Trigger>
       <Collapsible.Content class="my-2">
@@ -190,7 +194,7 @@
     <Collapsible.Root bind:open={filterStatusVisible} class="mt-4">
       <div class="flex flex-col bg-card rounded-2xl min-w-56 w-full py-2 px-4">
         <Collapsible.Trigger class="flex items-center justify-between w-full">
-          <span class="text-lg font-semibold">{m["stat"]}</span>
+          <span class="text-lg font-semibold">{m["assets.dataTable.status"]()}</span>
           <ChevronRight class="h-4 w-4 transition-transform {filterStatusVisible ? `rotate-90` : ``}" />
         </Collapsible.Trigger>
         <Collapsible.Content class="my-2">
@@ -229,16 +233,16 @@
     <div class="flex flex-col items-center w-full">
       <!-- Top Bar -->
       <div class="flex flex-col bg-card rounded-2xl w-full p-4 pt-2 mb-4">
-        <Label for="asset-search" class="sr-only">Search</Label>
-        <Input type="text" placeholder="Search assets..." class="w-full mt-2" id="asset-search" bind:value={searchQuery} />
+        <Label for="asset-search" class="sr-only">{m["assets.search.searchLabel"]()}</Label>
+        <Input type="text" placeholder={m["assets.search.searchPlaceholder"]()} class="w-full mt-2" id="asset-search" bind:value={searchQuery} />
         <div class="flex flex-row mt-2 flex-wrap gap-2">
           <div class="flex items-center gap-2">
             <Select.Root allowDeselect={false} bind:value={selectedPageSizeString} type="single" onValueChange={(value) => (currentPage = 1)}>
-              <Select.Trigger class="">{selectedPageSizeString} per page</Select.Trigger>
+              <Select.Trigger class="">{m["assets.search.perPage"]({ count: selectedPageSizeString})}</Select.Trigger>
               <Select.Content>
                 {#each [24, 48, 72] as amount}
                   <Select.Item value={amount.toString()}>
-                    {amount} per page
+                    {m["assets.search.perPage"]({ count: amount })}
                   </Select.Item>
                 {/each}
               </Select.Content>
@@ -247,7 +251,7 @@
           {#if tooSmall.current}
             <Button variant="outline">
               <FunnelIcon class="h-4 w-4" />
-              <span class="sr-only">Show Filters</span>
+              <span class="sr-only">{m["assets.search.showFilters"]()}</span>
             </Button>
           {/if}
           <div class="flex-1 flex justify-end">
@@ -263,7 +267,7 @@
           {/each}
         {:else}
           {#if filteredAssets.length === 0}
-            <span class="text-gray-500 dark:text-gray-400 w-full py-8 text-center">No assets found.</span>
+            <span class="text-gray-500 dark:text-gray-400 w-full py-8 text-center">{m["assets.noAssetsFound"]()}</span>
           {/if}
           {#each currentAssetArray as asset (asset.id)}
             <AssetCard {asset} approvalDialog={data.user?.roles.includes(UserPermissions.Approve_Assets) ? dialog : undefined} size={smallerIcons.current ? `normal` : `large`} />
