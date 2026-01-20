@@ -149,6 +149,22 @@
       "failedToLoadError": "Failed to load preview data: {error}"
     }
   },
+  "requests": {
+    "wouldYouLikeToAcceptOrReject": "Would you like to accept or reject this request?",
+    "initialMessageCredit": "Request created by {name}\n\n{name} would like to add you as a collaborator to the asset {assetName}.",
+    "initialMessageLink": "Request created by {name}\n\n{name} would like to link your asset, {toLinkAssetName}, to their asset, {assetName}.",
+    "initialMessageReport": "Report created by {name}\n\n{name} would like to report the asset, {assetName}.",
+    "tableTitle": "{type} Request",
+    "requestID": "Request ID: {id}",
+    "Status": "Request Status: {status}",
+    "resolvedBy": "Resolved By: {name}",
+    "notResolved": "Not Resolved",
+    "createdBy": "Created By: {name}",
+    "createdAt": "Created At: {date}",
+    "typeYourMessageHere": "Type your message here...",
+    "noMessagesFound": "No messages found for this request.",
+    "submitMessage": "Submit Message"
+  },
   "enums": {
     "status": {
       "private": "Private",
@@ -234,6 +250,11 @@
         "config": "Configs",
         "other": "Other"
       }
+    },
+    "requestTypes": {
+      "credit": "Credit",
+      "link": "Link",
+      "report": "Report"
     }
   },
   "dialogs": {
@@ -243,6 +264,8 @@
     "dontShowAgain": "Don't show again",
     "cancel": "Cancel",
     "submit": "Submit",
+    "accept": "Accept",
+    "reject": "Reject",
     "close": "Close",
     "approvalDialog": {
       "title": "Update Status for {name}",

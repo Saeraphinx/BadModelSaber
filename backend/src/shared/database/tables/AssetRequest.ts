@@ -188,7 +188,6 @@ export class AssetRequest extends Model<InferAttributes<AssetRequest>, InferCrea
         }
     }
 
-
     public allowedToAccept(user: User): boolean {
         if (this.requestType === RequestType.Report) {
             return user.roles.includes(UserPermissions.Manage_All_Reports);
@@ -265,7 +264,7 @@ export class AssetRequest extends Model<InferAttributes<AssetRequest>, InferCrea
         return this.save();
     }
 
-    public decline(userId: string, silent = false): Promise<this> {
+    public async decline(userId: string, silent = false): Promise<this> {
         this.accepted = false;
         this.resolvedBy = userId;
         if (!silent) {
