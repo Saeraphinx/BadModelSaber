@@ -124,7 +124,7 @@
       <p class="text-gray-500">{m["requests.Status"]({status: data.pageData.accepted ?? m["enums.status.pending"]()})}</p>
       <p class="text-gray-500">{m["requests.resolvedBy"]({ name: data.pageData.resolvedBy ?? m["requests.notResolved"]()})}</p>
       <p class="text-gray-500">{m["requests.createdBy"]({name: users.get(data.pageData.requesterId)?.displayName || "Unknown User"})}</p>
-      <p class="text-gray-500">{m["requests.createdAt"]({ date: new Date(data.pageData.createdAt).toLocaleDateString(getLocale())})}</p>
+      <p class="text-gray-500">{m["requests.createdAt"]({ date: new Date(data.pageData.createdAt).toLocaleDateString()})}</p>
     </div>
   </div>
   <div class="flex flex-col w-full max-w-2xl">

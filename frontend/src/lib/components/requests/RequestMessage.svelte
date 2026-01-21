@@ -27,7 +27,7 @@
       <img src={user.avatarUrl} alt={user.displayName} class="w-8 h-8 rounded-full mr-2" />
       <span class="font-semibold">{user.displayName}</span>
     </a>
-    <span class="text-sm text-gray-500 ml-2">{new Date(message.timestamp).toLocaleString(getLocale())}</span>
+    <span class="text-sm text-gray-500 ml-2">{new Date(message.timestamp).toLocaleString()}</span>
   </div>
   <div class="text-gray-800 dark:text-gray-200">
     <p class="whitespace-pre-line">{message.message}</p>

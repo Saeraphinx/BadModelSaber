@@ -341,23 +341,23 @@
             </DropdownMenu.SubTrigger>
             <DropdownMenu.SubContent class="">
               <DropdownMenu.RadioGroup bind:value={theme} onValueChange={handleThemeChange}>
-                <DropdownMenu.Label>{m["layout.userMenu.theme"]}</DropdownMenu.Label>
-                <DropdownMenu.RadioItem closeOnSelect={false} value="system">{m["layout.userMenu.system"]}</DropdownMenu.RadioItem>
-                <DropdownMenu.RadioItem closeOnSelect={false} value="dark">{m["layout.userMenu.dark"]}</DropdownMenu.RadioItem>
-                <DropdownMenu.RadioItem closeOnSelect={false} value="light">{m["layout.userMenu.light"]}</DropdownMenu.RadioItem>
+                <DropdownMenu.Label>{m["layout.userMenu.theme"]()}</DropdownMenu.Label>
+                <DropdownMenu.RadioItem closeOnSelect={false} value="system">{m["layout.userMenu.system"]()}</DropdownMenu.RadioItem>
+                <DropdownMenu.RadioItem closeOnSelect={false} value="dark">{m["layout.userMenu.dark"]()}</DropdownMenu.RadioItem>
+                <DropdownMenu.RadioItem closeOnSelect={false} value="light">{m["layout.userMenu.light"]()}</DropdownMenu.RadioItem>
               </DropdownMenu.RadioGroup>
             </DropdownMenu.SubContent>
           </DropdownMenu.Sub>
           <DropdownMenu.Sub>
             <DropdownMenu.SubTrigger>
               <LanguagesIcon />
-              {m["layout.userMenu.language"]}
+              {m["layout.userMenu.language"]()}
             </DropdownMenu.SubTrigger>
             <DropdownMenu.SubContent class="">
               <DropdownMenu.RadioGroup value={currentLocale} onValueChange={(val) => {
                 setContext("locale", val);
               }}>
-                <DropdownMenu.Label>{m["layout.userMenu.language"]}</DropdownMenu.Label>
+                <DropdownMenu.Label>{m["layout.userMenu.language"]()}</DropdownMenu.Label>
                 {#each availableLocales as [code, name]}
                   <DropdownMenu.RadioItem closeOnSelect={true} value={code}>{name}</DropdownMenu.RadioItem>
                 {/each}
@@ -414,7 +414,7 @@
 <Sheet.Root bind:open={openAlerts}>
   <Sheet.Content class="grid grid-rows-[auto_1fr_auto] h-full">
     <Sheet.Header>
-      <Sheet.Title class="text-lg font-semibold">{m["layout.userMenu.alerts"]}</Sheet.Title>
+      <Sheet.Title class="text-lg font-semibold">{m["layout.userMenu.alerts"]()}</Sheet.Title>
       <div class="flex flex-row justify-between items-center">
         <Sheet.Description class="text-sm text-gray-500">
           {#if showRead}
@@ -436,18 +436,18 @@
             <Alert {alert} class="mb-2" />
           {/each}
         {:else}
-          <p class="text-gray-500">{m["layout.alertSidebar.noAlertsAvailable"]}</p>
+          <p class="text-gray-500">{m["layout.alertSidebar.noAlertsAvailable"]()}</p>
         {/if}
       {:else if unreadAlerts.length > 0}
         {#each unreadAlerts as alert}
           <Alert {alert} class="mb-2" />
         {/each}
       {:else}
-        <p class="text-gray-500">{m["layout.alertSidebar.noUnreadAlerts"]}</p>
+        <p class="text-gray-500">{m["layout.alertSidebar.noUnreadAlerts"]()}</p>
       {/if}
     </ScrollArea>
     <Sheet.Footer>
-      <Sheet.Close class={buttonVariants({ variant: "outline" })}>{m["dialogs.close"]}</Sheet.Close>
+      <Sheet.Close class={buttonVariants({ variant: "outline" })}>{m["dialogs.close"]()}</Sheet.Close>
     </Sheet.Footer>
   </Sheet.Content>
 </Sheet.Root>

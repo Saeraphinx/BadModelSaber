@@ -1,12 +1,12 @@
 {
   "$schema": "https://inlang.com/schema/project-settings",
-  "baseLocale": "en-US",
-  "sourceLanguageTag": "en-US",
+  "baseLocale": "en",
+  "sourceLanguageTag": "en",
   "languageTags": [
-    "en-US"
+    "en"
   ],
   "locales": [
-    "en-US"
+    "en"
   ],
   "modules": [
     "https://cdn.jsdelivr.net/npm/@inlang/plugin-message-format@4/dist/index.js",
