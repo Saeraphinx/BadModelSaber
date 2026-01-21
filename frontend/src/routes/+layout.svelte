@@ -333,11 +333,11 @@
             {/if}
             <DropdownMenu.Separator />
           {/if}
-          <p class="p-1 text-sm">{m["layout.userMenu.options"]}</p>
+          <p class="p-1 text-sm">{m["layout.userMenu.options"]()}</p>
           <DropdownMenu.Sub>
             <DropdownMenu.SubTrigger>
               <SunMoonIcon />
-              {m["layout.userMenu.theme"]}
+              {m["layout.userMenu.theme"]()}
             </DropdownMenu.SubTrigger>
             <DropdownMenu.SubContent class="">
               <DropdownMenu.RadioGroup bind:value={theme} onValueChange={handleThemeChange}>

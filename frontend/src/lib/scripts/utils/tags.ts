@@ -1,6 +1,7 @@
 import type { ClassValue } from "svelte/elements";
 import { AssetFileFormat, Tags } from "../api/DBTypes";
 import { m } from "$lib/paraglide/messages";
+import { getLocale } from "$lib/paraglide/runtime";
 
 export function getTagData(tag: Tags, assetType: AssetFileFormat, shouldShowInternal: boolean = false): { translatedTag: string, category: string, outlineColor: ClassValue, disabled: boolean, animated: boolean } {
   let splitType = assetType.split("_");
@@ -69,7 +70,7 @@ export function getTagData(tag: Tags, assetType: AssetFileFormat, shouldShowInte
       intClass = `bg-[#7f65ee]`;
       break;
     default:
-      intClass = `bg-[#333333]`;
+      intClass = `bg-[#833333]`;
       break;
   }
   //#endregion colors
@@ -133,8 +134,16 @@ export function getTagData(tag: Tags, assetType: AssetFileFormat, shouldShowInte
       break;
   }
   // #endregion categories & disabled
+  let translatedTag:string;
+  try {
+    translatedTag = m[`enums.tags.${tag}`]();
+  } catch (e) {
+    // Fallback to tag key if translation not found
+    console.warn(`Translation for tag ${tag} not found for locale ${getLocale()}.`);
+    translatedTag = tag;
+  }
   return {
-    translatedTag: m[`enums.tags.${tag}`](),
+    translatedTag: translatedTag,
     category,
     outlineColor: intClass,
     animated, 

@@ -46,7 +46,7 @@
   let selectedStatuses = $state<Status[]>([Status.Verified, Status.Unverified]);
   let searchQuery = $state<string>("");
   let assetStatuses = $derived.by(() => {
-    if (!data.user) return [Status.Verified];
+    if (!data.user) return [Status.Verified, Status.Unverified];
     if (data.user.roles.includes(UserPermissions.View_All_Assets)) {
       return Object.values(Status);
     }
