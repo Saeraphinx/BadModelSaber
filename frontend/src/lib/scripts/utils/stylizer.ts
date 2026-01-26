@@ -1,45 +1,48 @@
 import { m } from "$lib/paraglide/messages";
+import { getLocale } from "$lib/paraglide/runtime";
 import { AssetFileFormat, Status, UserPermissions } from "../api/DBTypes";
 
-export function capitalizeFirstLetter(str: any): string {
-  if (!str) return ``; // Handle empty strings
-  if (typeof str !== 'string') return ``; // Ensure input is a string
-  return str.charAt(0).toUpperCase() + str.slice(1);
-}
+// export function capitalizeFirstLetter(str: any): string {
+//   if (!str) return ``; // Handle empty strings
+//   if (typeof str !== 'string') return ``; // Ensure input is a string
+//   return str.charAt(0).toUpperCase() + str.slice(1);
+// }
 
 export function getStatusString(status: Status): string {
   return m[`enums.status.${status}`]();
 }
 
 
-export function getAssetTypeString(type: AssetFileFormat): string {
-  switch (type) {
-    case AssetFileFormat.Camera2Config_JSON:
-      return ".json (Camera2)";
-    case AssetFileFormat.ChromaEnv_JSON:
-      return ".json (Chroma)";
-    case AssetFileFormat.CountersPlusConfig_JSON:
-      return ".json (Counters+)";
-    case AssetFileFormat.HSVConfig_JSON:
-      return ".json (HSV)";
-    default:
-      return `.${type.split('_')[1]}`;  // Default case for other formats
-  }
-}
+// export function getAssetTypeString(type: AssetFileFormat): string {
+//   switch (type) {
+//     case AssetFileFormat.Camera2Config_JSON:
+//       return ".json (Camera2)";
+//     case AssetFileFormat.ChromaEnv_JSON:
+//       return ".json (Chroma)";
+//     case AssetFileFormat.CountersPlusConfig_JSON:
+//       return ".json (Counters+)";
+//     case AssetFileFormat.HSVConfig_JSON:
+//       return ".json (HSV)";
+//     default:
+//       return `.${type.split('_')[1]}`;  // Default case for other formats
+//   }
+// }
 
 export function getAssetTypeData(format: AssetFileFormat): {
   rawString: AssetFileFormat;
   formatString: string;
   typeString: string;
+  translatedType: string;
   combinedString: string;
 } {
-  let type = format.split('_')[0].replaceAll('-', ' ');
+  let type = format.split('_')[0]//.replaceAll('-', ' ');
   let translatedType = type;
   try {
     // @ts-expect-error
-    translatedType = m[`enums.assetTypes.singular.${type}`]();
+    translatedType = m[`enums.assetTypes.${type}`]();
   } catch (e) {
-    translatedType = capitalizeFirstLetter(type);
+    console.debug(`Translation for asset type ${type} not found for locale ${getLocale()}.`);
+    translatedType = type;
   }
   let fileFormat = `.${format.split('_')[1].toLowerCase()}`;
 
@@ -48,14 +51,16 @@ export function getAssetTypeData(format: AssetFileFormat): {
       return {
         rawString: format,
         formatString: fileFormat,
-        typeString: "HitScoreVisualizer",
+        typeString: type,
+        translatedType: "HitScoreVisualizer",
         combinedString: `HSV (${fileFormat})`,
       };
     default: 
       return {
         rawString: format,
         formatString: fileFormat,
-        typeString: translatedType,
+        typeString: type,
+        translatedType: translatedType,
         combinedString: `${translatedType} (${fileFormat})`,
       };
   }
@@ -64,14 +69,14 @@ export function getAssetTypeData(format: AssetFileFormat): {
 export function getAssetTypeCategories(): Map<string, ReturnType<typeof getAssetTypeData>[]> {
   let categories: Map<string, ReturnType<typeof getAssetTypeData>[]> = new Map();
   for (let format in AssetFileFormat) {
-    let type = `${format.split('_')[0].replaceAll('-', ' ')}`; // Pluralize type
-    let category = categories.get(type) ?? [];
-    category.push(getAssetTypeData(AssetFileFormat[format as keyof typeof AssetFileFormat]));
-    categories.set(type, category);
+    let assetTypeData = getAssetTypeData(AssetFileFormat[format as keyof typeof AssetFileFormat]);
+    let category = categories.get(assetTypeData.typeString) ?? [];
+    category.push(assetTypeData);
+    categories.set(assetTypeData.typeString, category);
   }
   let singleFormats: ReturnType<typeof getAssetTypeData>[] = [];
   for (let [key, value] of categories) {
-    if (value.length == 1 || key == 'Sounds') { // Group single formats and Sound into Other
+    if (value.length == 1 || key == 'sound') { // Group single formats and Sound into Other
       categories.delete(key);
       singleFormats.push(...value);
     }
@@ -80,43 +85,43 @@ export function getAssetTypeCategories(): Map<string, ReturnType<typeof getAsset
   // file format that goes into config
   let configCategories = [`.json`];
   // Create Other and Config categories & set their position
-  categories.set('Configs', []);
-  categories.set('Other', []);
+  categories.set('config', []);
+  categories.set('other', []);
   for (let format of singleFormats) {
     if (configCategories.includes(format.formatString)) {
-      let category = categories.get('Configs') ?? [];
+      let category = categories.get('config') ?? [];
       category.push(format);
-      categories.set('Configs', category);
+      categories.set('config', category);
     } else {
-      let category = categories.get('Other') ?? [];
+      let category = categories.get('other') ?? [];
       category.push(format);
-      categories.set('Other', category);
+      categories.set('other', category);
     }
   }
 
-  let sabers = categories.get('Sabers');
+  let sabers = categories.get('saber');
   if (sabers) {
-    categories.delete('Sabers');
+    categories.delete('saber');
     categories.set(m["enums.assetTypes.plurals.saber"](), sabers);
   } 
-  let notes = categories.get('Notes');
+  let notes = categories.get('note');
   if (notes) {
-    categories.delete('Notes');
+    categories.delete('note');
     categories.set(m["enums.assetTypes.plurals.note"](), notes);
   }
-  let walls = categories.get('Walls');
+  let walls = categories.get('wall');
   if (walls) {
-    categories.delete('Walls');
+    categories.delete('wall');
     categories.set(m["enums.assetTypes.plurals.wall"](), walls);
   }
-  let configs = categories.get('Configs');
+  let configs = categories.get('config');
   if (configs) {
-    categories.delete('Configs');
+    categories.delete('config');
     categories.set(m["enums.assetTypes.plurals.config"](), configs);
   }
-  let other = categories.get('Other');
+  let other = categories.get('other');
   if (other) {
-    categories.delete('Other');
+    categories.delete('other');
     categories.set(m["enums.assetTypes.plurals.other"](), other);
   }
 

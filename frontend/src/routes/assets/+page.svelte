@@ -19,7 +19,7 @@
   import { getContext, onMount } from "svelte";
   import ApprovalPopup from "$lib/components/assets/ApprovalDialog.svelte";
   import { toast } from "svelte-sonner";
-  import { capitalizeFirstLetter, getAssetTypeCategories, getAssetTypeString, getStatusString } from "$lib/scripts/utils/stylizer.js";
+  import { getAssetTypeCategories, getStatusString } from "$lib/scripts/utils/stylizer.js";
   import { trpc } from "$lib/scripts/utils/api.js";
   import { m } from "$lib/paraglide/messages.js";
 
@@ -43,7 +43,7 @@
   let filterFileFormatVisible = $state<boolean>(true);
   let filterStatusVisible = $state<boolean>(true);
   let selectedFileFormats = $state<AssetFileFormat[]>([]);
-  let selectedStatuses = $state<Status[]>([Status.Verified, Status.Unverified]);
+  let selectedStatuses = $state<Status[]>([Status.Verified]);
   let searchQuery = $state<string>("");
   let assetStatuses = $derived.by(() => {
     if (!data.user) return [Status.Verified, Status.Unverified];
@@ -52,7 +52,7 @@
     }
     return data.user.roles.includes(UserPermissions.View_Pending_Assets) ? [Status.Verified, Status.Unverified, Status.Pending] : [Status.Verified, Status.Unverified];
   });
-
+  
   // Filters Themselves
   let filteredAssets = $derived.by(() => {
     // Filter Only
@@ -154,7 +154,7 @@
 {#snippet filters()}
   <!-- File Type Filter -->
   <Collapsible.Root bind:open={filterFileFormatVisible}>
-    <div class="flex flex-col bg-card rounded-2xl min-w-56 w-full py-2 px-4">
+    <div class="flex flex-col bg-card rounded-2xl min-w-60 w-full py-2 px-4">
       <Collapsible.Trigger class="flex items-center justify-between w-full">
         <span class="text-lg font-semibold">{m["assets.dataTable.type"]()}</span>
         <ChevronRight class="h-4 w-4 transition-transform {filterFileFormatVisible ? `rotate-90` : ``}" />
@@ -192,7 +192,7 @@
   {#if assetStatuses.length > 1}
     <!-- Only show status filter if there are multiple statuses available for filtering -->
     <Collapsible.Root bind:open={filterStatusVisible} class="mt-4">
-      <div class="flex flex-col bg-card rounded-2xl min-w-56 w-full py-2 px-4">
+      <div class="flex flex-col bg-card rounded-2xl min-w-60 w-full py-2 px-4">
         <Collapsible.Trigger class="flex items-center justify-between w-full">
           <span class="text-lg font-semibold">{m["assets.dataTable.status"]()}</span>
           <ChevronRight class="h-4 w-4 transition-transform {filterStatusVisible ? `rotate-90` : ``}" />

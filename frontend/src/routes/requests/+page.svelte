@@ -5,6 +5,7 @@
   import Badge from "$shadcn/components/ui/badge/badge.svelte";
   import * as Tabs from "$shadcn/components/ui/tabs/index.js";
   import { onMount } from "svelte";
+  import { UserPermissions } from "$lib/scripts/api/DBTypes";
 
   let { data } = $props();
 
@@ -13,7 +14,7 @@
   let reports: AssetRequestPublicAPIv3[] | null = $state([]);
 
   onMount(() => {
-    trpc.RequestRouter.request.query({})
+    trpc.RequestRouter.getRequests.query({})
       .then((res) => {
         incomingRequests = res.incoming || [];
         outgoingRequests = res.outgoing || [];
@@ -52,13 +53,13 @@
             {data.requestCounts.incoming}
           </Badge>
         </Tabs.Trigger>
-        {#if data.requestCounts.reports !== null}
-          <Tabs.Trigger value="reports">
-            Reports
-            <Badge variant="outline">
-              {data.requestCounts.reports}
-            </Badge>
-          </Tabs.Trigger>
+        {#if data.user.roles.includes(UserPermissions.View_All_Reports)}
+        <Tabs.Trigger value="admin">
+          Admin
+          <Badge variant="outline">
+            {data.requestCounts.reports}
+          </Badge>
+        </Tabs.Trigger>
         {/if}
       </Tabs.List>
     <Tabs.Content value="outgoing">
