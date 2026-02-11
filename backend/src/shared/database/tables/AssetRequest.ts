@@ -13,8 +13,22 @@ export type AssetRequestInfer = InferAttributes<AssetRequest>;
     modelName: `AssetRequest`,
     timestamps: true,
     paranoid: true,
+    hooks: {
+        afterValidate: async (ar: AssetRequest) => {
+            if (ar.isNewRecord) {
+                await AssetRequest.validatorCreation.parseAsync(ar);
+            } else {
+                await AssetRequest.validator.parseAsync(ar);
+            }
+            let isNotValid = AssetRequest.validateExtended(ar);
+            if (isNotValid) {
+                throw new Error(isNotValid);
+            }
+        }
+    }
 })
 export class AssetRequest extends Model<InferAttributes<AssetRequest>, InferCreationAttributes<AssetRequest>> {
+    // #region Columns
     @Column({
         type: DataType.INTEGER,
         autoIncrement: true,
@@ -104,7 +118,7 @@ export class AssetRequest extends Model<InferAttributes<AssetRequest>, InferCrea
             return User.findByPk(this.requesterId) || null;
         }
     }
-
+    // #endregion
 
     // #region Validators
     public static validator = z.object({
@@ -139,35 +153,10 @@ export class AssetRequest extends Model<InferAttributes<AssetRequest>, InferCrea
         createdAt: z.date(),
         updatedAt: z.date(),
         deletedAt: z.date().nullable().optional(),
-    }).refine((data) => {
-        // Ensure that if the requestType is Report, objectToAdd must be null
-        return !(data.requestType === RequestType.Report && data.objectToAdd !== null)
-    }, {
-        message: `If requestType is Report, objectToAdd must be null`,
-    }).refine((data) => {
-        // Ensure that if the requestType is Credit or Link, objectToAdd must be a string or LinkedAsset
-        if (data.requestType === RequestType.Credit) {
-            return typeof data.objectToAdd === 'string'
-        } else if (data.requestType === RequestType.Link) {
-            if (data.objectToAdd === null) return false; // If requestType is Link, objectToAdd must not be null
-            return typeof data.objectToAdd === 'object' && 'id' in data.objectToAdd && 'linkType' in data.objectToAdd;
-        }
-    }, {
-        message: `If requestType is Credit or Link, objectToAdd must be a string or LinkedAsset`,
-    }).refine((data) => {
-        // Ensure that if the requestType is Report, requestResponseBy must be null
-        return data.requestType !== RequestType.Report || data.requestResponseBy === null
-    }, {
-        message: `If requestType is Report, requestResponseBy must be null`
-    }).refine((data) => {
-            // Ensure that if the requestType is Credit or Link, requestResponseBy must not be null;
-        return data.requestType !== RequestType.Credit && data.requestType !== RequestType.Link || data.requestResponseBy !== null
-    }, {
-        message: `If requestType is Credit or Link, requestResponseBy must not be null`,
-    });
+    })
   
 
-    public static createValidator = z.object({
+    public static validatorCreation = z.object({
         ...AssetRequest.validator.shape,
         id: AssetRequest.validator.shape.id.nullish(), // id is optional when creating a new request
 
@@ -178,6 +167,29 @@ export class AssetRequest extends Model<InferAttributes<AssetRequest>, InferCrea
         updatedAt: AssetRequest.validator.shape.updatedAt.nullish(),
         deletedAt: AssetRequest.validator.shape.deletedAt.nullish(),
     })
+
+    public static validateExtended(data: AssetRequest | AssetRequestInfer): string | null {
+        if (data.requestType === RequestType.Report && data.objectToAdd !== null) {
+            return "Reports cannot have objectToAdd set, it must be null."
+        }
+
+        if (data.requestType === RequestType.Credit) {
+            if (typeof data.objectToAdd === 'string') {
+                return `Credit request must have an ID in objectToAdd`
+            }
+        } else if (data.requestType === RequestType.Link) {
+            if (data.objectToAdd === null) return `If requestType is Link, objectToAdd must not be null`; // If requestType is Link, objectToAdd must not be null
+            if (!(typeof data.objectToAdd === 'object' && 'id' in data.objectToAdd && 'linkType' in data.objectToAdd)) {
+                return "If requestType is Link, objectToAdd must be a LinkedAsset"
+            };
+        }
+
+        if (data.requestType !== RequestType.Report && data.requestResponseBy === null) {
+            return "Requests must have a reqestReponseBy ID set."
+        }
+
+        return null;
+    }
 
     // #endregion Validators
     public allowedToMessage(user: User): boolean {

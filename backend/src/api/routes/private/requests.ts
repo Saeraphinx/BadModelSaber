@@ -1,16 +1,17 @@
 
 import { Asset, AssetRequest, AssetRequestInfer, RequestType, UserPermissions } from "../../../shared/Database.ts";
 import { Validator } from "../../../shared/Validator.ts";
-import { WhereOptions } from "sequelize";
+import { Op, WhereOptions } from "sequelize";
 import { authProcedure, router } from "../../trpc.ts";
 import { TRPCError } from "@trpc/server";
+import { parseErrorMessage } from "../../../shared/Tools.ts";
 
 export const RequestRouter = router({
     getRequests: authProcedure(`loggedIn`).input(Validator.z.object({
         includeActioned: Validator.z.boolean().optional().default(false),
         assetId: Validator.zNumberId.optional()
     })).query(async ({ input, ctx }) => {
-        let isElevated = ctx.user.roles.includes(UserPermissions.Manage_All_Reports);
+        let isElevated = ctx.user.roles.includes(UserPermissions.View_All_Reports);
         const whereOptions: WhereOptions<AssetRequestInfer> = {};
 
         if (input.assetId) {
@@ -38,6 +39,7 @@ export const RequestRouter = router({
         if (isElevated) {
             reports = AssetRequest.findAll({
                 where: {
+                    requesterId: {[Op.ne]: ctx.user.id},
                     requestType: RequestType.Report,
                     ...whereOptions
                 },
@@ -86,11 +88,11 @@ export const RequestRouter = router({
         if (!isElevated && assetReq.requesterId !== ctx.user?.id && assetReq.requestResponseBy !== ctx.user?.id) {
             throw new Error(`You are not allowed to view this request`);
         }
-        return assetReq.getAPIResponse();
+        return await assetReq.getAPIResponse();
     }),
     addMessage: authProcedure(`loggedIn`).input(Validator.z.object({
         id: Validator.zNumberId,
-        message: Validator.z.string().min(1)
+        message: Validator.z.string().min(1).max(2048)
     })).mutation(async ({ input, ctx }) => {
         const assetReq = await AssetRequest.findByPk(input.id);
         if (!assetReq) {
@@ -99,7 +101,9 @@ export const RequestRouter = router({
         if (!assetReq.allowedToMessage(ctx.user)) {
             throw new Error(`You are not allowed to message this request`);
         }
-        await assetReq.addMessage(ctx.user, input.message);
+        await assetReq.addMessage(ctx.user, input.message).catch((err) => {
+            throw new TRPCError({code: `INTERNAL_SERVER_ERROR`, message: parseErrorMessage(err)});
+        });
         return { message: `Message added successfully` };
     }),
     handleRequest: authProcedure(`loggedIn`).input(Validator.z.object({
@@ -132,7 +136,7 @@ export const RequestRouter = router({
         }
 
         let assetReq = await asset.report(ctx.user, input.reason);
-        return assetReq.getAPIResponse();
+        return await assetReq.getAPIResponse();
     })
 });
 

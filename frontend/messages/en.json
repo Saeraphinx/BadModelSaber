@@ -151,9 +151,9 @@
   },
   "requests": {
     "wouldYouLikeToAcceptOrReject": "Would you like to accept or reject this request?",
-    "initialMessageCredit": "Request created by {name}\n\n{name} would like to add you as a collaborator to the asset {assetName}.",
-    "initialMessageLink": "Request created by {name}\n\n{name} would like to link your asset, {toLinkAssetName}, to their asset, {assetName}.",
-    "initialMessageReport": "Report created by {name}\n\n{name} would like to report the asset, {assetName}.",
+    "initialMessageCredit": "{name} would like to add you as a collaborator to the asset {assetName}.",
+    "initialMessageLink": "{name} would like to link your asset, {toLinkAssetName}, to their asset, {assetName}.",
+    "initialMessageReport": "{name} would like to report the asset, {assetName}.",
     "tableTitle": "{type} Request",
     "requestID": "Request ID: {id}",
     "Status": "Request Status: {status}",

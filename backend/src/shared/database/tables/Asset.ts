@@ -15,8 +15,22 @@ export type AssetValidatorType = typeof Asset.validator; // for use in frontend
     modelName: `Asset`,
     timestamps: true,
     paranoid: true,
+    hooks: {
+        afterValidate: async (asset: Asset) => {
+            if (asset.isNewRecord) {
+                await Asset.validatorCreation.parseAsync(asset);
+            } else {
+                await Asset.validator.parseAsync(asset);
+            }
+            let isNotValid = Asset.validateExtended(asset);
+            if (isNotValid) {
+                throw new Error(isNotValid);
+            }
+        }
+    }
 })
 export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes<Asset>> {
+    // #region Columns
     @Column({
         type: DataType.INTEGER,
         autoIncrement: true,
@@ -157,6 +171,7 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
     get assetFileName(): NonAttribute<string> {
         return `${this.fileSafeName}.${this.type.split('_')[1]}`; // e.g. ".saber"
     }
+    // #endregion
 
     private static readonly invalidFileNameChars = /[<>:"/\\|?*\x00-\x1F]/gi;
     private static readonly invalidFileNameWin = /^(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(\..*)?$/gi;
@@ -206,20 +221,11 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
         createdAt: z.date(),
         updatedAt: z.date(),
         deletedAt: z.date().nullable(),
-    }).refine(async (data) => {
-        if (data.license === 'custom' && !data.licenseUrl) {
-            return false; // If license is custom, licenseUrl must be provided
-        } else if (data.license !== 'custom' && data.licenseUrl) {
-            return false; // If license is not custom, licenseUrl must not be provided
-        }
-        return true;
-    }, {
-        message: "If license is 'custom', licenseUrl must be provided.",
     });
 
 
     // This validator is used for creating new assets, it omits the id and timestamps and other fields that are marked as CreationOptional
-    public static createValidator = z.object({
+    public static validatorCreation = z.object({
         ...Asset.validator.shape,
         id: Asset.validator.shape.id.nullish(),
         oldId: Asset.validator.shape.oldId.nullish(),
@@ -231,6 +237,16 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
         updatedAt: Asset.validator.shape.updatedAt.nullish(),
         deletedAt: Asset.validator.shape.deletedAt.nullish(),
     })
+
+    // if string is return, its an error. if its a null, its oki
+    public static validateExtended(data: Asset|AssetInfer): string|null {
+        if (data.license === 'custom' && !data.licenseUrl) {
+            return `If license is custom, licenseUrl must be provided`;
+        } else if (data.license !== 'custom' && data.licenseUrl) {
+            return `If license is not custom, licenseUrl must not be provided`
+        }
+        return null;
+    }
     // #endregion
 
     public static async checkIfExists(id: number): Promise<boolean> {

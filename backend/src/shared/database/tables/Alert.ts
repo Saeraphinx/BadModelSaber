@@ -11,6 +11,19 @@ export type AlertInfer = InferAttributes<Alert>;
     modelName: `Alert`,
     timestamps: true,
     paranoid: true,
+    hooks: {
+        afterValidate: async (alert: Alert) => {
+            if (alert.isNewRecord) {
+                await Alert.validatorCreation.parseAsync(alert);
+            } else {
+                await Alert.validator.parseAsync(alert);
+            }
+            let isNotValid = Alert.validateExtended(alert);
+            if (isNotValid) {
+                throw new Error(isNotValid);
+            }
+        }
+    }
 })
 export class Alert extends Model<InferAttributes<Alert>, InferCreationAttributes<Alert>> {
     @Column({
@@ -90,15 +103,9 @@ export class Alert extends Model<InferAttributes<Alert>, InferCreationAttributes
         createdAt: z.date(),
         updatedAt: z.date(),
         deletedAt: z.date().nullable(),
-    }).refine((data) => {
-        // Ensure that either assetId or requestId is provided, but not both
-        if (data.assetId && data.requestId) {
-            throw new Error("Either assetId or requestId can be provided, but not both.");
-        }
-        return true;
-    });
+    })
 
-    public static createValidator = z.object({
+    public static validatorCreation = z.object({
         ...Alert.validator.shape,
         id: Alert.validator.shape.id.nullish(), // id is optional when creating a new alert
         read: Alert.validator.shape.read.nullish(),
@@ -108,13 +115,14 @@ export class Alert extends Model<InferAttributes<Alert>, InferCreationAttributes
         createdAt: Alert.validator.shape.createdAt.nullish(),
         updatedAt: Alert.validator.shape.updatedAt.nullish(),
         deletedAt: Alert.validator.shape.deletedAt.nullish(),
-    }).refine((data) => {
-        // Ensure that only one of assetId or requestId is not nullish
+    })
+
+    public static validateExtended(data: Alert | AlertInfer) : string | null {
         if (data.assetId && data.requestId) {
-            throw new Error("Either assetId or requestId can be provided, but not both.");
+            return "Either assetId or requestId can be provided, but not both.";
         }
-        return true;
-    });
+        return null;
+    }
     // #endregion Validators
 
     public toAPIResponse(): AlertPublicAPIv3 {

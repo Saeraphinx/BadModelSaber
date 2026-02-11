@@ -8,6 +8,8 @@
 
   let {
     message,
+    accept,
+    reject,
     user = {
       id: "unknown",
       displayName: "Unknown User",
@@ -15,6 +17,8 @@
     },
     class: className = "",
   } : {
+    accept: Function,
+    reject: Function,
     message: RequestMessage & { initMessage?: boolean };
     user?: { id:string, displayName: string; avatarUrl: string };
     class?: ClassValue;
@@ -33,8 +37,8 @@
     <p class="whitespace-pre-line">{message.message}</p>
     {#if message.initMessage}
       <div class="flex flex-row justify-center gap-4 mt-2">
-        <Button variant="secondary" class="w-1/4">{m["dialogs.reject"]()}</Button>
-        <Button class="w-1/4">{m["dialogs.accept"]()}</Button>
+        <Button onclick={reject()} variant="secondary" class="w-1/4">{m["dialogs.reject"]()}</Button>
+        <Button onclick={accept()} class="w-1/4">{m["dialogs.accept"]()}</Button>
       </div>
     {/if}
   </div>

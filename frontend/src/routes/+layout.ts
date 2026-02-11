@@ -1,10 +1,11 @@
 import type { LayoutLoad } from "./$types";
-import { parseError, trpc } from "$lib/scripts/utils/api";
+import { createTRPC, parseError } from "$lib/scripts/utils/api";
 
 export const load: LayoutLoad = async ({ fetch }) => {
   let pendingToasts: Awaited<ReturnType<LayoutLoad>>['pendingToasts'] = [];
   let userToasted = false;
   let alertsToasted = false;
+  const trpc = createTRPC(fetch);
   const defaultObj = {
     alerts: [],
     requestCounts: {
@@ -14,8 +15,10 @@ export const load: LayoutLoad = async ({ fetch }) => {
     },
     user: undefined,
     pendingToasts: pendingToasts,
+    trpc
   }
   let userRes = await trpc.userRouterV3.getMe.query().catch((err) => {
+    console.error(err);
     let error = parseError(err);
     userToasted = true;
     if (error.code == 403) {
@@ -55,5 +58,6 @@ export const load: LayoutLoad = async ({ fetch }) => {
       },
       user: userRes,
       alerts: !alertRes ? [] : (alertRes || []),
+      trpc
     }
 }

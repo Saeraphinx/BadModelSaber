@@ -6,6 +6,8 @@
   import * as Tabs from "$shadcn/components/ui/tabs/index.js";
   import { onMount } from "svelte";
   import { UserPermissions } from "$lib/scripts/api/DBTypes";
+  import Button from "$shadcn/components/ui/button/button.svelte";
+  import { RefreshCwIcon } from "@lucide/svelte";
 
   let { data } = $props();
 
@@ -14,8 +16,13 @@
   let reports: AssetRequestPublicAPIv3[] | null = $state([]);
 
   onMount(() => {
+    getRequests();
+  });
+
+  function getRequests() {
     trpc.RequestRouter.getRequests.query({})
       .then((res) => {
+        console.log(res);
         incomingRequests = res.incoming || [];
         outgoingRequests = res.outgoing || [];
         reports = res.reports || null;
@@ -23,7 +30,7 @@
       .catch((err) => {
         console.error("Failed to fetch requests:", err);
       });
-  });
+  }
 </script>
 
 {#snippet requestCards(requests: AssetRequestPublicAPIv3[])}
@@ -61,6 +68,7 @@
           </Badge>
         </Tabs.Trigger>
         {/if}
+        <Button variant="ghost" size="icon" onclick={getRequests}><RefreshCwIcon /></Button>
       </Tabs.List>
     <Tabs.Content value="outgoing">
       {@render requestCards(outgoingRequests)}
@@ -76,6 +84,7 @@
       {/if}
     </Tabs.Content>
   </Tabs.Root>
+  
 </div>
 
 <!-- {#if data.requests.outgoing.length > 0}

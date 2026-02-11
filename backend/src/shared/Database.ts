@@ -405,33 +405,6 @@ export class DatabaseManager {
 
     public loadHooks() {
         Logger.debug(`Loading hooks...`);
-
-        Asset.afterValidate(`checkAssetValidator`, async (asset, options) => {
-            // throws if invalid
-            if (asset.isNewRecord) {
-                await Asset.createValidator.parseAsync(asset);
-            } else {
-                await Asset.validator.parseAsync(asset);
-            }
-        });
-
-        Alert.afterValidate(`checkAlertValidator`, async (alert, options) => {
-            // throws if invalid
-            if (alert.isNewRecord) {
-                await Alert.createValidator.parseAsync(alert);
-            } else {
-                await Alert.validator.parseAsync(alert);
-            }
-        });
-
-        AssetRequest.afterValidate(`checkAssetRequestValidator`, async (request, options) => {
-            // throws if invalid
-            if (request.isNewRecord) {
-                await AssetRequest.createValidator.parseAsync(request);
-            } else {
-                await AssetRequest.validator.parseAsync(request);
-            }
-        });
     }
 
     public async importFakeData() {

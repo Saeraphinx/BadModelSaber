@@ -26,6 +26,8 @@
             "**/.DS_Store": true,
             "**/Thumbs.db": true,
             "**/.svelte-kit": true,
+            "backend/": true,
+            "frontend/":true
         }
     },
     "launch": {

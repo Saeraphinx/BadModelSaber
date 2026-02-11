@@ -45,7 +45,7 @@ export const AdminRouter = router({
             targetUser.save();
         }),
     createAlert: authProcedure([UserPermissions.Manage_All_Users, UserPermissions.Manage_NonMod_Users])
-        .input(Alert.createValidator.pick({
+        .input(Alert.validatorCreation.pick({
             header: true,
             message: true,
             type: true,

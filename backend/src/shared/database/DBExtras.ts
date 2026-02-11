@@ -69,7 +69,17 @@ export enum LinkedAssetLinkType {
   Alternate = 'alternate', // e.g. an alternate version of the asset (e.g. a different color scheme)
 }
 
-// Changes to this enum should be mirrored in translation documents
+// #endregion Asset Enums
+
+// #region Tags
+/*
+HOW TO ADD TAGS:
+- Add Tag this enum
+- copy this file to frontend/backend
+  - If removing/editing a tag, make sure to add a migration for it in the database
+- Add extra information to tags.ts on the frontend
+- If the tag is protected/internal, edit protectedTags in Asset.ts on the backend
+*/
 export enum Tags {
   // features
   CustomColors = 'CustomColors', // all really
@@ -118,7 +128,6 @@ export enum Tags {
   // internal tags
   Featured = 'Featured',
 }
-// #endregion Asset Enums
 
 // #region Alert & Reqeust & User Enums
 export enum UserPermissions {

@@ -269,10 +269,10 @@
   resolved "https://registry.yarnpkg.com/@lucide/lab/-/lab-0.1.2.tgz#1408bb0063d5f94e944d4a3ba329874785c12a7a"
   integrity sha512-VprF2BJa7ZuTGOhUd5cf8tHJXyL63wdxcGieAiVVoR9hO0YmPsnZO0AGqDiX2/br+/MC6n8BoJcmPilltOXIJA==
 
-"@lucide/svelte@^0.515.0":
-  version "0.515.0"
-  resolved "https://registry.yarnpkg.com/@lucide/svelte/-/svelte-0.515.0.tgz#f25d03b05b436fe01746a183ae9b759df83af930"
-  integrity sha512-CEAyqcZmNBfYzVgaRmK2RFJP5tnbXxekRyDk0XX/eZQRfsJmkDvmQwXNX8C869BgNeryzmrRyjHhUL6g9ZOHNA==
+"@lucide/svelte@^0.561.0":
+  version "0.561.0"
+  resolved "https://registry.yarnpkg.com/@lucide/svelte/-/svelte-0.561.0.tgz#ca5f8ce6ed843da99ec47eebdc9e5b1681ff8862"
+  integrity sha512-vofKV2UFVrKE6I4ewKJ3dfCXSV6iP6nWVmiM83MLjsU91EeJcEg7LoWUABLp/aOTxj1HQNbJD1f3g3L0JQgH9A==
 
 "@napi-rs/wasm-runtime@^1.0.7":
   version "1.0.7"

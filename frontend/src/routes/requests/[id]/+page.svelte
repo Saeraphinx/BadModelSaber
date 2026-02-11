@@ -9,44 +9,53 @@
   import Button from "$shadcn/components/ui/button/button.svelte";
   import { m } from "$lib/paraglide/messages.js";
   import { getLocale } from "$lib/paraglide/runtime.js";
+  import { onMount } from "svelte";
+  import Spinner from "$shadcn/components/ui/spinner/spinner.svelte";
+  import { toast } from "svelte-sonner";
 
   let { data } = $props();
 
+  // Message Content
   let users = $state<Map<string, { id: string; displayName: string; avatarUrl: string }>>(new Map());
-  let initialString = "";
-  if (data.pageData.requestType === RequestType.Credit) {
-    initialString = m["requests.initialMessageCredit"]({
-      name: data.pageData?.requester?.displayName || "Unknown User",
-      assetName: data.pageData.refrencedAsset?.name || "Unknown Asset",
-    });
-  } else if (data.pageData.requestType === RequestType.Link) {
-    initialString = m["requests.initialMessageLink"]({
-      name: data.pageData?.requester?.displayName || "Unknown User",
-      assetName: data.pageData.refrencedAsset?.name || "Unknown Asset",
-      toLinkAssetName: "Unknown Asset",
-    });
-  } else {
-    initialString = m["requests.initialMessageReport"]({
-      name: data.pageData?.requester?.displayName || "Unknown User",
-      assetName: data.pageData.refrencedAsset?.name || "Unknown Asset"
-    });
-  }
-  if (data.user?.roles.includes(UserPermissions.Manage_All_Reports) && data.pageData.requestType !== RequestType.Report && data.user.id === data.pageData.requestResponseBy) {
-    initialString += `\n\n${m["requests.wouldYouLikeToAcceptOrReject"]()}`;
-  }
-  let messages: (ReqMessage & {initMessage?: boolean})[] = $state([
-    {
-      userId: `5`,
-      message: initialString,
-      timestamp: new Date(data.pageData.createdAt),
-      initMessage: true,
-    },
-    ...data.pageData.messages,
-  ]);
+  let messages: (ReqMessage & { initMessage?: boolean })[] = $state([]);
+  onMount(() => {
+    let initialString = "";
+    if (data.pageData.requestType === RequestType.Credit) {
+      initialString = m["requests.initialMessageCredit"]({
+        name: data.pageData?.requester?.displayName || "Unknown User",
+        assetName: data.pageData.refrencedAsset?.name || "Unknown Asset",
+      });
+    } else if (data.pageData.requestType === RequestType.Link) {
+      initialString = m["requests.initialMessageLink"]({
+        name: data.pageData?.requester?.displayName || "Unknown User",
+        assetName: data.pageData.refrencedAsset?.name || "Unknown Asset",
+        toLinkAssetName: "Unknown Asset",
+      });
+    } else {
+      initialString = m["requests.initialMessageReport"]({
+        name: data.pageData?.requester?.displayName || "Unknown User",
+        assetName: data.pageData.refrencedAsset?.name || "Unknown Asset",
+      });
+    }
+    let initMessage = false;
+    if (data.user?.roles.includes(UserPermissions.Manage_All_Reports) || (data.pageData.requestResponseBy === data.user?.id)) {
+      initMessage = true
+      initialString += `\n\n${m["requests.wouldYouLikeToAcceptOrReject"]()}`;
+    }
 
+    messages = [
+      {
+        userId: `5`,
+        message: initialString,
+        timestamp: new Date(data.pageData.createdAt),
+        initMessage,
+      },
+      ...data.pageData.messages,
+    ];
+  });
   async function populateUsers() {
     let userIds = new Set<string>();
-    console.log(data.pageData);
+    userIds.add(`5`); // system user
     data.pageData.messages.forEach((message) => {
       if (message.userId && !users.has(message.userId) && message.userId !== data.user!.id) {
         userIds.add(message.userId);
@@ -70,7 +79,7 @@
             .catch((err) => {
               console.error(`Failed to fetch user ${userId}:`, err);
               users.set(userId, { id: userId, displayName: `Unknown User ${userId}`, avatarUrl: "/default-avatar.png" });
-            })
+            }),
         );
       }
     }
@@ -90,12 +99,15 @@
       return data.pageData.accepted === null;
     }
   });
+  let isSending = $state(false);
   async function sendMessage() {
-    if (!messageBox.trim()) return;
-    await trpc.RequestRouter.addMessage.mutate({
-      id: data.pageData.id,
-      message: messageBox.trim(),
-    })
+    if (messageBox.trim() == "") return;
+    isSending = true
+    await trpc.RequestRouter.addMessage
+      .mutate({
+        id: data.pageData.id,
+        message: messageBox.trim(),
+      })
       .then((res) => {
         messages = [
           ...messages,
@@ -106,10 +118,19 @@
           },
         ];
         messageBox = "";
+        isSending = false;
       })
       .catch((err) => {
         console.error("Failed to send message:", err);
+        toast.error("Failed to send message. Check your error log for more info.")
       });
+  }
+
+  async function handleRequest(accepted: boolean) {
+    trpc.RequestRouter.handleRequest.mutate({
+      action: accepted ? `accept` : `decline`,
+      id: data.pageData.id
+    })
   }
 </script>
 
@@ -121,25 +142,32 @@
     <div class="flex flex-col items-start gap-2 bg-card p-4 rounded-lg shadow-md w-full max-w-2xl">
       <h1 class="text-2xl font-bold">{m["requests.tableTitle"]({ type: m[`enums.requestTypes.${data.pageData.requestType}`]() })}</h1>
       <p class="text-gray-500">{m["requests.requestID"]({ id: data.pageData.id })}</p>
-      <p class="text-gray-500">{m["requests.Status"]({status: data.pageData.accepted ?? m["enums.status.pending"]()})}</p>
-      <p class="text-gray-500">{m["requests.resolvedBy"]({ name: data.pageData.resolvedBy ?? m["requests.notResolved"]()})}</p>
-      <p class="text-gray-500">{m["requests.createdBy"]({name: users.get(data.pageData.requesterId)?.displayName || "Unknown User"})}</p>
-      <p class="text-gray-500">{m["requests.createdAt"]({ date: new Date(data.pageData.createdAt).toLocaleDateString()})}</p>
+      <p class="text-gray-500">{m["requests.Status"]({ status: data.pageData.accepted ?? m["enums.status.pending"]() })}</p>
+      <p class="text-gray-500">{m["requests.resolvedBy"]({ name: data.pageData.resolvedBy ?? m["requests.notResolved"]() })}</p>
+      <p class="text-gray-500">{m["requests.createdBy"]({ name: users.get(data.pageData.requesterId)?.displayName || "Unknown User" })}</p>
+      <p class="text-gray-500">{m["requests.createdAt"]({ date: new Date(data.pageData.createdAt).toLocaleDateString() })}</p>
     </div>
   </div>
   <div class="flex flex-col w-full max-w-2xl">
     {#await populateUsers()}
       <p>Loading...</p>
     {:then}
-      {#each messages as message}
-        <RequestMessage {message} user={users.get(message.userId) || { id: "0", displayName: "Unknown User", avatarUrl: "/default-avatar.png" }} class="w-full max-w-2xl mb-4" />
-      {:else}
-        <p class="text-muted-foreground">{m["requests.noMessagesFound"]}</p>
-      {/each}
+      {#key messages}
+        {#each messages as message}
+          <RequestMessage accept={() => {handleRequest(true)}} reject={() => {handleRequest(false)}} {message} user={users.get(message.userId) || { id: "0", displayName: "Unknown User", avatarUrl: "" }} class="w-full max-w-2xl mb-4" />
+        {:else}
+          <p class="text-muted-foreground">{m["requests.noMessagesFound"]}</p>
+        {/each}
+      {/key}
       {#if isAllowedToSend}
         <div class="flex flex-col items-end">
           <Textarea bind:value={messageBox} placeholder={m["requests.typeYourMessageHere"]()} class="w-full" rows={5} />
-          <Button variant="default" class="mt-2 w-32" onclick={sendMessage}>{m["requests.submitMessage"]()}</Button>
+          <Button disabled={isSending || messageBox.trim() == ""} variant="default" class="mt-2 w-32" onclick={sendMessage}>
+            {m["requests.submitMessage"]()}
+            {#if isSending}
+              <Spinner />
+            {/if}
+          </Button>
         </div>
       {/if}
     {:catch error}
