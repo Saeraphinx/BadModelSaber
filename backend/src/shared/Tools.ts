@@ -2,6 +2,8 @@ import { UniqueConstraintError, ValidationError } from "sequelize";
 import { fromZodError, isZodErrorLike } from "zod-validation-error";
 import * as fs from "fs";
 import { randomBytes } from "crypto";
+import { TRPCError } from "@trpc/server";
+import { Logger } from "./Logger.ts";
 
 export type If<Value extends boolean, TrueResult, FalseResult = null> = Value extends true ? TrueResult : Value extends false  ? FalseResult  : TrueResult | FalseResult;
 
@@ -23,6 +25,12 @@ export function parseErrorMessage(err: unknown): string {
         console.error(`Error parsing error message: ${e}`);
         return `Unknown error`;
     }
+}
+
+export function handleTRPCPromiseCatch(err: unknown): never {
+    Logger.debug(`handleTRPCPRomiseCatch called`)
+    Logger.debug(err);
+    throw new TRPCError({code: `INTERNAL_SERVER_ERROR`, message: parseErrorMessage(err)})
 }
 
 export function createRandomString(byteCount: number): string {

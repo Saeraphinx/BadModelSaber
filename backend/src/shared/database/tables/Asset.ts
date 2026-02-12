@@ -1,4 +1,4 @@
-import { BelongsTo, Column, CreatedAt, DataType, DeletedAt, ForeignKey, Model, Table, UpdatedAt } from "sequelize-typescript";
+import { AfterValidate, BelongsTo, Column, CreatedAt, DataType, DeletedAt, ForeignKey, Model, Table, UpdatedAt } from "sequelize-typescript";
 import { InferAttributes, InferCreationAttributes, NonAttribute, CreationOptional } from "sequelize";
 import { Alert, AssetRequest, User, UserPermissions } from "../../Database.ts";
 import { AlertType, AssetFileFormat, AssetPublicAPIv1, AssetPublicAPIv2, AssetPublicAPIv3, License, LinkedAsset, LinkedAssetLinkType, RequestType, Status, StatusHistory, Tags, UserPublicAPIv3 } from "../DBExtras.ts";
@@ -15,19 +15,6 @@ export type AssetValidatorType = typeof Asset.validator; // for use in frontend
     modelName: `Asset`,
     timestamps: true,
     paranoid: true,
-    hooks: {
-        afterValidate: async (asset: Asset) => {
-            if (asset.isNewRecord) {
-                await Asset.validatorCreation.parseAsync(asset);
-            } else {
-                await Asset.validator.parseAsync(asset);
-            }
-            let isNotValid = Asset.validateExtended(asset);
-            if (isNotValid) {
-                throw new Error(isNotValid);
-            }
-        }
-    }
 })
 export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes<Asset>> {
     // #region Columns
@@ -239,13 +226,26 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
     })
 
     // if string is return, its an error. if its a null, its oki
-    public static validateExtended(data: Asset|AssetInfer): string|null {
+    public static validateExtended(data: Asset | AssetInfer): string | null {
         if (data.license === 'custom' && !data.licenseUrl) {
             return `If license is custom, licenseUrl must be provided`;
         } else if (data.license !== 'custom' && data.licenseUrl) {
             return `If license is not custom, licenseUrl must not be provided`
         }
         return null;
+    }
+
+    @AfterValidate
+    private static async runValidators(asset: Asset) {
+        if (asset.isNewRecord) {
+            await Asset.validatorCreation.parseAsync(asset);
+        } else {
+            await Asset.validator.parseAsync(asset);
+        }
+        let isNotValid = Asset.validateExtended(asset);
+        if (isNotValid) {
+            throw new Error(isNotValid);
+        }
     }
     // #endregion
 
@@ -304,7 +304,7 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
             let removedTags = this.tags.filter(tag => !data.tags!.includes(tag));
             // only allow adding/removing internal tags if user has permission
             if (
-                newTags.some(tag => Asset.protectedTags.includes(tag)) || 
+                newTags.some(tag => Asset.protectedTags.includes(tag)) ||
                 removedTags.some(tag => Asset.protectedTags.includes(tag))
             ) {
                 if (!user.roles.includes(UserPermissions.Allow_Internal_Tags)) {
@@ -324,7 +324,7 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
         if (this.status !== Status.Private) {
             throw new Error(`Only assets that are Private can be submitted for approval.`);
         }
-        
+
         let allowBypass = true;
         switch (this.type) {
             case AssetFileFormat.Avatar_Avatar:
@@ -335,7 +335,7 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
                 break;
             default:
                 allowBypass = true;
-                break; 
+                break;
         }
 
         if (allowBypass) {

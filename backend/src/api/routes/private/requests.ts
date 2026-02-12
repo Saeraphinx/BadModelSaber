@@ -4,7 +4,7 @@ import { Validator } from "../../../shared/Validator.ts";
 import { Op, WhereOptions } from "sequelize";
 import { authProcedure, router } from "../../trpc.ts";
 import { TRPCError } from "@trpc/server";
-import { parseErrorMessage } from "../../../shared/Tools.ts";
+import { handleTRPCPromiseCatch, parseErrorMessage } from "../../../shared/Tools.ts";
 
 export const RequestRouter = router({
     getRequests: authProcedure(`loggedIn`).input(Validator.z.object({
@@ -83,10 +83,10 @@ export const RequestRouter = router({
         let isElevated = ctx.user.roles.includes(UserPermissions.View_All_Reports);
         const assetReq = await AssetRequest.findByPk(input.id, { include: { all: true }});
         if (!assetReq) {
-            throw new Error(`Request not found`);
+            throw new TRPCError({code: `NOT_FOUND`, message: `Request not found`});
         }
         if (!isElevated && assetReq.requesterId !== ctx.user?.id && assetReq.requestResponseBy !== ctx.user?.id) {
-            throw new Error(`You are not allowed to view this request`);
+            throw new TRPCError({code: `FORBIDDEN`, message: `You are not allowed to message this request`});
         }
         return await assetReq.getAPIResponse();
     }),
@@ -96,14 +96,12 @@ export const RequestRouter = router({
     })).mutation(async ({ input, ctx }) => {
         const assetReq = await AssetRequest.findByPk(input.id);
         if (!assetReq) {
-            throw new Error(`Request not found`);
+            throw new TRPCError({code: `NOT_FOUND`, message: `Request not found`});
         }
         if (!assetReq.allowedToMessage(ctx.user)) {
-            throw new Error(`You are not allowed to message this request`);
+            throw new TRPCError({code: `FORBIDDEN`, message: `You are not allowed to message this request`});
         }
-        await assetReq.addMessage(ctx.user, input.message).catch((err) => {
-            throw new TRPCError({code: `INTERNAL_SERVER_ERROR`, message: parseErrorMessage(err)});
-        });
+        await assetReq.addMessage(ctx.user, input.message).catch(handleTRPCPromiseCatch);
         return { message: `Message added successfully` };
     }),
     handleRequest: authProcedure(`loggedIn`).input(Validator.z.object({
@@ -112,16 +110,16 @@ export const RequestRouter = router({
     })).mutation(async ({ input, ctx }) => {
         const assetReq = await AssetRequest.findByPk(input.id);
         if (!assetReq) {
-            throw new Error(`Request not found`);
+            throw new TRPCError({code: `NOT_FOUND`, message: `Request not found`});
         }
         if (!assetReq.allowedToAccept(ctx.user)) {
-            throw new Error(`You are not allowed to ${input.action} this request`);
+            throw new TRPCError({code: `FORBIDDEN`, message: `You are not allowed to handle this request`});
         }
         if (input.action === `accept`) {
-            await assetReq.accept(ctx.user.id);
+            await assetReq.accept(ctx.user.id).catch(handleTRPCPromiseCatch);
             return { message: `Request accepted successfully` };
         } else if (input.action === `decline`) {
-            await assetReq.decline(ctx.user.id);
+            await assetReq.decline(ctx.user.id).catch(handleTRPCPromiseCatch);
             return { message: `Request declined successfully` };
         }
         throw new Error(`Invalid action`);
@@ -135,8 +133,8 @@ export const RequestRouter = router({
             throw new TRPCError({ code: `NOT_FOUND`, message: `Asset not found` });
         }
 
-        let assetReq = await asset.report(ctx.user, input.reason);
-        return await assetReq.getAPIResponse();
+        let assetReq = await asset.report(ctx.user, input.reason).catch(handleTRPCPromiseCatch);
+        return await assetReq.getAPIResponse().catch(handleTRPCPromiseCatch);;
     })
 });
 

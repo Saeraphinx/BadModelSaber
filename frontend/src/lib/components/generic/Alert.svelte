@@ -10,10 +10,12 @@
   let {
     alert,
     showRead = $bindable(false),
+    deleteFromArray,
     class: className,
     ...restProps
   }: {
     alert: AlertPublicAPIv3;
+    deleteFromArray?: () => void;
     showRead?: boolean;
   } & HTMLAttributes<HTMLDivElement> = $props();
 
@@ -42,6 +44,9 @@
         description: error.message,
       });
     });
+    if (deleteFromArray) {
+      deleteFromArray();
+    }
   }
 
   function deleteAlert() {
@@ -52,6 +57,9 @@
         description: error.message,
       });
     });
+    if (deleteFromArray) {
+      deleteFromArray();
+    }
   }
 </script>
 

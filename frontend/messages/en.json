@@ -282,7 +282,7 @@
     },
     "reportDialog": {
       "title": "Report {name}",
-      "description": "If you believe this asset violates our community guidelines or contains inappropriate content, please provide a reason for reporting it. Our moderation team will review the report and take appropriate action if necessary.",
+      "description": "If you believe this asset violates our rules, please provide a reason for reporting it. Our moderation team will review the report and take appropriate action if necessary.",
       "reasonPlaceholder": "Enter reason for reporting this asset"
     },
     "linkAssetDialog": {

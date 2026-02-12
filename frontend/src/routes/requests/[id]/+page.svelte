@@ -1,14 +1,12 @@
 <script lang="ts">
   import AssetCard from "$lib/components/assets/AssetCard.svelte";
-  import RequestCard from "$lib/components/requests/RequestCard.svelte";
   import RequestMessage from "$lib/components/requests/RequestMessage.svelte";
   import { RequestType, UserPermissions, type UserPublicAPIv3 } from "$lib/scripts/api/DBTypes.js";
-  import { trpc } from "$lib/scripts/utils/api.js";
+  import { parseErrorMessage, trpc } from "$lib/scripts/utils/api.js";
   import type { RequestMessage as ReqMessage } from "$lib/scripts/api/DBTypes.js";
   import Textarea from "$shadcn/components/ui/textarea/textarea.svelte";
   import Button from "$shadcn/components/ui/button/button.svelte";
   import { m } from "$lib/paraglide/messages.js";
-  import { getLocale } from "$lib/paraglide/runtime.js";
   import { onMount } from "svelte";
   import Spinner from "$shadcn/components/ui/spinner/spinner.svelte";
   import { toast } from "svelte-sonner";
@@ -39,8 +37,10 @@
     }
     let initMessage = false;
     if (data.user?.roles.includes(UserPermissions.Manage_All_Reports) || (data.pageData.requestResponseBy === data.user?.id)) {
-      initMessage = true
-      initialString += `\n\n${m["requests.wouldYouLikeToAcceptOrReject"]()}`;
+      if (data.pageData.accepted === null) {
+        initMessage = true
+        initialString += `\n\n${m["requests.wouldYouLikeToAcceptOrReject"]()}`;
+      }
     }
 
     messages = [
@@ -127,9 +127,13 @@
   }
 
   async function handleRequest(accepted: boolean) {
-    trpc.RequestRouter.handleRequest.mutate({
+    await trpc.RequestRouter.handleRequest.mutate({
       action: accepted ? `accept` : `decline`,
       id: data.pageData.id
+    }).then(r => {
+      return r.message
+    }).catch(e => {
+      return toast.error(parseErrorMessage(e));
     })
   }
 </script>

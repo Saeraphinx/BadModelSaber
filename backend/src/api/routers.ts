@@ -36,9 +36,9 @@ export const loadExpressMiddleware = createExpressMiddleware({
     router: appRouter,
     createContext,
     onError: ({ error, type, path }) => {
-        if (EnvConfig.isDevMode) {
+        //if (EnvConfig.isDevMode) {
             Logger.error(`tRPC Error on ${type} ${path}: ${error.cause ? parseErrorMessage(error.cause) : error.message}`);
-        }
+        //}
     }
 });
 export const loadOpenApiMiddleware = createOpenApiExpressMiddleware({

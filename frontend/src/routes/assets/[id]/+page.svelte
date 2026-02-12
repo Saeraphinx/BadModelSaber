@@ -64,6 +64,7 @@
     if (data.user.id === data.pageData.uploaderId) return false; // Can't report your own asset
     return true; // Allow reporting if the user is logged in and not the uploader
   });
+  // #endregion
   // #region Editing
   let allowedToEdit = $derived.by(() => {
     if (!data.user) return false;
@@ -133,8 +134,9 @@
   let authorAssets = $state<AssetPublicAPIv3[]>([]);
 
   onMount(async () => {
+    let pa = Promise.resolve()
     if (data.pageData.linkedIds.length > 0) {
-      trpc.assetsRouterV3.getMultipleAssetsById
+      pa = trpc.assetsRouterV3.getMultipleAssetsById
         .query({ id: data.pageData.linkedIds.map((li) => li.id).splice(0, 20) })
         .then((res) => {
           relatedAssets = res ? Object.values(res) : [];
@@ -147,7 +149,7 @@
     } else {
       isRelatedLoading = false;
     }
-    trpc.userRouterV3.getAssetsByUserId
+    let pb=trpc.userRouterV3.getAssetsByUserId
       .query({ id: data.pageData.uploaderId, limit: 20 })
       .then((res) => {
         authorAssets = res.assets.filter((i) => i.id !== data.pageData.id) || [];
@@ -157,6 +159,7 @@
         toast.error(`Failed to load author's other assets: ${err.message}`);
         isAuthorLoading = false;
       });
+    await Promise.all([pa, pb]);
   });
 
   $effect(() => {
@@ -339,9 +342,9 @@
           {/if}
         </Carousel.Content>
         {#if apiType === "related" && relatedApi}
-          <CarouselNavigator api={relatedApi} showOnlyOne={true} />
+          <CarouselNavigator api={relatedApi} numberOfDots={assets.length} showOnlyOne={true} />
         {:else if apiType === "author" && authorApi}
-          <CarouselNavigator api={authorApi} showOnlyOne={true} />
+          <CarouselNavigator api={authorApi} numberOfDots={assets.length} showOnlyOne={true} />
         {/if}
       </Carousel.Root>
     {/if}

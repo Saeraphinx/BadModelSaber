@@ -6,6 +6,7 @@ import { User } from "./User.ts";
 import { Asset } from "./Asset.ts";
 import { Alert } from "./Alert.ts";
 import { Logger } from "../../Logger.ts";
+import { parseErrorMessage } from "../../../shared/Tools.ts";
 
 export type AssetRequestInfer = InferAttributes<AssetRequest>;
 @Table({
@@ -14,13 +15,13 @@ export type AssetRequestInfer = InferAttributes<AssetRequest>;
     timestamps: true,
     paranoid: true,
     hooks: {
-        afterValidate: async (ar: AssetRequest) => {
-            if (ar.isNewRecord) {
-                await AssetRequest.validatorCreation.parseAsync(ar);
+        afterValidate: async (request: AssetRequest) => {
+            if (request.isNewRecord) {
+                await AssetRequest.validatorCreation.parseAsync(request);
             } else {
-                await AssetRequest.validator.parseAsync(ar);
+                await AssetRequest.validator.parseAsync(request);
             }
-            let isNotValid = AssetRequest.validateExtended(ar);
+            let isNotValid = AssetRequest.validateExtended(request);
             if (isNotValid) {
                 throw new Error(isNotValid);
             }
@@ -154,7 +155,7 @@ export class AssetRequest extends Model<InferAttributes<AssetRequest>, InferCrea
         updatedAt: z.date(),
         deletedAt: z.date().nullable().optional(),
     })
-  
+
 
     public static validatorCreation = z.object({
         ...AssetRequest.validator.shape,
@@ -251,20 +252,24 @@ export class AssetRequest extends Model<InferAttributes<AssetRequest>, InferCrea
                 if (!otherAsset) {
                     throw new Error(`Linked asset not found.`);
                 }
-                refrencedAsset.addLink(otherAsset, obj.linkType);
+                await refrencedAsset.addLink(otherAsset, obj.linkType);
                 break;
             case RequestType.Report:
-                refrencedAsset.setStatus(Status.Removed, `Report ID ${this.id}`, userId, false);
+                await refrencedAsset.setStatus(Status.Removed, `Report ID ${this.id}`, userId, false)
                 if (!silent) {
                     refrencedAsset.alertUploader({
                         type: AlertType.AssetRemoval,
-                        header: `Your asset ${refrencedAsset.id} (${refrencedAsset.name}) has been removed.`,
+                        header: `Your asset ${refrencedAsset.name} (${refrencedAsset.id}) has been removed.`,
                         message: `Your asset has been removed. Please do not re-upload the asset. If you have any question, please contact the approval team.`
+                    }).catch((e) => {
+                        Logger.warn(`Unable to alert uploader: ${parseErrorMessage(e)}`)
                     });
                     this.alertReporter({
                         type: AlertType.RequestAccepted,
                         header: `Your report has been accepted`,
                         message: `Your report has been accepted and the asset has been removed. If you have any question, please contact the approval team.`
+                    }).catch((e) => {
+                        Logger.warn(`Unable to alert requester: ${parseErrorMessage(e)}`)
                     });
                 }
                 break;
@@ -273,7 +278,7 @@ export class AssetRequest extends Model<InferAttributes<AssetRequest>, InferCrea
         this.accepted = true;
         this.resolvedBy = userId;
         Logger.log(`Request ${this.id} accepted by user ${userId}`);
-        return this.save();
+        return await this.save();
     }
 
     public async decline(userId: string, silent = false): Promise<this> {
@@ -284,10 +289,12 @@ export class AssetRequest extends Model<InferAttributes<AssetRequest>, InferCrea
                 type: AlertType.RequestDeclined,
                 header: `Your request has been declined`,
                 message: `Your request has been declined. If you have any question, please contact the approval team.`
+            }).catch((e) => {
+                Logger.warn(`Unable to alert requester: ${parseErrorMessage(e)}`)
             });
         }
         Logger.log(`Request ${this.id} declined by user ${userId}`);
-        return this.save();
+        return await this.save();
     }
 
     public async getAPIResponse(): Promise<AssetRequestPublicAPIv3> {
@@ -298,8 +305,8 @@ export class AssetRequest extends Model<InferAttributes<AssetRequest>, InferCrea
         let requesterApi = null;
 
         if (refrencedAsset && requester) {
-           refAssetApi = await refrencedAsset.getApiV3Response(false);
-           requesterApi = await requester.getApiResponse();
+            refAssetApi = await refrencedAsset.getApiV3Response(false);
+            requesterApi = await requester.getApiResponse();
         }
 
         return {

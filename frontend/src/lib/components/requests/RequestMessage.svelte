@@ -37,8 +37,8 @@
     <p class="whitespace-pre-line">{message.message}</p>
     {#if message.initMessage}
       <div class="flex flex-row justify-center gap-4 mt-2">
-        <Button onclick={reject()} variant="secondary" class="w-1/4">{m["dialogs.reject"]()}</Button>
-        <Button onclick={accept()} class="w-1/4">{m["dialogs.accept"]()}</Button>
+        <Button onclick={() => {reject()}} variant="secondary" class="w-1/4">{m["dialogs.reject"]()}</Button>
+        <Button onclick={() => {accept()}} class="w-1/4">{m["dialogs.accept"]()}</Button>
       </div>
     {/if}
   </div>

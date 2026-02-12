@@ -5,7 +5,25 @@
   import { getContext, onMount, setContext } from "svelte";
   import { Button, buttonVariants } from "$shadcn/components/ui/button";
   import * as Avatar from "$shadcn/components/ui/avatar";
-  import { BellDotIcon, BellIcon, FileBadgeIcon, GitBranchIcon, Link2Icon, LogInIcon, LogOutIcon, Menu, MessageCircleQuestionIcon, PlusIcon, Settings, SunIcon, TrafficConeIcon, UserIcon, SettingsIcon, SunMoonIcon, LanguagesIcon } from "@lucide/svelte";
+  import {
+    BellDotIcon,
+    BellIcon,
+    FileBadgeIcon,
+    GitBranchIcon,
+    Link2Icon,
+    LogInIcon,
+    LogOutIcon,
+    Menu,
+    MessageCircleQuestionIcon,
+    PlusIcon,
+    Settings,
+    SunIcon,
+    TrafficConeIcon,
+    UserIcon,
+    SettingsIcon,
+    SunMoonIcon,
+    LanguagesIcon,
+  } from "@lucide/svelte";
   import { MediaQuery } from "svelte/reactivity";
   import * as Popover from "$shadcn/components/ui/popover";
   import { page } from "$app/state";
@@ -24,6 +42,7 @@
   import { invalidateAll } from "$app/navigation";
   import { getLocale } from "$lib/paraglide/runtime";
   import { m } from "$lib/paraglide/messages";
+  import { Spinner } from "$shadcn/components/ui/spinner";
 
   let { data, children } = $props();
   let theme: `system` | `light` | `dark` = $state("system");
@@ -152,12 +171,15 @@
   let isPendingAlerts = $derived(unreadAlerts.length > 0);
   let openAlerts = $state(false);
   let showRead = $state(false);
+  let isLoadingAlerts = $state(false);
   async function updateAlerts() {
     // this is honestly a fucking mess but its what works for now
+    isLoadingAlerts = true;
     trpc.alertsRouter.getAlerts
-      .query({ read: showRead ? `true` : `false` })
+      .query({ read: `all` })
       .then((val) => {
         allAlerts = val;
+        isLoadingAlerts = false;
       })
       .catch((error) => {
         toast.error("Failed to fetch read alerts.", {
@@ -207,9 +229,7 @@
   // #endregion Toasts
 
   let currentLocale = getLocale();
-  const availableLocales = [
-    ["en", "English"],
-  ];
+  const availableLocales = [["en", "English"]];
 
   const links = [
     { href: "/", label: m["layout.navbar.home"](), target: undefined },
@@ -232,13 +252,14 @@
   </NavigationMenu.Root>
 {/snippet}
 
-<!-- Page title & favicon -->
+<!-- #region Page title & favicon -->
 <svelte:head>
   <title>{page.data.pageMetadata?.title || `ModelSaber`}</title>
   <link rel="icon" href="/favicon.png" />
 </svelte:head>
 
 <div>
+  <!-- #region top bar -->
   <div class="flex w-auto flex-row text-base justify-between">
     <!-- Logo -->
     <a href="/">
@@ -354,9 +375,11 @@
               {m["layout.userMenu.language"]()}
             </DropdownMenu.SubTrigger>
             <DropdownMenu.SubContent class="">
-              <DropdownMenu.RadioGroup value={currentLocale} onValueChange={(val) => {
-                setContext("locale", val);
-              }}>
+              <DropdownMenu.RadioGroup
+                value={currentLocale}
+                onValueChange={(val) => {
+                  setContext("locale", val);
+                }}>
                 <DropdownMenu.Label>{m["layout.userMenu.language"]()}</DropdownMenu.Label>
                 {#each availableLocales as [code, name]}
                   <DropdownMenu.RadioItem closeOnSelect={true} value={code}>{name}</DropdownMenu.RadioItem>
@@ -416,11 +439,13 @@
     <Sheet.Header>
       <Sheet.Title class="text-lg font-semibold">{m["layout.userMenu.alerts"]()}</Sheet.Title>
       <div class="flex flex-row justify-between items-center">
-        <Sheet.Description class="text-sm text-gray-500">
-          {#if showRead}
-            {m["layout.alertSidebar.readAlerts"]({ count: allAlerts.length })}
-          {:else}
-            {m["layout.alertSidebar.unreadAlerts"]({ count: unreadAlerts.length })}
+        <Sheet.Description class="text-sm flex flex-row text-gray-500">
+          {#if !isLoadingAlerts}
+            {#if showRead}
+              {m["layout.alertSidebar.readAlerts"]({ count: allAlerts.length })}
+            {:else}
+              {m["layout.alertSidebar.unreadAlerts"]({ count: unreadAlerts.length })}
+            {/if}
           {/if}
         </Sheet.Description>
         <div class="flex items-center space-x-2">
@@ -430,20 +455,47 @@
       </div>
     </Sheet.Header>
     <ScrollArea class="mx-4 min-h-0">
-      {#if showRead}
+      {#if isLoadingAlerts}
+        <div class="flex flex-row items-center justify-center gap-2">
+          <Spinner class="text-gray-500"/>
+          <p class="text-gray-500">Loading...</p>
+        </div>
+      {:else if showRead}
         {#if allAlerts.length > 0}
           {#each allAlerts as alert}
-            <Alert {alert} class="mb-2" />
+            <Alert
+              {alert}
+              deleteFromArray={() => {
+                allAlerts = allAlerts.filter((a) => a.id !== alert.id);
+              }}
+              class="mb-2" />
           {/each}
         {:else}
           <p class="text-gray-500">{m["layout.alertSidebar.noAlertsAvailable"]()}</p>
         {/if}
       {:else if unreadAlerts.length > 0}
         {#each unreadAlerts as alert}
-          <Alert {alert} class="mb-2" />
+          <Alert
+            {alert}
+            deleteFromArray={() => {
+              // mark alert as read on client
+              unreadAlerts = unreadAlerts.map((a) => {
+                if (a.id === alert.id) {
+                  return {
+                    ...a,
+                    read: true,
+                  };
+                } else {
+                  return a;
+                }
+              });
+            }}
+            class="mb-2" />
         {/each}
       {:else}
-        <p class="text-gray-500">{m["layout.alertSidebar.noUnreadAlerts"]()}</p>
+        <div class="flex justify-center items-center gap-2">
+          <p class="text-gray-500">{m["layout.alertSidebar.noUnreadAlerts"]()}</p>
+        </div>
       {/if}
     </ScrollArea>
     <Sheet.Footer>

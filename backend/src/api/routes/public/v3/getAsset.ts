@@ -100,7 +100,7 @@ export const assetsRouterV3 = router({
             for (let asset of assets) {
                 response[asset.id.toString()] = await asset.getApiV3Response();
             }
-            console.log(response);
+            //console.log(response);
             return response;
         }),
     getFrontPageAssets: authProcedure(`anyCheckAuth`)

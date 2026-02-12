@@ -4,6 +4,7 @@
   import { Button } from "$shadcn/components/ui/button";
   import * as Dialog from "$shadcn/components/ui/dialog";
   import Input from "$shadcn/components/ui/input/input.svelte";
+  import { Textarea } from "$shadcn/components/ui/textarea";
   import { toast } from "svelte-sonner";
 
   let reason = $state<string>("");
@@ -48,7 +49,7 @@
       <Dialog.Description>{m["dialogs.reportDialog.description"]()}</Dialog.Description>
     </Dialog.Header>
     <div class="flex flex-row">
-      <Input type="text" bind:value={reason} placeholder={m["dialogs.reportDialog.reasonPlaceholder"]()} />
+      <Textarea bind:value={reason} placeholder={m["dialogs.reportDialog.reasonPlaceholder"]()} />
     </div>
     <Dialog.Footer>
       <Button variant="ghost" onclick={() => (visible = false)}>{m["dialogs.cancel"]()}</Button>

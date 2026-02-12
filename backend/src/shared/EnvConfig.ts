@@ -70,6 +70,7 @@ export class EnvConfig {
     }
 
     public static get isDevMode(): boolean {
+        //return true;
         return process.env.NODE_ENV === `development`;
     }
 

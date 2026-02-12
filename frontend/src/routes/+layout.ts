@@ -34,7 +34,7 @@ export const load: LayoutLoad = async ({ fetch }) => {
     return defaultObj;
   }
 
-  let alertRes = await trpc.alertsRouter.getAlerts.query({ read: `false`}).catch((error) => {
+  let alertRes = await trpc.alertsRouter.getAlerts.query({ read: `false` }).catch((error) => {
     console.error(`Failed to fetch alerts:`, error)
     alertsToasted = true;
     pendingToasts.push({

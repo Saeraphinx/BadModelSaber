@@ -60,7 +60,7 @@
 </script>
 
 <Dialog.Root bind:open={visible} >
-  <Dialog.Content class="sm:max-w-[425px]">
+  <Dialog.Content class="sm:max-w-[550px]">
     <Dialog.Header>
       <Dialog.Title>{ m["dialogs.approvalDialog.title"]({ name }) }</Dialog.Title>
       <Dialog.Description>{ m["dialogs.approvalDialog.description"]({ name })}</Dialog.Description>

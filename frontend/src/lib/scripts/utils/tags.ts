@@ -12,7 +12,7 @@ export function getTagData(tag: Tags, assetType: AssetFileFormat, shouldShowInte
   let disabled = false;
   let animated = false;
   // #region colors
-  switch (tag) {
+  switch (tag.replaceAll(` `, ``)) {
     case Tags.CustomColors:
       intClass = `bg-linear-to-r from-[#ff3030] via-[#F0F] to-[#3702fF]`;
       animated = true;
