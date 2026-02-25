@@ -1,17 +1,17 @@
-import { Alert, User, UserPermissions } from "../../../shared/Database.ts";
+import { Alert, dbId, User, UserPermissions } from "../../../shared/Database.ts";
 import { Validator } from "../../../shared/Validator.ts";
 import z from "zod/v4";
 import { dedupeArray } from "../../../shared/Tools.ts";
-import { authProcedure, router } from "../../trpc.ts";
+import { authProcedure, loggedInProcedure, router } from "../../trpc.ts";
 import { Logger } from "../../../shared/Logger.ts";
 import { importFromOldModelSaber } from "../../../shared/Importer.ts";
 import { TRPCError } from "@trpc/server";
 import { EnvConfig } from "../../../shared/EnvConfig.ts";
 
 export const AdminRouter = router({
-    setRoles: authProcedure([UserPermissions.Manage_All_Users])
+    setRoles: loggedInProcedure([UserPermissions.Manage_All_Users])
         .input(z.object({
-            userId: Validator.zUserID,
+            userId: dbId,
             roles: Validator.z.array(Validator.z.enum(UserPermissions)),
         }))
         .mutation(async ({ input, ctx }) => {

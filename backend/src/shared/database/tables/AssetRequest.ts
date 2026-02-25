@@ -1,7 +1,7 @@
 import { AllowNull, BelongsTo, Column, CreatedAt, DataType, DeletedAt, ForeignKey, Model, Table, UpdatedAt } from "sequelize-typescript";
 import { InferAttributes, InferCreationAttributes, CreationOptional, NonAttribute } from "sequelize";
 import { z } from "zod/v4";
-import { AlertType, AssetRequestPublicAPIv3, LinkedAsset, LinkedAssetLinkType, RequestMessage, RequestType, Status, UserPermissions } from "../DBExtras.ts";
+import { AlertType, AssetRequestApiV3, dbId, LinkedAsset, LinkedAssetLinkType, RequestMessage, RequestType, Status, UserPermissions } from "../DBExtras.ts";
 import { User } from "./User.ts";
 import { Asset } from "./Asset.ts";
 import { Alert } from "./Alert.ts";
@@ -52,7 +52,7 @@ export class AssetRequest extends Model<InferAttributes<AssetRequest>, InferCrea
         allowNull: false,
     })
     @ForeignKey(() => User)
-    declare requesterId: string; // User ID of the person who made the request
+    declare requesterId: number; // User ID of the person who made the request
     @BelongsTo(() => User, {
         foreignKey: `requesterId`,
     })
@@ -62,13 +62,13 @@ export class AssetRequest extends Model<InferAttributes<AssetRequest>, InferCrea
         allowNull: true,
         defaultValue: null,
     })
-    declare requestResponseBy: string | null; // User ID of the person who has been asked to respond to the request. null if this isn't for a specific user
+    declare requestResponseBy: number | null; // User ID of the person who has been asked to respond to the request. null if this isn't for a specific user
     @Column({
         type: DataType.JSONB,
         allowNull: true,
         defaultValue: null,
     })
-    declare objectToAdd: string | LinkedAsset | null;
+    declare objectToAdd: number | LinkedAsset | null; // number if an id to add to the collaberators, LinkedAsset if linking, null if report
 
     @Column({
         type: DataType.STRING,
@@ -87,7 +87,7 @@ export class AssetRequest extends Model<InferAttributes<AssetRequest>, InferCrea
         allowNull: true,
         defaultValue: null,
     })
-    declare resolvedBy: CreationOptional<string | null>; // User ID of the person who resolved the request, null if not resolved
+    declare resolvedBy: CreationOptional<number | null>; // User ID of the person who resolved the request, null if not resolved
     @Column({
         type: DataType.JSONB,
         allowNull: false,
@@ -124,21 +124,21 @@ export class AssetRequest extends Model<InferAttributes<AssetRequest>, InferCrea
     // #region Validators
     public static validator = z.object({
         id: z.number().int().positive(),
-        refrencedAssetId: z.number().int().min(1).refine(async (id) => await Asset.checkIfExists(id)),
-        requesterId: z.string().min(1).max(32).refine(async (id) => await User.checkIfExists(id)),
-        requestResponseBy: z.string().min(1).max(100).nullable(),
-        objectToAdd: z.union([z.string().min(1).max(100), z.object({
-            id: z.number().int().positive(),
+        refrencedAssetId: dbId.refine(async (id) => await Asset.checkIfExists(id)),
+        requesterId: dbId.refine(async (id) => await User.checkIfExists(id)),
+        requestResponseBy: dbId.nullable(),
+        objectToAdd: z.union([dbId, z.object({
+            id: dbId,
             linkType: z.enum(LinkedAssetLinkType),
         })]).nullable(),
         requestType: z.enum(RequestType),
         accepted: z.boolean().nullable(),
-        resolvedBy: z.string().min(1).max(32).nullable().refine(async (id) => {
+        resolvedBy: dbId.nullable().refine(async (id) => {
             if (id === null) return true; // If resolvedBy is null, no need
             return await User.checkIfExists(id);
         }),
         messages: z.array(z.object({
-            userId: z.string().min(1).max(32).refine(async (id) => await User.checkIfExists(id)),
+            userId: dbId.refine(async (id) => await User.checkIfExists(id)),
             message: z.string().max(1024),
             timestamp: z.preprocess((input) => {
                 if (typeof input === 'string') {
@@ -153,8 +153,8 @@ export class AssetRequest extends Model<InferAttributes<AssetRequest>, InferCrea
         })).default([]),
         createdAt: z.date(),
         updatedAt: z.date(),
-        deletedAt: z.date().nullable().optional(),
-    })
+        deletedAt: z.date().nullable(),
+    }) satisfies z.ZodType<AssetRequestInfer>
 
 
     public static validatorCreation = z.object({
@@ -297,7 +297,7 @@ export class AssetRequest extends Model<InferAttributes<AssetRequest>, InferCrea
         return await this.save();
     }
 
-    public async getAPIResponse(): Promise<AssetRequestPublicAPIv3> {
+    public async getAPIResponse(): Promise<AssetRequestApiV3> {
         let refrencedAsset = await this.refrencedAsset;
         let requester = await this.requester;
 

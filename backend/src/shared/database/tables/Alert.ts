@@ -3,7 +3,7 @@ import { InferAttributes, InferCreationAttributes, CreationOptional } from "sequ
 import { z } from "zod/v4";
 import { User } from "./User.ts";
 import { Asset } from "./Asset.ts";
-import { AlertPublicAPIv3, AlertType } from "../DBExtras.ts";
+import { AlertPublicApiv3, AlertType, dbId } from "../DBExtras.ts";
 
 export type AlertInfer = InferAttributes<Alert>;
 @Table({
@@ -40,10 +40,10 @@ export class Alert extends Model<InferAttributes<Alert>, InferCreationAttributes
     })
     declare type: AlertType; // Type of alert, e.g. "new_asset", "asset_approved", etc.
     @Column({
-        type: DataType.STRING,
+        type: DataType.NUMBER,
         allowNull: false,
     })
-    declare userId: string; // User ID of the person who should receive the alert
+    declare userId: number; // User ID of the person who should receive the alert
 
     @Column({
         type: DataType.INTEGER,
@@ -93,9 +93,9 @@ export class Alert extends Model<InferAttributes<Alert>, InferCreationAttributes
         // unique by db
         id: z.number().int().positive(),
         type: z.enum(AlertType),
-        userId: z.string().refine(async (id) => await User.checkIfExists(id)),
-        assetId: z.number().int().refine(async (id) => await Asset.checkIfExists(id)).nullable(),
-        requestId: z.number().int().nullable(),
+        userId: dbId.refine(async (id) => await User.checkIfExists(id)),
+        assetId: dbId.refine(async (id) => await Asset.checkIfExists(id)).nullable(),
+        requestId: dbId,
         header: z.string().min(1).max(255),
         message: z.string().min(1).max(4096),
         read: z.boolean(),
@@ -103,7 +103,7 @@ export class Alert extends Model<InferAttributes<Alert>, InferCreationAttributes
         createdAt: z.date(),
         updatedAt: z.date(),
         deletedAt: z.date().nullable(),
-    })
+    }) satisfies z.ZodType<AlertInfer> 
 
     public static validatorCreation = z.object({
         ...Alert.validator.shape,
@@ -125,7 +125,7 @@ export class Alert extends Model<InferAttributes<Alert>, InferCreationAttributes
     }
     // #endregion Validators
 
-    public toAPIResponse(): AlertPublicAPIv3 {
+    public toAPIResponse(): AlertPublicApiv3 {
         return {
             id: this.id,
             type: this.type,

@@ -219,7 +219,7 @@ export const statusHistorySchema = z.object({
     }
     return input;
   }, z.date()),
-  userId: z.string()
+  userId: z.number()
 })
 export const linkedAssetLinkTypeSchema = z.enum(LinkedAssetLinkType)
 export const tagsSchema = z.enum(Tags)
@@ -233,7 +233,7 @@ export const requestTypeSchema = z.enum(RequestType)
 // #endregion Alert Enums
 export type RequestMessage = z.infer<typeof requestMessageSchema>;
 export const requestMessageSchema = z.object({
-  userId: z.string(),
+  userId: z.number(),
   message: z.string(),
   timestamp: z.preprocess((input) => {
     if (typeof input === 'string') {

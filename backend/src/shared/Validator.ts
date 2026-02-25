@@ -6,61 +6,6 @@ import jszip from "jszip";
 import { parseErrorMessage } from "./Tools.ts";
 
 export class Validator {
-    public static z = z;
-    public static zBool = z.preprocess((input) => {
-        if (typeof input === `string`) {
-            if (input.toLowerCase() === `true`) return true;
-        }
-        if (typeof input === `number`) {
-            if (input >= 1) return true;
-        }
-        if (typeof input === `boolean`) return input;
-        return false; // Default to false if not a boolean or string
-    }, z.boolean());
-    public static zNumberId = z.number().int().positive();
-    /**
-     * @deprecated Use z.number().int().positive() or zNumberId instead
-     */
-    public static zNumberIDTransform = z.transform((input, ctx) => {
-        try {
-            let num = Number(input);
-            if (Number.isNaN(num) || !Number.isInteger(num) || num <= 0) {
-                ctx.issues.push({
-                    input,
-                    code: `custom`,
-                    message: `Invalid ID: must be a positive integer.`,
-                });
-                return z.NEVER;
-            }
-            return num;
-        } catch (error) {
-            ctx.issues.push({
-                input,
-                code: `custom`,
-                message: `Invalid ID: must be a number.`,
-            });
-            return z.NEVER;
-        }
-    });
-    public static zUserID = z.string().min(1).max(64).regex(/^\d+$|^me$/, {
-        error: `ID must be a non-empty string of digits or the word "me".`,
-    });
-    public static zAssetFileFormat = z.enum(AssetFileFormat);
-    public static zAssetStatus = z.enum(Status);
-    public static zNumberIDObj = z.object({
-        id: Validator.zNumberIDTransform,
-    });
-
-    public static zCreateAssetv3 = Asset.validator.pick({
-        type: true,
-        name: true,
-        description: true,
-        license: true,
-        licenseUrl: true,
-        sourceUrl: true,
-        tags: true,
-    });
-
     public static zFilterAssetv3 = z.object({
         type: Validator.zAssetFileFormat.optional(),
         status: Validator.zAssetStatus.optional(),
@@ -76,13 +21,6 @@ export class Validator {
         }
         return true; // Valid if both are provided or neither is provided
     }, `Both page and limit must be provided together.`);
-
-    public static zApprovalObjv3 = z.object({
-        status: Validator.zAssetStatus,
-        reason: z.string().max(320).optional().default(`No reason provided.`),
-    });
-
-    public static zAssetIdArray = z.array(Validator.zNumberIDTransform);
 
 
     public static validateThumbnail(file: File) {

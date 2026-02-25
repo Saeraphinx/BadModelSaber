@@ -3,7 +3,7 @@ import { Validator } from "../../../../shared/Validator.ts";
 import { Asset, AssetInfer, User } from "../../../../shared/Database.ts";
 import { Op, WhereOptions } from "sequelize";
 import { parseErrorMessage } from "../../../../shared/Tools.ts";
-import { AssetPublicAPIv3, userPublicAPIv3Schema } from "../../../../shared/database/DBExtras.ts";
+import { AssetPublicAPIv3, userApiV3Schema } from "../../../../shared/database/DBExtras.ts";
 import { authProcedure, router } from "../../../trpc.ts";
 
 export const userRouterV3 = router({
@@ -16,7 +16,7 @@ export const userRouterV3 = router({
             }
         })
         .input(Validator.z.void())
-        .output(userPublicAPIv3Schema)
+        .output(userApiV3Schema)
         .query(({ctx}) => {
         return ctx.user.getApiResponse();
     }),

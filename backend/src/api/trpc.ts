@@ -4,13 +4,13 @@ import { User, UserPermissions } from '../shared/Database.ts';
 import { OpenApiMeta } from 'trpc-to-openapi';
 import SuperJSON from 'superjson';
 import { parseErrorMessage } from '../shared/Tools.ts';
-import { ZodError } from 'zod/v4';
+import z, { ZodError } from 'zod/v4';
 
 
 // eslint-disable-next-line quotes
 declare module 'express-session' {
     export interface Session {
-        userId?: string;
+        userId?: number;
     }
 }
 
@@ -91,68 +91,75 @@ function dummyAnyLoggedIn() {
     });
 }
 
-
-type ProcedureReturn = ReturnType<
-    typeof dummyNoAuth | typeof dummyLoggedIn | typeof dummyAnyLoggedIn
->;
-
 // Function overloads for better type inference
-export function authProcedure(permissions: 'any'): ReturnType<typeof dummyNoAuth>;
-export function authProcedure(permissions: 'anyCheckAuth'): ReturnType<typeof dummyAnyLoggedIn>;
-export function authProcedure(permissions: 'loggedIn'): ReturnType<typeof dummyLoggedIn>;
-export function authProcedure(permissions: UserPermissions[]): ReturnType<typeof dummyLoggedIn>;
-export function authProcedure(permissions: any): ProcedureReturn {
+export function anyProcedure(): ReturnType<typeof dummyAnyLoggedIn> {
     return t.procedure.use(async ({ ctx, next }) => {
-        if (permissions === `any`) {
+        if (!ctx.userId) {
             return next({
                 ctx: {
                     ...ctx,
-                    user: undefined,
+                    user: null,
                 }
             });
-        }
-
-        if (!ctx.userId && permissions !== `anyCheckAuth`) {
-            throw new TRPCError({ code: 'UNAUTHORIZED', message: 'You must be logged in to access this resource' });
         }
 
         const user = await User.findByPk(ctx.userId);
-        if (permissions === `anyCheckAuth`) {
-            return next({
-                ctx: {
-                    ...ctx,
-                    user,
-                }
-            });
-        }
-
         if (!user) {
-            throw new TRPCError({ code: 'UNAUTHORIZED', message: 'You must be logged in to access this resource' });
-        }
-
-        if (permissions === `loggedIn`) {
             return next({
                 ctx: {
                     ...ctx,
-                    user,
+                    user: null,
+                }
+            });
+        } else {
+            return next({
+                ctx: {
+                    ...ctx,
+                    user: user,
                 }
             });
         }
-
-        if (Array.isArray(permissions) && permissions.length > 0) {
-            const hasPermission = permissions.some((permission) => user.roles.includes(permission));
-            if (!hasPermission) {
-                throw new TRPCError({ code: 'FORBIDDEN', message: 'You do not have permission to access this resource' });
-            } else {
-                return next({
-                    ctx: {
-                        ...ctx,
-                        user,
-                    }
-                });
-            }
+    });
+}
+export function loggedInProcedure(roles?: UserPermissions[] | { hasAllOf?: UserPermissions[], hasOneOf?: UserPermissions[], denied?: UserPermissions[] }): ReturnType<typeof dummyLoggedIn> {
+    return t.procedure.use(async ({ ctx, next }) => {
+        if (!ctx.userId) {
+            throw new TRPCError({ code: 'UNAUTHORIZED', message: 'You are not logged in.' });
         }
 
-        throw new TRPCError({ code: 'FORBIDDEN', message: 'You do not have permission to access this resource' });
+        // Fetch user from database
+        const user = await User.findByPk(ctx.userId);
+        if (!user) {
+            throw new TRPCError({ code: 'UNAUTHORIZED', message: 'User not found.' });
+        }
+
+        if (roles) {
+            try {
+                // stupid typescript overloading
+                const hasPermission = Array.isArray(roles) 
+                    ? user.checkRoles(roles) 
+                    : user.checkRoles(roles);
+                
+                if (hasPermission) {
+                    return next({
+                        ctx: {
+                            ...ctx,
+                            user: user,
+                        }
+                    });
+                } else {
+                    throw new TRPCError({ code: 'FORBIDDEN', message: 'You do not have the required permissions.' });
+                };
+            } catch (error) {
+                throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: parseErrorMessage(error) });
+            }
+        } else {
+            return next({
+                ctx: {
+                    ...ctx,
+                    user: user,
+                }
+            });
+        }
     });
 }

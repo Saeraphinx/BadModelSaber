@@ -1,43 +1,61 @@
-import { ColorResolvable, Colors, MessageFlags, WebhookClient } from "discord.js";
-import { Asset, Status, User } from "./Database.ts";
+import { APIMessage, ColorResolvable, Colors, EmbedBuilder, MessagePayload, WebhookClient, WebhookMessageCreateOptions } from "discord.js";
+import { Asset, Game, GameWebhookConfig, Project, Status, Status, User, Version, WebhookLogType } from "./Database.ts";
 import { EnvConfig } from "./EnvConfig.ts";
-import { Logger } from "./Logger.ts";
 
-export enum WebhookType {
-    VerifiedLog = "verified-log",
-    StatusLog = "status-log",
+const userUrl = `${EnvConfig.server.frontendUrl}/user/`;
+type GameWebhookConfigWithClient = GameWebhookConfig & { client: WebhookClient };
+export class Webhooks {
+    private static webhookClients: Map<string, GameWebhookConfigWithClient[]> = new Map();
+
+
+    // #region Webhook Management
+    public static async registerWebhooks() {
+        let games = await Game.findAll();
+
+        for (let game of games) {
+            this.registerWebhook(game);
+        }
+    }
+
+    public static async registerWebhook(game: Game) {
+        let webhookConfigs: GameWebhookConfigWithClient[] = [];
+        for (let webhookConfig of game.webhookConfig) {
+            let client = new WebhookClient({ url: webhookConfig.url });
+            webhookConfigs.push({
+                id: webhookConfig.id,
+                url: webhookConfig.url,
+                types: webhookConfig.types,
+                isAssetWebhook: webhookConfig.isAssetWebhook,
+                client: client
+            });
+        }
+        this.webhookClients.set(game.name, webhookConfigs);
+    }
+
+    public static async sendWebhookLog(gameName: string, type: WebhookLogType, isAssetWebhook: boolean, payload: string | MessagePayload | WebhookMessageCreateOptions): Promise<APIMessage[] | undefined> {
+        let webhookConfigs = this.webhookClients.get(gameName);
+        if (!webhookConfigs) return;
+
+        let results: APIMessage[] = [];
+        for (let webhookConfig of webhookConfigs) {
+            if (webhookConfig.types.includes(type) && webhookConfig.isAssetWebhook === isAssetWebhook) {
+                try {
+                    let res = await webhookConfig.client.send(payload);
+                    results.push(res);
+                } catch (error) {
+                    console.error(`Failed to send webhook to ${webhookConfig.url}: ${error}`);
+                }
+            }
+        }
+        return results;
+    } 
+    // #endregion
+
 }
 
-export class Webhooks {
-    private internalWebhook: WebhookClient | null = null;
-    private publicWebhook: WebhookClient | null = null;
-    private static _instance: Webhooks;
-
-    constructor() {
-        if (Webhooks._instance) {
-            return Webhooks._instance;
-        }
-        Webhooks._instance = this;
-        this.init();
-    }
-
-    private init() {
-        // Initialize webhook clients here if needed
-    }
-
-    public static async sendUpdateStatus(asset: Asset, userPreformingAction: User, oldStatus: Status, newStatus: Status) {
-        if (!this._instance) {
-            this._instance = new Webhooks();
-        }
-        return this._instance.sendUpdateStatus(asset, userPreformingAction, oldStatus, newStatus);
-    }
-
-    public async sendUpdateStatus(asset: Asset, userPreformingAction: User, oldStatus: Status, newStatus: Status) {
-        if (!this.internalWebhook) {
-            return;
-        }
-
-        let color: ColorResolvable = 0x000; // Default to black
+export class WebhookPayloadGenerator {
+    public static generateInternalStatusUpdateEmbedPayload(asset: Asset, userPreformingAction: User, oldStatus: Status, newStatus: Status): WebhookMessageCreateOptions {
+         let color: ColorResolvable = 0x000; // Default to black
         switch (newStatus) {
             case Status.Verified:
                 color = Colors.Green;
@@ -52,7 +70,7 @@ export class Webhooks {
                 color = Colors.Grey;
         }
 
-        this.internalWebhook.send({
+        let payload = {
             embeds: [{
                 author: {
                     name: `${userPreformingAction.displayName} (${userPreformingAction.id})`,
@@ -68,20 +86,23 @@ export class Webhooks {
                     text: `Asset ID: ${asset.id}`
                 },
             }],
-        })
+        };
 
-        if (newStatus === Status.Verified && this.publicWebhook) {
-            let uploader = await asset.uploader;
-            if (!uploader) {
-                Logger.warn(`Couldn't find uploader for ${asset.id}, cannot send public webhook.`);
-                return;
-            }
-            this.publicWebhook.send({
+        return payload;
+    }
+
+    public static async generatePublicNewAssetEmbedPayload(asset: Asset): Promise<WebhookMessageCreateOptions> {
+        let uploader = await asset.uploader;
+        if (!uploader) {
+            throw new Error(`Uploader not found for asset ID: ${asset.id}`);
+        }
+
+        return {
                 embeds: [{
                     author: {
                         name: `${uploader.displayName}`,
-                        icon_url: userPreformingAction.avatarUrl,
-                        url: `${EnvConfig.server.frontendUrl}/users/${userPreformingAction.id}`
+                        icon_url: uploader.avatarUrl,
+                        url: `${EnvConfig.server.frontendUrl}/users/${uploader.id}`
                     },
                     title: ` ${asset.name}`,
                     url: `${EnvConfig.server.frontendUrl}/assets/${asset.id}`,
@@ -90,6 +111,5 @@ export class Webhooks {
                     color: Colors.Green,
                 }],
             });
-        }
     }
 }

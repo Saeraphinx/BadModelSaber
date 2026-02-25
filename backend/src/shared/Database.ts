@@ -6,7 +6,7 @@ import { User } from "./database/tables/User.ts";
 import { Asset } from "./database/tables/Asset.ts";
 import { Alert } from "./database/tables/Alert.ts";
 import { AssetRequest } from "./database/tables/AssetRequest.ts";
-import { SponsorType, Status, UserPermissions } from "./database/DBExtras.ts";
+import { PlatformType, Status, UserPermissions } from "./database/DBExtras.ts";
 import fs from "node:fs";
 import { parseErrorMessage } from "./Tools.ts";
 
@@ -15,6 +15,10 @@ export * from "./database/tables/Asset.ts";
 export * from "./database/tables/Alert.ts";
 export * from "./database/tables/AssetRequest.ts";
 export * from "./database/DBExtras.ts";
+export * from "./database/tables/Game.ts"
+export * from "./database/tables/GameVersion.ts"
+export * from "./database/tables/Project.ts"
+export * from "./database/tables/Version.ts"
 
 export type Migration = typeof DatabaseManager.prototype.umzug._types.migration;
 
@@ -104,12 +108,14 @@ export class DatabaseManager {
             where: { id: `5` },
             defaults: {
                 id: `5`,
+                githubId: null,
+                discordId: null,
                 username: `system`,
                 displayName: `System User`,
                 bio: `hi :3\n\nThis user account is used for system operations and is not meant to be used by anyone.`,
                 roles: [...Object.values(UserPermissions).filter(r => !r.startsWith(`cos_`)), UserPermissions.C_System], // no cosmetic roles except system
-                sponsorUrl: [{
-                    platform: SponsorType.Patreon,
+                userPlatforms: [{
+                    platform: PlatformType.Patreon,
                     url: `https://www.patreon.com/beatsabermoddinggroup`
                 }],
                 avatarUrl: `https://cdn.discordapp.com/embed/avatars/5.png`
@@ -151,6 +157,7 @@ export class DatabaseManager {
     public loadTables() {
         Logger.debug(`Loading tables...`);
 
+        this.sequelize.query(`CREATE SEQUENCE IF NOT EXISTS global_id_seq INCREMENT BY 1 START WITH 1;`);
         this.sequelize.addModels([
             User,
             Asset,

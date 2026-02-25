@@ -1,9 +1,9 @@
 import { AfterValidate, BelongsTo, Column, CreatedAt, DataType, DeletedAt, ForeignKey, Model, Table, UpdatedAt } from "sequelize-typescript";
 import { InferAttributes, InferCreationAttributes, NonAttribute, CreationOptional } from "sequelize";
 import { Alert, AssetRequest, User, UserPermissions } from "../../Database.ts";
-import { AlertType, AssetFileFormat, AssetPublicAPIv1, AssetPublicAPIv2, AssetPublicAPIv3, License, LinkedAsset, LinkedAssetLinkType, RequestType, Status, StatusHistory, Tags, UserPublicAPIv3 } from "../DBExtras.ts";
+import { AlertType, AssetApiV3, AssetFileFormat, AssetPublicAPIv1, AssetPublicAPIv2, dbId, License, LinkedAsset, LinkedAssetLinkType, RequestType, Status, StatusHistory, Tags, UserApiV3 } from "../DBExtras.ts";
 import { z } from "zod/v4";
-import { EnvConfig } from "../../../shared/EnvConfig.ts";
+import { EnvConfig } from "../../EnvConfig.ts";
 import { Logger } from "../../Logger.ts";
 import { Webhooks } from "../../Webhooks.ts";
 import path from "node:path";
@@ -47,22 +47,22 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
     declare type: AssetFileFormat;
 
     @Column({
-        type: DataType.STRING,
+        type: DataType.NUMBER,
         allowNull: false,
-        defaultValue: "",
+        defaultValue: 0,
     })
     @ForeignKey(() => User)
-    declare uploaderId: string; // User ID of the uploader, this is not the author, but the person who uploaded the asset to the platform
+    declare uploaderId: number; // User ID of the uploader, this is not the author, but the person who uploaded the asset to the platform
     @BelongsTo(() => User, {
         foreignKey: `uploaderId`,
     })
     private declare _uploader?: NonAttribute<Promise<User | null>>;
     @Column({
-        type: DataType.ARRAY(DataType.STRING),
+        type: DataType.ARRAY(DataType.NUMBER),
         allowNull: false,
         defaultValue: [],
     })
-    declare collaborators: CreationOptional<string[]>; // credits for the asset, e.g. "Model by John Doe, Textures by Jane Smith"
+    declare collaborators: CreationOptional<number[]>; // credits for the asset, e.g. "Model by John Doe, Textures by Jane Smith"
     @Column({
         type: DataType.STRING,
         allowNull: false,
@@ -164,20 +164,18 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
     private static readonly invalidFileNameWin = /^(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(\..*)?$/gi;
 
     // #region Validators
-    private static validatorTypeTest1: z.infer<typeof Asset.validator> = ({} as Asset); // validator has property asset doesn't
-    private static validatorTypeTest2: AssetInfer = ({} as z.infer<typeof Asset.validator>); // asset has property validator doesn't
     public static validator = z.object({
         // unique by db
         id: z.number().int().positive(),
         // unique by db
         oldId: z.number().int().nullable(),
         linkedIds: z.array(z.object({
-            id: z.number().refine(async (id) => await Asset.checkIfExists(id)),
+            id: dbId.refine(async (id) => await Asset.checkIfExists(id)),
             linkType: z.enum(LinkedAssetLinkType),
         })),
         type: z.enum(AssetFileFormat),
-        uploaderId: z.string().refine(async (id) => await User.checkIfExists(id)),
-        collaborators: z.array(z.string()),
+        uploaderId: dbId.refine(async (id) => await User.checkIfExists(id)),
+        collaborators: z.array(dbId),
         name: z.string().min(1).max(64),
         description: z.string().max(4096),
         license: z.enum(Object.values(License)),
@@ -202,13 +200,13 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
                 }
                 return input;
             }, z.date()),
-            userId: z.string().refine(async (id) => await User.checkIfExists(id)), // User ID of the person who changed the status
+            userId: dbId.refine(async (id) => await User.checkIfExists(id)), // User ID of the person who changed the status
         })),
         tags: z.array(z.enum(Tags)).default([]),
         createdAt: z.date(),
         updatedAt: z.date(),
         deletedAt: z.date().nullable(),
-    });
+    }) satisfies z.ZodType<AssetInfer>;
 
 
     // This validator is used for creating new assets, it omits the id and timestamps and other fields that are marked as CreationOptional
@@ -259,7 +257,7 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
             return [Status.Verified, Status.Unverified, Status.Pending];
         }
 
-        if (user.roles.includes(UserPermissions.View_All_Assets)) {
+        if (user.permissions.includes(UserPermissions.View_All_Assets)) {
             return [Status.Verified, Status.Pending, Status.Private, Status.Removed, Status.Unverified];
         }
 
@@ -283,7 +281,7 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
         }
 
         // Users can edit their own assets
-        return user.id === this.uploaderId || user.roles.includes(UserPermissions.Edit_Any_Asset);
+        return user.id === this.uploaderId || user.permissions.includes(UserPermissions.Edit_Any_Asset);
     }
     // #endregion
     // #region Edits
@@ -307,7 +305,7 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
                 newTags.some(tag => Asset.protectedTags.includes(tag)) ||
                 removedTags.some(tag => Asset.protectedTags.includes(tag))
             ) {
-                if (!user.roles.includes(UserPermissions.Allow_Internal_Tags)) {
+                if (!user.permissions.includes(UserPermissions.Allow_Internal_Tags)) {
                     throw new Error(`You do not have permission to add or remove internal tags.`);
                 } else {
                     this.tags = data.tags;
@@ -392,7 +390,7 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
             throw new Error(`This asset is already linked to the requested asset.`);
         }
 
-        if (this.uploaderId !== assetToLink.uploaderId && !reqBy.roles.includes(UserPermissions.Edit_Any_Asset)) {
+        if (this.uploaderId !== assetToLink.uploaderId && !reqBy.permissions.includes(UserPermissions.Edit_Any_Asset)) {
             let existingRequests = await AssetRequest.findAll({
                 where: {
                     requestResponseBy: assetToLink.uploaderId,
@@ -635,9 +633,9 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
     }
     // #endregion Misc
     // #region API Responses
-    public async getApiV3Response(includeAuthor: boolean = true): Promise<AssetPublicAPIv3> {
+    public async toApiV3(includeAuthor: boolean = true): Promise<AssetApiV3> {
         let author;
-        let authorApi: UserPublicAPIv3 | null = null;
+        let authorApi: UserApiV3 | null = null;
 
         if (includeAuthor) {
             author = await this.uploader;
@@ -645,7 +643,7 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
                 authorApi = {
                 } as User; // Fallback to a default user if not found
             } else {
-                authorApi = author.getApiResponse();
+                authorApi = author.toApiV3();
             }
         }
 
@@ -676,7 +674,7 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
         }
     }
 
-    public async getApiV2Response(): Promise<AssetPublicAPIv2> {
+    public async toApiV2(): Promise<AssetPublicAPIv2> {
         let author = await this.uploader;
         let type: `avatar` | `saber` | `platform` | `bloq` = `avatar`;
         switch (this.type.split('_')[0]) {
@@ -703,7 +701,7 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
             hash: this.fileHash,
             id: this.id,
             discord: author ? author.username : 'Unknown',
-            discordid: author ? author.id : '-1',
+            discordid: author?.discordId ? author.discordId : '-1',
             install_link: `modelsaber://${type}/${this.id}/${this.assetFileName}`,
             download: `${EnvConfig.server.backendUrl}/${EnvConfig.server.fileRoute}/asset/${this.assetFileName}`,
             status: this.status,
@@ -714,8 +712,8 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
         }
     }
 
-    public async getApiV1Response(): Promise<AssetPublicAPIv1> {
-        let apiV2Response = await this.getApiV2Response();
+    public async toApiV1(): Promise<AssetPublicAPIv1> {
+        let apiV2Response = await this.toApiV2();
 
         return {
             tags: apiV2Response.tags,
@@ -731,8 +729,8 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
         }
     }
 
-    public async getApiResponse(): Promise<AssetPublicAPIv3> {
-        return this.getApiV3Response();
+    public async toApiResponse(): Promise<AssetApiV3> {
+        return this.toApiV3();
     }
     // #endregion
 }

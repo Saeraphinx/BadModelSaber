@@ -8,3 +8,4 @@ converts
 .env
 .*.env
 !.default.env
+.DS_Store

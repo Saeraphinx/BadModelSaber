@@ -1,4 +1,3 @@
-import { Router } from 'express';
 import { Logger } from '../../../shared/Logger.ts';
 import { Validator } from '../../../shared/Validator.ts';
 import { createRandomString, parseErrorMessage } from '../../../shared/Tools.ts';
