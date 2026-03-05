@@ -353,12 +353,12 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
         return this;
     }
     // #region ToAPI
-    public async toPublicApiV3(): Promise<VersionApiV3> {
+    public async toApiV3(): Promise<VersionApiV3> {
         let versions = await GameVersion.findAll({
             where: {
                 id: this.supportedGameVersionIds,
             }
-        }).then((gvs) => gvs.map((gv) => gv.toPublicApiV3()));
+        }).then((gvs) => gvs.map((gv) => gv.toApiV3()));
 
         return {
             id: this.id,
@@ -377,7 +377,7 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
         };
     }
 
-    public async toPublicApiV2(): Promise<ModVersionsApiv2> {
+    public async toApiV2(): Promise<ModVersionsApiv2> {
         let supportedGameVersions = await GameVersion.findAll({
             where: {
                 id: this.supportedGameVersionIds,
@@ -400,13 +400,13 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
             status: this.status,
             // fix this later
             dependencies: this.dependencies.map((dep) => dep.pId),
-            supportedGameVersions: supportedGameVersions.map((gv) => gv.toPublicApiV2()),
+            supportedGameVersions: supportedGameVersions.map((gv) => gv.toApiV2()),
             downloadCount: 0, // to be implemented later
             statusHistory: this.statusHistory.map((entry) => ({
                 status: entry.status,
                 reason: entry.reason,
-                userId: entry.changedById,
-                setAt: new Date(entry.changedAt),
+                userId: entry.userId,
+                setAt: new Date(entry.timestamp),
             })),
             lastUpdatedById: this.lastUpdatedById,
             lastApprovedById: this.lastApprovedById,
@@ -416,7 +416,7 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
         };
     }
 
-    public async toPublicApiV1(project: Project, gameVersion: GameVersion, doResolution: boolean = true): Promise<ModApiV1> {
+    public async toApiV1(project: Project, gameVersion: GameVersion, doResolution: boolean = true): Promise<ModApiV1> {
         let dependencyPromises = this.dependencies.map(async (dep) => {
             let depProject = await Project.findByPk(dep.pId);
             if (!depProject) {

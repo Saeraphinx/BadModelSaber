@@ -2,13 +2,14 @@ import { Router, RequestHandler, NextFunction } from "express";
 import { Logger, LogLevel } from "../../../shared/Logger.ts";
 import { Validator } from "../../../shared/Validator.ts";
 import { parseErrorMessage } from "../../../shared/Tools.ts";
-import { Asset, Status, UserPermissions } from "../../../shared/Database.ts";
+import { Asset, Game, Status, UserPermissions } from "../../../shared/Database.ts";
 import path from "node:path";
 import fs from "node:fs";
 import { EnvConfig } from "../../../shared/EnvConfig.ts";
-import { authProcedure, router } from "../../trpc.ts";
+import { loggedInProcedure, router } from "../../trpc.ts";
 import { zfd } from "zod-form-data";
 import { createHash } from "node:crypto";
+import { TRPCError } from "@trpc/server";
 
 /*
 Files follow this structure:
@@ -22,8 +23,8 @@ Where
     - Icon files, named as 1.png, 2.jpg, etc.
 */
 
-export const uploadAssetV3 = router({
-    assetUpload: authProcedure([UserPermissions.Create_Assets])
+export const uploadStuff = router({
+    assetUpload: loggedInProcedure()
     .input(zfd.formData({
         data: zfd.json(Asset.validator.pick({
             type: true,
@@ -34,6 +35,7 @@ export const uploadAssetV3 = router({
             sourceUrl: true,
             tags: true,
         })),
+        immidateSubmit: zfd.checkbox().optional(), // if true, will immidately submit the asset for review after upload instead of saving as private 
         asset: zfd.file(), // main asset file, will be validated later based on type
         icon_1: zfd.file().refine((file) => Validator.validateThumbnail(file), { message: "Invalid icon file format" }),
         icon_2: zfd.file().refine((file) => Validator.validateThumbnail(file), { message: "Invalid icon file format" }).optional(),
@@ -44,6 +46,13 @@ export const uploadAssetV3 = router({
         return Validator.validateAssetFile(data.asset, data.data.type);
     }, { message: "Invalid asset file format for the specified type" }))
     .mutation(async ({ ctx, input }) => {
+        let defaultGame = await Game.defaultGame;
+        if (!defaultGame) {
+            throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Default game not found. Please contact a site administrator.' });
+        }
+        if (!(await ctx.user.checkRoles([UserPermissions.Asset_Create], defaultGame.name))) {
+            throw new TRPCError({ code: 'FORBIDDEN', message: 'You do not have permission to upload assets.' });
+        }
         Logger.debug(`Asset upload started for user with asset type ${input.data.type}`);
         let fileHash = await getHashFromFile(input.asset);
         let imageNames: Map<string, File> = new Map();
@@ -68,6 +77,7 @@ export const uploadAssetV3 = router({
             fileSize: input.asset.size,
             iconNames: Array.from(imageNames.keys()),
             status: Status.Private,
+            gameName: defaultGame.name,
         }).then(async (asset) => {
             Logger.debug(`Asset database entry created for user ${ctx.user?.id} with asset ID ${asset.id}`);
             fs.mkdirSync(asset.folderPath, { recursive: true });
@@ -89,10 +99,16 @@ export const uploadAssetV3 = router({
                 });
             }
             Logger.debug(`Asset upload completed for user ${ctx.user?.id} with asset ID ${asset.id}`);
-            return await asset.getApiV3Response();
+            if (input.immidateSubmit) {
+                asset.setStatus(Status.Pending, "Asset immidately submitted for review by uploader", ctx.user).catch((err) => {
+                    Logger.error(`Error setting asset status to pending: ${parseErrorMessage(err)}`);
+                    throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Failed to submit asset for review. Please contact a site administrator.' });
+                });
+            }
+            return await asset.toApiV3();
         }).catch((err) => {
             Logger.debug(`Error creating asset: ${parseErrorMessage(err)}`);
-            throw new Error(parseErrorMessage(err));
+            throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: parseErrorMessage(err) });
         });
     })
 })

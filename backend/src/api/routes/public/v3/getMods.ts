@@ -7,7 +7,8 @@ import { Op } from "sequelize";
 import { platform } from "node:os";
 
 export const GetModsV3 = router({
-    getMods: gameProcedure({})
+    // #region getMods
+    getMods: gameProcedure()
         .meta({
             openapi: {
                 method: `GET`,
@@ -81,6 +82,8 @@ export const GetModsV3 = router({
 
             return output;
         }),
+    // #endregion
+    // #region getProject
     getProject: anyProcedure()
         .input(z.object({
             projectId: z.number()
@@ -96,6 +99,8 @@ export const GetModsV3 = router({
             }
             return await project.toPublicApiV3() as ProjectApiV3;
         }),
+    // #endregion
+    // #region getProjectVersions
     getProjectVerisons: anyProcedure()
         .input(z.object({
             projectId: z.number()
@@ -118,6 +123,8 @@ export const GetModsV3 = router({
             let output = await Promise.all(versions.map(async v => await v.toPublicApiV3()));
             return output;
         }),
+    // #endregion
+    // #region getProjectAndVersions
     getProjectAndVerions: anyProcedure()
         .meta({
             openapi: {
@@ -152,4 +159,5 @@ export const GetModsV3 = router({
                 versions: outputVersions
             };
         })
+    // #endregion
 })

@@ -120,18 +120,23 @@ export enum Tags {
 // #region Alert & Reqeust & User Enums
 export enum UserPermissions {
   // actual permissions
-  View_Pending_Assets = "view_pending_assets", // User can view & search pending assets
-  View_All_Assets = "view_all_assets", // User can view & search all assets, including private ones
-  Approve_Assets = "approve_assets", // User can approve/reject pending assets
-  Edit_Any_Asset = "edit_any_asset", // User can edit any asset, regardless of ownership
-  Allow_Internal_Tags = "allow_internal_tags", // User can add internal tags to assets
+  Mods_Create = "mods_create", // User can create new mods (e.g. sabers, platforms, etc.)
+  Mods_ViewAll = "mods_view_all", // User can view all mods, including private ones 
+  Mods_EditAll = "mods_edit_all", // User can edit all mods, including those created by other users
+  Mods_Approval = "mods_approval", // User can approve/reject pending mods
 
-  View_All_Reports = "view_all_reports", // User can view all asset reports
-  Manage_All_Reports = "manage_all_reports", // User can manage (resolve) asset reports
+  Asset_Create = "asset_create", // User can create/upload assets
+  Asset_ViewAll = "asset_view_all", // User can view all assets, including private ones
+  Asset_EditAll = "asset_edit_all", // User can edit all assets, including private ones
+  Asset_Approval = "asset_approval", // User can approve/reject pending assets 
+  Asset_InternalTags = "asset_internal_tags", // User can add/remove internal tags (e.g. featured)
 
-  Manage_NonMod_Users = "manage_nonmod_users", // User can manage non-admin users (e.g. ban users)
-  Manage_All_Users = "manage_all_users", // User can manage admin users w/o restrictions
-  Create_Assets = "create_assets", // User can upload/create assets
+  Reports_ViewAll = "reports_view_all", // User can view all reports
+  Reports_Manage = "reports_manage", // User can manage (accept/decline) reports, regardless of responseBy
+
+  Users_Ban = "users_ban", // User can ban/unban other users
+  Users_Edit = "users_edit", // User can edit other users' profiles (e.g. add/remove roles, edit bio, etc.)
+
   Administative_Tasks = "administrative_tasks", // User can perform high-level admin tasks
 
   // cosmetic roles for badges only

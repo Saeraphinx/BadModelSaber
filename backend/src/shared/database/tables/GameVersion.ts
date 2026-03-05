@@ -98,7 +98,7 @@ export class GameVersion extends Model<InferAttributes<GameVersion>, InferCreati
         return { gv1, gv2 };
     }
 
-    public toPublicApiV3() {
+    public toApiV3() {
         return {
             id: this.id,
             gameName: this.gameName,
@@ -106,7 +106,7 @@ export class GameVersion extends Model<InferAttributes<GameVersion>, InferCreati
         };
     }
 
-    public toPublicApiV2(): GameVersionApiV2 {
+    public toApiV2(): GameVersionApiV2 {
         return {
             id: this.id,
             gameName: this.gameName,

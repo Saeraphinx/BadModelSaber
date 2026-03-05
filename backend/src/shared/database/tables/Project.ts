@@ -1,12 +1,13 @@
 import { AllowNull, BelongsTo, Column, CreatedAt, DataType, Default, DeletedAt, ForeignKey, Model, Table, UpdatedAt } from "sequelize-typescript";
 import { col, CreationOptional, InferAttributes, InferCreationAttributes, NonAttribute, Op, Sequelize, WhereOptions } from "sequelize";
-import { ModApiv2, ProjectApiV3, Status, StatusHistory, StatusHistorySchema, UserPermissions } from "../DBExtras.ts";
+import { ModApiv2, ProjectApiV3, Status, StatusHistory, statusHistorySchema, UserPermissions } from "../DBExtras.ts";
 import z from "zod/v4";
 import { Game } from "./Game.ts";
 import { Logger } from "../../Logger.ts";
 import { User } from "./User.ts";
 import { Version } from "./Version.ts";
 import { Range, satisfies, SemVer } from "semver";
+import { Translation } from "./Translation.ts";
 
 
 export type ProjectInfer = InferAttributes<Project>;
@@ -131,7 +132,7 @@ export class Project extends Model<InferAttributes<Project>, InferCreationAttrib
         gitUrl: z.url(),
         lastApprovedById: z.number().int().positive().nullable(),
         lastUpdatedById: z.number().int().positive(),
-        statusHistory: z.array(StatusHistorySchema),
+        statusHistory: z.array(statusHistorySchema),
         createdAt: z.date(),
         updatedAt: z.date(),
         deletedAt: z.date().nullable(),
@@ -185,22 +186,11 @@ export class Project extends Model<InferAttributes<Project>, InferCreationAttrib
             return Promise.resolve(false);
         }
 
-        if (this.status === Status.Unverified) {
-            return Promise.resolve(user.checkRoles({ 
-                gameName: this.gameName,
-                perGamePermissions: [UserPermissions.View_Unverified_Mods, UserPermissions.View_All_Mods]
-            }));
-        } else if (this.status === Status.Pending) {
-            return Promise.resolve(user.checkRoles({ 
-                gameName: this.gameName,
-                perGamePermissions: [UserPermissions.View_Pending_Mods, UserPermissions.View_All_Mods]
-            }));
-        } else {
-            return Promise.resolve(user.checkRoles({ 
-                gameName: this.gameName,
-                perGamePermissions: [UserPermissions.View_All_Mods]
-            }));
+        if (this.authorIds.includes(user.id)) {
+            return Promise.resolve(true);
         }
+
+        return Promise.resolve(user.checkRoles([UserPermissions.Mods_ViewAll], this.gameName));
     }
 
     public canEdit(user: User | null | undefined): Promise<boolean> {
@@ -212,10 +202,7 @@ export class Project extends Model<InferAttributes<Project>, InferCreationAttrib
             return Promise.resolve(true);
         }
 
-        return Promise.resolve(user.checkRoles({
-            gameName: this.gameName,
-            perGamePermissions: [UserPermissions.Edit_Mods]
-        }));
+        return Promise.resolve(user.checkRoles([UserPermissions.Mods_EditAll], this.gameName));
     }
     // #endregion
     // #region Version Lookups
@@ -263,6 +250,42 @@ export class Project extends Model<InferAttributes<Project>, InferCreationAttrib
         }
     }
     // #endregion
+    // #region Translation Lookup
+    public async getTranslation(language: string): Promise<{ name: string | null, summary: string | null, description: string | null } | null> {
+        let translations = await Translation.findAll({
+            where: {
+                parentId: this.id,
+                contentType: { [Op.or]: [`name`, `summary`, `description`] },
+                language: language,
+            },
+        });
+
+        if (translations.length === 0) {
+            return null;
+        }
+
+        let translationMap: { [key: string]: string | null } = {};
+        for (let translation of translations) {
+            translationMap[translation.contentType] = translation.translatedString;
+            // check if translation is still accurate by comparing original string to current project values - if not, return null to indicate translation needs review
+            if (translation.originalString) {
+                let currentValue = (this as any)[translation.contentType];
+                if (currentValue !== translation.originalString) {
+                    Logger.warn(`Translation for project ID ${this.id} content type ${translation.contentType} may be outdated and in need of review.`);
+                    translation.outOfDate = true;
+                    await translation.save();
+                    translationMap[translation.contentType] = null;
+                }
+            }
+        }
+
+        return {
+            name: translationMap[`name`] || null,
+            summary: translationMap[`summary`] || null,
+            description: translationMap[`description`] || null,
+        };
+    }
+    // #endregion
     // #region Edit
     public async setStatus(newStatus: Status, user: User, reason: string, shouldSendWebhook = true): Promise<this> {
         let previousStatus = this.status;
@@ -274,8 +297,8 @@ export class Project extends Model<InferAttributes<Project>, InferCreationAttrib
         this.statusHistory = [...this.statusHistory, {
             status: newStatus,
             reason: reason,
-            changedById: user.id,
-            changedAt: new Date().toISOString(),
+            userId: user.id,
+            timestamp: new Date(),
         }];
         try {
             await this.save();
@@ -288,12 +311,17 @@ export class Project extends Model<InferAttributes<Project>, InferCreationAttrib
     }
     // #endregion
     // #region ToAPI
-    public async toPublicApiV3(): Promise<ProjectApiV3> {
+    public async toApiV3(language?: string): Promise<ProjectApiV3> {
         let authors = await User.findAll({
             where: {
                 id: this.authorIds,
             },
         }).then((users) => users.map((user) => user.toApiV3()));
+
+        let translation = null;
+        if (language && !language.startsWith(`en`)) {
+            translation = await this.getTranslation(language);
+        }
 
         return {
             id: this.id,
@@ -311,10 +339,11 @@ export class Project extends Model<InferAttributes<Project>, InferCreationAttrib
             statusHistory: this.statusHistory,
             createdAt: this.createdAt,
             updatedAt: this.updatedAt,
+            translation: translation,
         };
     }
 
-    public async toPublicApiV2(): Promise<ModApiv2> {
+    public async toApiV2(): Promise<ModApiv2> {
         let authors = await User.findAll({
             where: {
                 id: this.authorIds,
@@ -337,8 +366,8 @@ export class Project extends Model<InferAttributes<Project>, InferCreationAttrib
             statusHistory: this.statusHistory.map((entry) => ({
                 status: entry.status,
                 reason: entry.reason,
-                userId: entry.changedById,
-                setAt: entry.changedAt,
+                userId: entry.userId,
+                setAt: entry.timestamp.toString(),
             })),
             createdAt: this.createdAt,
             updatedAt: this.updatedAt,

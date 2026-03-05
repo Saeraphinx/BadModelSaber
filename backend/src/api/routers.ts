@@ -11,7 +11,7 @@ import { createOpenApiExpressMiddleware, generateOpenApiDocument } from 'trpc-to
 import { authRouter } from './routes/private/auth.ts';
 import { konamiRouter } from './routes/private/editUser.ts';
 import { Logger } from '../shared/Logger.ts';
-import { uploadAssetV3 } from './routes/private/upload.ts';
+import { uploadStuff } from './routes/private/upload.ts';
 import { parseErrorMessage } from '../shared/Tools.ts';
 import { statusRouter } from './routes/private/getstatus.ts';
 import { GetV2Router } from './routes/public/v2/getAsset.ts';
@@ -32,7 +32,7 @@ const appRouter = router({
     v3: {
         status: statusRouter,
         user: userRouterV3,
-        upload: uploadAssetV3,
+        upload: uploadStuff,
         assets: assetsRouterV3,
     }
 });

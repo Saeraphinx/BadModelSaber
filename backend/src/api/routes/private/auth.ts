@@ -3,9 +3,10 @@ import { Validator } from '../../../shared/Validator.ts';
 import { createRandomString, parseErrorMessage } from '../../../shared/Tools.ts';
 import { EnvConfig } from '../../../shared/EnvConfig.ts';
 import { User, UserPermissions } from '../../../shared/Database.ts';
-import { authProcedure, router } from '../../trpc.ts';
+import { loggedInProcedure, router } from '../../trpc.ts';
 import { REST, RESTGetAPICurrentUserResult, RESTOAuth2AuthorizationQuery, RESTPostOAuth2AccessTokenWithBotAndGuildsScopeResult, RESTPostOAuth2ClientCredentialsResult, Routes } from 'discord.js';
 import { OAuth2API } from '@discordjs/core';
+import z from 'zod/v4';
 
 export function loadAuthConfig() {
     if (!EnvConfig.auth.discord.clientSecret || !EnvConfig.auth.discord.clientId) {
@@ -30,12 +31,12 @@ function prepAuth(ip: string, redirectUrl: string, userId?: number, minsToTimeou
 }
 
 export const authRouter = router({
-    discordAuthInit: authProcedure(`any`)
-        .input(Validator.z.object({
-            redirect: Validator.z.url().optional(),
+    discordAuthInit: loggedInProcedure()
+        .input(z.object({
+            redirect: z.url().optional(),
         }))
-        .output(Validator.z.object({
-            url: Validator.z.url(),
+        .output(z.object({
+            url: z.url(),
         }))
         .query(async ({ input, ctx, path }) => {
             let state = prepAuth(ctx.req.ip || ``, input.redirect ?? EnvConfig.server.frontendUrl);
@@ -55,13 +56,13 @@ export const authRouter = router({
 
             return { url };
         }),
-    discordAuthCallback: authProcedure(`any`)
+    discordAuthCallback: loggedInProcedure()
         .meta({ openapi: { method: 'GET', path: '/auth/discord/callback', tags: ['Authentication'] } })
-        .input(Validator.z.object({
-            code: Validator.z.string(),
-            state: Validator.z.string(),
+        .input(z.object({
+            code: z.string(),
+            state: z.string(),
         }))
-        .output(Validator.z.void())
+        .output(z.void())
         .query(async ({ input, ctx }) => {
             let stateObj = validStates.find((s) => s.stateId === input.state && s.ip === ctx.req.ip);
             if (!stateObj) {
@@ -83,20 +84,24 @@ export const authRouter = router({
                 throw new Error(`Failed to fetch user info from Discord.`, err);
             });
 
-            let dbUser = await User.findByPk(userInfo.id);
+            let dbUser = await User.findOne({ where: { discordId: userInfo.id } });
             if (!dbUser) {
-                let roles = [UserPermissions.Create_Assets];
+                let roles = {
+                    sitewide: [UserPermissions.Asset_Create, UserPermissions.Mods_Create],
+                    perGame: {},
+                };
                 if (userInfo && EnvConfig.auth.discord.autoAdminIds && EnvConfig.auth.discord.autoAdminIds.includes(userInfo.id)) {
                     Logger.info(`Auto-assigning administrative permissions to user ${userInfo.username} (${userInfo.id})`);
-                    roles.push(UserPermissions.Administative_Tasks);
-                    roles.push(UserPermissions.Manage_All_Users);
-                    roles.push(UserPermissions.C_Admin)
+                    roles.sitewide.push(UserPermissions.C_Admin);
+                    roles.sitewide.push(UserPermissions.Administative_Tasks);
+                    roles.sitewide.push(UserPermissions.Users_EditAll);
                 }
                 dbUser = await User.create({
-                    id: userInfo.id,
+                    discordId: userInfo.id,
+                    githubId: null,
                     username: userInfo.username,
                     displayName: userInfo.global_name ?? userInfo.username,
-                    roles: roles,
+                    permissions: roles,
                     avatarUrl: userInfo.avatar ? `https://cdn.discordapp.com/avatars/${userInfo.id}/${userInfo.avatar}.png` : `https://cdn.discordapp.com/embed/avatars/${Number(userInfo.id) % 6}.png`,
                 });
                 Logger.info(`New user created: ${dbUser.username} (${dbUser.id})`);
@@ -120,9 +125,9 @@ export const authRouter = router({
             }
             return;
         }),
-    logout: authProcedure(`loggedIn`)
-        .input(Validator.z.object({
-            redirect: Validator.z.url().optional(),
+    logout: loggedInProcedure()
+        .input(z.object({
+            redirect: z.url().optional(),
         }))
         .mutation(async ({ input, ctx }) => {
             return new Promise<{ message: string }>((resolve, reject) => {

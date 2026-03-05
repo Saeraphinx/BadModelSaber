@@ -163,3 +163,8 @@ export function loggedInProcedure(roles?: UserPermissions[] | { hasAllOf?: UserP
         }
     });
 }
+export function gameProcedure(roles?: UserPermissions[] | { hasAllOf?: UserPermissions[], hasOneOf?: UserPermissions[], denied?: UserPermissions[] }) {
+    return loggedInProcedure(roles).input(z.object({
+        gameName: z.string().optional()
+    }))
+}

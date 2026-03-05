@@ -1,22 +1,56 @@
-import { Asset, Status, UserPermissions } from "../../../shared/Database.ts";
+import { Asset, Project, Status, UserPermissions, Version } from "../../../shared/Database.ts";
 import { Validator } from "../../../shared/Validator.ts";
 import { parseErrorMessage } from "../../../shared/Tools.ts";
-import { authProcedure, router } from "../../trpc.ts";
+import { loggedInProcedure, router } from "../../trpc.ts";
+import z from "zod/v4";
+import { TRPCError } from "@trpc/server";
 
 export const approvalRouter = router({
-    approveAsset: authProcedure([UserPermissions.Approve_Assets]).input(Validator.z.object({
-        id: Validator.z.number().int().positive(),
-        status: Validator.z.enum(Status),
-        reason: Validator.z.string().max(1000).optional()
+    setStatusAsset: loggedInProcedure([UserPermissions.Asset_Approval]).input(z.object({
+        id: z.number().int().positive(),
+        status: z.enum(Status),
+        reason: z.string().max(1000).optional()
     })).mutation(async ({input, ctx}) => {
         const asset = await Asset.findByPk(input.id);
         if (!asset) {
-            throw new Error(`Asset not found`);
+            throw new TRPCError({ code: 'NOT_FOUND', message: 'Asset not found' });
         }
-        await asset.setStatus(input.status, input.reason ?? `No reason given.`, ctx.user.id).then(() => {
-            return asset.getApiV3Response();
+        await asset.setStatus(input.status, ctx.user, input.reason ?? `No reason given.`).then(() => {
+            return asset.toApiV3();
         }).catch(err => {
-            throw new Error(`Error updating asset status: ${parseErrorMessage(err)}`);
+            throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: `Error updating asset status: ${parseErrorMessage(err)}` });
+        });
+    }),
+    setStatusProject: loggedInProcedure([UserPermissions.Mods_Approval]).input(z.object({
+        id: z.number().int().positive(),
+        status: z.enum(Status),
+        reason: z.string().max(1000).optional()
+    })).mutation(async ({input, ctx}) => {
+        const mod = await Project.findByPk(input.id);
+        if (!mod) {
+            throw new TRPCError({ code: 'NOT_FOUND', message: 'Project not found' });
+        }
+
+        await mod.setStatus(input.status, ctx.user, input.reason ?? `No reason given.`).then(() => {
+            return mod.toApiV3();
+        }).catch(err => {
+            throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: `Error updating mod status: ${parseErrorMessage(err)}` });
+        });
+    }),
+    setStatusVersion: loggedInProcedure([UserPermissions.Mods_Approval]).input(z.object({
+        id: z.number().int().positive(),
+        status: z.enum(Status),
+        reason: z.string().max(1000).optional()
+    })).mutation(async ({input, ctx}) => {
+        const version = await Version.findByPk(input.id);
+        if (!version) {
+            throw new TRPCError({ code: 'NOT_FOUND', message: 'Version not found' });
+        }
+
+        await version.setStatus(input.status, ctx.user, input.reason ?? `No reason given.`).then(() => {
+            return version.toApiV3();
+        }).catch(err => {
+            throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: `Error updating version status: ${parseErrorMessage(err)}` });
         });
     })
 });

@@ -1,6 +1,14 @@
 import { APIMessage, ColorResolvable, Colors, EmbedBuilder, MessagePayload, WebhookClient, WebhookMessageCreateOptions } from "discord.js";
-import { Asset, Game, GameWebhookConfig, Project, Status, Status, User, Version, WebhookLogType } from "./Database.ts";
+import { Asset, Game, GameWebhookConfig, Project, Status, User, Version, WebhookLogType } from "./Database.ts";
 import { EnvConfig } from "./EnvConfig.ts";
+
+/* 
+
+This file contains all logic related to managing and sending webhooks, including generating payloads for different types of webhook logs. It interfaces with the Game table to retrieve webhook configurations and send the payloads.
+
+Each webhook log type can be turned on and off for each game, and can be designated as an "asset webhook" or not. 
+
+*/
 
 const userUrl = `${EnvConfig.server.frontendUrl}/user/`;
 type GameWebhookConfigWithClient = GameWebhookConfig & { client: WebhookClient };
@@ -48,14 +56,14 @@ export class Webhooks {
             }
         }
         return results;
-    } 
+    }
     // #endregion
 
 }
 
 export class WebhookPayloadGenerator {
     public static generateInternalStatusUpdateEmbedPayload(asset: Asset, userPreformingAction: User, oldStatus: Status, newStatus: Status): WebhookMessageCreateOptions {
-         let color: ColorResolvable = 0x000; // Default to black
+        let color: ColorResolvable = 0x000; // Default to black
         switch (newStatus) {
             case Status.Verified:
                 color = Colors.Green;
@@ -79,7 +87,7 @@ export class WebhookPayloadGenerator {
                 },
                 title: `Asset Status Updated`,
                 url: `${EnvConfig.server.frontendUrl}/assets/${asset.id}`,
-                thumbnail: asset.iconNames[0] ? {url:`${EnvConfig.server.backendUrl}/files/icons/${asset.iconNames[0]}`} : undefined,
+                thumbnail: asset.iconNames[0] ? { url: `${EnvConfig.server.backendUrl}/files/icons/${asset.iconNames[0]}` } : undefined,
                 description: `The status of the asset **${asset.name}** (ID: ${asset.id}) has been updated from **${oldStatus}** to **${newStatus}**.`,
                 color: color,
                 footer: {
@@ -94,22 +102,22 @@ export class WebhookPayloadGenerator {
     public static async generatePublicNewAssetEmbedPayload(asset: Asset): Promise<WebhookMessageCreateOptions> {
         let uploader = await asset.uploader;
         if (!uploader) {
-            throw new Error(`Uploader not found for asset ID: ${asset.id}`);
+            throw new Error(`Uploader not found for ID: ${asset.id}`);
         }
 
         return {
-                embeds: [{
-                    author: {
-                        name: `${uploader.displayName}`,
-                        icon_url: uploader.avatarUrl,
-                        url: `${EnvConfig.server.frontendUrl}/users/${uploader.id}`
-                    },
-                    title: ` ${asset.name}`,
-                    url: `${EnvConfig.server.frontendUrl}/assets/${asset.id}`,
-                    thumbnail: asset.iconNames[0] ? {url:`${EnvConfig.server.backendUrl}/files/icons/${asset.iconNames[0]}`} : undefined,
-                    description: asset.description ? (asset.description.length > 2048 ? asset.description.substring(0, 1000) + "..." : asset.description) : "No description provided.",
-                    color: Colors.Green,
-                }],
-            });
+            embeds: [{
+                author: {
+                    name: `${uploader.displayName}`,
+                    icon_url: uploader.avatarUrl,
+                    url: `${EnvConfig.server.frontendUrl}/users/${uploader.id}`
+                },
+                title: ` ${asset.name}`,
+                url: `${EnvConfig.server.frontendUrl}/assets/${asset.id}`,
+                thumbnail: asset.iconNames[0] ? { url: `${EnvConfig.server.backendUrl}/files/icons/${asset.iconNames[0]}` } : undefined,
+                description: asset.description ? (asset.description.length > 2048 ? asset.description.substring(0, 1000) + "..." : asset.description) : "No description provided.",
+                color: Colors.Green,
+            }],
+        }
     }
 }

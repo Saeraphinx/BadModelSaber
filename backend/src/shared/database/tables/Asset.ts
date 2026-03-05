@@ -1,11 +1,11 @@
-import { AfterValidate, BelongsTo, Column, CreatedAt, DataType, DeletedAt, ForeignKey, Model, Table, UpdatedAt } from "sequelize-typescript";
+import { AfterValidate, AllowNull, BelongsTo, Column, CreatedAt, DataType, Default, DeletedAt, ForeignKey, Model, Table, UpdatedAt } from "sequelize-typescript";
 import { InferAttributes, InferCreationAttributes, NonAttribute, CreationOptional } from "sequelize";
 import { Alert, AssetRequest, User, UserPermissions } from "../../Database.ts";
-import { AlertType, AssetApiV3, AssetFileFormat, AssetPublicAPIv1, AssetPublicAPIv2, dbId, License, LinkedAsset, LinkedAssetLinkType, RequestType, Status, StatusHistory, Tags, UserApiV3 } from "../DBExtras.ts";
+import { AlertType, AssetApiV3, AssetFileFormat, AssetPublicAPIv1, AssetPublicAPIv2, dbId, License, LinkedAsset, LinkedAssetLinkType, RequestType, Status, StatusHistory, Tags, UserApiV3, WebhookLogType } from "../DBExtras.ts";
 import { z } from "zod/v4";
 import { EnvConfig } from "../../EnvConfig.ts";
 import { Logger } from "../../Logger.ts";
-import { Webhooks } from "../../Webhooks.ts";
+import { WebhookPayloadGenerator, Webhooks } from "../../Webhooks.ts";
 import path from "node:path";
 
 export type AssetInfer = InferAttributes<Asset>;
@@ -131,6 +131,11 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
     })
     declare tags: CreationOptional<Tags[]>; // system defined tags
 
+    @Column(DataType.TEXT)
+    @AllowNull(false)
+    declare gameName: string; // the game this asset is for, e.g. beatsaber, oculus, etc.
+    // #endregion
+
     @CreatedAt
     declare readonly createdAt: CreationOptional<Date>;
     @UpdatedAt
@@ -203,6 +208,7 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
             userId: dbId.refine(async (id) => await User.checkIfExists(id)), // User ID of the person who changed the status
         })),
         tags: z.array(z.enum(Tags)).default([]),
+        gameName: z.string().min(1).max(64),
         createdAt: z.date(),
         updatedAt: z.date(),
         deletedAt: z.date().nullable(),
@@ -252,25 +258,12 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
     }
 
     // #region Allowed to XYZ
-    public static allowedToViewRoles(user: User | undefined | null): Status[] {
-        if (!user) {
-            return [Status.Verified, Status.Unverified, Status.Pending];
-        }
-
-        if (user.permissions.includes(UserPermissions.View_All_Assets)) {
-            return [Status.Verified, Status.Pending, Status.Private, Status.Removed, Status.Unverified];
-        }
-
-        // If the user is logged in, they can view all approved and pending assets (same as unlogged-in users)
-        return [Status.Verified, Status.Unverified, Status.Pending];
-    }
-
     public canView(user: User | null | undefined): boolean {
+        let allowedStatuses = [Status.Verified, Status.Unverified];
         if (!user) {
-            return this.status === Status.Verified || this.status === Status.Unverified || this.status === Status.Pending;
+            return allowedStatuses.includes(this.status);
         }
 
-        let allowedStatuses = Asset.allowedToViewRoles(user);
         return allowedStatuses.includes(this.status) || this.uploaderId === user.id;
     }
 
@@ -281,7 +274,7 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
         }
 
         // Users can edit their own assets
-        return user.id === this.uploaderId || user.permissions.includes(UserPermissions.Edit_Any_Asset);
+        return user.id === this.uploaderId || user.checkRoles([UserPermissions.Asset_EditAll], this.gameName);
     }
     // #endregion
     // #region Edits
@@ -305,7 +298,7 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
                 newTags.some(tag => Asset.protectedTags.includes(tag)) ||
                 removedTags.some(tag => Asset.protectedTags.includes(tag))
             ) {
-                if (!user.permissions.includes(UserPermissions.Allow_Internal_Tags)) {
+                if (!user.checkRoles([UserPermissions.Asset_InternalTags], this.gameName)) {
                     throw new Error(`You do not have permission to add or remove internal tags.`);
                 } else {
                     this.tags = data.tags;
@@ -390,7 +383,7 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
             throw new Error(`This asset is already linked to the requested asset.`);
         }
 
-        if (this.uploaderId !== assetToLink.uploaderId && !reqBy.permissions.includes(UserPermissions.Edit_Any_Asset)) {
+        if (this.uploaderId !== assetToLink.uploaderId && !reqBy.checkRoles([UserPermissions.Asset_EditAll], this.gameName)) {
             let existingRequests = await AssetRequest.findAll({
                 where: {
                     requestResponseBy: assetToLink.uploaderId,
@@ -512,8 +505,9 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
         return this;
     }
 
-    public async setStatus(newStatus: Status, reason: string, userId: string | User, sendAlert = true): Promise<Asset> {
+    public async setStatus(newStatus: Status, userId: number | User, reason: string, sendAlert = true): Promise<Asset> {
         let userPreformingAction: User | null = null;
+        let oldStatus = this.status;
         if (userId instanceof User) {
             userPreformingAction = userId;
         } else {
@@ -536,31 +530,25 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
         }
 
         let alertType = AlertType.Generic
-        switch (this.status) {
-            case Status.Removed:
-            case Status.Private:
-                break;
-            case Status.Pending:
-                if (newStatus !== Status.Verified) {
-                    // rejected from queue
-                    alertType = AlertType.AssetRejected;
-                } else {
-                    // approved from queue
-                    alertType = AlertType.AssetVerified;
-                }
-                break;
+        switch (newStatus) {
             case Status.Verified:
-                if (newStatus !== Status.Verified) {
-                    alertType = AlertType.AssetRemoval
-                    // verification revoked
-                    break;
+                alertType = AlertType.ThingVerified;
+                Webhooks.sendWebhookLog(this.gameName, WebhookLogType.NewlyVerified, true, await WebhookPayloadGenerator.generatePublicNewAssetEmbedPayload(this));
+                break;
+            case Status.Unverified:
+                Webhooks.sendWebhookLog(this.gameName, WebhookLogType.NewlyUnverified, true, WebhookPayloadGenerator.generateInternalStatusUpdateEmbedPayload(this, userPreformingAction, oldStatus, newStatus));
+                break;
+            case Status.Removed:
+                if (oldStatus == Status.Verified || oldStatus == Status.Unverified) {
+                    alertType = AlertType.ThingRemoval;
+                } else if (oldStatus == Status.Pending) {
+                    alertType = AlertType.ThingRejected;
                 }
-            default:
-                Logger.warn(`Unhandled status change from ${this.status} to ${newStatus} for asset ${this.id}`);
                 break;
         }
+
         if (sendAlert) {
-            Webhooks.sendUpdateStatus(this, userPreformingAction, this.status, newStatus);
+            Webhooks.sendWebhookLog(this.gameName, WebhookLogType.Text_StatusUpdate, true, WebhookPayloadGenerator.generateInternalStatusUpdateEmbedPayload(this, userPreformingAction, oldStatus, newStatus));
             this.alertUploader({
                 type: alertType,
                 header: `Asset Status Updated`,

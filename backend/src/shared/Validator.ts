@@ -1,28 +1,9 @@
-import { z } from "zod/v4";
-
 import { AssetFileFormat, Status, Tags } from "./database/DBExtras.ts";
 import { Asset } from "./database/tables/Asset.ts";
 import jszip from "jszip";
 import { parseErrorMessage } from "./Tools.ts";
 
 export class Validator {
-    public static zFilterAssetv3 = z.object({
-        type: Validator.zAssetFileFormat.optional(),
-        status: Validator.zAssetStatus.optional(),
-        tags: z.array(z.enum(Tags)).optional(),
-        page: z.coerce.number().int().min(1).optional(),
-        limit: z.coerce.number().int().min(1).max(250).optional(),
-        minimalData: this.zBool.default(false),
-    }).refine((data) => {
-        if (data.page || data.limit) {
-            if (!data.page || !data.limit) {
-                return false; // If one is provided, both must be provided
-            }
-        }
-        return true; // Valid if both are provided or neither is provided
-    }, `Both page and limit must be provided together.`);
-
-
     public static validateThumbnail(file: File) {
         let isAcceptableImage =
             ((file.type === `image/png` && file.name.endsWith(`.png`)) ||

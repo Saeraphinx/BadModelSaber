@@ -3,12 +3,13 @@ import { Validator } from "../../../../shared/Validator.ts";
 import { Asset, AssetInfer, User } from "../../../../shared/Database.ts";
 import { Op, Sequelize, WhereOptions } from "sequelize";
 import { parseErrorMessage } from "../../../../shared/Tools.ts";
-import { AssetPublicAPIv3, assetPublicAPIv3Schema, Status, Tags } from "../../../../shared/database/DBExtras.ts";
-import { authProcedure, router } from "../../../trpc.ts";
+import { assetFileFormatSchema, AssetPublicAPIv3, assetPublicAPIv3Schema, Status, statusSchema, Tags } from "../../../../shared/database/DBExtras.ts";
+import { anyProcedure, router } from "../../../trpc.ts";
 import { TRPCError } from "@trpc/server";
+import z from "zod/v4";
 
 export const assetsRouterV3 = router({
-    getAssets: authProcedure(`anyCheckAuth`)
+    getAssets: anyProcedure()
         .meta({
             openapi: {
                 method: 'GET',
@@ -16,14 +17,27 @@ export const assetsRouterV3 = router({
                 tags: ['Assets'],
             }
         })
-        .input(Validator.zFilterAssetv3)
-        .output(Validator.z.object({
-            assets: Validator.z.array(assetPublicAPIv3Schema),
-            total: Validator.z.number(),
-            page: Validator.z.number().nullable()
+        .input(z.object({
+                type: assetFileFormatSchema.optional(),
+                status: statusSchema.optional(),
+                tags: z.array(z.enum(Tags)).optional(),
+                page: z.coerce.number().int().min(1).optional(),
+                limit: z.coerce.number().int().min(1).max(250).optional(),
+            }).refine((data) => {
+                if (data.page || data.limit) {
+                    if (!data.page || !data.limit) {
+                        return false; // If one is provided, both must be provided
+                    }
+                }
+                return true; // Valid if both are provided or neither is provided
+            }, `Both page and limit must be provided together.`))
+        .output(z.object({
+            assets: z.array(assetPublicAPIv3Schema),
+            total: z.number(),
+            page: z.number().nullable()
         }))
         .query(async ({ input, ctx }) => {
-            let allowedStatuses = Asset.allowedToViewRoles(ctx.user);
+            let allowedStatuses = ctx.user ? ctx.user.getAllowedStatuses(`asset`) : User.getAllowedStatuses();
             if (input.status && !allowedStatuses.includes(input.status)) {
                 return { assets: [], total: 0, page: null };
             }
@@ -40,13 +54,13 @@ export const assetsRouterV3 = router({
                 limit: input.limit ?? undefined,
                 offset: input.page && input.limit ? ((input.page - 1) * input.limit) : undefined,
                 order: [[`createdAt`, `DESC`]],
-                attributes: input.minimalData ? [`id`, `name`, `type`, `status`, `uploaderId`, `createdAt`, `updatedAt`, `iconNames`, `tags`] : undefined,
                 include: { all: true }
             });
-            let response = await Promise.all(assets.map(asset => asset.getApiV3Response()));
+            let response = await Promise.all(assets.map(asset => asset.toApiV3()));
             return { assets: response, total: assets.length, page: input.page ?? null };
         }),
-    getAssetById: authProcedure(`anyCheckAuth`)
+    getAssetById: 
+    (`anyCheckAuth`)
         .meta({
             openapi: {
                 method: 'GET',
@@ -54,8 +68,8 @@ export const assetsRouterV3 = router({
                 tags: ['Assets'],
             }
         })
-        .input(Validator.z.object({
-            id: Validator.zNumberId
+        .input(z.object({
+            id: z.int().positive(),
         }))
         .output(assetPublicAPIv3Schema)
         .query(async ({ input, ctx }) => {
@@ -83,8 +97,8 @@ export const assetsRouterV3 = router({
                 tags: ['Assets'],
             }
         })
-        .input(Validator.z.object({
-            id: Validator.z.array(Validator.zNumberId)
+        .input(z.object({
+            id: z.array(z.int().positive()).min(1),
         }))
         // Record keys as numbers doesn't exist in javascript, and zod errors on it because of that
         .output(Validator.z.record(Validator.z.string(), assetPublicAPIv3Schema))

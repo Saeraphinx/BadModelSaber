@@ -134,19 +134,25 @@ export enum Tags {
 
 // #region Alert & Reqeust & User Enums
 export enum UserPermissions {
-  // actual permissions
-  View_Pending_Assets = "view_pending_assets", // User can view & search pending assets
-  View_All_Assets = "view_all_assets", // User can view & search all assets, including private ones
-  Approve_Assets = "approve_assets", // User can approve/reject pending assets
-  Edit_Any_Asset = "edit_any_asset", // User can edit any asset, regardless of ownership
-  Allow_Internal_Tags = "allow_internal_tags", // User can add internal tags to assets
+  Mods_Create = "mods_create", // User can create new mods (e.g. sabers, platforms, etc.)
+  Mods_ViewAll = "mods_view_all", // User can view all mods, including private ones 
+  Mods_EditAll = "mods_edit_all", // User can edit all mods, including those created by other users
+  Mods_Approval = "mods_approval", // User can approve/reject pending mods
 
-  View_All_Reports = "view_all_reports", // User can view all asset reports
-  Manage_All_Reports = "manage_all_reports", // User can manage (resolve) asset reports
+  Asset_Create = "asset_create", // User can create/upload assets
+  Asset_ViewAll = "asset_view_all", // User can view all assets, including private ones
+  Asset_EditAll = "asset_edit_all", // User can edit all assets, including private ones
+  Asset_Approval = "asset_approval", // User can approve/reject pending assets 
+  Asset_InternalTags = "asset_internal_tags", // User can add/remove internal tags (e.g. featured)
 
-  Manage_NonMod_Users = "manage_nonmod_users", // User can manage non-admin users (e.g. ban users)
-  Manage_All_Users = "manage_all_users", // User can manage admin users w/o restrictions
-  Create_Assets = "create_assets", // User can upload/create assets
+  Reports_ViewAll = "reports_view_all", // User can view all reports
+  Reports_Manage = "reports_manage", // User can manage (accept/decline) reports, regardless of responseBy
+
+  Users_EditSelf = "users_update_self", // User can update their own profile (e.g. bio, display name, etc.)
+  Users_Ban = "users_ban", // User can ban/unban other users
+  Users_EditAll = "users_edit_all", // User can edit other users' profiles (e.g. edit bio, etc.)
+  Users_EditAllRoles = "users_edit_all_roles", // User can edit all roles of other users
+
   Administative_Tasks = "administrative_tasks", // User can perform high-level admin tasks
 
   // cosmetic roles for badges only
@@ -154,16 +160,15 @@ export enum UserPermissions {
   C_Moderator = "cos_moderator", // User is a moderator of the site
   C_Admin = "cos_admin", // User is an admin of the site
   C_BSMG_Staff = "cos_bsmg_staff", // User is a member of the BSMG staff
-  C_Modder = "cos_modder", // User is a Modder in BSMG
   C_Modeler = "cos_modeler", // User is a recognized modeler on ModelSaber
   C_System = "cos_system", // User is a system account
 }
 
 export enum AlertType {
   Generic = "generic", // Generic alert type, used for non-specific alerts
-  AssetVerified = "asset_verified", // Alert when an asset is approved
-  AssetRejected = "asset_rejected", // Alert when an asset is rejected
-  AssetRemoval = "asset_removal", // Alert when an asset is removed
+  ThingVerified = "thing_verified", // Alert when a thing is approved
+  ThingRejected = "thing_rejected", // Alert when a thing is rejected
+  ThingRemoval = "thing_removal", // Alert when a thing is removed
   RequestAccepted = "request_accepted", // Alert when a request is accepted
   RequestDeclined = "request_declined", // Alert when a request is declined
 }
@@ -273,124 +278,120 @@ export const linkedAssetSchema = z.object({
 
 // # region Enums
 export enum WebhookLogType {
-    SubmittedForReview = `submittedForReview`,
-    MarkedVerified = `verified`,
-    MarkedUnverified = `unverified`,
-    MarkedRemoved = `rejected`,
-    
-    VerificationRevoked = `verificationRevoked`,
+  NewlyVerified = "newly_verified",
+  NewlyUnverified = "newly_unverified",
+  NewThing = "new_thing", // e.g. new asset, new project
+  NewSubThing = "new_sub_thing", // e.g. new version of a project
 
-
-    Text_Created = `created`,
-    Text_StatusChanged = `statusChanged`,
-    Text_EditBypassed = `editBypassed`,
-    Text_Updated = `updated`,
+  Text_StatusUpdate = "text_status_update",
+  Text_Edited = "text_edited",
+  Text_Linked = "text_linked",
 }
 
 // #endregion
 export const ContentHashSchema = z.object({
-    path: z.string(),
-    hash: z.string(),
+  path: z.string(),
+  hash: z.string(),
 });
 export type ContentHash = z.infer<typeof ContentHashSchema>;
 
 export const DependencySchema = z.object({
-    pId: dbId, // mod/project id
-    sv: z.string().refine((str) => {
-        // validate semver range
-        if (validRange(str)) {
-            return true;
-        } else {
-            return false;
-        }
-    }), // semver range e.g. "^1.0.0"
+  pId: dbId, // mod/project id
+  sv: z.string().refine((str) => {
+    // validate semver range
+    if (validRange(str)) {
+      return true;
+    } else {
+      return false;
+    }
+  }), // semver range e.g. "^1.0.0"
 });
 export type Dependency = z.infer<typeof DependencySchema>;
 
 // #region API v1 Schemas
 // seperate type to avoid circular reference issues with zod
 export type ModApiV1 = {
-    name: string,
-    version: string,
-    gameVersion: string,
-    authorId: string,
-    author?: {
-        _id: string,
-        username: string,
-        lastLogin: string,
-    },
-    uploadDate: string,
-    updatedDate: string,
-    status: `pending` | `approved` | `declined` | `inactive`,
-    description: string,
-    link: string,
-    category: string,
-    required: boolean,
-    downloads: {
-        type: string,
-        url: string,
-        hashMd5: {
-            hash: string,
-            file: string,
-        }[],
-    }[],
-    dependencies: ModApiV1[] | string[],
+  name: string,
+  version: string,
+  gameVersion: string,
+  authorId: string,
+  author?: {
     _id: string,
+    username: string,
+    lastLogin: string,
+  },
+  uploadDate: string,
+  updatedDate: string,
+  status: `pending` | `approved` | `declined` | `inactive`,
+  description: string,
+  link: string,
+  category: string,
+  required: boolean,
+  downloads: {
+    type: string,
+    url: string,
+    hashMd5: {
+      hash: string,
+      file: string,
+    }[],
+  }[],
+  dependencies: ModApiV1[] | string[],
+  _id: string,
 }
 
 const ModApiV1Schema: z.ZodType<ModApiV1> = z.lazy(() => z.object({
-    name: z.string(),
-    version: z.string(),
-    gameVersion: z.string(),
-    authorId: z.string(),
-    author: z.object({
-        _id: z.string(),
-        username: z.string(),
-        lastLogin: z.string()
-    }).optional(),
-    uploadDate: z.string(),
-    updatedDate: z.string(),
-    status: z.enum([`pending`, `approved`, `declined`, `inactive`]),
-    description: z.string(),
-    link: z.string(),
-    category: z.string(),
-    required: z.boolean(),
-    downloads: z.array(z.object({
-        type: z.string(),
-        url: z.string(),
-        hashMd5: z.array(z.object({
-            hash: z.string(),
-            file: z.string()
-        }))
-    })),
-    dependencies: z.array(ModApiV1Schema).or(z.array(z.string())),
+  name: z.string(),
+  version: z.string(),
+  gameVersion: z.string(),
+  authorId: z.string(),
+  author: z.object({
     _id: z.string(),
+    username: z.string(),
+    lastLogin: z.string()
+  }).optional(),
+  uploadDate: z.string(),
+  updatedDate: z.string(),
+  status: z.enum([`pending`, `approved`, `declined`, `inactive`]),
+  description: z.string(),
+  link: z.string(),
+  category: z.string(),
+  required: z.boolean(),
+  downloads: z.array(z.object({
+    type: z.string(),
+    url: z.string(),
+    hashMd5: z.array(z.object({
+      hash: z.string(),
+      file: z.string()
+    }))
+  })),
+  dependencies: z.array(ModApiV1Schema).or(z.array(z.string())),
+  _id: z.string(),
 }));
 // #endregion
 // #region API v2 Schemas
 export const UserApiV2Schema = z.object({
-    id: z.number().int().positive(),
-    username: z.string(),
-    githubId: z.number().nullable(),
-    sponsorUrl: z.string().nullable(),
-    displayName: z.string(),
-    roles: z.object({ // do not allow roles to be sent when using v2 of the API
-        sitewide: z.array(z.enum([])), 
-        perGame: z.record(z.string(), z.array(z.enum([]))),
-    }),
-    bio: z.string(),
-    createdAt: z.date(),
-    updatedAt: z.date(),
+  id: z.number().int().positive(),
+  username: z.string(),
+  githubId: z.number().nullable(),
+  sponsorUrl: z.string().nullable(),
+  displayName: z.string(),
+  roles: z.object({ // do not allow roles to be sent when using v2 of the API
+    sitewide: z.array(z.enum([])),
+    perGame: z.record(z.string(), z.array(z.enum([]))),
+  }),
+  bio: z.string(),
+  createdAt: z.date(),
+  updatedAt: z.date(),
 });
 export type UserPublicApiV2 = z.infer<typeof UserApiV2Schema>;
 
 export const GameVersionApiv2Schema = z.object({
-    id: z.number().int().positive(),
-    gameName: z.string(),
-    version: z.string(),
-    defaultVersion: z.boolean(),
-    createdAt: z.date(),
-    updatedAt: z.date(),
+  id: z.number().int().positive(),
+  gameName: z.string(),
+  version: z.string(),
+  defaultVersion: z.boolean(),
+  createdAt: z.date(),
+  updatedAt: z.date(),
 });
 export type GameVersionApiV2 = z.infer<typeof GameVersionApiv2Schema>;
 
@@ -449,9 +450,9 @@ export type ModVersionsApiv2 = z.infer<typeof ModVersionsApiv2Schema>;
 // #endregion
 // #region API v3 Schemas
 let GameVersionApiV3Schema = z.object({
-    id: z.number().int().positive(),
-    gameName: z.string(),
-    version: z.string(),
+  id: z.number().int().positive(),
+  gameName: z.string(),
+  version: z.string(),
 });
 export type GameVersionApiV3 = z.infer<typeof GameVersionApiV3Schema>;
 
@@ -463,7 +464,10 @@ export const userApiV3Schema = z.object({
   bio: z.string().nullable(),
   userPlatforms: z.array(userPlatformSchema).nullable(),
   avatarUrl: z.string(),
-  permissions: z.array(userPermissionsSchema)
+  permissions: z.object({
+    perGame: z.record(z.string(), z.array(z.enum(UserPermissions))),
+    sitewide: z.array(z.enum(UserPermissions))
+  }),
 })
 
 export type AlertPublicApiv3 = z.infer<typeof alertPublicApiv3Schema>;
@@ -480,38 +484,43 @@ export const alertPublicApiv3Schema = z.object({
 })
 
 export const ProjectApiV3Schema = z.object({
-    id: dbId,
-    name: z.string(),
-    summary: z.string(),
-    description: z.string(),
-    category: z.string(),
-    authors: z.array(userApiV3Schema),
-    gameName: z.string(),
-    status: z.enum(Status),
-    iconFileName: z.string(),
-    gitUrl: z.string(),
-    lastApprovedById: dbId.nullable(),
-    lastUpdatedById: dbId,
-    statusHistory: z.array(statusHistorySchema),
-    createdAt: z.date(),
-    updatedAt: z.date(),
+  id: dbId,
+  name: z.string(),
+  summary: z.string(),
+  description: z.string(),
+  category: z.string(),
+  authors: z.array(userApiV3Schema),
+  gameName: z.string(),
+  status: z.enum(Status),
+  iconFileName: z.string(),
+  gitUrl: z.string(),
+  lastApprovedById: dbId.nullable(),
+  lastUpdatedById: dbId,
+  statusHistory: z.array(statusHistorySchema),
+  translation: z.object({
+    name: z.string().nullable(),
+    summary: z.string().nullable(),
+    description: z.string().nullable(),
+  }).nullable(),
+  createdAt: z.date(),
+  updatedAt: z.date(),
 });
 export type ProjectApiV3 = z.infer<typeof ProjectApiV3Schema>;
 
 export const VersionApiV3Schema = z.object({
-    id: dbId,
-    projectId: dbId,
-    uploaderId: dbId,
-    semver: z.string(),
-    supportedGameVersions: z.array(GameVersionApiV3Schema),
-    status: z.enum(Status),
-    dependencies: z.array(DependencySchema),
-    platform: z.string(),
-    zipHash: z.string(),
-    contentHashes: z.array(ContentHashSchema),
-    fileSize: z.number(),
-    createdAt: z.date(),
-    updatedAt: z.date(),
+  id: dbId,
+  projectId: dbId,
+  uploaderId: dbId,
+  semver: z.string(),
+  supportedGameVersions: z.array(GameVersionApiV3Schema),
+  status: z.enum(Status),
+  dependencies: z.array(DependencySchema),
+  platform: z.string(),
+  zipHash: z.string(),
+  contentHashes: z.array(ContentHashSchema),
+  fileSize: z.number(),
+  createdAt: z.date(),
+  updatedAt: z.date(),
 });
 export type VersionApiV3 = z.infer<typeof VersionApiV3Schema>;
 

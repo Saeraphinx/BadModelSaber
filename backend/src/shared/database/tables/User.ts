@@ -1,6 +1,6 @@
 import { AfterValidate, Column, CreatedAt, DataType, DeletedAt, Model, Table, UpdatedAt } from "sequelize-typescript";
 import { CreationAttributes, CreationOptional, InferAttributes, InferCreationAttributes, Sequelize } from "sequelize";
-import { AlertType, UserPlatform, UserApiV3, UserPermissions, PlatformType, UserPublicApiV2, dbId, userPermissionsSchema, userPlatformSchema } from "../DBExtras.ts";
+import { AlertType, UserPlatform, UserApiV3, UserPermissions, PlatformType, UserPublicApiV2, dbId, userPermissionsSchema, userPlatformSchema, Status } from "../DBExtras.ts";
 import { Alert } from "./Alert.ts";
 import { Logger } from "../../Logger.ts";
 import z from "zod";
@@ -23,7 +23,7 @@ export class User extends Model<InferAttributes<User>, InferCreationAttributes<U
         autoIncrementIdentity: true,
         defaultValue: Sequelize.fn(`nextval`, Sequelize.literal(`'global_id_seq'`)),
     })
-    declare id: number;
+    declare id: CreationOptional<number>;
 
     @Column({
         type: DataType.STRING(32),
@@ -73,7 +73,10 @@ export class User extends Model<InferAttributes<User>, InferCreationAttributes<U
         allowNull: false,
         defaultValue: []
     })
-    declare permissions: CreationOptional<UserPermissions[]>;
+    declare permissions: CreationOptional<{
+        perGame: Record<string, UserPermissions[]>,
+        sitewide: UserPermissions[]
+    }>;
 
     @CreatedAt
     declare readonly createdAt: CreationOptional<Date>;
@@ -93,7 +96,10 @@ export class User extends Model<InferAttributes<User>, InferCreationAttributes<U
         bio: z.string(),
         userPlatforms: z.array(userPlatformSchema),
         avatarUrl: z.url(),
-        permissions: z.array(userPermissionsSchema),
+        permissions: z.object({
+            perGame: z.record(z.string(), z.array(z.enum(UserPermissions))),
+            sitewide: z.array(z.enum(UserPermissions))
+        }),
         createdAt: z.date(),
         updatedAt: z.date(),
         deletedAt: z.date().nullable()
@@ -102,8 +108,6 @@ export class User extends Model<InferAttributes<User>, InferCreationAttributes<U
     public static validatorCreation = z.object({
         ...User.validator.shape,
         id: User.validator.shape.id.nullish(),
-        discordId: User.validator.shape.discordId.nullish(),
-        githubId: User.validator.shape.githubId.nullish(),
         displayName: User.validator.shape.displayName.nullish(),
         bio: User.validator.shape.bio.nullish(),
         userPlatforms: User.validator.shape.userPlatforms.nullish(),
@@ -130,6 +134,25 @@ export class User extends Model<InferAttributes<User>, InferCreationAttributes<U
             throw new Error(isNotValid);
         }
     }
+    // #endregion
+    // #region getAllowedStatuses
+    public static getAllowedStatuses(): Status[] {
+        return [Status.Verified, Status.Unverified];
+    }
+
+    public getAllowedStatuses(type: `asset`|`mod`, gameName?: string): Status[] {
+        if (type === `asset`) {
+            if (!this.checkRoles([UserPermissions.Asset_ViewAll], gameName)) {
+                return User.getAllowedStatuses();
+            }
+        } else {
+            if (!this.checkRoles([UserPermissions.Mods_ViewAll], gameName)) {
+                return User.getAllowedStatuses();
+            }
+        }
+        return Object.values(Status);
+    }
+            
     // #endregion
 
     // #region createAlert
@@ -163,19 +186,32 @@ export class User extends Model<InferAttributes<User>, InferCreationAttributes<U
     // #endregion
 
     // #region checkRoles
-    public checkRoles(has: UserPermissions[]): boolean;
+    public checkRoles(has: UserPermissions[], gameName?: string): boolean;
     public checkRoles(roles: {
         hasAllOf?: UserPermissions[],
         hasOneOf?: UserPermissions[],
         denied?: UserPermissions[]
-    }): boolean;
-    public checkRoles(roles: UserPermissions[] | { hasAllOf?: UserPermissions[], hasOneOf?: UserPermissions[], denied?: UserPermissions[] }): boolean {
+    }, gameName?: string): boolean;
+    public checkRoles(roles: UserPermissions[] | { hasAllOf?: UserPermissions[], hasOneOf?: UserPermissions[], denied?: UserPermissions[] }, gameName?: string): boolean {
         if (Array.isArray(roles)) {
-            return roles.every(role => this.permissions.includes(role));
+            if (gameName) {
+                return roles.every(role => (this.permissions.sitewide.includes(role) || (this.permissions.perGame[gameName] && this.permissions.perGame[gameName].includes(role))));
+            } else {
+                return roles.every(role => this.permissions.sitewide.includes(role));
+            }
         } else {
-            return (roles.hasAllOf ? roles.hasAllOf.every(role => this.permissions.includes(role)) : true) &&
-                (roles.hasOneOf ? roles.hasOneOf.some(role => this.permissions.includes(role)) : true) &&
-                (roles.denied ? roles.denied.every(role => !this.permissions.includes(role)) : true);
+            const sitewideCheck = (roles.hasAllOf ? roles.hasAllOf.every(role => this.permissions.sitewide.includes(role)) : true) &&
+                (roles.hasOneOf ? roles.hasOneOf.some(role => this.permissions.sitewide.includes(role)) : true) &&
+                (roles.denied ? roles.denied.every(role => !this.permissions.sitewide.includes(role)) : true);
+
+            if (gameName) {
+                const perGameCheck = (roles.hasAllOf ? roles.hasAllOf.every(role => this.permissions.perGame[gameName]?.includes(role) ?? false) : true) &&
+                    (roles.hasOneOf ? roles.hasOneOf.some(role => this.permissions.perGame[gameName]?.includes(role) ?? false) : true) &&
+                    (roles.denied ? roles.denied.every(role => !(this.permissions.perGame[gameName]?.includes(role) ?? false)) : true);
+                return sitewideCheck && perGameCheck;
+            } else {
+                return sitewideCheck;
+            }
         }
     }
     // #endregion

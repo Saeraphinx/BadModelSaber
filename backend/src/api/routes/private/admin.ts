@@ -1,50 +1,38 @@
-import { Alert, dbId, User, UserPermissions } from "../../../shared/Database.ts";
+import { Alert, dbId, User, UserPermissions, userPermissionsSchema } from "../../../shared/Database.ts";
 import { Validator } from "../../../shared/Validator.ts";
 import z from "zod/v4";
 import { dedupeArray } from "../../../shared/Tools.ts";
-import { authProcedure, loggedInProcedure, router } from "../../trpc.ts";
+import { loggedInProcedure, router } from "../../trpc.ts";
 import { Logger } from "../../../shared/Logger.ts";
 import { importFromOldModelSaber } from "../../../shared/Importer.ts";
 import { TRPCError } from "@trpc/server";
 import { EnvConfig } from "../../../shared/EnvConfig.ts";
 
 export const AdminRouter = router({
-    setRoles: loggedInProcedure([UserPermissions.Manage_All_Users])
+    setRoles: loggedInProcedure([UserPermissions.Users_EditAllRoles])
         .input(z.object({
             userId: dbId,
-            roles: Validator.z.array(Validator.z.enum(UserPermissions)),
+            permissions: z.object({
+                sitewide: z.array(z.enum(UserPermissions)),
+                perGame: z.record(z.string(), z.array(z.enum(UserPermissions))),
+            })
         }))
         .mutation(async ({ input, ctx }) => {
             let targetUser = await User.findByPk(input.userId);
             if (!targetUser) {
                 throw new Error(`User not found`);
             }
-            targetUser.roles = dedupeArray(input.roles);
+            
+            targetUser.permissions = input.permissions;
             targetUser.save().then((u) => {
-                Logger.log(`Successfully saved roles for user ${targetUser.id}: ${targetUser.roles.join(", ")}`);
+                Logger.log(`Successfully saved roles for user ${targetUser.id}: ${JSON.stringify(targetUser.permissions)}`);
                 return { message: `User roles updated successfully`, user: u };
             }).catch((e) => {
                 Logger.error(`Error saving user roles for user ${targetUser.id}: ${e}`);
                 throw new Error(`Failed to save user roles`);
             });
         }),
-    banUser: authProcedure([UserPermissions.Manage_All_Users, UserPermissions.Manage_NonMod_Users])
-        .input(z.object({
-            userId: Validator.zNumberId,
-            ban: z.boolean(),
-        }))
-        .mutation(async ({ input, ctx }) => {
-            let targetUser = await User.findByPk(input.userId);
-            if (!targetUser) {
-                throw new Error(`User not found`);
-            }
-            if (targetUser.roles.includes(UserPermissions.Manage_All_Users)) {
-                throw new Error(`Cannot ban a user with ${UserPermissions.Manage_All_Users} permission`);
-            }
-            targetUser.roles = []
-            targetUser.save();
-        }),
-    createAlert: authProcedure([UserPermissions.Manage_All_Users, UserPermissions.Manage_NonMod_Users])
+    createAlert: loggedInProcedure([UserPermissions.Users_EditAll, UserPermissions.Users_Ban])
         .input(Alert.validatorCreation.pick({
             header: true,
             message: true,
@@ -57,15 +45,15 @@ export const AdminRouter = router({
             let alert = await Alert.create(input);
             return alert;
         }),
-    importOldModelSaberData: authProcedure([UserPermissions.Administative_Tasks])
+    importOldModelSaberData: loggedInProcedure([UserPermissions.Administative_Tasks])
         .mutation(async ({ input, ctx }) => {
             importFromOldModelSaber((message, level) => {});
         }),
-    getAdminLogs: authProcedure([UserPermissions.Administative_Tasks])
+    getAdminLogs: loggedInProcedure([UserPermissions.Administative_Tasks])
         .query(async ({ input, ctx }) => {
             return Logger.getLogs(new Date(Date.now() - 1000 * 60 * 5)); // last 5 minutes
         }),
-    resetSchema: authProcedure([UserPermissions.Administative_Tasks])
+    resetSchema: loggedInProcedure([UserPermissions.Administative_Tasks])
         .mutation(async ({ ctx }) => {
             if (!EnvConfig.isDevMode) {
                 throw new TRPCError({ code: `FORBIDDEN`, message: `Cannot drop database schema in a non-development environment.` });
@@ -84,7 +72,7 @@ export const AdminRouter = router({
             });
             return { message: `Database schema reset successfully` };
         }),
-    importFakeData: authProcedure([UserPermissions.Administative_Tasks])
+    importFakeData: loggedInProcedure([UserPermissions.Administative_Tasks])
         .mutation(async ({ ctx }) => {
             if (!EnvConfig.isDevMode) {
                 throw new TRPCError({ code: `FORBIDDEN`, message: `Cannot import fake data in a non-development environment.` });
