@@ -136,8 +136,12 @@ export class User extends Model<InferAttributes<User>, InferCreationAttributes<U
     }
     // #endregion
     // #region getAllowedStatuses
-    public static getAllowedStatuses(): Status[] {
-        return [Status.Verified, Status.Unverified];
+    public static getAllowedStatuses(user?: User | null, gameName?: string): Status[] {
+        if (user) {
+            return user.getAllowedStatuses(`asset`, gameName);
+        } else {
+            return [Status.Verified, Status.Unverified];
+        }
     }
 
     public getAllowedStatuses(type: `asset`|`mod`, gameName?: string): Status[] {

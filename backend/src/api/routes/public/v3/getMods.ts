@@ -1,5 +1,5 @@
 import { Logger } from "../../../../shared/Logger.ts";
-import { GameVersion, GameVersionWhereOptions, Project, ProjectApiV3, ProjectApiV3Schema, Status, User, Version, VersionApiV3Schema } from "../../../../shared/Database.ts";
+import { GameVersion, GameVersionWhereOptions, Project, ProjectApiV3, projectApiV3Schema, Status, User, Version, versionApiV3Schema } from "../../../../shared/Database.ts";
 import { anyProcedure, gameProcedure, router } from "../../../trpc.ts";
 import z from "zod/v4";
 import { TRPCError } from "@trpc/server";
@@ -23,8 +23,8 @@ export const GetModsV3 = router({
             platform: z.string().optional(),
         }))
         .output(z.array(z.object({
-            project: ProjectApiV3Schema,
-            version: VersionApiV3Schema
+            project: projectApiV3Schema,
+            version: versionApiV3Schema
         })))
         .query(async ({ ctx, input }) => {
             let gvWhereOptions: GameVersionWhereOptions = {
@@ -88,7 +88,7 @@ export const GetModsV3 = router({
         .input(z.object({
             projectId: z.number()
         }))
-        .output(ProjectApiV3Schema)
+        .output(projectApiV3Schema)
         .query(async ({ ctx, input }) => {
             let project = await Project.findByPk(input.projectId);
             if (!project) {
@@ -105,7 +105,7 @@ export const GetModsV3 = router({
         .input(z.object({
             projectId: z.number()
         }))
-        .output(z.array(VersionApiV3Schema))
+        .output(z.array(versionApiV3Schema))
         .query(async ({ ctx, input }) => {
             let project = await Project.findByPk(input.projectId);
             if (!project) {
@@ -136,8 +136,8 @@ export const GetModsV3 = router({
             projectId: z.number()
         }))
         .output(z.object({
-            project: ProjectApiV3Schema,
-            versions: z.array(VersionApiV3Schema)
+            project: projectApiV3Schema,
+            versions: z.array(versionApiV3Schema)
         }))
         .query(async ({ ctx, input }) => {
             let project = await Project.findByPk(input.projectId);

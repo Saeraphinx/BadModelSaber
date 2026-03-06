@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { Alert, AlertInfer, alertPublicApiv3Schema } from "../../../shared/Database.ts";
+import { Alert, AlertInfer, alertApiV3Schema } from "../../../shared/Database.ts";
 import { Validator } from "../../../shared/Validator.ts";
 import { parseErrorMessage } from "../../../shared/Tools.ts";
 import { Logger } from "../../../shared/Logger.ts";
@@ -12,7 +12,7 @@ export const alertsRouter = router({
         .input(Validator.z.object({ 
             read: Validator.z.enum([`true`, `false`, `all`]).default(`false`) }
         ))
-        .output(Validator.z.array(alertPublicApiv3Schema))
+        .output(Validator.z.array(alertApiV3Schema))
         .query(async ({input, ctx}) => {
         let whereOptions: WhereOptions<AlertInfer> = {
             userId: ctx.user.id,

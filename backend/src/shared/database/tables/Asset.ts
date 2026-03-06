@@ -1,6 +1,6 @@
 import { AfterValidate, AllowNull, BelongsTo, Column, CreatedAt, DataType, Default, DeletedAt, ForeignKey, Model, Table, UpdatedAt } from "sequelize-typescript";
 import { InferAttributes, InferCreationAttributes, NonAttribute, CreationOptional } from "sequelize";
-import { Alert, AssetRequest, User, UserPermissions } from "../../Database.ts";
+import { Alert, ThingRequest, User, UserPermissions } from "../../Database.ts";
 import { AlertType, AssetApiV3, AssetFileFormat, AssetPublicAPIv1, AssetPublicAPIv2, dbId, License, LinkedAsset, LinkedAssetLinkType, RequestType, Status, StatusHistory, Tags, UserApiV3, WebhookLogType } from "../DBExtras.ts";
 import { z } from "zod/v4";
 import { EnvConfig } from "../../EnvConfig.ts";
@@ -338,12 +338,12 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
         }
     }
 
-    public async requestCollab(reqBy: User, userToCredit: User): Promise<AssetRequest> {
+    public async requestCollab(reqBy: User, userToCredit: User): Promise<ThingRequest> {
         if (this.uploaderId === userToCredit.id || this.collaborators.includes(userToCredit.id)) {
             throw new Error(`This user is already credited for this asset.`);
         }
 
-        let existingRequests = await AssetRequest.findAll({
+        let existingRequests = await ThingRequest.findAll({
             where: {
                 requestResponseBy: userToCredit.id,
                 refrencedAssetId: this.id,
@@ -361,7 +361,7 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
 
         Logger.log(`Creating credit request for asset ${this.id} by user ${reqBy.id} to credit user ${userToCredit.id}`);
         // note that alert is not needed as requests are treated like alerts
-        return await AssetRequest.create({
+        return await ThingRequest.create({
             refrencedAssetId: this.id,
             requesterId: reqBy.id,
             requestResponseBy: userToCredit.id,
@@ -384,7 +384,7 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
         }
 
         if (this.uploaderId !== assetToLink.uploaderId && !reqBy.checkRoles([UserPermissions.Asset_EditAll], this.gameName)) {
-            let existingRequests = await AssetRequest.findAll({
+            let existingRequests = await ThingRequest.findAll({
                 where: {
                     requestResponseBy: assetToLink.uploaderId,
                     refrencedAssetId: this.id,
@@ -399,7 +399,7 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
             }
 
             Logger.log(`Creating link request for asset ${this.id} by user ${reqBy.id} to link asset ${assetToLink.id}`);
-            return await AssetRequest.create({
+            return await ThingRequest.create({
                 refrencedAssetId: this.id,
                 requesterId: reqBy.id,
                 requestResponseBy: assetToLink.uploaderId,
@@ -561,12 +561,12 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
     }
     // #endregion
     // #region Reports
-    public async report(reportedBy: User, reason: string): Promise<AssetRequest> {
+    public async report(reportedBy: User, reason: string): Promise<ThingRequest> {
         if (this.uploaderId === reportedBy.id) {
             throw new Error(`You cannot report your own asset.`);
         }
 
-        let existingRequests = await AssetRequest.findAll({
+        let existingRequests = await ThingRequest.findAll({
             where: {
                 requestResponseBy: this.uploaderId,
                 refrencedAssetId: this.id,
@@ -579,7 +579,7 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
         }
 
         Logger.log(`Creating report request for asset ${this.id} by user ${reportedBy.id} for reason: ${reason}`);
-        return await AssetRequest.create({
+        return await ThingRequest.create({
             refrencedAssetId: this.id,
             requesterId: reportedBy.id,
             requestType: RequestType.Report,

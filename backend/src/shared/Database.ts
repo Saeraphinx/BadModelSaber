@@ -5,7 +5,7 @@ import { Umzug, SequelizeStorage } from "umzug";
 import { User } from "./database/tables/User.ts";
 import { Asset } from "./database/tables/Asset.ts";
 import { Alert } from "./database/tables/Alert.ts";
-import { AssetRequest } from "./database/tables/AssetRequest.ts";
+import { ThingRequest } from "./database/tables/ThingRequest.ts";
 import { PlatformType, Status, UserPermissions } from "./database/DBExtras.ts";
 import fs from "node:fs";
 import { parseErrorMessage } from "./Tools.ts";
@@ -13,7 +13,7 @@ import { parseErrorMessage } from "./Tools.ts";
 export * from "./database/tables/User.ts";
 export * from "./database/tables/Asset.ts";
 export * from "./database/tables/Alert.ts";
-export * from "./database/tables/AssetRequest.ts";
+export * from "./database/tables/ThingRequest.ts";
 export * from "./database/DBExtras.ts";
 export * from "./database/tables/Game.ts"
 export * from "./database/tables/GameVersion.ts"
@@ -162,7 +162,7 @@ export class DatabaseManager {
             User,
             Asset,
             Alert,
-            AssetRequest
+            ThingRequest
         ]);
 
         /* old model stuffs

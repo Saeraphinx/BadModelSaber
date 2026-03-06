@@ -1,12 +1,12 @@
-import { Asset, AssetRequest, LinkedAssetLinkType, User } from "../../../shared/Database.ts";
-import { Validator } from "../../../shared/Validator.ts";
+import z from "zod/v4";
+import { Asset, ThingRequest, LinkedAssetLinkType, User, dbId } from "../../../shared/Database.ts";
 import { parseErrorMessage } from "../../../shared/Tools.ts";
-import { authProcedure, router } from "../../trpc.ts";
+import { loggedInProcedure, router } from "../../trpc.ts";
 import { TRPCError } from "@trpc/server";
 
 export const UpdateAssetRouter = router({
-    updateAsset: authProcedure(`loggedIn`).input(Validator.z.object({
-        assetId: Validator.zNumberId,
+    updateAsset: loggedInProcedure().input(z.object({
+        assetId: dbId,
         data: Asset.validator.pick({
             name: true,
             description: true,
@@ -21,13 +21,13 @@ export const UpdateAssetRouter = router({
             throw new Error(`You are not allowed to edit this asset`);
         }
         asset.updateAsset(input.data, ctx.user).then(updatedAsset => {
-            return updatedAsset.getApiResponse();
+            return updatedAsset.toApiV3();
         }).catch(err => {
             throw new Error(`Error updating asset: ${parseErrorMessage(err)}`);
         });
     }),
-    submitForApproval: authProcedure(`loggedIn`).input(Validator.z.object({
-        assetId: Validator.zNumberId
+    submitForApproval: loggedInProcedure().input(z.object({
+        assetId: dbId
     })).mutation(async ({ input, ctx }) => {
         const asset = await Asset.findByPk(input.assetId);
         if (!asset) {
@@ -37,15 +37,15 @@ export const UpdateAssetRouter = router({
             throw new TRPCError({ code: `FORBIDDEN`, message: `You are not allowed to edit this asset` });
         }
         return await asset.submitForApproval(ctx.user).then(updatedAsset => {
-            return updatedAsset.getApiResponse();
+            return updatedAsset.toApiV3();
         }).catch(err => {
             throw new TRPCError({ code: `INTERNAL_SERVER_ERROR`, message: `Error submitting asset for approval: ${parseErrorMessage(err)}` });
         });
     }),
-    linkAsset: authProcedure(`loggedIn`).input(Validator.z.object({
-        assetId: Validator.zNumberId,
-        linkToId: Validator.zNumberId,
-        type: Validator.z.enum(LinkedAssetLinkType)
+    linkAsset: loggedInProcedure().input(z.object({
+        assetId: dbId,
+        linkToId: dbId,
+        type: z.enum(LinkedAssetLinkType)
     })).mutation(async ({ input, ctx }) => {
         const asset = await Asset.findByPk(input.assetId);
         if (!asset) {
@@ -59,19 +59,19 @@ export const UpdateAssetRouter = router({
             throw new Error(`Asset to link not found`);
         }
 
-        return await asset.requestLink(ctx.user, otherAsset, input.type).then(result => {
-            if (result instanceof AssetRequest) {
-                return { message: `Request created successfully`, request: result.getAPIResponse() };
+        return await asset.requestLink(ctx.user, otherAsset, input.type).then(async result => {
+            if (result instanceof ThingRequest) {
+                return { message: `Request created successfully`, request: await result.toApiV3() };
             } else {
-                return { message: `Asset linked successfully`, asset: result.getApiResponse() };
+                return { message: `Asset linked successfully`, asset: await result.toApiV3() };
             }
         }).catch(err => {
             throw new Error(`Error linking asset: ${parseErrorMessage(err)}`);
         });
     }),
-    addCollaborator: authProcedure(`loggedIn`).input(Validator.z.object({
-        id: Validator.zNumberId,
-        userId: Validator.zUserID
+    addCollaborator: loggedInProcedure().input(z.object({
+        id: dbId,
+        userId: dbId
     })).mutation(async ({ input, ctx }) => {
         const asset = await Asset.findByPk(input.id);
         if (!asset) {
@@ -88,7 +88,7 @@ export const UpdateAssetRouter = router({
             throw new Error(`User to credit not found`);
         }
         return asset.requestCollab(ctx.user, userToCredit).then(request => {
-            return request.getAPIResponse();
+            return request.toApiV3();
         }).catch(err => {
             throw new Error(`Error adding collaborator: ${parseErrorMessage(err)}`);
         });

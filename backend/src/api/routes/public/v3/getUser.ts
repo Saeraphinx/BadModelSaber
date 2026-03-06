@@ -3,11 +3,12 @@ import { Validator } from "../../../../shared/Validator.ts";
 import { Asset, AssetInfer, User } from "../../../../shared/Database.ts";
 import { Op, WhereOptions } from "sequelize";
 import { parseErrorMessage } from "../../../../shared/Tools.ts";
-import { AssetPublicAPIv3, userApiV3Schema } from "../../../../shared/database/DBExtras.ts";
-import { authProcedure, router } from "../../../trpc.ts";
+import { AssetApiV3, userApiV3Schema } from "../../../../shared/database/DBExtras.ts";
+import { anyProcedure, loggedInProcedure, router } from "../../../trpc.ts";
+import z from "zod/v4";
 
 export const userRouterV3 = router({
-    getMe: authProcedure(`loggedIn`)
+    getMe: loggedInProcedure()
         .meta({
             openapi: {
                 method: 'GET',
@@ -15,46 +16,29 @@ export const userRouterV3 = router({
                 tags: ['Users'],
             }
         })
-        .input(Validator.z.void())
+        .input(z.void())
         .output(userApiV3Schema)
         .query(({ctx}) => {
-        return ctx.user.getApiResponse();
+        return ctx.user.toApiV3();
     }),
-    getUserById: authProcedure(`any`).input(Validator.z.object({
-        id: Validator.zUserID
+    getUserById: loggedInProcedure().input(z.object({
+        id: z.int().positive()
     })).query(async ({input, ctx}) => {
-        let userId = input.id;
-        if (userId === `me`) {
-            if (!ctx.userId) {
-                throw new Error(`You are not logged in`);
-            } else {
-                userId = ctx.userId;
-            }
-        }
-        const user = await User.findByPk(userId);
+        const user = await User.findByPk(input.id);
         if (!user) {
             throw new Error(`User not found`);
         }
-        return user.getApiResponse();
+        return user.toApiV3();
     }),
-    getAssetsByUserId: authProcedure(`any`).input(Validator.z.object({
-        id: Validator.zUserID,
-        ...Validator.zFilterAssetv3.shape
+    getAssetsByUserId: anyProcedure().input(z.object({
+        id: z.int().positive(),
     })).query(async ({input, ctx}) => {
-        let userId = input.id;
-        if (userId === `me`) {
-            if (!ctx.userId) {
-                throw new Error(`You are not logged in`);
-            } else {
-                userId = ctx.userId;
-            }
-        }
-        const user = await User.findByPk(userId);
+        const user = await User.findByPk(input.id);
         if (!user) {
             throw new Error(`User not found`);
         }
         let whereOptions: WhereOptions<AssetInfer> = {
-            status: Asset.allowedToViewRoles(ctx.user),
+            status: User.getAllowedStatuses(ctx.user),
             [Op.or]: [
                 { uploaderId: user.id },
                 {
@@ -66,13 +50,13 @@ export const userRouterV3 = router({
         };
         const assets = await Asset.findAll({
             where: whereOptions,
-            limit: input.limit ?? undefined,
-            offset: input.page && input.limit ? ((input.page - 1) * input.limit) : undefined,
+            //limit: input.limit ?? undefined,
+            //offset: input.page && input.limit ? ((input.page - 1) * input.limit) : undefined,
             order: [["createdAt", "DESC"]],
             include: { all: true }
         });
-        let response = await Promise.all(assets.map(asset => asset.getApiV3Response()));
-        return { assets: response, total: assets.length, page: input.page ?? null};
+        let response = await Promise.all(assets.map(asset => asset.toApiV3()));
+        return { assets: response, total: assets.length, page: /*input.page ?? null*/ null};
     })
 });
 

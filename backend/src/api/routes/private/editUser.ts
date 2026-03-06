@@ -1,5 +1,5 @@
 import z from "zod/v4";
-import { Asset, AssetRequest, LinkedAssetLinkType, RequestType, User, UserPermissions } from "../../../shared/Database.ts";
+import { Asset, ThingRequest, LinkedAssetLinkType, RequestType, User, UserPermissions } from "../../../shared/Database.ts";
 import { Validator } from "../../../shared/Validator.ts";
 import { loggedInProcedure, router } from "../../trpc.ts";
 import { dedupeArray } from "../../../shared/Tools.ts";

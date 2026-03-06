@@ -1,5 +1,5 @@
 
-import { Asset, AssetRequest, AssetRequestInfer, RequestType, UserPermissions } from "../../../shared/Database.ts";
+import { Asset, ThingRequest, AssetRequestInfer, RequestType, UserPermissions } from "../../../shared/Database.ts";
 import { Validator } from "../../../shared/Validator.ts";
 import { Op, WhereOptions } from "sequelize";
 import { authProcedure, router } from "../../trpc.ts";
@@ -21,14 +21,14 @@ export const RequestRouter = router({
             whereOptions.accepted = null;
         }
 
-        let incoming = AssetRequest.findAll({
+        let incoming = ThingRequest.findAll({
             where: {
                 requestResponseBy: ctx.user.id,
                 ...whereOptions
             },
             include: { all: true },
         });
-        let outgoing = AssetRequest.findAll({
+        let outgoing = ThingRequest.findAll({
             where: {
                 requesterId: ctx.user.id,
                 ...whereOptions
@@ -37,7 +37,7 @@ export const RequestRouter = router({
         });
         let reports = null;
         if (isElevated) {
-            reports = AssetRequest.findAll({
+            reports = ThingRequest.findAll({
                 where: {
                     requesterId: {[Op.ne]: ctx.user.id},
                     requestType: RequestType.Report,
@@ -54,13 +54,13 @@ export const RequestRouter = router({
         };
     }),
     requestCounts: authProcedure(`loggedIn`).query(async ({ ctx }) => {
-        let incoming = await AssetRequest.count({
+        let incoming = await ThingRequest.count({
             where: {
                 requestResponseBy: ctx.user.id,
                 accepted: null
             }
         });
-        let outgoing = await AssetRequest.count({
+        let outgoing = await ThingRequest.count({
             where: {
                 requesterId: ctx.user.id,
                 accepted: null
@@ -68,7 +68,7 @@ export const RequestRouter = router({
         });
         let reports = null;
         if (ctx.user.roles.includes(UserPermissions.View_All_Reports)) {
-            reports = await AssetRequest.count({
+            reports = await ThingRequest.count({
                 where: {
                     requestType: RequestType.Report,
                     accepted: null
@@ -81,7 +81,7 @@ export const RequestRouter = router({
         id: Validator.zNumberId,
     })).query(async ({ input, ctx }) => {
         let isElevated = ctx.user.roles.includes(UserPermissions.View_All_Reports);
-        const assetReq = await AssetRequest.findByPk(input.id, { include: { all: true }});
+        const assetReq = await ThingRequest.findByPk(input.id, { include: { all: true }});
         if (!assetReq) {
             throw new TRPCError({code: `NOT_FOUND`, message: `Request not found`});
         }
@@ -94,7 +94,7 @@ export const RequestRouter = router({
         id: Validator.zNumberId,
         message: Validator.z.string().min(1).max(2048)
     })).mutation(async ({ input, ctx }) => {
-        const assetReq = await AssetRequest.findByPk(input.id);
+        const assetReq = await ThingRequest.findByPk(input.id);
         if (!assetReq) {
             throw new TRPCError({code: `NOT_FOUND`, message: `Request not found`});
         }
@@ -108,7 +108,7 @@ export const RequestRouter = router({
         id: Validator.zNumberId,
         action: Validator.z.enum([`accept`, `decline`]),
     })).mutation(async ({ input, ctx }) => {
-        const assetReq = await AssetRequest.findByPk(input.id);
+        const assetReq = await ThingRequest.findByPk(input.id);
         if (!assetReq) {
             throw new TRPCError({code: `NOT_FOUND`, message: `Request not found`});
         }

@@ -3,10 +3,10 @@ import { Validator } from "../../../../shared/Validator.ts";
 import { Asset, AssetInfer, User } from "../../../../shared/Database.ts";
 import { Op, Sequelize, WhereOptions } from "sequelize";
 import { parseErrorMessage } from "../../../../shared/Tools.ts";
-import { assetFileFormatSchema, AssetPublicAPIv3, assetPublicAPIv3Schema, Status, statusSchema, Tags } from "../../../../shared/database/DBExtras.ts";
+import { assetFileFormatSchema, AssetApiV3, assetApiV3Schema, Status, statusSchema, Tags } from "../../../../shared/database/DBExtras.ts";
 import { anyProcedure, router } from "../../../trpc.ts";
 import { TRPCError } from "@trpc/server";
-import z from "zod/v4";
+import z, { any } from "zod/v4";
 
 export const assetsRouterV3 = router({
     getAssets: anyProcedure()
@@ -32,7 +32,7 @@ export const assetsRouterV3 = router({
                 return true; // Valid if both are provided or neither is provided
             }, `Both page and limit must be provided together.`))
         .output(z.object({
-            assets: z.array(assetPublicAPIv3Schema),
+            assets: z.array(assetApiV3Schema),
             total: z.number(),
             page: z.number().nullable()
         }))
@@ -59,8 +59,7 @@ export const assetsRouterV3 = router({
             let response = await Promise.all(assets.map(asset => asset.toApiV3()));
             return { assets: response, total: assets.length, page: input.page ?? null };
         }),
-    getAssetById: 
-    (`anyCheckAuth`)
+    getAssetById: anyProcedure()
         .meta({
             openapi: {
                 method: 'GET',
@@ -71,7 +70,7 @@ export const assetsRouterV3 = router({
         .input(z.object({
             id: z.int().positive(),
         }))
-        .output(assetPublicAPIv3Schema)
+        .output(assetApiV3Schema)
         .query(async ({ input, ctx }) => {
             let asset = await Asset.findByPk(input.id, { include: { all: true } });
             if (!asset) {
@@ -87,9 +86,9 @@ export const assetsRouterV3 = router({
             if (!asset.canView(ctx.user)) {
                 throw new TRPCError({code: `FORBIDDEN`, message: `You are not allowed to view this asset.`} );
             }
-            return await asset.getApiV3Response();
+            return await asset.toApiV3();
         }),
-    getMultipleAssetsById: authProcedure(`any`)
+    getMultipleAssetsById: anyProcedure()
         .meta({
             openapi: {
                 method: 'GET',
@@ -101,24 +100,24 @@ export const assetsRouterV3 = router({
             id: z.array(z.int().positive()).min(1),
         }))
         // Record keys as numbers doesn't exist in javascript, and zod errors on it because of that
-        .output(Validator.z.record(Validator.z.string(), assetPublicAPIv3Schema))
+        .output(z.record(z.string(), assetApiV3Schema))
         .query(async ({ input, ctx }) => {
             const assets = await Asset.findAll({
                 where: {
                     id: input.id,
-                    status: Asset.allowedToViewRoles(ctx.user)
+                    status: User.getAllowedStatuses(ctx.user)
                 },
                 include: { all: true }
             });
-            let response: { [key: string]: AssetPublicAPIv3 } = {};
+            let response: { [key: string]: AssetApiV3 } = {};
             for (let asset of assets) {
-                response[asset.id.toString()] = await asset.getApiV3Response();
+                response[asset.id.toString()] = await asset.toApiV3();
             }
             //console.log(response);
             return response;
         }),
-    getFrontPageAssets: authProcedure(`anyCheckAuth`)
-        .output(Validator.z.array(assetPublicAPIv3Schema))
+    getFrontPageAssets: anyProcedure()
+        .output(z.array(assetApiV3Schema))
         .query(async ({ ctx }) => {
             try {
                 const assets = await Asset.findAll({
@@ -133,7 +132,7 @@ export const assetsRouterV3 = router({
                     ],
                     include: { all: true }
                 });
-                let response = await Promise.all(assets.map(asset => asset.getApiV3Response()));
+                let response = await Promise.all(assets.map(asset => asset.toApiV3()));
                 return response;
             } catch (err) {
                 console.error(err);

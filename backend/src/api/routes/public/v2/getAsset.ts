@@ -2,10 +2,10 @@ import { LegacyValidator } from "../../../../shared/LegacyValidator.ts";
 import { Asset, AssetFileFormat, AssetInfer, assetPublicAPIv1Schema, Status } from "../../../../shared/Database.ts";
 import { z } from "zod/v4";
 import { Op, WhereOptions } from "sequelize";
-import { authProcedure, router } from "../../../trpc.ts";
+import { anyProcedure, router } from "../../../trpc.ts";
 
 export const GetV2Router = router({
-    getAssets: authProcedure(`any`)
+    getAssets: anyProcedure()
         .meta({
             openapi: {
                 method: 'GET',
@@ -46,8 +46,8 @@ export const GetV2Router = router({
             },
             order: [[sortingData.type, sortingData.direction]],
         }).then(async assets => {
-            let promises = assets.map(async asset => asset.getApiV1Response());
-            let repsonse = {} as { [key: number]: Awaited<ReturnType<Asset[`getApiV1Response`]>> };
+            let promises = assets.map(async asset => asset.toApiV2());
+            let repsonse = {} as { [key: number]: Awaited<ReturnType<Asset[`toApiV2`]>> };
             await Promise.all(promises).then((values) => {
                 for (let i = 0; i < values.length; i++) {
                     repsonse[assets[i].id] = values[i];

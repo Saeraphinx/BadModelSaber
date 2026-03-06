@@ -3,7 +3,7 @@ import { InferAttributes, InferCreationAttributes, CreationOptional } from "sequ
 import { z } from "zod/v4";
 import { User } from "./User.ts";
 import { Asset } from "./Asset.ts";
-import { AlertPublicApiv3, AlertType, dbId } from "../DBExtras.ts";
+import { AlertApiV3, AlertType, dbId } from "../DBExtras.ts";
 
 export type AlertInfer = InferAttributes<Alert>;
 @Table({
@@ -125,7 +125,7 @@ export class Alert extends Model<InferAttributes<Alert>, InferCreationAttributes
     }
     // #endregion Validators
 
-    public toAPIResponse(): AlertPublicApiv3 {
+    public toAPIResponse(): AlertApiV3 {
         return {
             id: this.id,
             type: this.type,

@@ -145,13 +145,19 @@ export enum UserPermissions {
   Asset_Approval = "asset_approval", // User can approve/reject pending assets 
   Asset_InternalTags = "asset_internal_tags", // User can add/remove internal tags (e.g. featured)
 
-  Reports_ViewAll = "reports_view_all", // User can view all reports
-  Reports_Manage = "reports_manage", // User can manage (accept/decline) reports, regardless of responseBy
+  Requests_ViewAssets = "requests_view_assets", // User can view asset requests
+  Requests_ViewMods = "requests_view_mods", // User can view mod requests
+  Requests_ViewUsers = "requests_view_users", // User can view user requests
+  Requests_ViewAll = "requests_view_all", // User can view all requests
+  Requests_ManageAssets = "requests_manage_assets", // User can manage (accept/decline) asset requests
+  Requests_ManageMods = "requests_manage_mods", // User can manage (accept/decline) mod requests
+  Requests_ManageUsers = "requests_manage_users", // User can manage (accept/decline) user requests
+  Requests_ManageAll = "requests_manage_all", // User can manage (accept/decline) requests, regardless of responseBy
 
   Users_EditSelf = "users_update_self", // User can update their own profile (e.g. bio, display name, etc.)
   Users_Ban = "users_ban", // User can ban/unban other users
   Users_EditAll = "users_edit_all", // User can edit other users' profiles (e.g. edit bio, etc.)
-  Users_EditAllRoles = "users_edit_all_roles", // User can edit all roles of other users
+  Users_EditAllRoles = "users_edit_all_roles", // User can edit all roles of other users. basically allows all permissions
 
   Administative_Tasks = "administrative_tasks", // User can perform high-level admin tasks
 
@@ -174,9 +180,12 @@ export enum AlertType {
 }
 
 export enum RequestType {
-  Credit = "credit", // Request to credit the user for an asset
-  Link = "link", // Request to add an asset to linkedIds that the author is not the uploader of
-  Report = "report", // Request to report an asset for a specific reason
+  Asset_Credit = "asset_credit", // Request to credit the user for an asset
+  Asset_Link = "asset_link", // Request to add an asset to linkedIds that the author is not the uploader of
+  Asset_Report = "asset_report", // Request to report an asset for a specific reason
+  Project_Report = "project_report", // Request to report a project for a specific reason
+  Version_Report = "version_report", // Request to report a version for a specific reason
+  User_Report = "user_report", // Request to report a user for a specific reason
 }
 // #endregion Alert Enums
 
@@ -247,7 +256,7 @@ export const linkedAssetLinkTypeSchema = z.enum(LinkedAssetLinkType)
 export const tagsSchema = z.enum(Tags)
 
 // #endregion Asset Enums
-// #region Alert & Reqeust & User Enums
+// #region Alert & Request & User Enums
 export const userPermissionsSchema = z.enum(UserPermissions)
 export const alertTypeSchema = z.enum(AlertType)
 export const requestTypeSchema = z.enum(RequestType)
@@ -470,8 +479,8 @@ export const userApiV3Schema = z.object({
   }),
 })
 
-export type AlertPublicApiv3 = z.infer<typeof alertPublicApiv3Schema>;
-export const alertPublicApiv3Schema = z.object({
+export type AlertApiV3 = z.infer<typeof alertApiV3Schema>;
+export const alertApiV3Schema = z.object({
   id: dbId,
   type: alertTypeSchema,
   assetId: dbId.nullable(),
@@ -483,7 +492,7 @@ export const alertPublicApiv3Schema = z.object({
   updatedAt: z.date()
 })
 
-export const ProjectApiV3Schema = z.object({
+export const projectApiV3Schema = z.object({
   id: dbId,
   name: z.string(),
   summary: z.string(),
@@ -505,9 +514,9 @@ export const ProjectApiV3Schema = z.object({
   createdAt: z.date(),
   updatedAt: z.date(),
 });
-export type ProjectApiV3 = z.infer<typeof ProjectApiV3Schema>;
+export type ProjectApiV3 = z.infer<typeof projectApiV3Schema>;
 
-export const VersionApiV3Schema = z.object({
+export const versionApiV3Schema = z.object({
   id: dbId,
   projectId: dbId,
   uploaderId: dbId,
@@ -522,7 +531,7 @@ export const VersionApiV3Schema = z.object({
   createdAt: z.date(),
   updatedAt: z.date(),
 });
-export type VersionApiV3 = z.infer<typeof VersionApiV3Schema>;
+export type VersionApiV3 = z.infer<typeof versionApiV3Schema>;
 
 export type AssetApiV3 = z.infer<typeof assetApiV3Schema>;
 export const assetApiV3Schema = z.object({
@@ -550,18 +559,18 @@ export const assetApiV3Schema = z.object({
   updatedAt: z.date()
 })
 
-export type AssetRequestApiV3 = z.infer<typeof assetRequestApiV3Schema>;
-export const assetRequestApiV3Schema = z.object({
+export type ThingRequestApiV3 = z.infer<typeof thingRequestApiV3Schema>;
+export const thingRequestApiV3Schema = z.object({
   id: dbId,
-  refrencedAssetId: dbId,
-  refrencedAsset: assetApiV3Schema.nullable(),
+  refrencedThingId: dbId,
+  refrencedThing: z.union([assetApiV3Schema, userApiV3Schema, projectApiV3Schema, versionApiV3Schema]).nullable(),
   requesterId: dbId,
   requester: userApiV3Schema.nullable(),
   requestResponseBy: dbId.nullable(),
   requestType: requestTypeSchema,
   accepted: z.boolean().nullable(),
   messages: z.array(requestMessageSchema),
-  resolvedBy: z.string().nullable(),
+  resolvedBy: dbId.nullable(),
   createdAt: z.date(),
   updatedAt: z.date()
 })

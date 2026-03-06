@@ -1,34 +1,36 @@
 import { AllowNull, BelongsTo, Column, CreatedAt, DataType, DeletedAt, ForeignKey, Model, Table, UpdatedAt } from "sequelize-typescript";
 import { InferAttributes, InferCreationAttributes, CreationOptional, NonAttribute } from "sequelize";
 import { z } from "zod/v4";
-import { AlertType, AssetRequestApiV3, dbId, LinkedAsset, LinkedAssetLinkType, RequestMessage, RequestType, Status, UserPermissions } from "../DBExtras.ts";
+import { AlertType, ThingRequestApiV3, dbId, LinkedAsset, LinkedAssetLinkType, RequestMessage, RequestType, Status, UserPermissions } from "../DBExtras.ts";
 import { User } from "./User.ts";
 import { Asset } from "./Asset.ts";
 import { Alert } from "./Alert.ts";
 import { Logger } from "../../Logger.ts";
-import { parseErrorMessage } from "../../../shared/Tools.ts";
+import { parseErrorMessage } from "../../Tools.ts";
+import { Project } from "./Project.ts";
+import { Version } from "./Version.ts";
 
-export type AssetRequestInfer = InferAttributes<AssetRequest>;
+export type ThingRequestInfer = InferAttributes<ThingRequest>;
 @Table({
     tableName: `asset_requests`,
-    modelName: `AssetRequest`,
+    modelName: `ThingRequest`,
     timestamps: true,
     paranoid: true,
     hooks: {
-        afterValidate: async (request: AssetRequest) => {
+        afterValidate: async (request: ThingRequest) => {
             if (request.isNewRecord) {
-                await AssetRequest.validatorCreation.parseAsync(request);
+                await ThingRequest.validatorCreation.parseAsync(request);
             } else {
-                await AssetRequest.validator.parseAsync(request);
+                await ThingRequest.validator.parseAsync(request);
             }
-            let isNotValid = AssetRequest.validateExtended(request);
+            let isNotValid = ThingRequest.validateExtended(request);
             if (isNotValid) {
                 throw new Error(isNotValid);
             }
         }
     }
 })
-export class AssetRequest extends Model<InferAttributes<AssetRequest>, InferCreationAttributes<AssetRequest>> {
+export class ThingRequest extends Model<InferAttributes<ThingRequest>, InferCreationAttributes<ThingRequest>> {
     // #region Columns
     @Column({
         type: DataType.INTEGER,
@@ -41,12 +43,12 @@ export class AssetRequest extends Model<InferAttributes<AssetRequest>, InferCrea
         type: DataType.INTEGER,
         allowNull: false,
     })
-    @ForeignKey(() => Asset)
-    declare refrencedAssetId: number; // Asset ID that this request is for
-    @BelongsTo(() => Asset, {
-        foreignKey: `refrencedAssetId`,
-    })
-    private declare _refrencedAsset?: NonAttribute<Promise<Asset | null>>; // This should be replaced with an Asset object in the actual implementation
+    declare refrencedId: number; // ID that this request is for
+
+    @Column(DataType.STRING)
+    @AllowNull(true)
+    declare refrencedGameName: string | null; // game name that this request is for, is null for user reports
+
     @Column({
         type: DataType.STRING,
         allowNull: false,
@@ -102,15 +104,6 @@ export class AssetRequest extends Model<InferAttributes<AssetRequest>, InferCrea
     @DeletedAt
     declare deletedAt: CreationOptional<Date | null>; // Timestamp of when the request was deleted, null if not deleted
 
-    public get refrencedAsset(): NonAttribute<Promise<Asset | null>> {
-        if (this._refrencedAsset) {
-            return Promise.resolve(this._refrencedAsset) || null;
-        } else {
-            Logger.debug(`Asset not loaded, fetching from DB for refrencedAssetId: ${this.refrencedAssetId}`);
-            return Asset.findByPk(this.refrencedAssetId) || null;
-        }
-    }
-
     public get requester(): NonAttribute<Promise<User | null>> {
         if (this._requester) {
             return Promise.resolve(this._requester) || null;
@@ -119,13 +112,32 @@ export class AssetRequest extends Model<InferAttributes<AssetRequest>, InferCrea
             return User.findByPk(this.requesterId) || null;
         }
     }
+
+    public async getRefrencedAsset(): Promise<Asset | User | Project | Version | null> {
+        switch (this.requestType) {
+            case RequestType.Asset_Credit:
+            case RequestType.Asset_Link:
+            case RequestType.Asset_Report:
+                return await Asset.findByPk(this.refrencedId);
+            case RequestType.User_Report:
+                return await User.findByPk(this.refrencedId);
+            case RequestType.Project_Report:
+                return await Project.findByPk(this.refrencedId);
+            case RequestType.Version_Report:
+                return await Version.findByPk(this.refrencedId);
+            default:
+                return Promise.resolve(null);
+        }
+    }
+
     // #endregion
 
     // #region Validators
     public static validator = z.object({
-        id: z.number().int().positive(),
-        refrencedAssetId: dbId.refine(async (id) => await Asset.checkIfExists(id)),
+        id: dbId,
+        refrencedId: dbId.refine(async (id) => await Asset.checkIfExists(id)),
         requesterId: dbId.refine(async (id) => await User.checkIfExists(id)),
+        refrencedGameName: z.string().nullable(),
         requestResponseBy: dbId.nullable(),
         objectToAdd: z.union([dbId, z.object({
             id: dbId,
@@ -154,39 +166,43 @@ export class AssetRequest extends Model<InferAttributes<AssetRequest>, InferCrea
         createdAt: z.date(),
         updatedAt: z.date(),
         deletedAt: z.date().nullable(),
-    }) satisfies z.ZodType<AssetRequestInfer>
+    }) satisfies z.ZodType<ThingRequestInfer>
 
 
     public static validatorCreation = z.object({
-        ...AssetRequest.validator.shape,
-        id: AssetRequest.validator.shape.id.nullish(), // id is optional when creating a new request
-
-        accepted: AssetRequest.validator.shape.accepted.nullish(),
-        resolvedBy: AssetRequest.validator.shape.resolvedBy.nullish(),
-        messages: AssetRequest.validator.shape.messages.nullish(),
-        createdAt: AssetRequest.validator.shape.createdAt.nullish(),
-        updatedAt: AssetRequest.validator.shape.updatedAt.nullish(),
-        deletedAt: AssetRequest.validator.shape.deletedAt.nullish(),
+        ...ThingRequest.validator.shape,
+        id: ThingRequest.validator.shape.id.nullish(), // id is optional when creating a new request
+        refrencedGameName: ThingRequest.validator.shape.refrencedGameName.nullish(),
+        accepted: ThingRequest.validator.shape.accepted.nullish(),
+        resolvedBy: ThingRequest.validator.shape.resolvedBy.nullish(),
+        messages: ThingRequest.validator.shape.messages.nullish(),
+        createdAt: ThingRequest.validator.shape.createdAt.nullish(),
+        updatedAt: ThingRequest.validator.shape.updatedAt.nullish(),
+        deletedAt: ThingRequest.validator.shape.deletedAt.nullish(),
     })
 
-    public static validateExtended(data: AssetRequest | AssetRequestInfer): string | null {
-        if (data.requestType === RequestType.Report && data.objectToAdd !== null) {
+    public static validateExtended(data: ThingRequest | ThingRequestInfer): string | null {
+        if (data.requestType.includes("report") && data.objectToAdd !== null) {
             return "Reports cannot have objectToAdd set, it must be null."
         }
 
-        if (data.requestType === RequestType.Credit) {
+        if (data.requestType.includes("report") && data.requestType !== RequestType.User_Report && data.refrencedGameName == null) {
+            return "Reports must have refrencedGameName set, it must not be null."
+        }
+
+        if (data.requestType === RequestType.Asset_Credit) {
             if (typeof data.objectToAdd === 'string') {
                 return `Credit request must have an ID in objectToAdd`
             }
-        } else if (data.requestType === RequestType.Link) {
+        } else if (data.requestType === RequestType.Asset_Link) {
             if (data.objectToAdd === null) return `If requestType is Link, objectToAdd must not be null`; // If requestType is Link, objectToAdd must not be null
             if (!(typeof data.objectToAdd === 'object' && 'id' in data.objectToAdd && 'linkType' in data.objectToAdd)) {
                 return "If requestType is Link, objectToAdd must be a LinkedAsset"
             };
         }
 
-        if (data.requestType !== RequestType.Report && data.requestResponseBy === null) {
-            return "Requests must have a reqestReponseBy ID set."
+        if (!data.requestType.includes("report") && data.requestResponseBy === null) {
+            return "Requests must have a requestResponseBy ID set."
         }
 
         return null;
@@ -194,18 +210,30 @@ export class AssetRequest extends Model<InferAttributes<AssetRequest>, InferCrea
 
     // #endregion Validators
     public allowedToMessage(user: User): boolean {
-        if (this.requestType === RequestType.Report) {
-            return this.requesterId === user.id || user.roles.includes(UserPermissions.Manage_All_Reports);
-        } else {
-            return false; // Non-report requests should not allow messaging
+        switch (this.requestType) {
+            case RequestType.User_Report:
+                return user.id === this.requestResponseBy || user.checkRoles([UserPermissions.Requests_ManageUsers, UserPermissions.Requests_ManageAll], this.refrencedGameName ?? undefined);
+            case RequestType.Asset_Report:
+                return user.id === this.requestResponseBy || user.checkRoles([UserPermissions.Requests_ManageAssets, UserPermissions.Requests_ManageAll], this.refrencedGameName ?? undefined);
+            case RequestType.Project_Report:
+            case RequestType.Version_Report:
+                return user.id === this.requestResponseBy || user.checkRoles([UserPermissions.Requests_ManageMods, UserPermissions.Requests_ManageAll], this.refrencedGameName ?? undefined);
+            default:
+                return false;
         }
     }
 
     public allowedToAccept(user: User): boolean {
-        if (this.requestType === RequestType.Report) {
-            return user.roles.includes(UserPermissions.Manage_All_Reports);
-        } else {
-            return user.id === this.requestResponseBy || user.roles.includes(UserPermissions.Manage_All_Reports);
+        switch (this.requestType) {
+            case RequestType.User_Report:
+                return user.checkRoles([UserPermissions.Requests_ManageUsers, UserPermissions.Requests_ManageAll], this.refrencedGameName ?? undefined);
+            case RequestType.Asset_Report:
+                return user.checkRoles([UserPermissions.Requests_ManageAssets, UserPermissions.Requests_ManageAll], this.refrencedGameName ?? undefined);
+            case RequestType.Project_Report:
+            case RequestType.Version_Report:
+                return user.checkRoles([UserPermissions.Requests_ManageMods, UserPermissions.Requests_ManageAll], this.refrencedGameName ?? undefined);
+            default:
+                return user.id === this.requestResponseBy || user.checkRoles([UserPermissions.Requests_ManageAll], this.refrencedGameName ?? undefined);
         }
     }
 
@@ -233,20 +261,22 @@ export class AssetRequest extends Model<InferAttributes<AssetRequest>, InferCrea
         });
     }
 
-    public async accept(userId: string, silent = false): Promise<this> {
-        let refrencedAsset = await this.refrencedAsset;
-        if (!refrencedAsset) {
+    public async accept(acceptedBy: User, silent = false): Promise<this> {
+        let refrencedThing = await this.getRefrencedAsset();
+        if (!refrencedThing) {
             throw new Error(`Referenced asset not found.`);
         }
         switch (this.requestType) {
-            case RequestType.Credit:
+            case RequestType.Asset_Credit:
+                let refrencedAsset = refrencedThing as Asset;
                 refrencedAsset.collaborators = [
                     ...refrencedAsset.collaborators,
-                    this.objectToAdd as string
+                    this.objectToAdd as number
                 ];
                 await refrencedAsset.save();
                 break;
-            case RequestType.Link:
+            case RequestType.Asset_Link:
+                refrencedAsset = refrencedThing as Asset;
                 let obj = this.objectToAdd as LinkedAsset;
                 let otherAsset = await Asset.findByPk(obj.id);
                 if (!otherAsset) {
@@ -254,11 +284,12 @@ export class AssetRequest extends Model<InferAttributes<AssetRequest>, InferCrea
                 }
                 await refrencedAsset.addLink(otherAsset, obj.linkType);
                 break;
-            case RequestType.Report:
-                await refrencedAsset.setStatus(Status.Removed, `Report ID ${this.id}`, userId, false)
+            case RequestType.Asset_Report:
+                refrencedAsset = refrencedThing as Asset;
+                await refrencedAsset.setStatus(Status.Removed, acceptedBy, `Report ID ${this.id}`, false)
                 if (!silent) {
                     refrencedAsset.alertUploader({
-                        type: AlertType.AssetRemoval,
+                        type: AlertType.ThingRemoval,
                         header: `Your asset ${refrencedAsset.name} (${refrencedAsset.id}) has been removed.`,
                         message: `Your asset has been removed. Please do not re-upload the asset. If you have any question, please contact the approval team.`
                     }).catch((e) => {
@@ -276,14 +307,14 @@ export class AssetRequest extends Model<InferAttributes<AssetRequest>, InferCrea
         }
 
         this.accepted = true;
-        this.resolvedBy = userId;
-        Logger.log(`Request ${this.id} accepted by user ${userId}`);
+        this.resolvedBy = acceptedBy.id;
+        Logger.log(`Request ${this.id} accepted by user ${acceptedBy.id}`);
         return await this.save();
     }
 
-    public async decline(userId: string, silent = false): Promise<this> {
+    public async decline(declinedBy: User, silent = false): Promise<this> {
         this.accepted = false;
-        this.resolvedBy = userId;
+        this.resolvedBy = declinedBy.id;
         if (!silent) {
             this.alertReporter({
                 type: AlertType.RequestDeclined,
@@ -293,26 +324,26 @@ export class AssetRequest extends Model<InferAttributes<AssetRequest>, InferCrea
                 Logger.warn(`Unable to alert requester: ${parseErrorMessage(e)}`)
             });
         }
-        Logger.log(`Request ${this.id} declined by user ${userId}`);
+        Logger.log(`Request ${this.id} declined by user ${declinedBy.id}`);
         return await this.save();
     }
 
-    public async getAPIResponse(): Promise<AssetRequestApiV3> {
-        let refrencedAsset = await this.refrencedAsset;
+    public async toApiV3(): Promise<ThingRequestApiV3> {
+        let refrencedThing = await this.getRefrencedAsset();
         let requester = await this.requester;
 
-        let refAssetApi = null;
+        let refThingApi = null;
         let requesterApi = null;
 
-        if (refrencedAsset && requester) {
-            refAssetApi = await refrencedAsset.getApiV3Response(false);
-            requesterApi = await requester.getApiResponse();
+        if (refrencedThing && requester) {
+            refThingApi = await refrencedThing.toApiV3();
+            requesterApi = await requester.toApiV3();
         }
 
         return {
             id: this.id,
-            refrencedAssetId: this.refrencedAssetId,
-            refrencedAsset: refAssetApi,
+            refrencedThingId: this.refrencedId,
+            refrencedThing: refThingApi,
             requesterId: this.requesterId,
             requester: requesterApi,
             requestResponseBy: this.requestResponseBy,

@@ -1,7 +1,7 @@
 import { alertsRouter } from './routes/private/getEditAlerts.ts';
 import { approvalRouter } from './routes/private/approval.ts';
 import { RequestRouter } from './routes/private/getEditRequests.ts';
-import { UpdateAssetRouter } from './routes/private/editAsset.ts';
+import { UpdateAssetRouter } from './routes/private/editThing.ts';
 import { userRouterV3 } from './routes/public/v3/getUser.ts';
 import { assetsRouterV3 } from './routes/public/v3/getAsset.ts';
 import { createCallerFactory, createContext, router } from './trpc.ts';
