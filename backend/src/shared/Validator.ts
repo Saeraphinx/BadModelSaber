@@ -2,6 +2,7 @@ import { AssetFileFormat, Status, Tags } from "./database/DBExtras.ts";
 import { Asset } from "./database/tables/Asset.ts";
 import jszip from "jszip";
 import { parseErrorMessage } from "./Tools.ts";
+import z from "zod/v4";
 
 export class Validator {
     public static validateThumbnail(file: File) {

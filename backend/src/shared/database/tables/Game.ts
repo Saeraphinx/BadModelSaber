@@ -26,33 +26,33 @@ export class Game extends Model<InferAttributes<Game>, InferCreationAttributes<G
     private static readonly _defaultCategories: NonAttribute<string[]> = [`Core`, `Essentials`, `Other`];
     private static readonly _defaultPlatforms: NonAttribute<string[]> = [`universal`];
 
-    @Column(DataType.TEXT)
     @AllowNull(false)
     @PrimaryKey
+    @Column(DataType.TEXT)
     declare name: string;
 
-    @Column(DataType.TEXT)
     @AllowNull(false)
+    @Column(DataType.TEXT)
     declare displayName: string;
 
-    @Column(DataType.ARRAY(DataType.TEXT))
     @AllowNull(false)
     @Default(Game._defaultCategories)
+    @Column(DataType.ARRAY(DataType.TEXT))
     declare categories: CreationOptional<string[]>;
 
-    @Column(DataType.ARRAY(DataType.TEXT))
     @AllowNull(false)
     @Default(Game._defaultPlatforms)
+    @Column(DataType.ARRAY(DataType.TEXT))
     declare platforms: CreationOptional<string[]>;
 
-    @Column(DataType.ARRAY(DataType.JSONB))
     @AllowNull(false)
     @Default([])
+    @Column(DataType.ARRAY(DataType.JSONB))
     declare webhookConfig: GameWebhookConfig[];
 
-    @Column(DataType.BOOLEAN)
     @AllowNull(false)
     @Default(false)
+    @Column(DataType.BOOLEAN)
     declare default: boolean;
 
     @CreatedAt
@@ -223,7 +223,7 @@ export class Game extends Model<InferAttributes<Game>, InferCreationAttributes<G
     }
     // #endregion
 
-    public toPublicApiV3() {
+    public toApiV3() {
         return {
             name: this.name,
             displayName: this.displayName,

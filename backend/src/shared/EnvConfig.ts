@@ -26,7 +26,7 @@ export const DEFAULT_CONFIG = {
         sessionCookieName: `bms_session`, // the name of the session cookie
         sessionCookieSameSite: `strict` as `strict`, // the SameSite attribute for the session cookie
         sessionCookieSecret: `supersecretkey`, // the secret for the session cookie
-        authBypass: `false`, // whether to bypass authentication for the API (useful for development. always false in production)
+        authBypass: -1, // whether to bypass authentication for the API (useful for development. always false in production)
     },
     storage: {
         uploads: `./storage/uploads`, // the directory where uploads are stored
@@ -60,7 +60,7 @@ export class EnvConfig {
             sessionCookieName: string;
             sessionCookieSameSite: `strict` | `lax` | `none` | boolean;
             sessionCookieSecret: string;
-            authBypass: string | boolean;
+            authBypass: number;
         } = DEFAULT_CONFIG.server;
     public static storage: typeof DEFAULT_CONFIG.storage = DEFAULT_CONFIG.storage;
     public static database: typeof DEFAULT_CONFIG.database = DEFAULT_CONFIG.database;
@@ -132,7 +132,7 @@ export class EnvConfig {
             sessionCookieName: process.env.SESSION_COOKIE_NAME || DEFAULT_CONFIG.server.sessionCookieName,
             sessionCookieSameSite: DEFAULT_CONFIG.server.sessionCookieSameSite,
             sessionCookieSecret: process.env.SESSION_SECRET || DEFAULT_CONFIG.server.sessionCookieSecret,
-            authBypass: EnvConfig.isDevMode ? process.env.AUTH_BYPASS || false : false,
+            authBypass: EnvConfig.isDevMode ? parseInt(process.env.AUTH_BYPASS || `-1`) : -1,
         };
 
         console.log(`Using CORS Origin: ${EnvConfig.server.corsOrigin}`);

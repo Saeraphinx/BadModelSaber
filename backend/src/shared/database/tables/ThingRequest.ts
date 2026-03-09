@@ -1,4 +1,4 @@
-import { AllowNull, BelongsTo, Column, CreatedAt, DataType, DeletedAt, ForeignKey, Model, Table, UpdatedAt } from "sequelize-typescript";
+import { AfterValidate, AllowNull, BelongsTo, Column, CreatedAt, DataType, Default, DeletedAt, ForeignKey, Model, Table, UpdatedAt } from "sequelize-typescript";
 import { InferAttributes, InferCreationAttributes, CreationOptional, NonAttribute } from "sequelize";
 import { z } from "zod/v4";
 import { AlertType, ThingRequestApiV3, dbId, LinkedAsset, LinkedAssetLinkType, RequestMessage, RequestType, Status, UserPermissions } from "../DBExtras.ts";
@@ -16,19 +16,6 @@ export type ThingRequestInfer = InferAttributes<ThingRequest>;
     modelName: `ThingRequest`,
     timestamps: true,
     paranoid: true,
-    hooks: {
-        afterValidate: async (request: ThingRequest) => {
-            if (request.isNewRecord) {
-                await ThingRequest.validatorCreation.parseAsync(request);
-            } else {
-                await ThingRequest.validator.parseAsync(request);
-            }
-            let isNotValid = ThingRequest.validateExtended(request);
-            if (isNotValid) {
-                throw new Error(isNotValid);
-            }
-        }
-    }
 })
 export class ThingRequest extends Model<InferAttributes<ThingRequest>, InferCreationAttributes<ThingRequest>> {
     // #region Columns
@@ -39,21 +26,18 @@ export class ThingRequest extends Model<InferAttributes<ThingRequest>, InferCrea
         allowNull: false,
     })
     declare id: CreationOptional<number>;
-    @Column({
-        type: DataType.INTEGER,
-        allowNull: false,
-    })
+    
+    @AllowNull(false)
+    @Column(DataType.INTEGER)
     declare refrencedId: number; // ID that this request is for
 
-    @Column(DataType.STRING)
     @AllowNull(true)
+    @Column(DataType.STRING)
     declare refrencedGameName: string | null; // game name that this request is for, is null for user reports
 
-    @Column({
-        type: DataType.STRING,
-        allowNull: false,
-    })
+    @AllowNull(false)
     @ForeignKey(() => User)
+    @Column(DataType.INTEGER)
     declare requesterId: number; // User ID of the person who made the request
     @BelongsTo(() => User, {
         foreignKey: `requesterId`,
@@ -90,11 +74,10 @@ export class ThingRequest extends Model<InferAttributes<ThingRequest>, InferCrea
         defaultValue: null,
     })
     declare resolvedBy: CreationOptional<number | null>; // User ID of the person who resolved the request, null if not resolved
-    @Column({
-        type: DataType.JSONB,
-        allowNull: false,
-        defaultValue: [],
-    })
+    
+    @AllowNull(true)
+    @Default(null)
+    @Column(DataType.JSONB)
     declare messages: CreationOptional<RequestMessage[]>; // Array of messages related to the request
 
     @CreatedAt
@@ -152,16 +135,7 @@ export class ThingRequest extends Model<InferAttributes<ThingRequest>, InferCrea
         messages: z.array(z.object({
             userId: dbId.refine(async (id) => await User.checkIfExists(id)),
             message: z.string().max(1024),
-            timestamp: z.preprocess((input) => {
-                if (typeof input === 'string') {
-                    const date = new Date(input);
-                    if (isNaN(date.getTime())) {
-                        return undefined; // Will fail .date() validation
-                    }
-                    return date;
-                }
-                return input;
-            }, z.date()),
+            timestamp: z.iso.datetime(),
         })).default([]),
         createdAt: z.date(),
         updatedAt: z.date(),
@@ -208,8 +182,41 @@ export class ThingRequest extends Model<InferAttributes<ThingRequest>, InferCrea
         return null;
     }
 
+    @AfterValidate
+    private static async runValidators(instance: ThingRequest) {
+        if (instance.isNewRecord) {
+            await ThingRequest.validatorCreation.parseAsync(instance);
+        } else {
+            await ThingRequest.validator.parseAsync(instance);
+        }
+        let isNotValid = ThingRequest.validateExtended(instance);
+        if (isNotValid) {
+            throw new Error(isNotValid);
+        }
+    }
+
     // #endregion Validators
-    public allowedToMessage(user: User): boolean {
+    // #region Permission Checks
+    public canView(user: User): boolean {
+        if (user.id === this.requesterId) return true; // Requesters can always view their own requests
+        if (this.requestResponseBy && user.id === this.requestResponseBy) return true; // The person who is asked to respond can view the request
+
+        switch (this.requestType) {
+            case RequestType.User_Report:
+                return user.checkRoles([UserPermissions.Requests_ViewUsers, UserPermissions.Requests_ViewAll], this.refrencedGameName ?? undefined);
+            case RequestType.Asset_Report:
+            case RequestType.Asset_Credit:
+            case RequestType.Asset_Link:
+                return user.checkRoles([UserPermissions.Requests_ViewAssets, UserPermissions.Requests_ViewAll], this.refrencedGameName ?? undefined);
+            case RequestType.Project_Report:
+            case RequestType.Version_Report:
+                return user.checkRoles([UserPermissions.Requests_ViewMods, UserPermissions.Requests_ViewAll], this.refrencedGameName ?? undefined);
+            default:
+                return false; // Only people with specific permissions or the requester/requestResponseBy can view reports, and only the requester/requestResponseBy can view non-report requests
+        }
+    }
+
+    public canMessage(user: User): boolean {
         switch (this.requestType) {
             case RequestType.User_Report:
                 return user.id === this.requestResponseBy || user.checkRoles([UserPermissions.Requests_ManageUsers, UserPermissions.Requests_ManageAll], this.refrencedGameName ?? undefined);
@@ -223,7 +230,7 @@ export class ThingRequest extends Model<InferAttributes<ThingRequest>, InferCrea
         }
     }
 
-    public allowedToAccept(user: User): boolean {
+    public canAccept(user: User): boolean {
         switch (this.requestType) {
             case RequestType.User_Report:
                 return user.checkRoles([UserPermissions.Requests_ManageUsers, UserPermissions.Requests_ManageAll], this.refrencedGameName ?? undefined);
@@ -236,6 +243,7 @@ export class ThingRequest extends Model<InferAttributes<ThingRequest>, InferCrea
                 return user.id === this.requestResponseBy || user.checkRoles([UserPermissions.Requests_ManageAll], this.refrencedGameName ?? undefined);
         }
     }
+    // #endregion Permission Checks
 
     public addMessage(user: User, message: string): Promise<this> {
         Logger.log(`Adding message to request ${this.id} from user ${user.id}`);
@@ -244,7 +252,7 @@ export class ThingRequest extends Model<InferAttributes<ThingRequest>, InferCrea
             {
                 userId: user.id,
                 message: message,
-                timestamp: new Date(Date.now()),
+                timestamp: new Date(Date.now()).toISOString(),
             }
         ]
         return this.save();
@@ -261,6 +269,7 @@ export class ThingRequest extends Model<InferAttributes<ThingRequest>, InferCrea
         });
     }
 
+    // #region handle reports
     public async accept(acceptedBy: User, silent = false): Promise<this> {
         let refrencedThing = await this.getRefrencedAsset();
         if (!refrencedThing) {
@@ -327,6 +336,7 @@ export class ThingRequest extends Model<InferAttributes<ThingRequest>, InferCrea
         Logger.log(`Request ${this.id} declined by user ${declinedBy.id}`);
         return await this.save();
     }
+    // #endregion handle reports
 
     public async toApiV3(): Promise<ThingRequestApiV3> {
         let refrencedThing = await this.getRefrencedAsset();

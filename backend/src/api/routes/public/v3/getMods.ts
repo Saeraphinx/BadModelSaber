@@ -57,8 +57,8 @@ export const GetModsV3 = router({
             });
 
             let output = await Promise.all(versions.filter(v => v.canView(ctx.user)).map(async v => ({
-                project: await (await v.project)?.toPublicApiV3() as ProjectApiV3,
-                version: await v.toPublicApiV3()
+                project: await (await v.project)?.toApiV3() as ProjectApiV3,
+                version: await v.toApiV3()
             }))).catch(err => {
                 Logger.warn("Error parsing mods for GetModsV3:");
                 Logger.warn(err);
@@ -97,7 +97,7 @@ export const GetModsV3 = router({
             if (!project.canView(ctx.user)) {
                 throw new TRPCError({ code: 'FORBIDDEN', message: 'You do not have permission to view this project.' });
             }
-            return await project.toPublicApiV3() as ProjectApiV3;
+            return await project.toApiV3() as ProjectApiV3;
         }),
     // #endregion
     // #region getProjectVersions
@@ -120,7 +120,7 @@ export const GetModsV3 = router({
                 }
             });
             versions = versions.filter(async v => await v.canView(ctx.user, project));
-            let output = await Promise.all(versions.map(async v => await v.toPublicApiV3()));
+            let output = await Promise.all(versions.map(async v => await v.toApiV3()));
             return output;
         }),
     // #endregion
@@ -153,9 +153,9 @@ export const GetModsV3 = router({
                 }
             });
             versions = versions.filter(async v => await v.canView(ctx.user, project));
-            let outputVersions = await Promise.all(versions.map(async v => await v.toPublicApiV3()));
+            let outputVersions = await Promise.all(versions.map(async v => await v.toApiV3()));
             return {
-                project: await project.toPublicApiV3() as ProjectApiV3,
+                project: await project.toApiV3() as ProjectApiV3,
                 versions: outputVersions
             };
         })

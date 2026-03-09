@@ -9,16 +9,16 @@ import { Column, DataType, Model, PrimaryKey, Table } from "sequelize-typescript
 })
 export class Translation extends Model<InferAttributes<Translation>, InferCreationAttributes<Translation>> {
     // #region Columns
-    @Column(DataType.NUMBER)
     @PrimaryKey
+    @Column(DataType.NUMBER)
     declare parentId: number; // ID of the entity this translation belongs to (e.g. Asset, Project, etc.)
 
-    @Column(DataType.STRING)
     @PrimaryKey
+    @Column(DataType.STRING)
     declare contentType: string; // Type of content being translated (e.g. "name", "description", etc.)
 
-    @Column(DataType.STRING)
     @PrimaryKey
+    @Column(DataType.STRING)
     declare language: string; // Language code (e.g. "en", "es", "fr", etc.)
 
     @Column(DataType.TEXT)

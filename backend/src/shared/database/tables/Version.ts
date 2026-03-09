@@ -1,6 +1,6 @@
 import { CreationOptional, InferAttributes, InferCreationAttributes, NonAttribute, Op, WhereOptions } from "sequelize";
-import { AllowNull, BelongsTo, Column, CreatedAt, DataType, DeletedAt, ForeignKey, Model, Sequelize, Table, UpdatedAt } from "sequelize-typescript";
-import { ContentHash, ContentHashSchema, Dependency, DependencySchema, ModApiV1, ModVersionsApiv2, Status, StatusHistory, StatusHistorySchema, UserPermissions, VersionApiV3 } from "../DBExtras.ts";
+import { AfterCreate, AfterValidate, AllowNull, BelongsTo, Column, CreatedAt, DataType, DeletedAt, ForeignKey, Model, Sequelize, Table, UpdatedAt } from "sequelize-typescript";
+import { ContentHash, ContentHashSchema, Dependency, DependencySchema, ModApiV1, ModVersionsApiv2, Status, StatusHistory, statusHistorySchema, UserPermissions, VersionApiV3 } from "../DBExtras.ts";
 import { SemVer, parse } from "semver";
 import { Project } from "./Project.ts";
 import { User } from "./User.ts";
@@ -16,34 +16,6 @@ export type VersionWhereOptions = WhereOptions<Version>;
     modelName: `Version`,
     timestamps: true,
     paranoid: true,
-    hooks: {
-        afterValidate: async (version: Version) => {
-            if (version.isNewRecord) {
-                Version.validatorCreation.parse(version);
-            } else {
-                Version.validator.parse(version);
-            }
-            let isValid = await Version.validateExtended(version);
-            if (!isValid) {
-                throw new Error(`Extended validation failed for Version.`);
-            }
-        },
-        afterCreate: async (version: Version) => {
-            for (let gameVersionId of version.supportedGameVersionIds) {
-                let gv = await GameVersion.findByPk(gameVersionId);
-                if (!gv) {
-                    Logger.warn(`Could not find GameVersion with id ${gameVersionId} for Version id ${version.id} after creation.`);
-                    continue;
-                }
-                for (let linkedId of gv.linkedVersionIds) {
-                    if (!version.supportedGameVersionIds.includes(linkedId)) {
-                        version.supportedGameVersionIds = [...version.supportedGameVersionIds, linkedId];
-                    }
-                }
-            }
-            await version.save();
-        }
-    },
 })
 export class Version extends Model<InferAttributes<Version>, InferCreationAttributes<Version>> {
     // #region Columns
@@ -57,16 +29,16 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
     })
     declare readonly id: CreationOptional<number>;
 
-    @Column(DataType.INTEGER)
     @AllowNull(false)
     @ForeignKey(() => Project)
+    @Column(DataType.INTEGER)
     declare projectId: number;
     @BelongsTo(() => Project, `projectId`)
     declare _project: NonAttribute<Promise<Project | null>>;
 
-    @Column(DataType.TEXT)
     @AllowNull(false)
     @ForeignKey(() => User)
+    @Column(DataType.TEXT)
     declare uploaderId: number;
     @BelongsTo(() => User, `uploaderId`)
     declare _uploader: NonAttribute<Promise<User | null>>;
@@ -84,44 +56,44 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
     })
     declare semver: SemVer;
 
-    @Column(DataType.ARRAY(DataType.INTEGER))
     @AllowNull(false)
+    @Column(DataType.ARRAY(DataType.INTEGER))
     declare supportedGameVersionIds: number[]; // ids of GameVersion entries
 
-    @Column(DataType.TEXT)
     @AllowNull(false)
+    @Column(DataType.TEXT)
     declare status: Status;
 
-    @Column(DataType.ARRAY(DataType.JSONB))
     @AllowNull(false)
+    @Column(DataType.ARRAY(DataType.JSONB))
     declare dependencies: Dependency[];
 
-    @Column(DataType.TEXT)
     @AllowNull(false)
+    @Column(DataType.TEXT)
     declare platform: string; // pulled from the parent Game's platforms
 
-    @Column(DataType.TEXT)
     @AllowNull(false)
+    @Column(DataType.TEXT)
     declare zipHash: string;
 
-    @Column(DataType.ARRAY(DataType.JSONB))
     @AllowNull(false)
+    @Column(DataType.ARRAY(DataType.JSONB))
     declare contentHashes: ContentHash[];
 
-    @Column(DataType.INTEGER)
     @AllowNull(false)
+    @Column(DataType.INTEGER)
     declare lastApprovedById: CreationOptional<number> | null;
 
-    @Column(DataType.INTEGER)
     @AllowNull(false)
+    @Column(DataType.INTEGER)
     declare lastUpdatedById: number;
 
-    @Column(DataType.INTEGER)
     @AllowNull(false)
+    @Column(DataType.INTEGER)
     declare fileSize: number;
 
-    @Column(DataType.ARRAY(DataType.JSONB))
     @AllowNull(false)
+    @Column(DataType.ARRAY(DataType.JSONB))
     declare statusHistory: CreationOptional<StatusHistory[]>;
 
     @CreatedAt
@@ -171,7 +143,7 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
         lastApprovedById: z.number().nullable(),
         lastUpdatedById: z.number(),
         fileSize: z.number(),
-        statusHistory: z.array(StatusHistorySchema),
+        statusHistory: z.array(statusHistorySchema),
         createdAt: z.date(),
         updatedAt: z.date(),
         deletedAt: z.date().nullable(),
@@ -225,6 +197,35 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
 
         return true;
     }
+
+    @AfterValidate
+    private static async runValidators(version: Version) {
+        if (version.isNewRecord) {
+            Version.validatorCreation.parse(version);
+        } else {
+            Version.validator.parse(version);
+        }
+        let isValid = await Version.validateExtended(version);
+        if (!isValid) {
+            throw new Error(`Extended validation failed for Version.`);
+        }
+    }
+    @AfterCreate
+    private static async runCreate(version: Version) {
+        for (let gameVersionId of version.supportedGameVersionIds) {
+            let gv = await GameVersion.findByPk(gameVersionId);
+            if (!gv) {
+                Logger.warn(`Could not find GameVersion with id ${gameVersionId} for Version id ${version.id} after creation.`);
+                continue;
+            }
+            for (let linkedId of gv.linkedVersionIds) {
+                if (!version.supportedGameVersionIds.includes(linkedId)) {
+                    version.supportedGameVersionIds = [...version.supportedGameVersionIds, linkedId];
+                }
+            }
+        }
+        await version.save();
+    }
     // #endregion
     // #region DuplicateChecks
     public static async checkForExistingVersion(projectId: number, semver: SemVer, excludeId?: number): Promise<boolean> {
@@ -267,25 +268,18 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
             return false;
         }
 
-        if (this.status === Status.Verified) {
+        if (this.status === Status.Verified || this.status === Status.Unverified) {
             return true;
         }
 
-        if (this.status === Status.Unverified) {
+        if (this.status === Status.Pending) {
             return user.checkRoles({
-                gameName: prj.gameName,
-                perGamePermissions: [UserPermissions.View_Unverified_Mods, UserPermissions.View_All_Mods]
-            });
-        } else if (this.status === Status.Pending) {
-            return user.checkRoles({
-                gameName: prj.gameName,
-                perGamePermissions: [UserPermissions.View_Pending_Mods, UserPermissions.View_All_Mods]
-            });
+                hasOneOf: [UserPermissions.Mods_ViewAll]
+            }, prj.gameName);
         } else {
             return user.checkRoles({
-                gameName: prj.gameName,
-                perGamePermissions: [UserPermissions.View_All_Mods]
-            });
+                hasOneOf: [UserPermissions.Mods_ViewAll]
+            }, prj.gameName);
         }
     }
     public async canEdit(user: User | null | undefined, project?: Project): Promise<boolean> {
@@ -331,11 +325,11 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
         }
 
         let previousStatus = this.status;
-        
+
         let historyEntry: StatusHistory = {
             status: newStatus,
-            changedById: user.id,
-            changedAt: new Date().toISOString(),
+            userId: user.id,
+            timestamp: new Date().toISOString(),
             reason: reason,
         };
 
@@ -350,6 +344,21 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
 
         Logger.info(`Version id ${this.id} status changed from ${previousStatus} to ${newStatus} by user id ${user.id} for reason: ${reason}`);
 
+        return this;
+    }
+
+    public async updateVersion(data: VersionAllowedEdit, user: User): Promise<this> {
+        if (data.semver) {
+            this.semver = data.semver;
+        }
+        if (data.supportedGameVersionIds) {
+            this.supportedGameVersionIds = data.supportedGameVersionIds;
+        }
+        if (data.dependencies) {
+            this.dependencies = data.dependencies;
+        }
+        this.lastUpdatedById = user.id;
+        await this.save();
         return this;
     }
     // #region ToAPI
@@ -427,7 +436,7 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
                 throw new Error(`Could not find version for dependency with project id ${dep.pId} and semver range ${dep.sv}`);
             }
             if (doResolution) {
-                return depVersion.toPublicApiV1(depProject, gameVersion, false);
+                return depVersion.toApiV1(depProject, gameVersion, false);
             } else {
                 return depVersion.id.toString();
             }

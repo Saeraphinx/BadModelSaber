@@ -1,4 +1,4 @@
-import { AfterValidate, AllowNull, BelongsTo, Column, CreatedAt, DataType, Default, DeletedAt, ForeignKey, Model, Table, UpdatedAt } from "sequelize-typescript";
+import { AfterValidate, AllowNull, BelongsTo, Column, CreatedAt, DataType, Default, DeletedAt, ForeignKey, Model, Table, Unique, UpdatedAt } from "sequelize-typescript";
 import { InferAttributes, InferCreationAttributes, NonAttribute, CreationOptional } from "sequelize";
 import { Alert, ThingRequest, User, UserPermissions } from "../../Database.ts";
 import { AlertType, AssetApiV3, AssetFileFormat, AssetPublicAPIv1, AssetPublicAPIv2, dbId, License, LinkedAsset, LinkedAssetLinkType, RequestType, Status, StatusHistory, Tags, UserApiV3, WebhookLogType } from "../DBExtras.ts";
@@ -7,6 +7,7 @@ import { EnvConfig } from "../../EnvConfig.ts";
 import { Logger } from "../../Logger.ts";
 import { WebhookPayloadGenerator, Webhooks } from "../../Webhooks.ts";
 import path from "node:path";
+import { IEditable, IReportable, IViewable } from "./common.ts";
 
 export type AssetInfer = InferAttributes<Asset>;
 export type AssetValidatorType = typeof Asset.validator; // for use in frontend
@@ -16,7 +17,7 @@ export type AssetValidatorType = typeof Asset.validator; // for use in frontend
     timestamps: true,
     paranoid: true,
 })
-export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes<Asset>> {
+export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes<Asset>> implements IViewable, IReportable, IEditable {
     // #region Columns
     @Column({
         type: DataType.INTEGER,
@@ -40,90 +41,77 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
     })
     declare linkedIds: CreationOptional<LinkedAsset[]>; // models that are linked to this asset, e.g. a pc .saber may have a linked .wacker, or a model may have a newer version that is linked to it
 
-    @Column({
-        type: DataType.STRING,
-        allowNull: false,
-    })
+    @AllowNull(false)
+    @Column(DataType.STRING)
     declare type: AssetFileFormat;
 
-    @Column({
-        type: DataType.NUMBER,
-        allowNull: false,
-        defaultValue: 0,
-    })
+    @AllowNull(false)
     @ForeignKey(() => User)
+    @Column(DataType.INTEGER)
     declare uploaderId: number; // User ID of the uploader, this is not the author, but the person who uploaded the asset to the platform
     @BelongsTo(() => User, {
         foreignKey: `uploaderId`,
     })
     private declare _uploader?: NonAttribute<Promise<User | null>>;
-    @Column({
-        type: DataType.ARRAY(DataType.NUMBER),
-        allowNull: false,
-        defaultValue: [],
-    })
+    
+    @AllowNull(false)
+    @Default([])
+    @Column(DataType.ARRAY(DataType.INTEGER))
     declare collaborators: CreationOptional<number[]>; // credits for the asset, e.g. "Model by John Doe, Textures by Jane Smith"
-    @Column({
-        type: DataType.STRING,
-        allowNull: false,
-    })
+    
+    @AllowNull(false)
+    @Column(DataType.TEXT)
     declare name: string;
-    @Column({
-        type: DataType.TEXT,
-        allowNull: false,
-    })
+
+    @AllowNull(false)
+    @Column(DataType.TEXT)
     declare description: string;
-    @Column({
-        type: DataType.STRING,
-        allowNull: false,
-    })
+
+
+    @AllowNull(false)
+    @Column(DataType.STRING)
     declare license: License; // e.g. CC-BY, CC0, etc. or 'custom'
-    @Column({
-        type: DataType.STRING,
-        allowNull: true,
-        defaultValue: null,
-    })
+    
+    @AllowNull(true)
+    @Default(null)
+    @Column(DataType.STRING)
     declare licenseUrl: CreationOptional<string | null>; // URL to the license, if applicable (e.g. custom is set for license)
-    @Column({
-        type: DataType.STRING,
-        allowNull: true,
-        defaultValue: null,
-    })
-    declare sourceUrl: CreationOptional<string | null> // URL to the source of the asset, if applicable;
-    @Column({
-        type: DataType.STRING,
-        allowNull: false,
-    })
+    
+    @AllowNull(true)
+    @Default(null)
+    @Column(DataType.STRING)
+    declare sourceUrl: CreationOptional<string | null>; // URL to the source of the asset, if applicable;
+    
+    @AllowNull(false)
+    @Column(DataType.STRING)
     declare fileSafeName: string; // file-safe version of the asset name
-    @Column({
-        type: DataType.STRING,
-        allowNull: false,
-        unique: true,
-    })
+    
+    @AllowNull(false)
+    @Unique
+    @Column(DataType.STRING)
     declare fileHash: string;
-    @Column({
-        type: DataType.INTEGER,
-        allowNull: false,
-    })
+
+    @AllowNull(false)
+    @Column(DataType.INTEGER)
     declare fileSize: number;
-    @Column({
-        type: DataType.ARRAY(DataType.STRING),
-        allowNull: false,
-        defaultValue: [],
-    })
-    declare iconNames: string[]; // names of the icons associated with the asset, e.g. ["icon1.png", "icon2.png"]
-    @Column({
-        type: DataType.STRING,
-        allowNull: false,
-        defaultValue: Status.Pending,
-    })
+    
+    @AllowNull(false)
+    @Default([])
+    @Column(DataType.ARRAY(DataType.STRING))
+    declare iconNames: CreationOptional<string[]>; // names of the icons associated with the asset, e.g. ["icon1.png", "icon2.png"]
+    
+    @AllowNull(false)
+    @Default(Status.Private)
+    @Column(DataType.STRING)
     declare status: CreationOptional<Status>;
+
     @Column({
         type: DataType.JSONB,
         allowNull: false,
         defaultValue: [],
     })
     declare statusHistory: CreationOptional<StatusHistory[]>;
+
     @Column({
         type: DataType.ARRAY(DataType.STRING),
         allowNull: false,
@@ -131,8 +119,8 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
     })
     declare tags: CreationOptional<Tags[]>; // system defined tags
 
-    @Column(DataType.TEXT)
     @AllowNull(false)
+    @Column(DataType.STRING)
     declare gameName: string; // the game this asset is for, e.g. beatsaber, oculus, etc.
     // #endregion
 
@@ -195,16 +183,7 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
         statusHistory: z.array(z.object({
             status: z.enum(Status),
             reason: z.string().max(512),
-            timestamp: z.preprocess((input) => {
-                if (typeof input === 'string') {
-                    const date = new Date(input);
-                    if (isNaN(date.getTime())) {
-                        return undefined; // Will fail .date() validation
-                    }
-                    return date;
-                }
-                return input;
-            }, z.date()),
+            timestamp: z.iso.datetime(),
             userId: dbId.refine(async (id) => await User.checkIfExists(id)), // User ID of the person who changed the status
         })),
         tags: z.array(z.enum(Tags)).default([]),
@@ -258,7 +237,7 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
     }
 
     // #region Allowed to XYZ
-    public canView(user: User | null | undefined): boolean {
+    public canView(user?: User | null): boolean {
         let allowedStatuses = [Status.Verified, Status.Unverified];
         if (!user) {
             return allowedStatuses.includes(this.status);
@@ -268,7 +247,7 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
     }
 
 
-    public canEdit(user: User | null): boolean {
+    public canEdit(user?: User | null): boolean {
         if (!user) {
             return false; // Only logged-in users can edit assets
         }
@@ -331,10 +310,10 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
 
         if (allowBypass) {
             Logger.log(`Asset ${this.id} submitted for approval by user ${reqBy.id}, auto-approving due to asset type.`);
-            return this.setStatus(Status.Unverified, `Auto-approved upon submission due to asset type.`, reqBy, false);
+            return this.setStatus(Status.Unverified, reqBy, `Auto-approved upon submission due to asset type.`, false);
         } else {
             Logger.log(`Asset ${this.id} submitted for approval by user ${reqBy.id}, sending to approval queue.`);
-            return this.setStatus(Status.Pending, `Submitted for approval.`, reqBy, false);
+            return this.setStatus(Status.Pending, reqBy, `Submitted for approval.`, false);
         }
     }
 
@@ -346,8 +325,8 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
         let existingRequests = await ThingRequest.findAll({
             where: {
                 requestResponseBy: userToCredit.id,
-                refrencedAssetId: this.id,
-                requestType: RequestType.Credit
+                refrencedId: this.id,
+                requestType: RequestType.Asset_Credit
             }
         });
 
@@ -362,10 +341,10 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
         Logger.log(`Creating credit request for asset ${this.id} by user ${reqBy.id} to credit user ${userToCredit.id}`);
         // note that alert is not needed as requests are treated like alerts
         return await ThingRequest.create({
-            refrencedAssetId: this.id,
+            refrencedId: this.id,
             requesterId: reqBy.id,
             requestResponseBy: userToCredit.id,
-            requestType: RequestType.Credit,
+            requestType: RequestType.Asset_Credit,
             objectToAdd: userToCredit.id,
         })
     }
@@ -387,8 +366,8 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
             let existingRequests = await ThingRequest.findAll({
                 where: {
                     requestResponseBy: assetToLink.uploaderId,
-                    refrencedAssetId: this.id,
-                    requestType: RequestType.Link
+                    refrencedId: this.id,
+                    requestType: RequestType.Asset_Link
                 }
             });
             if (existingRequests.some(req => req.accepted === false)) {
@@ -400,10 +379,10 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
 
             Logger.log(`Creating link request for asset ${this.id} by user ${reqBy.id} to link asset ${assetToLink.id}`);
             return await ThingRequest.create({
-                refrencedAssetId: this.id,
+                refrencedId: this.id,
                 requesterId: reqBy.id,
                 requestResponseBy: assetToLink.uploaderId,
-                requestType: RequestType.Link,
+                requestType: RequestType.Asset_Link,
                 objectToAdd: {
                     id: assetToLink.id,
                     linkType: type
@@ -462,6 +441,7 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
                         linkType: LinkedAssetLinkType.Older
                     }
                 ];
+                break;
             case LinkedAssetLinkType.AltFormat:
                 this.linkedIds = [
                     ...this.linkedIds,
@@ -520,7 +500,7 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
         this.statusHistory = [...this.statusHistory, {
             status: newStatus,
             reason: reason,
-            timestamp: new Date(),
+            timestamp: new Date().toISOString(),
             userId: userPreformingAction.id, // User ID of the person who changed the status
         }];
 
@@ -569,8 +549,8 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
         let existingRequests = await ThingRequest.findAll({
             where: {
                 requestResponseBy: this.uploaderId,
-                refrencedAssetId: this.id,
-                requestType: RequestType.Report
+                refrencedId: this.id,
+                requestType: RequestType.Asset_Report
             }
         });
 
@@ -580,14 +560,14 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
 
         Logger.log(`Creating report request for asset ${this.id} by user ${reportedBy.id} for reason: ${reason}`);
         return await ThingRequest.create({
-            refrencedAssetId: this.id,
+            refrencedId: this.id,
             requesterId: reportedBy.id,
-            requestType: RequestType.Report,
+            requestType: RequestType.Asset_Report,
             requestResponseBy: null,
             messages: [{
                 userId: reportedBy.id,
                 message: reason,
-                timestamp: new Date(Date.now()),
+                timestamp: new Date(Date.now()).toISOString(),
             }],
         });
     }

@@ -1,4 +1,4 @@
-import { Column, CreatedAt, DataType, DeletedAt, Model, Table, UpdatedAt } from "sequelize-typescript";
+import { AfterValidate, AllowNull, Column, CreatedAt, DataType, Default, DeletedAt, Model, Table, UpdatedAt } from "sequelize-typescript";
 import { InferAttributes, InferCreationAttributes, CreationOptional } from "sequelize";
 import { z } from "zod/v4";
 import { User } from "./User.ts";
@@ -11,19 +11,6 @@ export type AlertInfer = InferAttributes<Alert>;
     modelName: `Alert`,
     timestamps: true,
     paranoid: true,
-    hooks: {
-        afterValidate: async (alert: Alert) => {
-            if (alert.isNewRecord) {
-                await Alert.validatorCreation.parseAsync(alert);
-            } else {
-                await Alert.validator.parseAsync(alert);
-            }
-            let isNotValid = Alert.validateExtended(alert);
-            if (isNotValid) {
-                throw new Error(isNotValid);
-            }
-        }
-    }
 })
 export class Alert extends Model<InferAttributes<Alert>, InferCreationAttributes<Alert>> {
     @Column({
@@ -34,15 +21,11 @@ export class Alert extends Model<InferAttributes<Alert>, InferCreationAttributes
     })
     declare id: CreationOptional<number>;
     
-    @Column({
-        type: DataType.STRING,
-        allowNull: false,
-    })
+    @AllowNull(false)
+    @Column(DataType.STRING)
     declare type: AlertType; // Type of alert, e.g. "new_asset", "asset_approved", etc.
-    @Column({
-        type: DataType.NUMBER,
-        allowNull: false,
-    })
+    @AllowNull(false)
+    @Column(DataType.NUMBER)
     declare userId: number; // User ID of the person who should receive the alert
 
     @Column({
@@ -123,9 +106,22 @@ export class Alert extends Model<InferAttributes<Alert>, InferCreationAttributes
         }
         return null;
     }
+
+    @AfterValidate
+    private static async runValidator(alert: Alert) {
+            if (alert.isNewRecord) {
+                await Alert.validatorCreation.parseAsync(alert);
+            } else {
+                await Alert.validator.parseAsync(alert);
+            }
+            let isNotValid = Alert.validateExtended(alert);
+            if (isNotValid) {
+                throw new Error(isNotValid);
+            }
+        }
     // #endregion Validators
 
-    public toAPIResponse(): AlertApiV3 {
+    public toApiV3(): AlertApiV3 {
         return {
             id: this.id,
             type: this.type,

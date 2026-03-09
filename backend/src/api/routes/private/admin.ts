@@ -45,15 +45,15 @@ export const AdminRouter = router({
             let alert = await Alert.create(input);
             return alert;
         }),
-    importOldModelSaberData: loggedInProcedure([UserPermissions.Administative_Tasks])
+    importOldModelSaberData: loggedInProcedure([UserPermissions.Administrative_Tasks])
         .mutation(async ({ input, ctx }) => {
             importFromOldModelSaber((message, level) => {});
         }),
-    getAdminLogs: loggedInProcedure([UserPermissions.Administative_Tasks])
+    getAdminLogs: loggedInProcedure([UserPermissions.Administrative_Tasks])
         .query(async ({ input, ctx }) => {
             return Logger.getLogs(new Date(Date.now() - 1000 * 60 * 5)); // last 5 minutes
         }),
-    resetSchema: loggedInProcedure([UserPermissions.Administative_Tasks])
+    resetSchema: loggedInProcedure([UserPermissions.Administrative_Tasks])
         .mutation(async ({ ctx }) => {
             if (!EnvConfig.isDevMode) {
                 throw new TRPCError({ code: `FORBIDDEN`, message: `Cannot drop database schema in a non-development environment.` });
@@ -72,7 +72,7 @@ export const AdminRouter = router({
             });
             return { message: `Database schema reset successfully` };
         }),
-    importFakeData: loggedInProcedure([UserPermissions.Administative_Tasks])
+    importFakeData: loggedInProcedure([UserPermissions.Administrative_Tasks])
         .mutation(async ({ ctx }) => {
             if (!EnvConfig.isDevMode) {
                 throw new TRPCError({ code: `FORBIDDEN`, message: `Cannot import fake data in a non-development environment.` });

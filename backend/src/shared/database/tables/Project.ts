@@ -1,17 +1,19 @@
-import { AllowNull, BelongsTo, Column, CreatedAt, DataType, Default, DeletedAt, ForeignKey, Model, Table, UpdatedAt } from "sequelize-typescript";
+import { AfterValidate, AllowNull, BelongsTo, Column, CreatedAt, DataType, Default, DeletedAt, ForeignKey, Model, Table, UpdatedAt } from "sequelize-typescript";
 import { col, CreationOptional, InferAttributes, InferCreationAttributes, NonAttribute, Op, Sequelize, WhereOptions } from "sequelize";
-import { ModApiv2, ProjectApiV3, Status, StatusHistory, statusHistorySchema, UserPermissions } from "../DBExtras.ts";
+import { dbId, ModApiv2, ProjectApiV3, RequestType, Status, StatusHistory, statusHistorySchema, UserPermissions } from "../DBExtras.ts";
 import z from "zod/v4";
 import { Game } from "./Game.ts";
 import { Logger } from "../../Logger.ts";
 import { User } from "./User.ts";
 import { Version } from "./Version.ts";
-import { Range, satisfies, SemVer } from "semver";
+import { satisfies } from "semver";
 import { Translation } from "./Translation.ts";
+import { IEditable, IReportable, IViewable } from "./common.ts";
+import { ThingRequest } from "./ThingRequest.ts";
 
 
 export type ProjectInfer = InferAttributes<Project>;
-export type ProjectAllowedEdit = Partial<Pick<Project, `summary` | `description` | `category` | `gitUrl` | `authorIds`>>;
+export type ProjectAllowedEdit = Partial<Pick<Project, `summary` | `description` | `category` | `gitUrl` | `authorIds` | `collaboratorIds`>>;
 export type ProjectWhereOptions = WhereOptions<Project>;
 
 @Table({
@@ -19,21 +21,8 @@ export type ProjectWhereOptions = WhereOptions<Project>;
     modelName: `Project`,
     timestamps: true,
     paranoid: true,
-    hooks: {
-        afterValidate: async (project: Project) => {
-            if (project.isNewRecord) {
-                Project.validatorCreation.parse(project);
-            } else {
-                Project.validator.parse(project);
-            }
-            let isValid = await Project.validateExtended(project);
-            if (!isValid) {
-                throw new Error(`Project validation failed in extended validation.`);
-            }
-        }
-    }
 })
-export class Project extends Model<InferAttributes<Project>, InferCreationAttributes<Project>> {
+export class Project extends Model<InferAttributes<Project>, InferCreationAttributes<Project>> implements IViewable, IEditable, IReportable {
     // #region Columns
     @Column({
         type: DataType.INTEGER,
@@ -45,56 +34,61 @@ export class Project extends Model<InferAttributes<Project>, InferCreationAttrib
     })
     declare readonly id: CreationOptional<number>;
 
-    @Column(DataType.TEXT)
     @AllowNull(false)
+    @Column(DataType.TEXT)
     declare name: string; // the name of the project
 
-    @Column(DataType.TEXT)
     @AllowNull(false)
+    @Column(DataType.TEXT)
     declare summary: string; // a short summary of the project - for display in lists
 
-    @Column(DataType.TEXT)
     @AllowNull(false)
+    @Column(DataType.TEXT)
     declare description: string; // a longer description of the project - for the project details page - think a readme
 
-    @Column(DataType.TEXT)
     @AllowNull(false)
     @ForeignKey(() => Game)
+    @Column(DataType.TEXT)
     declare gameName: string; // the id of the game that this project is for
     @BelongsTo(() => Game, `gameName`)
     declare _game: NonAttribute<Promise<Game | null>>;
 
-    @Column(DataType.TEXT)
     @AllowNull(false)
+    @Column(DataType.TEXT)
     declare category: string; // what to categorize this project as
 
-    @Column(DataType.ARRAY(DataType.INTEGER))
     @AllowNull(false)
+    @Column(DataType.ARRAY(DataType.INTEGER))
     declare authorIds: number[]; // the ids of the users who are authors of this project
 
-    @Column(DataType.TEXT)
-    @AllowNull(false)
-    declare status: Status; // the current status of the project
-
-    @Column(DataType.TEXT)
-    @AllowNull(false)
-    declare iconFileName: string; // the filename of the project's icon image
-
-    @Column(DataType.TEXT)
-    @AllowNull(false)
-    declare gitUrl: string; // the URL of the project's git repository
-
-    @Column(DataType.TEXT)
-    @AllowNull(true)
-    declare lastApprovedById: CreationOptional<number> | null;
-
-    @Column(DataType.INTEGER)
-    @AllowNull(false)
-    declare lastUpdatedById: number;
-
-    @Column(DataType.ARRAY(DataType.JSONB))
     @AllowNull(false)
     @Default([])
+    @Column(DataType.ARRAY(DataType.INTEGER))
+    declare collaboratorIds: number[]; // the ids of the users who are collaborators on this project
+
+    @AllowNull(false)
+    @Column(DataType.TEXT)
+    declare status: Status; // the current status of the project
+
+    @AllowNull(false)
+    @Column(DataType.TEXT)
+    declare iconFileName: string; // the filename of the project's icon image
+
+    @AllowNull(false)
+    @Column(DataType.TEXT)
+    declare gitUrl: string; // the URL of the project's git repository
+
+    @AllowNull(true)
+    @Column(DataType.TEXT)
+    declare lastApprovedById: CreationOptional<number> | null;
+
+    @AllowNull(false)
+    @Column(DataType.INTEGER)
+    declare lastUpdatedById: number;
+
+    @AllowNull(false)
+    @Default([])
+    @Column(DataType.ARRAY(DataType.JSONB))
     declare statusHistory: CreationOptional<StatusHistory[]>;
 
     @CreatedAt
@@ -105,13 +99,13 @@ export class Project extends Model<InferAttributes<Project>, InferCreationAttrib
     declare readonly deletedAt: CreationOptional<Date> | null;
 
     get game(): NonAttribute<Promise<Game | null>> {
-            if (this._game) {
-                return Promise.resolve(this._game) || null;
-            } else {
-                Logger.debug(`Game not loaded, fetching from DB for gameName: ${this.gameName}`);
-                return Game.findByPk(this.gameName) || null;
-            }
+        if (this._game) {
+            return Promise.resolve(this._game) || null;
+        } else {
+            Logger.debug(`Game not loaded, fetching from DB for gameName: ${this.gameName}`);
+            return Game.findByPk(this.gameName) || null;
         }
+    }
     // #endregion
     // #region Validatiors
     /*
@@ -120,18 +114,19 @@ export class Project extends Model<InferAttributes<Project>, InferCreationAttrib
     */
 
     public static validator = z.object({
-        id: z.number().int().positive(),
+        id: dbId,
         name: z.string().max(128),
         summary: z.string().max(256),
         description: z.string().max(4096),
         gameName: z.string(),
         category: z.string(),
-        authorIds: z.array(z.number().int().positive()),
+        authorIds: z.array(dbId).min(1),
         status: z.enum(Status),
         iconFileName: z.string(),
         gitUrl: z.url(),
-        lastApprovedById: z.number().int().positive().nullable(),
-        lastUpdatedById: z.number().int().positive(),
+        lastApprovedById: dbId.nullable(),
+        lastUpdatedById: dbId,
+        collaboratorIds: z.array(dbId),
         statusHistory: z.array(statusHistorySchema),
         createdAt: z.date(),
         updatedAt: z.date(),
@@ -174,6 +169,19 @@ export class Project extends Model<InferAttributes<Project>, InferCreationAttrib
         }
 
         return true;
+    }
+
+    @AfterValidate
+    private static async runValidators(project: Project) {
+        if (project.isNewRecord) {
+            Project.validatorCreation.parse(project);
+        } else {
+            Project.validator.parse(project);
+        }
+        let isValid = await Project.validateExtended(project);
+        if (!isValid) {
+            throw new Error(`Project validation failed in extended validation.`);
+        }
     }
     // #endregion
     // #region Permissions 
@@ -287,6 +295,25 @@ export class Project extends Model<InferAttributes<Project>, InferCreationAttrib
     }
     // #endregion
     // #region Edit
+    public async updateProject(data: ProjectAllowedEdit, user: User): Promise<Project> {
+        if (data.authorIds) {
+            if (!data.authorIds.includes(user.id) && data.authorIds.length > 0) {
+                throw new Error(`You must be an author to set authorship, and you cannot remove yourself as an author if there are no other authors.`);
+            }
+        }
+
+        Object.assign(this, {
+            summary: data.summary ?? this.summary,
+            description: data.description ?? this.description,
+            category: data.category ?? this.category,
+            gitUrl: data.gitUrl ?? this.gitUrl,
+            authorIds: data.authorIds ?? this.authorIds,
+            collaboratorIds: data.collaboratorIds ?? this.collaboratorIds,
+        });
+        this.lastUpdatedById = user.id;
+        return await this.save();
+    }
+
     public async setStatus(newStatus: Status, user: User, reason: string, shouldSendWebhook = true): Promise<this> {
         let previousStatus = this.status;
         this.status = newStatus;
@@ -298,7 +325,7 @@ export class Project extends Model<InferAttributes<Project>, InferCreationAttrib
             status: newStatus,
             reason: reason,
             userId: user.id,
-            timestamp: new Date(),
+            timestamp: new Date().toISOString(),
         }];
         try {
             await this.save();
@@ -310,6 +337,34 @@ export class Project extends Model<InferAttributes<Project>, InferCreationAttrib
         return this;
     }
     // #endregion
+    // #region Report
+    public async report(reportedBy: User, reason: string): Promise<ThingRequest> {
+        let existingRequests = await ThingRequest.findAll({
+            where: {
+                requestResponseBy: this.lastUpdatedById,
+                refrencedId: this.id,
+                requestType: RequestType.Project_Report
+            }
+        });
+
+        if (existingRequests.length > 0) {
+            Logger.log(`User ${reportedBy.id} attempted to report project ${this.id} but a report already exists.`);
+            return existingRequests[0];
+        }
+
+        Logger.log(`Creating report request for project ${this.id} by user ${reportedBy.id} for reason: ${reason}`);
+        return await ThingRequest.create({
+            refrencedId: this.id,
+            requesterId: reportedBy.id,
+            requestType: RequestType.Project_Report,
+            requestResponseBy: null,
+            messages: [{
+                userId: reportedBy.id,
+                message: reason,
+                timestamp: new Date().toISOString(),
+            }],
+        });
+    }
     // #region ToAPI
     public async toApiV3(language?: string): Promise<ProjectApiV3> {
         let authors = await User.findAll({

@@ -1,18 +1,19 @@
 import { Router } from "express";
 import { Alert, AlertInfer, alertApiV3Schema } from "../../../shared/Database.ts";
 import { Validator } from "../../../shared/Validator.ts";
-import { parseErrorMessage } from "../../../shared/Tools.ts";
+import { handleTRPCPromiseCatch, parseErrorMessage } from "../../../shared/Tools.ts";
 import { Logger } from "../../../shared/Logger.ts";
 import { WhereOptions } from "sequelize";
-import { authProcedure, router } from "../../trpc.ts";
+import { loggedInProcedure, router } from "../../trpc.ts";
 import { TRPCError } from "@trpc/server";
+import { z } from "zod/v4";
 
 export const alertsRouter = router({
-    getAlerts: authProcedure(`loggedIn`)
-        .input(Validator.z.object({ 
-            read: Validator.z.enum([`true`, `false`, `all`]).default(`false`) }
+    getMyAlerts: loggedInProcedure()
+        .input(z.object({ 
+            read: z.enum([`true`, `false`, `all`]).default(`false`) }
         ))
-        .output(Validator.z.array(alertApiV3Schema))
+        .output(z.array(alertApiV3Schema))
         .query(async ({input, ctx}) => {
         let whereOptions: WhereOptions<AlertInfer> = {
             userId: ctx.user.id,
@@ -26,10 +27,10 @@ export const alertsRouter = router({
             where: whereOptions,
             order: [[`createdAt`, `DESC`]]
         });
-        return alerts.map(a => a.toAPIResponse());
+        return alerts.map(a => a.toApiV3());
     }),
-    markAlertRead: authProcedure(`loggedIn`).input(Validator.z.object({
-        id: Validator.z.number().int().positive()
+    markAlertRead: loggedInProcedure().input(z.object({
+        id: z.number().int().positive()
     })).mutation(async ({input, ctx}) => {
         const alert = await Alert.findByPk(input.id);
         if (!alert) {
@@ -40,21 +41,21 @@ export const alertsRouter = router({
         }
         alert.read = true;
         alert.discordMessageSent = true;
-        await alert.save();
+        await alert.save().catch(handleTRPCPromiseCatch);
         Logger.debug(`Alert ${alert.id} marked as read for user ${ctx.user.id}`);
-        return alert.toAPIResponse();
+        return alert.toApiV3();
     }),
-    deleteAlert: authProcedure(`loggedIn`).input(Validator.z.object({
-        id: Validator.z.number().int().positive()
+    deleteAlert: loggedInProcedure().input(z.object({
+        id: z.number().int().positive()
     })).mutation(async ({input, ctx}) => {
         const alert = await Alert.findByPk(input.id);
         if (!alert) {
             throw new TRPCError({ code: `NOT_FOUND`, message: `Alert not found`});
         }
         if (alert.userId !== ctx.user.id) {
-            throw new TRPCError({ code: `FORBIDDEN`, message: `You are not allowed to read this alert`});
+            throw new TRPCError({ code: `FORBIDDEN`, message: `You are not allowed to delete this alert`});
         }
-        await alert.destroy();
+        await alert.destroy().catch(handleTRPCPromiseCatch);
         Logger.debug(`Alert ${alert.id} deleted for user ${ctx.user.id}`);
         return;
     })

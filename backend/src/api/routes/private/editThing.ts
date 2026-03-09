@@ -1,10 +1,12 @@
 import z from "zod/v4";
-import { Asset, ThingRequest, LinkedAssetLinkType, User, dbId } from "../../../shared/Database.ts";
+import { Asset, ThingRequest, LinkedAssetLinkType, User, dbId, Project, DependencySchema, Version } from "../../../shared/Database.ts";
 import { parseErrorMessage } from "../../../shared/Tools.ts";
 import { loggedInProcedure, router } from "../../trpc.ts";
 import { TRPCError } from "@trpc/server";
+import { support } from "jszip";
 
 export const UpdateAssetRouter = router({
+    // #region updateAsset
     updateAsset: loggedInProcedure().input(z.object({
         assetId: dbId,
         data: Asset.validator.pick({
@@ -26,7 +28,9 @@ export const UpdateAssetRouter = router({
             throw new Error(`Error updating asset: ${parseErrorMessage(err)}`);
         });
     }),
-    submitForApproval: loggedInProcedure().input(z.object({
+    // #endregion
+    // #region submitForApproval
+    submitAssetForApproval: loggedInProcedure().input(z.object({
         assetId: dbId
     })).mutation(async ({ input, ctx }) => {
         const asset = await Asset.findByPk(input.assetId);
@@ -42,6 +46,8 @@ export const UpdateAssetRouter = router({
             throw new TRPCError({ code: `INTERNAL_SERVER_ERROR`, message: `Error submitting asset for approval: ${parseErrorMessage(err)}` });
         });
     }),
+    // #endregion
+    // #region linkAsset
     linkAsset: loggedInProcedure().input(z.object({
         assetId: dbId,
         linkToId: dbId,
@@ -69,7 +75,9 @@ export const UpdateAssetRouter = router({
             throw new Error(`Error linking asset: ${parseErrorMessage(err)}`);
         });
     }),
-    addCollaborator: loggedInProcedure().input(z.object({
+    // #endregion
+    // #region addAssetCollaborator
+    addAssetCollaborator: loggedInProcedure().input(z.object({
         id: dbId,
         userId: dbId
     })).mutation(async ({ input, ctx }) => {
@@ -92,7 +100,62 @@ export const UpdateAssetRouter = router({
         }).catch(err => {
             throw new Error(`Error adding collaborator: ${parseErrorMessage(err)}`);
         });
-    })
+    }),
+    // #endregion
+    // #region updateProject
+    updateProject: loggedInProcedure().input(z.object({
+        projectId: dbId,
+        data: Project.validator.pick({
+            description: true,
+            authorIds: true,
+            collaboratorIds: true,
+            summary: true,
+            gitUrl: true,
+        }).strict().partial()
+    })).mutation(async ({ input, ctx }) => {
+        const project = await Project.findByPk(input.projectId);
+        if (!project) {
+            throw new Error(`Project not found`);
+        }
+        if (!project.canEdit(ctx.user)) {
+            throw new Error(`You are not allowed to edit this project`);
+        }
+        return project.updateProject(input.data, ctx.user).then(updatedProject => {
+            return updatedProject.toApiV3();
+        });
+    }),
+    // #endregion
+    // #region updateVersion
+    updateVersion: loggedInProcedure().input(z.object({
+        versionId: dbId,
+        data: z.object({
+            semver: z.string(),
+            supportedGameVersionIds: z.array(dbId),
+            dependencies: z.array(DependencySchema)
+        }).strict().partial()
+    })).mutation(async ({ input, ctx }) => {
+        const version = await Version.findByPk(input.versionId);
+        if (!version) {
+            throw new Error(`Version not found`);
+        }
+        
+        const project = await version.project;
+        if (!project) {
+            throw new Error(`Project not found`);
+        }
+
+        if (!version.canEdit(ctx.user, project)) {
+            throw new Error(`You are not allowed to edit this version`);
+        }
+        Object.assign(version, input.data);
+        version.lastUpdatedById = ctx.user.id;
+        return await version.save().then(updatedVersion => {
+            return updatedVersion.toApiV3();
+        }).catch(err => {
+            throw new Error(`Error updating version: ${parseErrorMessage(err)}`);
+        });
+    }),
+    // #endregion
 })
 /*
 export class UpdateAssetRoutes {

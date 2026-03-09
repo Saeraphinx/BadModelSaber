@@ -1,21 +1,21 @@
 
-import { Asset, ThingRequest, AssetRequestInfer, RequestType, UserPermissions } from "../../../shared/Database.ts";
-import { Validator } from "../../../shared/Validator.ts";
+import { Asset, ThingRequest,  RequestType, UserPermissions, dbId, ThingRequestInfer } from "../../../shared/Database.ts";
+import { z } from "zod/v4";
 import { Op, WhereOptions } from "sequelize";
-import { authProcedure, router } from "../../trpc.ts";
+import { loggedInProcedure, router } from "../../trpc.ts";
 import { TRPCError } from "@trpc/server";
 import { handleTRPCPromiseCatch, parseErrorMessage } from "../../../shared/Tools.ts";
 
 export const RequestRouter = router({
-    getRequests: authProcedure(`loggedIn`).input(Validator.z.object({
-        includeActioned: Validator.z.boolean().optional().default(false),
-        assetId: Validator.zNumberId.optional()
+    getMyRequests: loggedInProcedure().input(z.object({
+        gameName: z.string().optional(),
+        includeActioned: z.boolean().optional().default(false),
+        thingId: z.number().int().positive().optional()
     })).query(async ({ input, ctx }) => {
-        let isElevated = ctx.user.roles.includes(UserPermissions.View_All_Reports);
-        const whereOptions: WhereOptions<AssetRequestInfer> = {};
+        const whereOptions: WhereOptions<ThingRequestInfer> = {};
 
-        if (input.assetId) {
-            whereOptions.refrencedAssetId = input.assetId;
+        if (input.thingId) {
+            whereOptions.refrencedId = input.thingId;
         }
         if (!input.includeActioned) {
             whereOptions.accepted = null;
@@ -35,25 +35,14 @@ export const RequestRouter = router({
             },
             include: { all: true },
         });
-        let reports = null;
-        if (isElevated) {
-            reports = ThingRequest.findAll({
-                where: {
-                    requesterId: {[Op.ne]: ctx.user.id},
-                    requestType: RequestType.Report,
-                    ...whereOptions
-                },
-                include: { all: true },
-            });
-        }
-        const [incomingRequests, outgoingRequests, reportRequests] = await Promise.all([incoming, outgoing, reports]);
+
+        const [incomingRequests, outgoingRequests] = await Promise.all([incoming, outgoing]);
         return {
-            incoming: await Promise.all(incomingRequests.map(req => req.getAPIResponse())),
-            outgoing: await Promise.all(outgoingRequests.map(req => req.getAPIResponse())),
-            reports: reportRequests ? await Promise.all(reportRequests.map(req => req.getAPIResponse())) : null
+            incoming: await Promise.all(incomingRequests.map(req => req.toApiV3())),
+            outgoing: await Promise.all(outgoingRequests.map(req => req.toApiV3())),
         };
     }),
-    requestCounts: authProcedure(`loggedIn`).query(async ({ ctx }) => {
+    requestCounts: loggedInProcedure().query(async ({ ctx }) => {
         let incoming = await ThingRequest.count({
             where: {
                 requestResponseBy: ctx.user.id,
@@ -66,67 +55,57 @@ export const RequestRouter = router({
                 accepted: null
             }
         });
-        let reports = null;
-        if (ctx.user.roles.includes(UserPermissions.View_All_Reports)) {
-            reports = await ThingRequest.count({
-                where: {
-                    requestType: RequestType.Report,
-                    accepted: null
-                }
-            });
-        }
-        return { incoming: incoming ?? 0, outgoing: outgoing ?? 0, reports: reports ?? null };
+        return { incoming: incoming ?? 0, outgoing: outgoing ?? 0 };
     }),
-    getRequest: authProcedure(`loggedIn`).input(Validator.z.object({
-        id: Validator.zNumberId,
+    getRequest: loggedInProcedure().input(z.object({
+        id: dbId,
     })).query(async ({ input, ctx }) => {
-        let isElevated = ctx.user.roles.includes(UserPermissions.View_All_Reports);
-        const assetReq = await ThingRequest.findByPk(input.id, { include: { all: true }});
-        if (!assetReq) {
+        const thingRequest = await ThingRequest.findByPk(input.id, { include: { all: true }});
+        if (!thingRequest) {
             throw new TRPCError({code: `NOT_FOUND`, message: `Request not found`});
         }
-        if (!isElevated && assetReq.requesterId !== ctx.user?.id && assetReq.requestResponseBy !== ctx.user?.id) {
+        if (!thingRequest.canView(ctx.user)) {
             throw new TRPCError({code: `FORBIDDEN`, message: `You are not allowed to message this request`});
         }
-        return await assetReq.getAPIResponse();
+        return await thingRequest.toApiV3();
     }),
-    addMessage: authProcedure(`loggedIn`).input(Validator.z.object({
-        id: Validator.zNumberId,
-        message: Validator.z.string().min(1).max(2048)
+    addMessage: loggedInProcedure().input(z.object({
+        id: dbId,
+        message: z.string().min(1).max(2048)
     })).mutation(async ({ input, ctx }) => {
         const assetReq = await ThingRequest.findByPk(input.id);
         if (!assetReq) {
             throw new TRPCError({code: `NOT_FOUND`, message: `Request not found`});
         }
-        if (!assetReq.allowedToMessage(ctx.user)) {
+        if (!assetReq.canMessage(ctx.user)) {
             throw new TRPCError({code: `FORBIDDEN`, message: `You are not allowed to message this request`});
         }
         await assetReq.addMessage(ctx.user, input.message).catch(handleTRPCPromiseCatch);
         return { message: `Message added successfully` };
     }),
-    handleRequest: authProcedure(`loggedIn`).input(Validator.z.object({
-        id: Validator.zNumberId,
-        action: Validator.z.enum([`accept`, `decline`]),
+    handleRequest: loggedInProcedure().input(z.object({
+        id: dbId,
+        action: z.enum([`accept`, `decline`]),
     })).mutation(async ({ input, ctx }) => {
         const assetReq = await ThingRequest.findByPk(input.id);
         if (!assetReq) {
             throw new TRPCError({code: `NOT_FOUND`, message: `Request not found`});
         }
-        if (!assetReq.allowedToAccept(ctx.user)) {
+        if (!assetReq.canAccept(ctx.user)) {
             throw new TRPCError({code: `FORBIDDEN`, message: `You are not allowed to handle this request`});
         }
         if (input.action === `accept`) {
-            await assetReq.accept(ctx.user.id).catch(handleTRPCPromiseCatch);
+            await assetReq.accept(ctx.user).catch(handleTRPCPromiseCatch);
             return { message: `Request accepted successfully` };
         } else if (input.action === `decline`) {
-            await assetReq.decline(ctx.user.id).catch(handleTRPCPromiseCatch);
+            await assetReq.decline(ctx.user).catch(handleTRPCPromiseCatch);
             return { message: `Request declined successfully` };
         }
         throw new Error(`Invalid action`);
     }),
-    reportAsset: authProcedure(`loggedIn`).input(Validator.z.object({
-        assetId: Validator.zNumberId,
-        reason: Validator.z.string().min(3).max(1000),
+    reportAsset: loggedInProcedure().input(z.object({
+        assetId: dbId,
+        reason: z.string().min(3).max(1000),
     })).mutation(async ({ input, ctx }) => {
         let asset = await Asset.findByPk(input.assetId);
         if (!asset) {
@@ -134,7 +113,7 @@ export const RequestRouter = router({
         }
 
         let assetReq = await asset.report(ctx.user, input.reason).catch(handleTRPCPromiseCatch);
-        return await assetReq.getAPIResponse().catch(handleTRPCPromiseCatch);;
+        return await assetReq.toApiV3().catch(handleTRPCPromiseCatch);;
     })
 });
 

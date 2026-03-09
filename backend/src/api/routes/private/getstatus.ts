@@ -1,11 +1,11 @@
-import { authProcedure, router } from "../../trpc.ts";
+import { anyProcedure, loggedInProcedure, router } from "../../trpc.ts";
 import { getGitVersion } from "../../../shared/Tools.ts";
 import { AdminRouter } from "./admin.ts";
 import { User, UserPermissions } from "../../../shared/Database.ts";
 import { REST, RESTGetAPICurrentUserResult } from "discord.js";
 
 export const statusRouter = router({
-    status: authProcedure(`any`).query(() => {
+    status: anyProcedure().query(() => {
         return {
             message: `Server is running`,
             timestamp: new Date().toISOString(),
@@ -14,7 +14,7 @@ export const statusRouter = router({
             version: getGitVersion(),
         };
     }),
-    adminStatus: authProcedure([UserPermissions.Administative_Tasks]).query(async () => {
+    adminStatus: loggedInProcedure([UserPermissions.Administrative_Tasks]).query(async ({ ctx }) => {
         let dbConnectionOK = await User.sequelize?.authenticate().then(() => `Connected`).catch(() => `Error`);
         let serverTime = new Date().toISOString();
         let isDocker = process.env.DOCKER === `true`;
@@ -26,7 +26,7 @@ export const statusRouter = router({
                 id: user.id,
                 username: user.username,
                 global_name: user.global_name,
-                descriminator: user.discriminator,
+                discriminator: user.discriminator,
                 avatar: user.avatar,
             };
         }).catch(() => {

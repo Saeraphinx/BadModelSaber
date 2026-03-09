@@ -27,7 +27,7 @@ export const alertsRouter = router({
             where: whereOptions,
             order: [[`createdAt`, `DESC`]]
         });
-        return alerts.map(a => a.toAPIResponse());
+        return alerts.map(a => a.toApiV3());
     }),
     markAlertRead: loggedInProcedure().input(z.object({
         id: z.number().int().positive()
@@ -43,7 +43,7 @@ export const alertsRouter = router({
         alert.discordMessageSent = true;
         await alert.save();
         Logger.debug(`Alert ${alert.id} marked as read for user ${ctx.user.id}`);
-        return alert.toAPIResponse();
+        return alert.toApiV3();
     }),
     deleteAlert: loggedInProcedure().input(z.object({
         id: z.number().int().positive()

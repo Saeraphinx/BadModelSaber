@@ -1,10 +1,15 @@
-import { AfterValidate, Column, CreatedAt, DataType, DeletedAt, Model, Table, UpdatedAt } from "sequelize-typescript";
+import { AfterValidate, AllowNull, Column, CreatedAt, DataType, DeletedAt, Model, Table, Unique, UpdatedAt } from "sequelize-typescript";
 import { CreationAttributes, CreationOptional, InferAttributes, InferCreationAttributes, Sequelize } from "sequelize";
 import { AlertType, UserPlatform, UserApiV3, UserPermissions, PlatformType, UserPublicApiV2, dbId, userPermissionsSchema, userPlatformSchema, Status } from "../DBExtras.ts";
 import { Alert } from "./Alert.ts";
 import { Logger } from "../../Logger.ts";
 import z from "zod";
 
+export const DefaultPermissions = [UserPermissions.Asset_Create, UserPermissions.Mods_Create, UserPermissions.Users_EditSelf];
+export const DefaultPermissionsObject = {
+    sitewide: DefaultPermissions,
+    perGame: {},
+} as const;
 export type UserEditable = Pick<InferAttributes<User>, "displayName" | "bio">
 export type UserInfer = InferAttributes<User>;
 @Table({
@@ -25,17 +30,14 @@ export class User extends Model<InferAttributes<User>, InferCreationAttributes<U
     })
     declare id: CreationOptional<number>;
 
-    @Column({
-        type: DataType.STRING(32),
-        allowNull: true,
-        unique: true,
-    })
+    @AllowNull(true)
+    @Unique
+    @Column(DataType.STRING(32))
+    
     declare discordId: string | null;
-    @Column({
-        type: DataType.STRING(32),
-        allowNull: true,
-        unique: true,
-    })
+    @AllowNull(true)
+    @Unique
+    @Column(DataType.STRING(32))
     declare githubId: string | null;
 
     @Column({

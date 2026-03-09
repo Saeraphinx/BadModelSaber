@@ -1,4 +1,4 @@
-import { AlertType, Asset, AssetFileFormat, AssetPublicAPIv2, License, LinkedAssetLinkType, Status, Tags, User, UserPermissions } from "./Database.ts";
+import { AlertType, Asset, AssetFileFormat, AssetPublicAPIv2, DefaultPermissionsObject, Game, License, LinkedAssetLinkType, Status, Tags, User, UserPermissions } from "./Database.ts";
 import { Logger } from "./Logger.ts";
 import * as fs from "fs";
 import * as crypto from "crypto";
@@ -28,11 +28,11 @@ export async function importFromOldModelSaber(sendMessage: (messaage: string, ty
     }
     const discordRest = new REST({ version: '10' }).setToken(EnvConfig.auth.discord.token);
     const importerUser = await User.create({
-        id: `6`,
+        id: 6,
         username: `ModelSaber Importer`,
         displayName: `ModelSaber Importer`,
         avatarUrl: `https://cdn.discordapp.com/embed/avatars/6.png`,
-        roles: [UserPermissions.C_System],
+        permissions: {sitewide: [UserPermissions.C_System], perGame: {}},
         bio: `This user was created by the ModelSaber importer for assets that couldn't be linked to a specific user during the importing process.`,
     });
     try {
@@ -238,11 +238,11 @@ export async function importFromOldModelSaber(sendMessage: (messaage: string, ty
 
                     if (discordUser.id !== `0`) {
                         return await User.create({
-                            id: discordUser.id,
+                            discordId: discordUser.id,
                             username: discordUser.username,
                             displayName: discordUser.global_name || discordUser.username,
                             avatarUrl: `https://cdn.discordapp.com/avatars/${discordUser.id}/${discordUser.avatar}.webp?animated=true`,
-                            roles: [UserPermissions.Create_Assets],
+                            permissions: DefaultPermissionsObject,
                         }).catch(err => {
                             sendMessage(`Failed to create user ${discordUser.id} (${discordUser.username}): ${err}`, `error`);
                             Logger.error(`Failed to create user ${discordUser.id} (${discordUser.username}): ${err}`);
@@ -349,9 +349,10 @@ export async function importFromOldModelSaber(sendMessage: (messaage: string, ty
                 iconNames: [thumbnailName],
                 license: License.Custom,
                 licenseUrl: `https://modelsaber.com/info/unknown-license`,
-                uploaderId: user.id || `6`,
+                uploaderId: user.id || 6,
                 status: Status.Verified,
                 tags: tags as Tags[],
+                gameName: (await Game.defaultGame).name,
                 createdAt: new Date(asset.date),
             }).then((record) => {
                 fs.mkdirSync(record.folderPath, { recursive: true });

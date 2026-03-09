@@ -1,9 +1,7 @@
 import { afterAll, beforeAll, describe, expect, inject, test } from "vitest";
 import { Context } from "../../src/api/trpc.ts";
-import { createCaller } from "../../src/api/routers.ts";
-import { Alert, Asset, AssetFileFormat, AssetInfer, AssetRequest, DatabaseManager, License, RequestType, Status, Tags, User, UserPermissions } from "../../src/shared/Database.ts";
+import { Alert, Asset, AssetFileFormat, AssetInfer, ThingRequest, DatabaseManager, License, RequestType, Status, Tags, User, UserPermissions } from "../../src/shared/Database.ts";
 import { CreationAttributes, InferCreationAttributes } from "sequelize";
-import { before } from "node:test";
 
 // most endpoints don't actually need a fully functional context, so we can just kinda do this
 function createTestContext(userId: string): Context {
@@ -15,11 +13,16 @@ function createTestContext(userId: string): Context {
     };
 }
 
-function createDummyUser(id: string, roles: UserPermissions[] = []): User {
+function createDummyUser(id: number, permissions?: UserPermissions[]): User
+function createDummyUser(id: number, permissions?: { sitewide: UserPermissions[]; perGame: Record<string, UserPermissions[]> }): User
+function createDummyUser(id: number, permissions: UserPermissions[] | { sitewide: UserPermissions[]; perGame: Record<string, UserPermissions[]> } = []): User {
+    if (Array.isArray(permissions)) {
+        permissions = { sitewide: permissions, perGame: {} };
+    }
     return {
         id: id,
-        roles: roles,
-    } as User;
+        permissions: permissions,
+    } as unknown as User;
 }
 
 describe("database tests", () => {
@@ -46,17 +49,20 @@ describe("database tests", () => {
                 description: "This is a test asset",
                 license: License.CC0,
                 tags: [],
+                gameName: "beatsaber",
                 fileSize: 1,
-                uploaderId: "1234",
+                uploaderId: 1234,
                 fileSafeName: "test_asset.avatar",
                 iconNames: ["icon1.png", "icon2.png"],
             }
             testUser = await User.create({
-                id: "1234",
+                id: 1234,
                 username: "testuser",
                 displayName: "Test User",
                 avatarUrl: "",
-                roles: [],
+                permissions: { sitewide: [], perGame: {} },
+                userPlatforms: [],
+                bio: "",
             });
             asset = await Asset.create({
                 ...assetDefaults,
@@ -66,16 +72,16 @@ describe("database tests", () => {
         });
 
         test(`canEdit returns true for uploader`, async () => {
-            expect(asset.canEdit(createDummyUser(`1234`))).toBe(true);
+            expect(asset.canEdit(createDummyUser(1234))).toBe(true);
         });
 
         test(`canEdit returns false for other users`, async () => {
             expect(asset.canEdit(null)).toBe(false);
-            expect(asset.canEdit(createDummyUser(`4321`))).toBe(false);
+            expect(asset.canEdit(createDummyUser(4321))).toBe(false);
         });
 
-        test(`canEdit returns true for edit_any_asset`, async () => {
-            expect(asset.canEdit(createDummyUser(`9876`, [UserPermissions.Edit_Any_Asset]))).toBe(true);
+        test(`canEdit returns true for Asset_EditAll`, async () => {
+            expect(asset.canEdit(createDummyUser(9876, [UserPermissions.Asset_EditAll]))).toBe(true);
         });
 
         test(`updateAsset updates fields correctly`, async () => {
@@ -89,7 +95,7 @@ describe("database tests", () => {
                 name: "Edited Test Asset",
                 description: "This is an edited test asset",
                 tags: [Tags.Acc, Tags.Animations],
-            }, createDummyUser(`1234`));
+            }, createDummyUser(1234));
 
             await testAsset.reload();
             expect(testAsset.name).toBe("Edited Test Asset");
@@ -105,7 +111,7 @@ describe("database tests", () => {
             });
             await expect(testAsset.updateAsset({
                 tags: [Tags.Featured],
-            }, createDummyUser(`1234`))).rejects.toThrowError();
+            }, createDummyUser(1234))).rejects.toThrowError();
         });
 
         test(`updateAsset works with feature tags when user has permission`, async () => {
@@ -116,7 +122,7 @@ describe("database tests", () => {
             });
             await testAsset.updateAsset({
                 tags: [Tags.Featured],
-            }, createDummyUser(`1234`, [UserPermissions.Allow_Internal_Tags]));
+            }, createDummyUser(1234, [UserPermissions.Asset_InternalTags]));
             await testAsset.reload();
             expect(testAsset.tags).toEqual([Tags.Featured]);
         });
@@ -154,11 +160,11 @@ describe("database tests", () => {
             let testAsset: Asset;
             beforeAll(async () => {
                 uploader = await User.create({
-                    id: "uploader1",
+                    id: 1000,
                     username: "uploader",
                 });
                 collaborator = await User.create({
-                    id: "collab1",
+                    id: 1001,
                     username: "collaborator",
                 });
                 testAsset = await Asset.create({
@@ -172,9 +178,9 @@ describe("database tests", () => {
 
             test(`requestCollab creates a collaboration request`, async () => {
                 let request = await testAsset.requestCollab(uploader, collaborator);
-                expect(request).toBeInstanceOf(AssetRequest);
-                expect(request.requestType).toBe(RequestType.Credit);
-                expect(request.refrencedAssetId).toBe(testAsset.id);
+                expect(request).toBeInstanceOf(ThingRequest);
+                expect(request.requestType).toBe(RequestType.Asset_Credit);
+                expect(request.refrencedId).toBe(testAsset.id);
                 expect(request.requestResponseBy).toBe(collaborator.id);
                 expect(request.requesterId).toBe(uploader.id);
             });
@@ -193,11 +199,11 @@ describe("database tests", () => {
             });
 
             test(`requestCollab does not create request if request has already been denied`, async () => {
-                let existingRequest = await AssetRequest.findOne({
+                let existingRequest = await ThingRequest.findOne({
                     where: {
-                        refrencedAssetId: testAsset.id,
+                        refrencedId: testAsset.id,
                         requestResponseBy: collaborator.id,
-                        requestType: RequestType.Credit,
+                        requestType: RequestType.Asset_Credit,
                     }
                 });
                 if (!existingRequest) throw new Error(`Existing request not found`);

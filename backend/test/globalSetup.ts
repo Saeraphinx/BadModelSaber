@@ -5,6 +5,7 @@ import { PostgreSqlContainer } from "@testcontainers/postgresql";
 import { TestProject } from "vitest/node";
 
 export default async function setup(project: TestProject) {
+    console.log(`Setting up global test environment...`);
     EnvConfig.load();
     process.env.NODE_ENV = `test`;
     process.env.STORAGE_UPLOADS="./test/temp/uploads"

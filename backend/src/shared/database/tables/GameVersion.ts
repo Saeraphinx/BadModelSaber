@@ -22,22 +22,22 @@ export class GameVersion extends Model<InferAttributes<GameVersion>, InferCreati
     })
     declare readonly id: CreationOptional<number>;
 
-    @Column(DataType.TEXT)
     @AllowNull(false)
+    @Column(DataType.TEXT)
     declare gameName: string;
 
-    @Column(DataType.TEXT)
     @AllowNull(false)
+    @Column(DataType.TEXT)
     declare version: string; // semver-esc version (e.g. 1.29.1)
 
-    @Column(DataType.BOOLEAN)
     @AllowNull(false)
     @Default(false)
+    @Column(DataType.BOOLEAN)
     declare defaultVersion: CreationOptional<boolean>;
 
-    @Column(DataType.ARRAY(DataType.INTEGER))
     @AllowNull(false)
     @Default([])
+    @Column(DataType.ARRAY(DataType.INTEGER))
     declare linkedVersionIds: CreationOptional<number[]>;
 
     @CreatedAt

@@ -159,7 +159,7 @@ export enum UserPermissions {
   Users_EditAll = "users_edit_all", // User can edit other users' profiles (e.g. edit bio, etc.)
   Users_EditAllRoles = "users_edit_all_roles", // User can edit all roles of other users. basically allows all permissions
 
-  Administative_Tasks = "administrative_tasks", // User can perform high-level admin tasks
+  Administrative_Tasks = "administrative_tasks", // User can perform high-level admin tasks
 
   // cosmetic roles for badges only
   C_Developer = "cos_developer", // User is a developer of the site
@@ -240,16 +240,7 @@ export type StatusHistory = z.infer<typeof statusHistorySchema>;
 export const statusHistorySchema = z.object({
   status: statusSchema,
   reason: z.string(),
-  timestamp: z.preprocess((input) => {
-    if (typeof input === 'string') {
-      const date = new Date(input);
-      if (isNaN(date.getTime())) {
-        return undefined; // Will fail .date() validation
-      }
-      return date;
-    }
-    return input;
-  }, z.date()),
+  timestamp: z.iso.datetime(),
   userId: dbId
 })
 export const linkedAssetLinkTypeSchema = z.enum(LinkedAssetLinkType)
@@ -265,16 +256,7 @@ export type RequestMessage = z.infer<typeof requestMessageSchema>;
 export const requestMessageSchema = z.object({
   userId: dbId,
   message: z.string(),
-  timestamp: z.preprocess((input) => {
-    if (typeof input === 'string') {
-      const date = new Date(input);
-      if (isNaN(date.getTime())) {
-        return undefined; // Will fail .date() validation
-      }
-      return date;
-    }
-    return input;
-  }, z.date()),
+  timestamp: z.iso.datetime(),
 })
 
 

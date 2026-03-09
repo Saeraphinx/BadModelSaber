@@ -100,7 +100,7 @@ export const uploadStuff = router({
             }
             Logger.debug(`Asset upload completed for user ${ctx.user?.id} with asset ID ${asset.id}`);
             if (input.immidateSubmit) {
-                asset.setStatus(Status.Pending, "Asset immidately submitted for review by uploader", ctx.user).catch((err) => {
+                await asset.setStatus(Status.Pending, ctx.user, "Asset immidately submitted for review by uploader").catch((err) => {
                     Logger.error(`Error setting asset status to pending: ${parseErrorMessage(err)}`);
                     throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Failed to submit asset for review. Please contact a site administrator.' });
                 });

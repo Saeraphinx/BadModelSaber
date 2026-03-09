@@ -1,9 +1,10 @@
 import * as fs from 'fs';
 
-import { Alert, AlertType, Asset, AssetFileFormat, DatabaseManager, License, LinkedAssetLinkType, SponsorType, SponsorUrl, Status, Tags, User, UserPermissions } from '../src/shared/Database.ts';
+import { Alert, AlertType, Asset, AssetFileFormat, DatabaseManager, Game, GameVersion, License, LinkedAssetLinkType, PlatformType, Project, Status, Tags, User, UserPermissions, UserPlatform, Version } from '../src/shared/Database.ts';
 import { de, faker } from '@faker-js/faker';
 import { EnvConfig } from '../src/shared/EnvConfig.ts';
 import { Op } from 'sequelize';
+import { SemVer } from 'semver';
 
 export async function generateFakeData(connectionString?: string): Promise<boolean> {
     //EnvConfig.load();
@@ -23,21 +24,54 @@ export async function generateFakeData(connectionString?: string): Promise<boole
 
     let users: User[] = []
 
-    let sponserUrls: SponsorUrl[] = [
-        { platform: SponsorType.Patreon, url: `https://www.patreon.com/beatsabermoddinggroup` },
-        { platform: SponsorType.KoFi, url: `https://ko-fi.com/BadModelSaber` },
-        { platform: SponsorType.GitHub, url: `https://github.com/Saeraphinx/support` },
+    let sponserUrls: UserPlatform[] = [
+        { platform: PlatformType.Patreon, url: `https://www.patreon.com/beatsabermoddinggroup` },
+        { platform: PlatformType.KoFi, url: `https://ko-fi.com/BadModelSaber` },
+        { platform: PlatformType.GitHub, url: `https://github.com/Saeraphinx/support` },
     ]
+
+    await Game.create({
+        name: `beatsaber`,
+        displayName: `Beat Saber`,
+        default: true,
+        webhookConfig: []
+    })
+
+    let gameVersionIds: number[] = [];
+
+    await GameVersion.create({
+        gameName: `beatsaber`,
+        version: `1.30.0`,
+    }).then((gameVersion) => {
+        gameVersionIds.push(gameVersion.id);
+    });
+
+    await GameVersion.create({
+        gameName: `beatsaber`,
+        version: `1.31.0`,
+    }).then((gameVersion) => {
+        gameVersionIds.push(gameVersion.id);
+    });
+
+    await Game.create({
+        name: `chromapper`,
+        displayName: `ChroMapper`,
+        default: false,
+        webhookConfig: []
+    })
 
     for (let [index, role] of Object.values(UserPermissions).entries()) {
         let user = await User.create({
-            id: faker.string.numeric(26),
+            discordId: faker.string.uuid(),
             username: faker.internet.username({ firstName: `John`, lastName: role }),
             displayName: faker.internet.displayName({ firstName: `John`, lastName: role }),
             avatarUrl: `https://cdn.discordapp.com/embed/avatars/${index % 6}.png`,
             bio: faker.lorem.sentence(),
-            sponsorUrl: faker.helpers.arrayElements(sponserUrls, { min: 0, max: 3 }),
-            roles: [role],
+            userPlatforms: faker.helpers.arrayElements(sponserUrls, { min: 0, max: 3 }),
+            permissions: {
+                sitewide: [role],
+                perGame: {}
+            }
         });
         users.push(user);
     }
@@ -51,8 +85,9 @@ export async function generateFakeData(connectionString?: string): Promise<boole
     let userCount = 0;
     for (let user of users) {
         console.log(`Creating entries for user ${++userCount}/${users.length}`);
+        let assetIds: number[] = [];
         let usersExcludingCurrent = users.filter(u => u.id !== user.id);
-        for (let count of [1, 2, 3, 4, 5, 6]) {
+        for (let count of [1]) {
             for (let type of Object.values(AssetFileFormat)) {
                 await Asset.create({
                     oldId: count % 2 == 1 ? faker.number.int({min: 1000000, max: 99999999}) : null, // Only set oldId for odd types
@@ -70,33 +105,45 @@ export async function generateFakeData(connectionString?: string): Promise<boole
                     fileSize: faker.number.int({ min: 1000, max: 1000000 }),
                     iconNames: faker.helpers.arrayElements(testIcons, { min: 1, max: 5 }),
                     status: faker.helpers.arrayElement(Object.values(Status)),
+                    gameName: `beatsaber`,
                     tags: faker.helpers.arrayElements(Object.values(Tags), { min: 0, max: 5 }),
-                })
+                }). then((asset) => {
+                    assetIds.push(asset.id);
+                });
             }
-        }
 
-        for (let count of faker.helpers.arrayElements([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], { min: 1, max: 10 })) {
-            let shouldIncludeAsset = -1;
-            let shouldIncludeRequest = -1;
-            switch (count % 3) {
-                case 0:
-                    shouldIncludeAsset = faker.number.int({ min: 0, max: 100 });
-                    break;
-                case 1:
-                    shouldIncludeRequest = faker.number.int({ min: 0, max: 100 });
-                    break;
-                default:
-                    break;
+            for (let status of Object.values(Status)) {
+                let proj = await Project.create({
+                    name: `${faker.lorem.words(1)} ${status}`,
+                    description: faker.lorem.paragraph(),
+                    authorIds: [user.id],
+                    collaboratorIds: faker.helpers.arrayElements(usersExcludingCurrent, { min: 0, max: 3 }).map(u => u.id),
+                    status: status,
+                    gameName: `beatsaber`,
+                    category: `Other`,
+                    summary: faker.lorem.sentence(),
+                    iconFileName: faker.helpers.arrayElement(testIcons),
+                    gitUrl: faker.internet.url(),
+                    lastUpdatedById: user.id,
+                });
+
+                await Version.create({
+                    projectId: proj.id,
+                    semver: new SemVer(`${faker.number.int({ min: 0, max: 3 })}.${faker.number.int({ min: 0, max: 10 })}.${faker.number.int({ min: 0, max: 20 })}`),
+                    contentHashes: [{
+                        path: `content/${faker.lorem.word()}.zip`,
+                        hash: faker.git.commitSha(),
+                    }],
+                    fileSize: faker.number.int({ min: 1000, max: 1000000 }),
+                    dependencies: [],
+                    lastUpdatedById: user.id,
+                    platform: `universal`,
+                    status: status,
+                    uploaderId: user.id,
+                    zipHash: faker.git.commitSha(),
+                    supportedGameVersionIds: faker.helpers.arrayElements(gameVersionIds, { min: 1, max: gameVersionIds.length }),
+                });
             }
-            await Alert.create({
-                header: `Test Alert ${count}`,
-                message: `This is a test alert message number ${count} for user ${user.username}.`,
-                userId: user.id,
-                assetId: shouldIncludeAsset !== -1 ? shouldIncludeAsset : null,
-                requestId: shouldIncludeRequest !== -1 ? shouldIncludeRequest : null,
-                type: faker.helpers.arrayElement(Object.values(AlertType)),
-                read: faker.datatype.boolean(),
-            });
         }
     }
 

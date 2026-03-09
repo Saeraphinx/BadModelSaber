@@ -9,6 +9,11 @@ import { ThingRequest } from "./database/tables/ThingRequest.ts";
 import { PlatformType, Status, UserPermissions } from "./database/DBExtras.ts";
 import fs from "node:fs";
 import { parseErrorMessage } from "./Tools.ts";
+import { Version } from "./database/tables/Version.ts";
+import { Project } from "./database/tables/Project.ts";
+import { GameVersion } from "./database/tables/GameVersion.ts";
+import { Translation } from "./database/tables/Translation.ts";
+import { Game } from "./database/tables/Game.ts";
 
 export * from "./database/tables/User.ts";
 export * from "./database/tables/Asset.ts";
@@ -91,7 +96,6 @@ export class DatabaseManager {
         await this.sequelize.query(`CREATE SCHEMA IF NOT EXISTS ${this.schemaName}`);
         await this.migrate();
         this.loadTables();
-        this.loadHooks();
         try {
             await this.sequelize.sync();
             Logger.log(`Database synced successfully.`);
@@ -105,18 +109,24 @@ export class DatabaseManager {
 
     public async createAdminUserIfNotExists() {
         this.adminUser = await User.findOrCreate({
-            where: { id: `5` },
+            where: { id: 5 },
             defaults: {
-                id: `5`,
+                id: 5,
                 githubId: null,
                 discordId: null,
                 username: `system`,
                 displayName: `System User`,
-                bio: `hi :3\n\nThis user account is used for system operations and is not meant to be used by anyone.`,
-                roles: [...Object.values(UserPermissions).filter(r => !r.startsWith(`cos_`)), UserPermissions.C_System], // no cosmetic roles except system
+                bio: `hi :3\n\nThis user account is used for system operations and is not meant to be used by anyone.\n\nBadModelSaber is developed by [Saeraphinx](https://saeraphinx.dev) and the [Beat Saber Modding Group](https://bsmg.wiki). If you need to contact us, you can find links to our support channels on our Wiki: https://bsmg.wiki/contact-us`,
+                permissions: {
+                    sitewide: [...Object.values(UserPermissions).filter(r => !r.startsWith(`cos_`)), UserPermissions.C_System],
+                    perGame: {}
+                },
                 userPlatforms: [{
                     platform: PlatformType.Patreon,
                     url: `https://www.patreon.com/beatsabermoddinggroup`
+                }, {
+                    platform: PlatformType.KoFi,
+                    url: `https://ko-fi.com/beatsabermods`
                 }],
                 avatarUrl: `https://cdn.discordapp.com/embed/avatars/5.png`
             }
@@ -157,261 +167,19 @@ export class DatabaseManager {
     public loadTables() {
         Logger.debug(`Loading tables...`);
 
-        this.sequelize.query(`CREATE SEQUENCE IF NOT EXISTS global_id_seq INCREMENT BY 1 START WITH 1;`);
+        this.sequelize.query(`CREATE SEQUENCE IF NOT EXISTS global_id_seq INCREMENT BY 1 START WITH 10;`);
         this.sequelize.addModels([
             User,
             Asset,
             Alert,
-            ThingRequest
+            ThingRequest,
+            Game,
+            GameVersion,
+            Project,
+            Version,
+            Translation
         ]);
 
-        /* old model stuffs
-        this.Users = User.init({
-            id: {
-                type: DataTypes.STRING,
-                primaryKey: true,
-                allowNull: false,
-                unique: true
-            },
-            username: {
-                type: DataTypes.STRING,
-                allowNull: false,
-            },
-            displayName: {
-                type: DataTypes.STRING,
-                allowNull: false,
-                defaultValue: ``
-            },
-            bio: {
-                type: DataTypes.TEXT,
-                allowNull: false,
-                defaultValue: ``
-            },
-            sponsorUrl: {
-                type: DataTypes.JSONB,
-                allowNull: true
-            },
-            avatarUrl: {
-                type: DataTypes.STRING,
-                allowNull: false,
-                defaultValue: `https://cdn.discordapp.com/embed/avatars/0.png`
-            },
-            roles: {
-                type: DataTypes.ARRAY(DataTypes.STRING),
-                allowNull: false,
-                defaultValue: []
-            },
-            createdAt: DataTypes.DATE,
-            updatedAt: DataTypes.DATE,
-            deletedAt: DataTypes.DATE
-        }, {
-            sequelize: this.sequelize,
-            modelName: `User`,
-            tableName: `users`,
-            timestamps: true,
-            paranoid: true
-        });
-
-        this.Assets = Asset.init({
-            id: {
-                type: DataTypes.INTEGER,
-                primaryKey: true,
-                allowNull: false,
-                autoIncrement: true,
-                unique: true
-            },
-            oldId: {
-                type: DataTypes.INTEGER,
-                allowNull: true,
-                unique: true,
-            },
-            linkedIds: {
-                type: DataTypes.JSON,
-                allowNull: false,
-                defaultValue: [],
-            },
-            type: {
-                type: DataTypes.STRING,
-                allowNull: false,
-            },
-            uploaderId: {
-                type: DataTypes.STRING,
-                allowNull: false
-            },
-            collaborators: {
-                type: DataTypes.ARRAY(DataTypes.STRING),
-                allowNull: false,
-                defaultValue: []
-            },
-            name: {
-                type: DataTypes.STRING,
-                allowNull: false
-            },
-            description: {
-                type: DataTypes.TEXT,
-                allowNull: true
-            },
-            license: {
-                type: DataTypes.STRING,
-                allowNull: false
-            },
-            licenseUrl: {
-                type: DataTypes.STRING,
-                allowNull: true
-            },
-            sourceUrl: {
-                type: DataTypes.STRING,
-                allowNull: true
-            },
-            fileHash: {
-                type: DataTypes.STRING,
-                allowNull: false,
-                unique: true
-            },
-            fileSize: {
-                type: DataTypes.INTEGER,
-                allowNull: false
-            },
-            iconNames: {
-                type: DataTypes.JSONB,
-                allowNull: false,
-                defaultValue: []
-            },
-            status: {
-                type: DataTypes.STRING,
-                allowNull: false,
-                defaultValue: Status.Private,
-            },
-            statusHistory: {
-                type: DataTypes.JSONB,
-                allowNull: false,
-                defaultValue: []
-            },
-            tags: {
-                type: DataTypes.JSONB,
-                allowNull: false,
-                defaultValue: []
-            },
-            createdAt: DataTypes.DATE,
-            updatedAt: DataTypes.DATE,
-            deletedAt: DataTypes.DATE
-        }, {
-            sequelize: this.sequelize,
-            modelName: `Asset`,
-            tableName: `assets`,
-            timestamps: true,
-            paranoid: true
-        });
-
-        this.Alerts = Alert.init({
-            id: {
-                type: DataTypes.INTEGER,
-                primaryKey: true,
-                autoIncrement: true,
-                allowNull: false
-            },
-            type: {
-                type: DataTypes.STRING,
-                allowNull: false,
-            },
-            userId: {
-                type: DataTypes.STRING,
-                allowNull: false,
-            },
-            assetId: {
-                type: DataTypes.INTEGER,
-                allowNull: true,
-            },
-            requestId: {
-                type: DataTypes.INTEGER,
-                allowNull: true,
-            },
-            header: {
-                type: DataTypes.STRING,
-                allowNull: false,
-            },
-            message: {
-                type: DataTypes.STRING,
-                allowNull: false,
-            },
-            read: {
-                type: DataTypes.BOOLEAN,
-                allowNull: false,
-                defaultValue: false
-            },
-            discordMessageSent: {
-                type: DataTypes.BOOLEAN,
-                allowNull: false,
-                defaultValue: false
-            },
-            createdAt: DataTypes.DATE,
-            updatedAt: DataTypes.DATE,
-            deletedAt: DataTypes.DATE
-        }, {
-            sequelize: this.sequelize,
-            modelName: `Alert`,
-            tableName: `alerts`,
-            timestamps: true,
-            paranoid: true
-        });
-
-        this.AssetRequests = AssetRequest.init({
-            id: {
-                type: DataTypes.INTEGER,
-                primaryKey: true,
-                autoIncrement: true,
-                allowNull: false
-            },
-            refrencedAssetId: {
-                type: DataTypes.INTEGER,
-                allowNull: false
-            },
-            requesterId: {
-                type: DataTypes.STRING,
-                allowNull: false
-            },
-            requestResponseBy: {
-                type: DataTypes.STRING,
-                allowNull: true
-            },
-            objectToAdd: {
-                type: DataTypes.JSONB,
-                allowNull: true,
-                defaultValue: null
-            },
-            resolvedBy: {
-                type: DataTypes.STRING,
-                allowNull: true,
-                defaultValue: null
-            },
-            requestType: {
-                type: DataTypes.STRING,
-                allowNull: false,
-            },
-            accepted: {
-                type: DataTypes.BOOLEAN,
-                allowNull: true,
-                defaultValue: null
-            },
-            messages: {
-                type: DataTypes.JSONB,
-                allowNull: false,
-                defaultValue: []
-            },
-            createdAt: DataTypes.DATE,
-            updatedAt: DataTypes.DATE,
-            deletedAt: DataTypes.DATE,
-        }, {
-            sequelize: this.sequelize,
-            modelName: `AssetRequest`,
-            tableName: `asset_requests`,
-            timestamps: true,
-        });
-        */
-    }
-
-    public loadHooks() {
-        Logger.debug(`Loading hooks...`);
     }
 
     public async importFakeData() {
