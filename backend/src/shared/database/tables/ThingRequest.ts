@@ -9,10 +9,11 @@ import { Logger } from "../../Logger.ts";
 import { parseErrorMessage } from "../../Tools.ts";
 import { Project } from "./Project.ts";
 import { Version } from "./Version.ts";
+import { IPermissionsChecks } from "./common.ts";
 
 export type ThingRequestInfer = InferAttributes<ThingRequest>;
 @Table({
-    tableName: `asset_requests`,
+    tableName: `thing_requests`,
     modelName: `ThingRequest`,
     timestamps: true,
     paranoid: true,
@@ -26,7 +27,7 @@ export class ThingRequest extends Model<InferAttributes<ThingRequest>, InferCrea
         allowNull: false,
     })
     declare id: CreationOptional<number>;
-    
+
     @AllowNull(false)
     @Column(DataType.INTEGER)
     declare refrencedId: number; // ID that this request is for
@@ -74,10 +75,10 @@ export class ThingRequest extends Model<InferAttributes<ThingRequest>, InferCrea
         defaultValue: null,
     })
     declare resolvedBy: CreationOptional<number | null>; // User ID of the person who resolved the request, null if not resolved
-    
+
     @AllowNull(true)
     @Default(null)
-    @Column(DataType.JSONB)
+    @Column(DataType.ARRAY(DataType.JSONB))
     declare messages: CreationOptional<RequestMessage[]>; // Array of messages related to the request
 
     @CreatedAt
@@ -196,6 +197,9 @@ export class ThingRequest extends Model<InferAttributes<ThingRequest>, InferCrea
     }
 
     // #endregion Validators
+    public static async checkIfExists(id: number): Promise<boolean> {
+        return (await ThingRequest.findByPk(id, { attributes: ['id'] })) ? true : false;
+    }
     // #region Permission Checks
     public canView(user: User): boolean {
         if (user.id === this.requesterId) return true; // Requesters can always view their own requests
@@ -278,8 +282,8 @@ export class ThingRequest extends Model<InferAttributes<ThingRequest>, InferCrea
         switch (this.requestType) {
             case RequestType.Asset_Credit:
                 let refrencedAsset = refrencedThing as Asset;
-                refrencedAsset.collaborators = [
-                    ...refrencedAsset.collaborators,
+                refrencedAsset.collaboratorIds = [
+                    ...refrencedAsset.collaboratorIds,
                     this.objectToAdd as number
                 ];
                 await refrencedAsset.save();

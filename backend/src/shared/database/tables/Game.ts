@@ -28,7 +28,7 @@ export class Game extends Model<InferAttributes<Game>, InferCreationAttributes<G
 
     @AllowNull(false)
     @PrimaryKey
-    @Column(DataType.TEXT)
+    @Column(DataType.STRING)
     declare name: string;
 
     @AllowNull(false)

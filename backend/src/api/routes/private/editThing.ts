@@ -88,7 +88,7 @@ export const UpdateAssetRouter = router({
         if (!asset.canEdit(ctx.user)) {
             throw new Error(`You are not allowed to edit this asset`);
         }
-        if (asset.collaborators.includes(input.userId)) {
+        if (asset.collaboratorIds.includes(input.userId)) {
             throw new Error(`User is already a collaborator on this asset`);
         }
         const userToCredit = await User.findByPk(input.userId);

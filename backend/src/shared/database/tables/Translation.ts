@@ -1,5 +1,5 @@
 import { InferAttributes, InferCreationAttributes } from "sequelize";
-import { Column, DataType, Model, PrimaryKey, Table } from "sequelize-typescript";
+import { Column, CreatedAt, DataType, DeletedAt, Model, PrimaryKey, Table, UpdatedAt } from "sequelize-typescript";
 
 @Table({
     tableName: `translations`,
@@ -10,7 +10,7 @@ import { Column, DataType, Model, PrimaryKey, Table } from "sequelize-typescript
 export class Translation extends Model<InferAttributes<Translation>, InferCreationAttributes<Translation>> {
     // #region Columns
     @PrimaryKey
-    @Column(DataType.NUMBER)
+    @Column(DataType.INTEGER)
     declare parentId: number; // ID of the entity this translation belongs to (e.g. Asset, Project, etc.)
 
     @PrimaryKey
@@ -30,7 +30,14 @@ export class Translation extends Model<InferAttributes<Translation>, InferCreati
     @Column(DataType.BOOLEAN)
     declare outOfDate: boolean; // Indicates whether the translation may be out of date and in need of review
 
-    @Column(DataType.NUMBER)
+    @Column(DataType.INTEGER)
     declare translatedBy: number; // User ID of the translator
+
+    @UpdatedAt
+    declare updatedAt: Date;
+    @CreatedAt
+    declare createdAt: Date;
+    @DeletedAt
+    declare deletedAt: Date | null;
     // #endregion
 }

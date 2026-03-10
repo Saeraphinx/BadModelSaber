@@ -16,18 +16,16 @@ export class GameVersion extends Model<InferAttributes<GameVersion>, InferCreati
         type: DataType.INTEGER,
         allowNull: false,
         primaryKey: true,
-        autoIncrement: true,
-        autoIncrementIdentity: true,
-        defaultValue: Sequelize.fn(`nextval`, Sequelize.literal(`'global_id_seq'`)),
+        defaultValue: Sequelize.literal(`nextval('global_id_seq')`),
     })
     declare readonly id: CreationOptional<number>;
 
     @AllowNull(false)
-    @Column(DataType.TEXT)
+    @Column(DataType.STRING)
     declare gameName: string;
 
     @AllowNull(false)
-    @Column(DataType.TEXT)
+    @Column(DataType.STRING)
     declare version: string; // semver-esc version (e.g. 1.29.1)
 
     @AllowNull(false)

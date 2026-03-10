@@ -1,5 +1,5 @@
 import { CreationOptional, InferAttributes, InferCreationAttributes, NonAttribute, Op, WhereOptions } from "sequelize";
-import { AfterCreate, AfterValidate, AllowNull, BelongsTo, Column, CreatedAt, DataType, DeletedAt, ForeignKey, Model, Sequelize, Table, UpdatedAt } from "sequelize-typescript";
+import { AfterCreate, AfterValidate, AllowNull, BelongsTo, Column, CreatedAt, DataType, Default, DeletedAt, ForeignKey, Model, Sequelize, Table, UpdatedAt } from "sequelize-typescript";
 import { ContentHash, ContentHashSchema, Dependency, DependencySchema, ModApiV1, ModVersionsApiv2, Status, StatusHistory, statusHistorySchema, UserPermissions, VersionApiV3 } from "../DBExtras.ts";
 import { SemVer, parse } from "semver";
 import { Project } from "./Project.ts";
@@ -7,6 +7,7 @@ import { User } from "./User.ts";
 import z from "zod/v4";
 import { Logger } from "../../Logger.ts";
 import { GameVersion } from "./GameVersion.ts";
+import { Literal } from "sequelize/lib/utils";
 
 export type VersionInfer = InferAttributes<Version>;
 export type VersionAllowedEdit = Partial<Pick<Version, `semver` | `supportedGameVersionIds` | `dependencies`>>;
@@ -23,9 +24,7 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
         type: DataType.INTEGER,
         allowNull: false,
         primaryKey: true,
-        autoIncrement: true,
-        autoIncrementIdentity: true,
-        defaultValue: Sequelize.fn(`nextval`, Sequelize.literal(`'global_id_seq'`)),
+        defaultValue: Sequelize.literal(`nextval('global_id_seq')`),
     })
     declare readonly id: CreationOptional<number>;
 
@@ -38,13 +37,13 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
 
     @AllowNull(false)
     @ForeignKey(() => User)
-    @Column(DataType.TEXT)
+    @Column(DataType.INTEGER)
     declare uploaderId: number;
     @BelongsTo(() => User, `uploaderId`)
     declare _uploader: NonAttribute<Promise<User | null>>;
 
     @Column({
-        type: DataType.TEXT,
+        type: DataType.STRING,
         allowNull: false,
         get() {
             const rawValue = this.getDataValue(`semver`);
@@ -61,7 +60,7 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
     declare supportedGameVersionIds: number[]; // ids of GameVersion entries
 
     @AllowNull(false)
-    @Column(DataType.TEXT)
+    @Column(DataType.STRING)
     declare status: Status;
 
     @AllowNull(false)
@@ -69,18 +68,19 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
     declare dependencies: Dependency[];
 
     @AllowNull(false)
-    @Column(DataType.TEXT)
+    @Column(DataType.STRING)
     declare platform: string; // pulled from the parent Game's platforms
 
     @AllowNull(false)
-    @Column(DataType.TEXT)
+    @Column(DataType.STRING)
     declare zipHash: string;
 
     @AllowNull(false)
     @Column(DataType.ARRAY(DataType.JSONB))
     declare contentHashes: ContentHash[];
 
-    @AllowNull(false)
+    @AllowNull(true)
+    @Default(null)
     @Column(DataType.INTEGER)
     declare lastApprovedById: CreationOptional<number> | null;
 
@@ -93,6 +93,7 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
     declare fileSize: number;
 
     @AllowNull(false)
+    @Default([])
     @Column(DataType.ARRAY(DataType.JSONB))
     declare statusHistory: CreationOptional<StatusHistory[]>;
 
@@ -151,7 +152,7 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
 
     public static validatorCreation = z.object({
         ...Version.validator.shape,
-        id: Version.validator.shape.id.nullish(),
+        id: Version.validator.shape.id.or(z.instanceof(Literal)).nullish(),
         lastApprovedById: Version.validator.shape.lastApprovedById.nullish(),
         statusHistory: Version.validator.shape.statusHistory.nullish(),
         createdAt: Version.validator.shape.createdAt.nullish(),
@@ -227,6 +228,9 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
         await version.save();
     }
     // #endregion
+    public static async checkIfExists(id: number): Promise<boolean> {
+        return (await Version.findByPk(id, { attributes: ['id'] })) ? true : false;
+    }
     // #region DuplicateChecks
     public static async checkForExistingVersion(projectId: number, semver: SemVer, excludeId?: number): Promise<boolean> {
         let whereClause: VersionWhereOptions = {

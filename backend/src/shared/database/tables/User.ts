@@ -4,6 +4,7 @@ import { AlertType, UserPlatform, UserApiV3, UserPermissions, PlatformType, User
 import { Alert } from "./Alert.ts";
 import { Logger } from "../../Logger.ts";
 import z from "zod";
+import { Literal } from "sequelize/lib/utils";
 
 export const DefaultPermissions = [UserPermissions.Asset_Create, UserPermissions.Mods_Create, UserPermissions.Users_EditSelf];
 export const DefaultPermissionsObject = {
@@ -21,12 +22,10 @@ export type UserInfer = InferAttributes<User>;
 export class User extends Model<InferAttributes<User>, InferCreationAttributes<User>> {
     // #region Columns
     @Column({
-        type: DataType.NUMBER,
+        type: DataType.INTEGER,
         allowNull: false,
         primaryKey: true,
-        autoIncrement: true,
-        autoIncrementIdentity: true,
-        defaultValue: Sequelize.fn(`nextval`, Sequelize.literal(`'global_id_seq'`)),
+        defaultValue: Sequelize.literal(`nextval('global_id_seq')`),
     })
     declare id: CreationOptional<number>;
 
@@ -109,7 +108,9 @@ export class User extends Model<InferAttributes<User>, InferCreationAttributes<U
 
     public static validatorCreation = z.object({
         ...User.validator.shape,
-        id: User.validator.shape.id.nullish(),
+        id: User.validator.shape.id.or(z.instanceof(Literal)).nullish(),
+        discordId: User.validator.shape.discordId.nullish(),
+        githubId: User.validator.shape.githubId.nullish(),
         displayName: User.validator.shape.displayName.nullish(),
         bio: User.validator.shape.bio.nullish(),
         userPlatforms: User.validator.shape.userPlatforms.nullish(),
@@ -120,7 +121,7 @@ export class User extends Model<InferAttributes<User>, InferCreationAttributes<U
     });
 
     public static validateExtended(data: User | UserInfer): string | null {
-        if (!data.githubId && !data.discordId) return `User must have at least one of discordId or githubId`;
+        if (!data.githubId && !data.discordId && data.id >= 10) return `User must have at least one of discordId or githubId`;
         return null;
     }
 

@@ -5,10 +5,7 @@ export interface IReportable {
     report(user: User, reason: string): Promise<ThingRequest>;
 }
 
-export interface IViewable {
+export interface IPermissionsChecks {
     canView(user: User | undefined | null): Promise<boolean> | boolean;
-}
-
-export interface IEditable {
     canEdit(user: User | undefined | null): Promise<boolean> | boolean;
 }

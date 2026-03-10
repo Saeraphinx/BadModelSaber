@@ -42,7 +42,7 @@ export const userRouterV3 = router({
             [Op.or]: [
                 { uploaderId: user.id },
                 {
-                    collaborators: {
+                    collaboratorIds: {
                         [Op.contains]: [user.id]
                     },
                 }

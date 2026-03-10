@@ -1,4 +1,4 @@
-import { AfterValidate, AllowNull, BelongsTo, Column, CreatedAt, DataType, Default, DeletedAt, ForeignKey, Model, Table, Unique, UpdatedAt } from "sequelize-typescript";
+import { AfterValidate, AllowNull, BelongsTo, Column, CreatedAt, DataType, Default, DeletedAt, ForeignKey, Model, Sequelize, Table, Unique, UpdatedAt } from "sequelize-typescript";
 import { InferAttributes, InferCreationAttributes, NonAttribute, CreationOptional } from "sequelize";
 import { Alert, ThingRequest, User, UserPermissions } from "../../Database.ts";
 import { AlertType, AssetApiV3, AssetFileFormat, AssetPublicAPIv1, AssetPublicAPIv2, dbId, License, LinkedAsset, LinkedAssetLinkType, RequestType, Status, StatusHistory, Tags, UserApiV3, WebhookLogType } from "../DBExtras.ts";
@@ -7,7 +7,8 @@ import { EnvConfig } from "../../EnvConfig.ts";
 import { Logger } from "../../Logger.ts";
 import { WebhookPayloadGenerator, Webhooks } from "../../Webhooks.ts";
 import path from "node:path";
-import { IEditable, IReportable, IViewable } from "./common.ts";
+import { IReportable, IPermissionsChecks } from "./common.ts";
+import { Literal } from "sequelize/lib/utils";
 
 export type AssetInfer = InferAttributes<Asset>;
 export type AssetValidatorType = typeof Asset.validator; // for use in frontend
@@ -17,14 +18,13 @@ export type AssetValidatorType = typeof Asset.validator; // for use in frontend
     timestamps: true,
     paranoid: true,
 })
-export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes<Asset>> implements IViewable, IReportable, IEditable {
+export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes<Asset>> implements IPermissionsChecks, IReportable {
     // #region Columns
     @Column({
         type: DataType.INTEGER,
-        autoIncrement: true,
         primaryKey: true,
         allowNull: false,
-        unique: true,
+        defaultValue: Sequelize.literal(`nextval('global_id_seq')`),
     })
     declare readonly id: CreationOptional<number>;
     @Column({
@@ -57,7 +57,7 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
     @AllowNull(false)
     @Default([])
     @Column(DataType.ARRAY(DataType.INTEGER))
-    declare collaborators: CreationOptional<number[]>; // credits for the asset, e.g. "Model by John Doe, Textures by Jane Smith"
+    declare collaboratorIds: CreationOptional<number[]>; // credits for the asset, e.g. "Model by John Doe, Textures by Jane Smith"
     
     @AllowNull(false)
     @Column(DataType.TEXT)
@@ -122,7 +122,6 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
     @AllowNull(false)
     @Column(DataType.STRING)
     declare gameName: string; // the game this asset is for, e.g. beatsaber, oculus, etc.
-    // #endregion
 
     @CreatedAt
     declare readonly createdAt: CreationOptional<Date>;
@@ -168,7 +167,7 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
         })),
         type: z.enum(AssetFileFormat),
         uploaderId: dbId.refine(async (id) => await User.checkIfExists(id)),
-        collaborators: z.array(dbId),
+        collaboratorIds: z.array(dbId),
         name: z.string().min(1).max(64),
         description: z.string().max(4096),
         license: z.enum(Object.values(License)),
@@ -197,10 +196,10 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
     // This validator is used for creating new assets, it omits the id and timestamps and other fields that are marked as CreationOptional
     public static validatorCreation = z.object({
         ...Asset.validator.shape,
-        id: Asset.validator.shape.id.nullish(),
+        id: Asset.validator.shape.id.or(z.instanceof(Literal)).nullish(),
         oldId: Asset.validator.shape.oldId.nullish(),
         linkedIds: Asset.validator.shape.linkedIds.nullish(),
-        collaborators: Asset.validator.shape.collaborators.nullish(),
+        collaboratorIds: Asset.validator.shape.collaboratorIds.nullish(),
         licenseUrl: Asset.validator.shape.licenseUrl.nullish(),
         sourceUrl: Asset.validator.shape.sourceUrl.nullish(),
         createdAt: Asset.validator.shape.createdAt.nullish(),
@@ -233,7 +232,7 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
     // #endregion
 
     public static async checkIfExists(id: number): Promise<boolean> {
-        return await Asset.findByPk(id, { attributes: ['id'] }) ? true : false;
+        return (await Asset.findByPk(id, { attributes: ['id'] })) ? true : false;
     }
 
     // #region Allowed to XYZ
@@ -318,7 +317,7 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
     }
 
     public async requestCollab(reqBy: User, userToCredit: User): Promise<ThingRequest> {
-        if (this.uploaderId === userToCredit.id || this.collaborators.includes(userToCredit.id)) {
+        if (this.uploaderId === userToCredit.id || this.collaboratorIds.includes(userToCredit.id)) {
             throw new Error(`This user is already credited for this asset.`);
         }
 
@@ -635,7 +634,7 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
             downloadUrl: `${EnvConfig.server.backendUrl}${EnvConfig.server.fileRoute}/${this.id}/${this.assetFileName}`,
             status: this.status,
             statusHistory: this.statusHistory,
-            collaborators: this.collaborators,
+            collaborators: this.collaboratorIds,
             tags: this.tags,
             createdAt: this.createdAt,
             updatedAt: this.updatedAt

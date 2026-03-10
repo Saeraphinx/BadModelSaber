@@ -187,7 +187,7 @@ describe("database tests", () => {
 
             test(`requestCollab throws error when collaborator is already credited`, async () => {
                 // first, add collaborator to asset
-                testAsset.collaborators = [...testAsset.collaborators, collaborator.id];
+                testAsset.collaboratorIds = [...testAsset.collaboratorIds, collaborator.id];
                 await testAsset.save();
                 
                 expect(testAsset.requestCollab(uploader, collaborator)).rejects.toThrowError();

@@ -4,13 +4,17 @@ import { z } from "zod/v4";
 import { User } from "./User.ts";
 import { Asset } from "./Asset.ts";
 import { AlertApiV3, AlertType, dbId } from "../DBExtras.ts";
+import { Col } from "sequelize/lib/utils";
+import { Project } from "./Project.ts";
+import { Version } from "./Version.ts";
+import { ThingRequest } from "./ThingRequest.ts";
 
 export type AlertInfer = InferAttributes<Alert>;
 @Table({
     tableName: `alerts`,
     modelName: `Alert`,
     timestamps: true,
-    paranoid: true,
+    paranoid: false,
 })
 export class Alert extends Model<InferAttributes<Alert>, InferCreationAttributes<Alert>> {
     @Column({
@@ -25,7 +29,7 @@ export class Alert extends Model<InferAttributes<Alert>, InferCreationAttributes
     @Column(DataType.STRING)
     declare type: AlertType; // Type of alert, e.g. "new_asset", "asset_approved", etc.
     @AllowNull(false)
-    @Column(DataType.NUMBER)
+    @Column(DataType.INTEGER)
     declare userId: number; // User ID of the person who should receive the alert
 
     @Column({
@@ -34,6 +38,21 @@ export class Alert extends Model<InferAttributes<Alert>, InferCreationAttributes
         defaultValue: null,
     })
     declare assetId: CreationOptional<number | null>; // Asset ID related to the alert, null if not applicable
+
+    @Column({
+        type: DataType.INTEGER,
+        allowNull: true,
+        defaultValue: null,
+    })
+    declare projectId: CreationOptional<number | null>; // Project ID related to the alert, null if not applicable
+
+    @Column({
+        type: DataType.INTEGER,
+        allowNull: true,
+        defaultValue: null,
+    })
+    declare versionId: CreationOptional<number | null>; // Version ID related to the alert, null if not applicable
+
     @Column({
         type: DataType.INTEGER,
         allowNull: true,
@@ -68,8 +87,6 @@ export class Alert extends Model<InferAttributes<Alert>, InferCreationAttributes
     declare createdAt: CreationOptional<Date>; // Timestamp of when the alert was created
     @UpdatedAt
     declare updatedAt: CreationOptional<Date>; // Timestamp of when the alert was last updated
-    @DeletedAt
-    declare deletedAt: CreationOptional<Date | null>; // Timestamp of when the alert was deleted, null
 
     // #region Validators
     public static validator = z.object({
@@ -78,14 +95,15 @@ export class Alert extends Model<InferAttributes<Alert>, InferCreationAttributes
         type: z.enum(AlertType),
         userId: dbId.refine(async (id) => await User.checkIfExists(id)),
         assetId: dbId.refine(async (id) => await Asset.checkIfExists(id)).nullable(),
-        requestId: dbId,
+        projectId: dbId.refine(async (id) => await Project.checkIfExists(id)).nullable(),
+        versionId: dbId.refine(async (id) => await Version.checkIfExists(id)).nullable(),
+        requestId: dbId.refine(async (id) => await ThingRequest.checkIfExists(id)).nullable(),
         header: z.string().min(1).max(255),
         message: z.string().min(1).max(4096),
         read: z.boolean(),
         discordMessageSent: z.boolean(),
         createdAt: z.date(),
         updatedAt: z.date(),
-        deletedAt: z.date().nullable(),
     }) satisfies z.ZodType<AlertInfer> 
 
     public static validatorCreation = z.object({
@@ -97,7 +115,6 @@ export class Alert extends Model<InferAttributes<Alert>, InferCreationAttributes
         discordMessageSent: Alert.validator.shape.discordMessageSent.nullish(),
         createdAt: Alert.validator.shape.createdAt.nullish(),
         updatedAt: Alert.validator.shape.updatedAt.nullish(),
-        deletedAt: Alert.validator.shape.deletedAt.nullish(),
     })
 
     public static validateExtended(data: Alert | AlertInfer) : string | null {

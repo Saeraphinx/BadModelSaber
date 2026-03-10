@@ -12,6 +12,7 @@ export default async function setup(project: TestProject) {
     process.env.STORAGE_ICONS="./test/temp/icons"
     process.env.STORAGE_LOGS="./test/temp/logs"
 
+    console.log(`Starting PostgreSQL container...`);
     let postgresContainer = await new PostgreSqlContainer("postgres:17").start();
     console.log(`Postgres container started at ${postgresContainer.getConnectionUri()}`);
     project.provide(`postgresUrl`, postgresContainer.getConnectionUri());

@@ -8,8 +8,9 @@ import { User } from "./User.ts";
 import { Version } from "./Version.ts";
 import { satisfies } from "semver";
 import { Translation } from "./Translation.ts";
-import { IEditable, IReportable, IViewable } from "./common.ts";
+import { IReportable, IPermissionsChecks } from "./common.ts";
 import { ThingRequest } from "./ThingRequest.ts";
+import { Literal } from "sequelize/lib/utils";
 
 
 export type ProjectInfer = InferAttributes<Project>;
@@ -22,15 +23,13 @@ export type ProjectWhereOptions = WhereOptions<Project>;
     timestamps: true,
     paranoid: true,
 })
-export class Project extends Model<InferAttributes<Project>, InferCreationAttributes<Project>> implements IViewable, IEditable, IReportable {
+export class Project extends Model<InferAttributes<Project>, InferCreationAttributes<Project>> implements IPermissionsChecks, IReportable {
     // #region Columns
     @Column({
         type: DataType.INTEGER,
         allowNull: false,
         primaryKey: true,
-        autoIncrement: true,
-        autoIncrementIdentity: true,
-        defaultValue: Sequelize.fn(`nextval`, Sequelize.literal(`'global_id_seq'`)),
+        defaultValue: Sequelize.literal(`nextval('global_id_seq')`),
     })
     declare readonly id: CreationOptional<number>;
 
@@ -48,13 +47,13 @@ export class Project extends Model<InferAttributes<Project>, InferCreationAttrib
 
     @AllowNull(false)
     @ForeignKey(() => Game)
-    @Column(DataType.TEXT)
+    @Column(DataType.STRING)
     declare gameName: string; // the id of the game that this project is for
     @BelongsTo(() => Game, `gameName`)
     declare _game: NonAttribute<Promise<Game | null>>;
 
     @AllowNull(false)
-    @Column(DataType.TEXT)
+    @Column(DataType.STRING)
     declare category: string; // what to categorize this project as
 
     @AllowNull(false)
@@ -67,11 +66,11 @@ export class Project extends Model<InferAttributes<Project>, InferCreationAttrib
     declare collaboratorIds: number[]; // the ids of the users who are collaborators on this project
 
     @AllowNull(false)
-    @Column(DataType.TEXT)
+    @Column(DataType.STRING)
     declare status: Status; // the current status of the project
 
     @AllowNull(false)
-    @Column(DataType.TEXT)
+    @Column(DataType.STRING)
     declare iconFileName: string; // the filename of the project's icon image
 
     @AllowNull(false)
@@ -79,7 +78,7 @@ export class Project extends Model<InferAttributes<Project>, InferCreationAttrib
     declare gitUrl: string; // the URL of the project's git repository
 
     @AllowNull(true)
-    @Column(DataType.TEXT)
+    @Column(DataType.INTEGER)
     declare lastApprovedById: CreationOptional<number> | null;
 
     @AllowNull(false)
@@ -135,7 +134,7 @@ export class Project extends Model<InferAttributes<Project>, InferCreationAttrib
 
     public static validatorCreation = z.object({
         ...Project.validator.shape,
-        id: Project.validator.shape.id.nullish(),
+        id: Project.validator.shape.id.or(z.instanceof(Literal)).nullish(),
         statusHistory: Project.validator.shape.statusHistory.nullish(),
         lastApprovedById: Project.validator.shape.lastApprovedById.nullish(),
         deletedAt: Project.validator.shape.deletedAt.nullish(),
@@ -184,6 +183,9 @@ export class Project extends Model<InferAttributes<Project>, InferCreationAttrib
         }
     }
     // #endregion
+    public static async checkIfExists(id: number): Promise<boolean> {
+        return (await Project.findByPk(id, { attributes: ['id'] })) ? true : false;
+    }
     // #region Permissions 
     public canView(user: User | null | undefined): Promise<boolean> {
         if (this.status === Status.Verified) {

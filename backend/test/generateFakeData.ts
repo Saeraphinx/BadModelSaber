@@ -62,7 +62,7 @@ export async function generateFakeData(connectionString?: string): Promise<boole
 
     for (let [index, role] of Object.values(UserPermissions).entries()) {
         let user = await User.create({
-            discordId: faker.string.uuid(),
+            discordId: faker.number.int({ min: 100000000000000000, max: 999999999999999999 }).toString(),
             username: faker.internet.username({ firstName: `John`, lastName: role }),
             displayName: faker.internet.displayName({ firstName: `John`, lastName: role }),
             avatarUrl: `https://cdn.discordapp.com/embed/avatars/${index % 6}.png`,
@@ -94,7 +94,7 @@ export async function generateFakeData(connectionString?: string): Promise<boole
                     linkedIds: [],
                     type: type,
                     uploaderId: user.id,
-                    collaborators: faker.helpers.arrayElements(usersExcludingCurrent, { min: 0, max: 3 }).map(u => u.id),
+                    collaboratorIds: faker.helpers.arrayElements(usersExcludingCurrent, { min: 0, max: 3 }).map(u => u.id),
                     name: `${faker.lorem.words(2)} ${type}`,
                     description: `This is a test asset of type ${type}.\n${faker.lorem.paragraph()}`,
                     license: License.CC0,
@@ -156,7 +156,7 @@ export async function generateFakeData(connectionString?: string): Promise<boole
                     [Op.ne]: user.id 
                 },
                 [Op.not]: {
-                    collaborators: {
+                    collaboratorIds: {
                         [Op.contains]: [user.id]
                     }
                 }
