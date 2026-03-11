@@ -4,6 +4,9 @@ import * as fs from "fs";
 import { randomBytes } from "crypto";
 import { TRPCError } from "@trpc/server";
 import { Logger } from "./Logger.ts";
+import { Context } from "../api/trpc.ts";
+import { UserPermissions } from "./database/DBExtras.ts";
+import { User } from "./database/tables/User.ts";
 
 export type If<Value extends boolean, TrueResult, FalseResult = null> = Value extends true ? TrueResult : Value extends false  ? FalseResult  : TrueResult | FalseResult;
 

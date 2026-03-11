@@ -2,28 +2,7 @@ import { afterAll, beforeAll, describe, expect, inject, test } from "vitest";
 import { Context } from "../../src/api/trpc.ts";
 import { Alert, Asset, AssetFileFormat, AssetInfer, ThingRequest, DatabaseManager, License, RequestType, Status, Tags, User, UserPermissions } from "../../src/shared/Database.ts";
 import { CreationAttributes, InferCreationAttributes } from "sequelize";
-
-// most endpoints don't actually need a fully functional context, so we can just kinda do this
-function createTestContext(userId: string): Context {
-    return {
-        req: {} as any,
-        res: {} as any,
-        userId: userId,
-        db: {} as any,
-    };
-}
-
-function createDummyUser(id: number, permissions?: UserPermissions[]): User
-function createDummyUser(id: number, permissions?: { sitewide: UserPermissions[]; perGame: Record<string, UserPermissions[]> }): User
-function createDummyUser(id: number, permissions: UserPermissions[] | { sitewide: UserPermissions[]; perGame: Record<string, UserPermissions[]> } = []): User {
-    if (Array.isArray(permissions)) {
-        permissions = { sitewide: permissions, perGame: {} };
-    }
-    return {
-        id: id,
-        permissions: permissions,
-    } as unknown as User;
-}
+import { createDummyAsset, createDummyUser } from "../testTools.ts";
 
 describe("database tests", () => {
     let databaseManager: DatabaseManager;
@@ -41,38 +20,14 @@ describe("database tests", () => {
 
     describe("assets", () => {
         let asset: Asset;
-        let assetDefaults: Omit<CreationAttributes<Asset>, `name` | `fileHash`>;
         let testUser: User;
         beforeAll(async () => {
-            assetDefaults = {
-                type: AssetFileFormat.Avatar_Avatar,
-                description: "This is a test asset",
-                license: License.CC0,
-                tags: [],
-                gameName: "beatsaber",
-                fileSize: 1,
-                uploaderId: 1234,
-                fileSafeName: "test_asset.avatar",
-                iconNames: ["icon1.png", "icon2.png"],
-            }
-            testUser = await User.create({
-                id: 1234,
-                username: "testuser",
-                displayName: "Test User",
-                avatarUrl: "",
-                permissions: { sitewide: [], perGame: {} },
-                userPlatforms: [],
-                bio: "",
-            });
-            asset = await Asset.create({
-                ...assetDefaults,
-                name: "Test Asset",
-                fileHash: "abcdef1234567890",
-            });
+            testUser = await createDummyUser(12345).save();
+            asset = await createDummyAsset(12345).save();
         });
 
         test(`canEdit returns true for uploader`, async () => {
-            expect(asset.canEdit(createDummyUser(1234))).toBe(true);
+            expect(asset.canEdit(testUser)).toBe(true);
         });
 
         test(`canEdit returns false for other users`, async () => {
@@ -85,12 +40,11 @@ describe("database tests", () => {
         });
 
         test(`updateAsset updates fields correctly`, async () => {
-            let testAsset = await Asset.create({
-                ...assetDefaults,
+            let testAsset = await createDummyAsset(undefined, undefined, {
                 name: "Unedited Test Asset",
                 fileHash: "1234567890abcdesadf",
                 tags: [Tags.Acc, Tags.Anime],
-            });
+            }).save();
             await testAsset.updateAsset({
                 name: "Edited Test Asset",
                 description: "This is an edited test asset",
@@ -104,37 +58,28 @@ describe("database tests", () => {
         })
 
         test(`updateAsset throws error when using feature tags without permission`, async () => {
-            let testAsset = await Asset.create({
-                ...assetDefaults,
-                name: "Unedited Test Asset 2",
-                fileHash: "zxcvbnmasdfghjkl",
-            });
+            let testAsset = await createDummyAsset().save();
             await expect(testAsset.updateAsset({
                 tags: [Tags.Featured],
             }, createDummyUser(1234))).rejects.toThrowError();
         });
 
         test(`updateAsset works with feature tags when user has permission`, async () => {
-            let testAsset = await Asset.create({
-                ...assetDefaults,
-                name: "Unedited Test Asset 3",
-                fileHash: "poiuytrewqlkjhgf",
-            });
+            let testAsset = await createDummyAsset(12345).save();
             await testAsset.updateAsset({
                 tags: [Tags.Featured],
-            }, createDummyUser(1234, [UserPermissions.Asset_InternalTags]));
+            }, createDummyUser(12345, [UserPermissions.Asset_InternalTags]));
             await testAsset.reload();
             expect(testAsset.tags).toEqual([Tags.Featured]);
         });
 
         test.for(getAssetTypes(false))(`submitForApproval sets status to Pending for format %s`, async (format) => {
-            let testAsset = await Asset.create({
-                ...assetDefaults,
+            let testAsset = await createDummyAsset(undefined, undefined, {
                 name: `test_${format}`,
                 fileHash: `hash_${format}`,
                 type: format,
                 status: Status.Private,
-            });
+            }).save();
             await testAsset.submitForApproval(testUser);
             await testAsset.reload();
             expect(testAsset.status).toBe(Status.Pending);
@@ -142,8 +87,7 @@ describe("database tests", () => {
 
         test.for(getAssetTypes(true))(`submitForApproval sets status to Unverified format %s`, async (format) => {
             console.log(format);
-            let testAsset = await Asset.create({
-                ...assetDefaults,
+            let testAsset = await createDummyAsset(undefined, undefined, {
                 name: `test_${format}`,
                 fileHash: `hash_${format}`,
                 type: format,
@@ -159,20 +103,12 @@ describe("database tests", () => {
             let collaborator: User;
             let testAsset: Asset;
             beforeAll(async () => {
-                uploader = await User.create({
-                    id: 1000,
-                    username: "uploader",
-                });
-                collaborator = await User.create({
-                    id: 1001,
-                    username: "collaborator",
-                });
-                testAsset = await Asset.create({
-                    ...assetDefaults,
+                uploader = await createDummyUser().save();
+                collaborator = await createDummyUser().save();
+                testAsset = await createDummyAsset(uploader.id, undefined, {
                     name: `Collab Test Asset`,
                     fileHash: `collab_test_hash`,
-                    uploaderId: uploader.id,
-                });
+                }).save();
             });
 
 

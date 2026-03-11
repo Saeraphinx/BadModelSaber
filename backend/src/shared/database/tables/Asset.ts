@@ -549,7 +549,8 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
             where: {
                 requestResponseBy: this.uploaderId,
                 refrencedId: this.id,
-                requestType: RequestType.Asset_Report
+                requestType: RequestType.Asset_Report,
+                refrencedGameName: this.gameName
             }
         });
 
@@ -563,6 +564,7 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
             requesterId: reportedBy.id,
             requestType: RequestType.Asset_Report,
             requestResponseBy: null,
+            refrencedGameName: this.gameName,
             messages: [{
                 userId: reportedBy.id,
                 message: reason,

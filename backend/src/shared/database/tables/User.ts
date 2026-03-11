@@ -72,7 +72,7 @@ export class User extends Model<InferAttributes<User>, InferCreationAttributes<U
     @Column({
         type: DataType.JSONB,
         allowNull: false,
-        defaultValue: []
+        defaultValue: { sitewide: [], perGame: {} },
     })
     declare permissions: CreationOptional<{
         perGame: Record<string, UserPermissions[]>,
@@ -113,6 +113,7 @@ export class User extends Model<InferAttributes<User>, InferCreationAttributes<U
         githubId: User.validator.shape.githubId.nullish(),
         displayName: User.validator.shape.displayName.nullish(),
         bio: User.validator.shape.bio.nullish(),
+        avatarUrl: User.validator.shape.avatarUrl.nullish(),
         userPlatforms: User.validator.shape.userPlatforms.nullish(),
         permissions: User.validator.shape.permissions.nullish(),
         createdAt: User.validator.shape.createdAt.nullish(),

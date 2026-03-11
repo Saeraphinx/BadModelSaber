@@ -74,7 +74,8 @@ export class DatabaseManager {
         return await this.sequelize.authenticate().then(() => {
             Logger.log(`Database connection successful.`);
         }).catch((error) => {
-            Logger.error(`Database connection failed: ${error.message}`);
+            Logger.error(`Database connection failed: ${parseErrorMessage(error)}`);
+            Logger.error(error)
             process.exit(1);
         });
     }
@@ -84,7 +85,8 @@ export class DatabaseManager {
         return await this.sequelize.close().then(() => {
             Logger.log(`Database connection closed.`);
         }).catch((error) => {
-            Logger.error(`Failed to close database connection: ${error.message}`);
+            Logger.error(`Failed to close database connection: ${parseErrorMessage(error)}`);
+            Logger.error(error)
         });
     }
 

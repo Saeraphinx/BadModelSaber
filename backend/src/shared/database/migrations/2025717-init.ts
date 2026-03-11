@@ -54,6 +54,11 @@ export const up: Migration = async ({ context: db }) => {
             allowNull: false,
             defaultValue: "https://cdn.discordapp.com/embed/avatars/0.png",
         },
+        permissions: {
+            type: DataTypes.JSONB,
+            allowNull: false,
+            defaultValue: { sitewide: [], perGame: {} },
+        },
         createdAt: {
             type: DataTypes.DATE,
             allowNull: false,
@@ -542,6 +547,11 @@ export const up: Migration = async ({ context: db }) => {
             },
             onDelete: 'RESTRICT',
             onUpdate: 'CASCADE',
+        },
+        requestResponseBy: {
+            type: DataTypes.INTEGER,
+            allowNull: true,
+            defaultValue: null,
         },
         objectToAdd: {
             type: DataTypes.JSONB,

@@ -1,8 +1,7 @@
 import * as fs from 'fs';
 
 import { Alert, AlertType, Asset, AssetFileFormat, DatabaseManager, Game, GameVersion, License, LinkedAssetLinkType, PlatformType, Project, Status, Tags, User, UserPermissions, UserPlatform, Version } from '../src/shared/Database.ts';
-import { de, faker } from '@faker-js/faker';
-import { EnvConfig } from '../src/shared/EnvConfig.ts';
+import { faker } from '@faker-js/faker';
 import { Op } from 'sequelize';
 import { SemVer } from 'semver';
 
@@ -100,7 +99,7 @@ export async function generateFakeData(connectionString?: string): Promise<boole
                     license: License.CC0,
                     licenseUrl: null,
                     sourceUrl: null,
-                    fileSafeName: `${faker.lorem.words(1)}.${type.toLowerCase()}`,
+                    fileSafeName: `${faker.lorem.words(1)}.${type.split(`_`)[1].toLowerCase()}`,
                     fileHash: faker.git.commitSha(),
                     fileSize: faker.number.int({ min: 1000, max: 1000000 }),
                     iconNames: faker.helpers.arrayElements(testIcons, { min: 1, max: 5 }),

@@ -45,7 +45,7 @@ export class ThingRequest extends Model<InferAttributes<ThingRequest>, InferCrea
     })
     private declare _requester?: NonAttribute<Promise<User | null>>; // This should be replaced with a User object in the actual implementation
     @Column({
-        type: DataType.STRING,
+        type: DataType.INTEGER,
         allowNull: true,
         defaultValue: null,
     })
@@ -76,8 +76,8 @@ export class ThingRequest extends Model<InferAttributes<ThingRequest>, InferCrea
     })
     declare resolvedBy: CreationOptional<number | null>; // User ID of the person who resolved the request, null if not resolved
 
-    @AllowNull(true)
-    @Default(null)
+    @AllowNull(false)
+    @Default([])
     @Column(DataType.ARRAY(DataType.JSONB))
     declare messages: CreationOptional<RequestMessage[]>; // Array of messages related to the request
 
