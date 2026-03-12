@@ -12,7 +12,9 @@ export const up: Migration = async ({ context: db }) => {
 
     await db.sequelize.query(`CREATE SEQUENCE IF NOT EXISTS global_id_seq INCREMENT BY 1 START WITH 10;`);
 
+
     // user goes first since theres a lot linking to this table
+    // #region users
     await queryInterface.createTable(`users`, {
         id: {
             type: DataTypes.INTEGER,
@@ -74,8 +76,10 @@ export const up: Migration = async ({ context: db }) => {
             allowNull: true,
         }
     });
-
+    // #endregion
+     
     // create all tables based on the models
+    // #region alerts  
     await queryInterface.createTable(`alerts`, {
         id: {
             type: DataTypes.INTEGER,
@@ -140,6 +144,7 @@ export const up: Migration = async ({ context: db }) => {
             defaultValue: DataTypes.NOW
         }
     });
+    // #endregion
 
     // uses global id
     await queryInterface.createTable(`assets`, {
@@ -155,7 +160,7 @@ export const up: Migration = async ({ context: db }) => {
             unique: true,
         },
         linkedIds: {
-            type: DataTypes.JSONB,
+            type: DataTypes.ARRAY(DataTypes.JSONB),
             allowNull: false,
             defaultValue: [],
         },
@@ -569,6 +574,7 @@ export const up: Migration = async ({ context: db }) => {
         resolvedBy: {
             type: DataTypes.INTEGER,
             allowNull: true,
+            defaultValue: null,
         },
         messages: {
             type: DataTypes.ARRAY(DataTypes.JSONB),
@@ -620,6 +626,10 @@ export const up: Migration = async ({ context: db }) => {
             type: DataTypes.BOOLEAN,
             allowNull: false,
             defaultValue: false,
+        },
+        translatedBy: {
+            type: DataTypes.INTEGER,
+            allowNull: false,
         },
         createdAt: {
             type: DataTypes.DATE,

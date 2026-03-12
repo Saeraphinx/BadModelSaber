@@ -35,7 +35,7 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
     })
     declare oldId: CreationOptional<number | null>; // id from modelsaber, if applicable
     @Column({
-        type: DataType.JSON,
+        type: DataType.ARRAY(DataType.JSONB),
         allowNull: false,
         defaultValue: [],
     })
@@ -242,7 +242,7 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
             return allowedStatuses.includes(this.status);
         }
 
-        return allowedStatuses.includes(this.status) || this.uploaderId === user.id;
+        return allowedStatuses.includes(this.status) || this.uploaderId === user.id || this.collaboratorIds.includes(user.id) || user.checkRoles([UserPermissions.Asset_ViewAll], this.gameName);
     }
 
 

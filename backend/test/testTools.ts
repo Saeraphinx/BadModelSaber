@@ -1,6 +1,7 @@
-import { CreationAttributes } from "sequelize";
+import { CreationAttributes, UniqueConstraintError, ValidationError } from "sequelize";
 import { Context } from "../src/api/trpc";
 import { Asset, AssetFileFormat, License, User, UserPermissions } from "../src/shared/Database";
+import { fromZodError, isZodErrorLike } from "zod-validation-error";
 
 // most endpoints don't actually need a fully functional context, so we can just kinda do this
 export function createTestContext(userId: string): Context {
@@ -46,7 +47,7 @@ function getRandomString(length: number): string {
     return result;
 }
 
-export function createDummyAsset(uploader: number | undefined | null = 5, id?: number, overrides: Partial<CreationAttributes<Asset>> = {}): Asset {
+export function createDummyAsset(uploader: number | undefined = 5, id?: number, overrides: Partial<CreationAttributes<Asset>> = {}): Asset {
     return new Asset({
         id: id,
         name: `Asset ${id}`,
@@ -62,4 +63,16 @@ export function createDummyAsset(uploader: number | undefined | null = 5, id?: n
         fileHash: getRandomString(16),
         ...overrides,
     });
+}
+
+export function handleException(err: unknown): () => never {
+    return () => {
+        if (err instanceof ValidationError || err instanceof UniqueConstraintError) {
+            console.error(`${err.message} ${err.errors.map(e => e.message).join(`, `)}`);
+        } else if (isZodErrorLike(err)) {
+            //console.error(`Zod error detected:`, JSON.stringify(err, null, 2));
+            console.error(fromZodError(err).toString());
+        }
+        throw err;
+    }
 }

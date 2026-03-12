@@ -3,9 +3,26 @@ import { getGitVersion } from "../../../shared/Tools.ts";
 import { AdminRouter } from "./admin.ts";
 import { User, UserPermissions } from "../../../shared/Database.ts";
 import { REST, RESTGetAPICurrentUserResult } from "discord.js";
+import z from "zod";
 
 export const statusRouter = router({
-    status: anyProcedure().query(() => {
+    status: anyProcedure().
+    meta({
+        openapi: {
+            method: 'GET',
+            path: '/status',
+            tags: ['Status'],
+        }
+    })
+    .input(z.void())
+    .output(z.object({
+        message: z.string(),
+        timestamp: z.string(),
+        isDocker: z.boolean(),
+        environment: z.string(),
+        version: z.string(),
+    }))
+    .query(() => {
         return {
             message: `Server is running`,
             timestamp: new Date().toISOString(),

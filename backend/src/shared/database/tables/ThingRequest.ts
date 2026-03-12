@@ -70,7 +70,7 @@ export class ThingRequest extends Model<InferAttributes<ThingRequest>, InferCrea
     })
     declare accepted: CreationOptional<boolean | null>; // Whether the request has been accepted or not
     @Column({
-        type: DataType.STRING,
+        type: DataType.INTEGER,
         allowNull: true,
         defaultValue: null,
     })
@@ -119,7 +119,7 @@ export class ThingRequest extends Model<InferAttributes<ThingRequest>, InferCrea
     // #region Validators
     public static validator = z.object({
         id: dbId,
-        refrencedId: dbId.refine(async (id) => await Asset.checkIfExists(id)),
+        refrencedId: dbId,//.refine(async (id) => await Asset.checkIfExists(id)),
         requesterId: dbId.refine(async (id) => await User.checkIfExists(id)),
         refrencedGameName: z.string().nullable(),
         requestResponseBy: dbId.nullable(),

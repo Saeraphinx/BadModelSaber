@@ -24,13 +24,13 @@ const appRouter = router({
         requests: RequestRouter,
         updateAsset: UpdateAssetRouter,
         updateUser: konamiRouter,
-        auth: authRouter
+        auth: authRouter,
+        status: statusRouter,
     },
     v2: {
         assets: GetV2Router
     },
     v3: {
-        status: statusRouter,
         user: userRouterV3,
         upload: uploadStuff,
         assets: assetsRouterV3,
