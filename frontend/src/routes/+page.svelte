@@ -1,6 +1,6 @@
 <script lang="ts">
   import AssetCard from "$lib/components/assets/AssetCard.svelte";
-  import { Status, type AssetPublicAPIv3 } from "$lib/scripts/api/DBTypes";
+  import { Status, type AssetApiV3 } from "$lib/scripts/api/DBTypes";
   import { trpc } from "$lib/scripts/utils/api";
   import { Button } from "$shadcn/components/ui/button";
   import * as Carousel from "$shadcn/components/ui/carousel";
@@ -11,9 +11,9 @@
   import Separator from "$shadcn/components/ui/separator/separator.svelte";
   import { m } from "$lib/paraglide/messages";
 
-  let recentlyUploadedVerified: AssetPublicAPIv3[] = $state([]);
+  let recentlyUploadedVerified: AssetApiV3[] = $state([]);
   onMount(async () => {
-    trpc.assetsRouterV3.getFrontPageAssets.query().then((data) => {
+    trpc.v3.assets.getFrontPageAssets.query().then((data) => {
       recentlyUploadedVerified = data;
     });
   });

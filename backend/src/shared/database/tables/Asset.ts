@@ -9,6 +9,7 @@ import { WebhookPayloadGenerator, Webhooks } from "../../Webhooks.ts";
 import path from "node:path";
 import { IReportable, IPermissionsChecks } from "./common.ts";
 import { Literal } from "sequelize/lib/utils";
+import { parseErrorMessage } from "../../Tools.ts";
 
 export type AssetInfer = InferAttributes<Asset>;
 export type AssetValidatorType = typeof Asset.validator; // for use in frontend
@@ -158,7 +159,7 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
     // #region Validators
     public static validator = z.object({
         // unique by db
-        id: z.number().int().positive(),
+        id: dbId,
         // unique by db
         oldId: z.number().int().nullable(),
         linkedIds: z.array(z.object({
@@ -196,7 +197,7 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
     // This validator is used for creating new assets, it omits the id and timestamps and other fields that are marked as CreationOptional
     public static validatorCreation = z.object({
         ...Asset.validator.shape,
-        id: Asset.validator.shape.id.or(z.instanceof(Literal)).nullish(),
+        id: z.union([Asset.validator.shape.id, z.instanceof(Literal)]).nullish(),
         oldId: Asset.validator.shape.oldId.nullish(),
         linkedIds: Asset.validator.shape.linkedIds.nullish(),
         collaboratorIds: Asset.validator.shape.collaboratorIds.nullish(),
@@ -220,9 +221,15 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
     @AfterValidate
     private static async runValidators(asset: Asset) {
         if (asset.isNewRecord) {
-            await Asset.validatorCreation.parseAsync(asset);
+            await Asset.validatorCreation.parseAsync(asset).catch(err => {
+                Logger.warn(`DB Validator failed - ${parseErrorMessage(err)}`);
+                throw err
+            });
         } else {
-            await Asset.validator.parseAsync(asset);
+            await Asset.validator.parseAsync(asset).catch(err => {
+                Logger.warn(`DB Validator failed - ${parseErrorMessage(err)}`);
+                throw err
+            });
         }
         let isNotValid = Asset.validateExtended(asset);
         if (isNotValid) {
@@ -285,7 +292,7 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
                 this.tags = data.tags;
             }
         }
-        Logger.debug(`Updating asset ${this.id} with data: ${JSON.stringify(data)}`);
+        Logger.debug(`User ${user.id} updating asset ${this.id} with data: ${JSON.stringify(data)}`);
         return await this.save();
     }
 
@@ -535,7 +542,7 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
             });
         }
         this.status = newStatus;
-        Logger.log(`Asset ${this.id} status changed to ${newStatus} by user ${userId} for reason: ${reason}`);
+        Logger.log(`Asset ${this.id} status changed to ${newStatus} by user ${userPreformingAction.id} for reason: ${reason}`);
         return this.save();
     }
     // #endregion
@@ -620,6 +627,7 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
             id: this.id,
             oldId: this.oldId,
             linkedIds: this.linkedIds,
+            gameName: this.gameName,
             type: this.type,
             uploaderId: this.uploaderId,
             uploader: authorApi,

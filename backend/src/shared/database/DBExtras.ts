@@ -1,3 +1,4 @@
+import { ref } from "node:process";
 import { validRange } from "semver";
 import z from "zod/v4";
 
@@ -161,7 +162,10 @@ export enum UserPermissions {
 
   Administrative_Tasks = "administrative_tasks", // User can perform high-level admin tasks
 
+  Secret_Features = "secret_features", // User can access secret features that enabled by inputting a specific code.
+
   // cosmetic roles for badges only
+  C_Banned = "cos_banned", // User is banned and should not be able to do anything
   C_Developer = "cos_developer", // User is a developer of the site
   C_Moderator = "cos_moderator", // User is a moderator of the site
   C_Admin = "cos_admin", // User is an admin of the site
@@ -519,6 +523,7 @@ export type AssetApiV3 = z.infer<typeof assetApiV3Schema>;
 export const assetApiV3Schema = z.object({
   id: dbId,
   oldId: z.number().nullable(),
+  gameName: z.string(),
   linkedIds: z.array(linkedAssetSchema),
   type: assetFileFormatSchema,
   uploaderId: dbId,
@@ -546,6 +551,7 @@ export const thingRequestApiV3Schema = z.object({
   id: dbId,
   refrencedThingId: dbId,
   refrencedThing: z.union([assetApiV3Schema, userApiV3Schema, projectApiV3Schema, versionApiV3Schema]).nullable(),
+  refrencedGameName: z.string().nullable(),
   requesterId: dbId,
   requester: userApiV3Schema.nullable(),
   requestResponseBy: dbId.nullable(),

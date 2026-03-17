@@ -1,8 +1,8 @@
 <script lang="ts">
   import AssetCard from "$lib/components/assets/AssetCard.svelte";
   import RequestMessage from "$lib/components/requests/RequestMessage.svelte";
-  import { RequestType, UserPermissions, type UserPublicAPIv3 } from "$lib/scripts/api/DBTypes.js";
-  import { parseErrorMessage, trpc } from "$lib/scripts/utils/api.js";
+  import { RequestType, UserPermissions, type UserApiV3 } from "$lib/scripts/api/DBTypes.js";
+  import { parseErrorMessage } from "$lib/scripts/utils/api.js";
   import type { RequestMessage as ReqMessage } from "$lib/scripts/api/DBTypes.js";
   import Textarea from "$shadcn/components/ui/textarea/textarea.svelte";
   import Button from "$shadcn/components/ui/button/button.svelte";
@@ -10,34 +10,47 @@
   import { onMount } from "svelte";
   import Spinner from "$shadcn/components/ui/spinner/spinner.svelte";
   import { toast } from "svelte-sonner";
+  import { checkRoles } from "$lib/scripts/utils/checkRoles.js";
 
-  let { data } = $props();
+  const { data: _internal } = $props();
+  const { trpc, user, pageData } = $derived(_internal);
+
+  let typeInfo: {type: string, nameProp: `username` | `name`, managePerm: UserPermissions} = $derived.by(() => {
+    switch (pageData.requestType) {
+      case RequestType.User_Report:
+        return {type: `user`, nameProp: `username`, managePerm: UserPermissions.Requests_ManageUsers};
+      case RequestType.Project_Report:
+        return {type: `project`, nameProp: `name`, managePerm: UserPermissions.Requests_ManageMods};
+      default:
+        return {type: `asset`, nameProp: `name`, managePerm: UserPermissions.Requests_ManageAssets};
+    }
+  });
 
   // Message Content
-  let users = $state<Map<string, { id: string; displayName: string; avatarUrl: string }>>(new Map());
+  let users = $state<Map<number, { id: number; displayName: string; avatarUrl: string }>>(new Map());
   let messages: (ReqMessage & { initMessage?: boolean })[] = $state([]);
   onMount(() => {
     let initialString = "";
-    if (data.pageData.requestType === RequestType.Credit) {
+    if (pageData.requestType === RequestType.Asset_Credit) {
       initialString = m["requests.initialMessageCredit"]({
-        name: data.pageData?.requester?.displayName || "Unknown User",
-        assetName: data.pageData.refrencedAsset?.name || "Unknown Asset",
+        name: pageData?.requester?.displayName || "Unknown User",
+        assetName: (pageData.refrencedThing && typeInfo.nameProp in pageData.refrencedThing ? pageData.refrencedThing[typeInfo.nameProp as keyof typeof pageData.refrencedThing] : null) ?? "Unknown Asset",
       });
-    } else if (data.pageData.requestType === RequestType.Link) {
+    } else if (pageData.requestType === RequestType.Asset_Link) {
       initialString = m["requests.initialMessageLink"]({
-        name: data.pageData?.requester?.displayName || "Unknown User",
-        assetName: data.pageData.refrencedAsset?.name || "Unknown Asset",
+        name: pageData?.requester?.displayName || "Unknown User",
+        assetName: (pageData.refrencedThing && typeInfo.nameProp in pageData.refrencedThing ? pageData.refrencedThing[typeInfo.nameProp as keyof typeof pageData.refrencedThing] : null) ?? "Unknown Asset",
         toLinkAssetName: "Unknown Asset",
       });
     } else {
       initialString = m["requests.initialMessageReport"]({
-        name: data.pageData?.requester?.displayName || "Unknown User",
-        assetName: data.pageData.refrencedAsset?.name || "Unknown Asset",
+        name: pageData.requester?.displayName || "Unknown User",
+        assetName: (pageData.refrencedThing && typeInfo.nameProp in pageData.refrencedThing ? pageData.refrencedThing[typeInfo.nameProp as keyof typeof pageData.refrencedThing] : null) ?? "Unknown Asset",
       });
     }
     let initMessage = false;
-    if (data.user?.roles.includes(UserPermissions.Manage_All_Reports) || (data.pageData.requestResponseBy === data.user?.id)) {
-      if (data.pageData.accepted === null) {
+    if (checkRoles(user, [UserPermissions.Requests_ManageAll, typeInfo.managePerm], pageData.refrencedGameName) || (pageData.requestResponseBy === user?.id)) {
+      if (pageData.accepted === null) {
         initMessage = true
         initialString += `\n\n${m["requests.wouldYouLikeToAcceptOrReject"]()}`;
       }
@@ -45,35 +58,35 @@
 
     messages = [
       {
-        userId: `5`,
+        userId: 5,
         message: initialString,
-        timestamp: new Date(data.pageData.createdAt),
+        timestamp: new Date(pageData.createdAt).toISOString(),
         initMessage,
       },
-      ...data.pageData.messages,
+      ...pageData.messages,
     ];
   });
   async function populateUsers() {
-    let userIds = new Set<string>();
-    userIds.add(`5`); // system user
-    data.pageData.messages.forEach((message) => {
-      if (message.userId && !users.has(message.userId) && message.userId !== data.user!.id) {
+    let userIds = new Set<number>();
+    userIds.add(5); // system user
+    pageData.messages.forEach((message) => {
+      if (message.userId && !users.has(message.userId) && message.userId !== user.id) {
         userIds.add(message.userId);
       }
     });
-    users.set(data.user!.id, data.user!);
-    if (data.pageData.refrencedAsset && data.pageData.refrencedAsset.uploader && !users.has(data.pageData.refrencedAsset.uploader.id)) {
-      users.set(data.pageData.refrencedAsset.uploader.id, data.pageData.refrencedAsset.uploader);
+    users.set(user.id, user);
+    if (pageData.refrencedThing && `uploader` in pageData.refrencedThing && !users.has(pageData.refrencedThing.uploader!.id)) {
+      users.set(pageData.refrencedThing.uploader!.id, pageData.refrencedThing.uploader!);
     }
-    if (data.pageData.requesterId && !users.has(data.pageData.requesterId)) {
-      userIds.add(data.pageData.requesterId);
+    if (pageData.requesterId && !users.has(pageData.requesterId)) {
+      users.set(pageData.requester!.id, pageData.requester!);
     }
     let promises = [];
     if (userIds.size > 0) {
       for (const userId of userIds) {
         if (users.has(userId)) continue; // Skip if already fetched
         promises.push(
-          trpc.userRouterV3.getUserById
+          trpc.v3.user.getUserById
             .query({ id: userId })
             .then((res) => users.set(userId, res))
             .catch((err) => {
@@ -89,32 +102,32 @@
   // Message boxes
   let messageBox = $state<string>("");
   let isAllowedToSend = $derived.by(() => {
-    if (data.pageData.requestType !== RequestType.Report) {
+    if (!pageData.requestType.endsWith("report")) {
       return false;
     }
-    if (data.user) {
-      if (data.user.roles.includes(UserPermissions.Manage_All_Reports)) {
+    if (user) {
+      if (checkRoles(user, [UserPermissions.Requests_ManageAll], pageData.refrencedGameName)) {
         return true;
       }
-      return data.pageData.accepted === null;
+      return pageData.accepted === null;
     }
   });
   let isSending = $state(false);
   async function sendMessage() {
     if (messageBox.trim() == "") return;
     isSending = true
-    await trpc.RequestRouter.addMessage
+    await trpc.internal.requests.addMessage
       .mutate({
-        id: data.pageData.id,
+        id: pageData.id,
         message: messageBox.trim(),
       })
       .then((res) => {
         messages = [
           ...messages,
           {
-            userId: data.user!.id,
+            userId: user!.id,
             message: messageBox,
-            timestamp: new Date(),
+            timestamp: new Date().toISOString(),
           },
         ];
         messageBox = "";
@@ -127,9 +140,9 @@
   }
 
   async function handleRequest(accepted: boolean) {
-    await trpc.RequestRouter.handleRequest.mutate({
+    await trpc.internal.requests.handleRequest.mutate({
       action: accepted ? `accept` : `decline`,
-      id: data.pageData.id
+      id: pageData.id
     }).then(r => {
       return r.message
     }).catch(e => {
@@ -140,16 +153,16 @@
 
 <div class="flex flex-row items-start justify-center gap-4" data-sveltekit-preload-code="false">
   <div class="flex flex-col gap-2">
-    {#if data.pageData.refrencedAsset}
-      <AssetCard asset={data.pageData.refrencedAsset} size="large" alwaysShowHover />
+    {#if pageData.refrencedThing}
+      <AssetCard asset={pageData.refrencedThing} size="large" alwaysShowHover />
     {/if}
     <div class="flex flex-col items-start gap-2 bg-card p-4 rounded-lg shadow-md w-full max-w-2xl">
-      <h1 class="text-2xl font-bold">{m["requests.tableTitle"]({ type: m[`enums.requestTypes.${data.pageData.requestType}`]() })}</h1>
-      <p class="text-gray-500">{m["requests.requestID"]({ id: data.pageData.id })}</p>
-      <p class="text-gray-500">{m["requests.Status"]({ status: data.pageData.accepted ?? m["enums.status.pending"]() })}</p>
-      <p class="text-gray-500">{m["requests.resolvedBy"]({ name: data.pageData.resolvedBy ?? m["requests.notResolved"]() })}</p>
-      <p class="text-gray-500">{m["requests.createdBy"]({ name: users.get(data.pageData.requesterId)?.displayName || "Unknown User" })}</p>
-      <p class="text-gray-500">{m["requests.createdAt"]({ date: new Date(data.pageData.createdAt).toLocaleDateString() })}</p>
+      <h1 class="text-2xl font-bold">{m["requests.tableTitle"]({ type: m[`enums.requestTypes.${pageData.requestType}`]() })}</h1>
+      <p class="text-gray-500">{m["requests.requestID"]({ id: pageData.id })}</p>
+      <p class="text-gray-500">{m["requests.Status"]({ status: pageData.accepted ?? m["enums.status.pending"]() })}</p>
+      <p class="text-gray-500">{m["requests.resolvedBy"]({ name: pageData.resolvedBy ?? m["requests.notResolved"]() })}</p>
+      <p class="text-gray-500">{m["requests.createdBy"]({ name: users.get(pageData.requesterId)?.displayName || "Unknown User" })}</p>
+      <p class="text-gray-500">{m["requests.createdAt"]({ date: new Date(pageData.createdAt).toLocaleDateString() })}</p>
     </div>
   </div>
   <div class="flex flex-col w-full max-w-2xl">
@@ -158,7 +171,7 @@
     {:then}
       {#key messages}
         {#each messages as message}
-          <RequestMessage accept={() => {handleRequest(true)}} reject={() => {handleRequest(false)}} {message} user={users.get(message.userId) || { id: "0", displayName: "Unknown User", avatarUrl: "" }} class="w-full max-w-2xl mb-4" />
+          <RequestMessage accept={() => {handleRequest(true)}} reject={() => {handleRequest(false)}} {message} user={users.get(message.userId) || { id: -1, displayName: "Unknown User", avatarUrl: "" }} class="w-full max-w-2xl mb-4" />
         {:else}
           <p class="text-muted-foreground">{m["requests.noMessagesFound"]}</p>
         {/each}

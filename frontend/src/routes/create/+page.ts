@@ -1,15 +1,16 @@
-import { type AssetRequestPublicAPIv3, type AssetFileFormat, RequestType, UserPermissions } from "$lib/scripts/api/DBTypes";
+import { UserPermissions } from "$lib/scripts/api/DBTypes";
 import { error } from "@sveltejs/kit";
 import type { PageLoad } from "./$types.js";
+import { checkRoles } from "$lib/scripts/utils/checkRoles.js";
 
 export const ssr = false;
 export const load: PageLoad = async ({ parent }) => {
-  let parentData = await parent();
-  if (!parentData.user) {
+  const { user } = await parent();
+  if (!user) {
     return error(401, {message: 'You must be logged in to view this page', redirectToHome: true});
   }
 
-  if (!parentData.user.roles.includes(UserPermissions.Create_Assets)) {
+  if (!checkRoles(user, [UserPermissions.Asset_Create], `any`)) {
     return error(403, {message: 'You do not have permission to view this page'});
   }
 
@@ -17,6 +18,6 @@ export const load: PageLoad = async ({ parent }) => {
     pageMetadata: {
       title: 'Create Asset - ModelSaber',
     },
-    user: parentData.user,
+    user: user,
   };
 }

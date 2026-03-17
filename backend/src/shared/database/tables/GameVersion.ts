@@ -98,7 +98,7 @@ export class GameVersion extends Model<InferAttributes<GameVersion>, InferCreati
 
     public toApiV3() {
         return {
-            id: this.id,
+            id: this.id as number,
             gameName: this.gameName,
             version: this.version,
         };

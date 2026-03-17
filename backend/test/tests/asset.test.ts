@@ -132,12 +132,16 @@ describe("assets", () => {
         let collaborator: User;
         let testAsset: Asset;
         beforeAll(async () => {
-            uploader = await createDummyUser(3455).save();
-            collaborator = await createDummyUser(3456).save();
-            testAsset = await createDummyAsset(uploader.id, undefined, {
-                name: `Collab Test Asset`,
-                fileHash: `collab_test_hash`,
-            }).save();
+            try {
+                uploader = await createDummyUser().save();
+                collaborator = await createDummyUser().save();
+                testAsset = await createDummyAsset(uploader.id, undefined, {
+                    name: `Collab Test Asset`,
+                    fileHash: `collab_test_hash`,
+                }).save();
+            } catch (error) {
+                handleException(error)();
+            }
         });
 
 
@@ -155,12 +159,12 @@ describe("assets", () => {
             testAsset.collaboratorIds = [...testAsset.collaboratorIds, collaborator.id];
             await testAsset.save();
 
-            expect(testAsset.requestCollab(uploader, collaborator)).rejects.toThrowError();
-            expect(testAsset.requestCollab(uploader, uploader)).rejects.toThrowError();
+            await expect(testAsset.requestCollab(uploader, collaborator)).rejects.toThrowError();
+            await expect(testAsset.requestCollab(uploader, uploader)).rejects.toThrowError();
         });
 
         test(`does not create duplicate open requests`, async () => {
-            expect(testAsset.requestCollab(uploader, collaborator)).rejects.toThrowError();
+            await expect(testAsset.requestCollab(uploader, collaborator)).rejects.toThrowError();
         });
 
         test(`does not create request if request has already been denied`, async () => {
@@ -174,7 +178,7 @@ describe("assets", () => {
             if (!existingRequest) throw new Error(`Existing request not found`);
             existingRequest.accepted = false;
             await existingRequest.save();
-            expect(testAsset.requestCollab(uploader, collaborator)).rejects.toThrowError();
+            await expect(testAsset.requestCollab(uploader, collaborator)).rejects.toThrowError();
         });
     });
 });

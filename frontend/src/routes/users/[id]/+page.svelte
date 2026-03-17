@@ -6,8 +6,8 @@
   import Separator from "$shadcn/components/ui/separator/separator.svelte";
 
   const { data } = $props();
-  const user = data.pageData.user;
-  const assets = data.pageData.assets.assets;
+  const user = $derived(data.pageData.user);
+  const assets = $derived(data.pageData.assets.assets);
   let dialog = $state<ApprovalDialog>();
 
   // #region Edit User
@@ -22,7 +22,7 @@
     <div class="flex flex-col bg-accent p-4 rounded-lg w-full">
       <div class="flex flex-col w-64">
         <div class="flex flex-row flex-wrap gap-2">
-          {#each user.sponsorUrl as sponsorUrl}
+          {#each user.userPlatforms as sponsorUrl}
             <SponsorButton type={sponsorUrl.platform} url={sponsorUrl.url} />
           {/each}
         </div>

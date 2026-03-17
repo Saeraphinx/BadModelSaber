@@ -32,6 +32,8 @@ export const userRouterV3 = router({
     }),
     getAssetsByUserId: anyProcedure().input(z.object({
         id: z.int().positive(),
+        limit: z.number().positive().optional(),
+        page: z.number().positive().optional(),
     })).query(async ({input, ctx}) => {
         const user = await User.findByPk(input.id);
         if (!user) {
@@ -50,13 +52,13 @@ export const userRouterV3 = router({
         };
         const assets = await Asset.findAll({
             where: whereOptions,
-            //limit: input.limit ?? undefined,
-            //offset: input.page && input.limit ? ((input.page - 1) * input.limit) : undefined,
+            limit: input.limit ?? undefined,
+            offset: input.page && input.limit ? ((input.page - 1) * input.limit) : undefined,
             order: [["createdAt", "DESC"]],
             include: { all: true }
         });
         let response = await Promise.all(assets.map(asset => asset.toApiV3()));
-        return { assets: response, total: assets.length, page: /*input.page ?? null*/ null};
+        return { assets: response, total: assets.length, page: input.page ?? null};
     })
 });
 

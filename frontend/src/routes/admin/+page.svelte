@@ -2,42 +2,50 @@
   import { AlertType, UserPermissions } from "$lib/scripts/api/DBTypes";
   import * as Tabs from "$shadcn/components/ui/tabs/index.js";
   import * as Select from "$shadcn/components/ui/select/index.js";
+  import * as Accordion from "$shadcn/components/ui/accordion/index.js";
   import Label from "$shadcn/components/ui/label/label.svelte";
   import Input from "$shadcn/components/ui/input/input.svelte";
   import { Textarea } from "$shadcn/components/ui/textarea";
   import { Button } from "$shadcn/components/ui/button";
   import { Checkbox } from "$shadcn/components/ui/checkbox";
   import { toast } from "svelte-sonner";
-  import { trpc } from "$lib/scripts/utils/api";
   import { RefreshCwIcon } from "@lucide/svelte";
+  import type { PageData } from "../$types";
 
+  const { data } = $props();
+  // svelte-ignore state_referenced_locally
+  const { user, trpc } = data;
   // #region Alert
-  let alertType = $state(AlertType.AssetVerified);
-  let alertUserId = $state("");
+  let alertType = $state(AlertType.Generic);
+  let alertUserId = $state(5);
   let alertAssetId = $state("");
   let alertRequestId = $state("");
   let alertHeader = $state("");
   let alertMessage = $state("");
   function sendAdminAlert() {
-    trpc.AdminRouter.createAlert.mutate({
-      userId: alertUserId,
-      type: alertType,
-      assetId: parseInt(alertAssetId) || undefined,
-      requestId: parseInt(alertRequestId) || undefined,
-      header: alertHeader,
-      message: alertMessage,
-    }).then((res) => {
-      toast.success(`Alert sent successfully.`);
-    }).catch((err) => {
-      console.error(err);
-      toast.error(`Failed to send alert.`);
-    });
+    trpc.internal.admin.createAlert
+      .mutate({
+        userId: alertUserId,
+        type: alertType,
+        assetId: parseInt(alertAssetId) || undefined,
+        requestId: parseInt(alertRequestId) || undefined,
+        header: alertHeader,
+        message: alertMessage,
+      })
+      .then((res) => {
+        toast.success(`Alert sent successfully.`);
+      })
+      .catch((err) => {
+        console.error(err);
+        toast.error(`Failed to send alert.`);
+      });
   }
   // #endregion
 
   // #region Roles
-  let roleUserId = $state("");
-  let rolePermissions = $state<UserPermissions[]>([]);
+  let roleUserId = $state(user.id);
+  let sitewidePermissions = $state<UserPermissions[]>([]);
+  let perGamePermissions = $state<Record<string, UserPermissions[]>>({});
   let hasBeenLoaded = $state(false);
   function clearRoleSelections() {
     const checkboxes = document.querySelectorAll("input[type=checkbox]");
@@ -46,56 +54,72 @@
     });
   }
   function loadUserRoles() {
-    trpc.userRouterV3.getUserById.query({ id: roleUserId }).then((user) => {
-      rolePermissions = user.roles;
-      for (const perm of user.roles) {
-        let checkbox = document.getElementById(perm) as HTMLInputElement;
-        if (checkbox) {
-          checkbox.checked = true;
+    trpc.v3.user.getUserById
+      .query({ id: roleUserId })
+      .then((user) => {
+        sitewidePermissions = user.permissions.sitewide;
+        perGamePermissions = user.permissions.perGame;
+        for (const perm of sitewidePermissions) {
+          let checkbox = document.getElementById(`sw_${perm}`) as HTMLInputElement;
+          if (checkbox) {
+            checkbox.checked = true;
+          }
         }
-      }
-      toast.success("User roles loaded.");
-      hasBeenLoaded = true;
-    }).catch((err) => {
-      console.error(err);
-      toast.error("Failed to load user roles.");
-    });
+        toast.success("User roles loaded.");
+        hasBeenLoaded = true;
+      })
+      .catch((err) => {
+        console.error(err);
+        toast.error("Failed to load user roles.");
+      });
   }
   function sendUserRoles() {
-    trpc.AdminRouter.setRoles.mutate({
-      userId: roleUserId,
-      roles: rolePermissions,
-    }).then(() => {
-      toast.success("User roles updated.");
-    }).catch((err) => {
-      console.error(err);
-      toast.error("Failed to update user roles.");
-    });
+    trpc.internal.admin.setRoles
+      .mutate({
+        userId: roleUserId,
+        permissions: {
+          sitewide: sitewidePermissions,
+          perGame: perGamePermissions,
+        },
+      })
+      .then(() => {
+        toast.success("User roles updated.");
+      })
+      .catch((err) => {
+        console.error(err);
+        toast.error("Failed to update user roles.");
+      });
   }
   // #endregion
 
   // #region Admin Logs
   let adminLogs: { timestamp: Date; level: string; message: string }[] = $state([]);
   function fetchAdminLogs() {
-    trpc.AdminRouter.getAdminLogs.query().then((logs) => {
-      adminLogs = logs;
-      toast.success("Admin logs fetched.");
-    }).catch((err) => {
-      console.error(err);
-      toast.error("Failed to fetch admin logs.");
-    });
+    trpc.internal.admin.getAdminLogs
+      .query()
+      .then((logs) => {
+        adminLogs = logs;
+        toast.success("Admin logs fetched.");
+      })
+      .catch((err) => {
+        console.error(err);
+        toast.error("Failed to fetch admin logs.");
+      });
   }
   // #endregion
 
   // #region Admin Status
   async function getAdminStatus() {
-    return await trpc.statusRouter.adminStatus.query().then((status) => {
-      return status;
-    }).catch((err) => {
-      console.error(err);
-      toast.error("Failed to fetch admin status.");
-      return undefined;
-    });
+    return await trpc.internal.status.adminStatus
+      .query()
+      .then((status) => {
+        return status;
+      })
+      .catch((err) => {
+        console.error(err);
+        toast.error("Failed to fetch admin status.");
+        return undefined;
+      });
   }
 </script>
 
@@ -106,7 +130,7 @@
       <p>Loading Admin Data...</p>
     {:then adminStatus}
       {#if adminStatus}
-        <p>DB Status: {adminStatus.dbConnectionOK ?? `Unknown`} | Version: {adminStatus.version} | Signed in as {adminStatus.discordTokenUser?.username}#{adminStatus.discordTokenUser?.descriminator}</p>
+        <p>DB Status: {adminStatus.dbConnectionOK ?? `Unknown`} | Version: {adminStatus.version} | Signed in as {adminStatus.discordTokenUser?.username}#{adminStatus.discordTokenUser?.discriminator}</p>
       {:else}
         <p>Unable to fetch admin status.</p>
       {/if}
@@ -117,9 +141,7 @@
   <div class="flex flex-col md:flex-row">
     <div class="flex flex-col items-center justify-center p-4 bg-accent rounded-lg m-auto w-[400px]">
       <div class="flex flex-row gap-2">
-        <p class="text-2xl">
-          Admin Logs
-        </p>
+        <p class="text-2xl">Admin Logs</p>
         <Button variant="outline" size="icon" onclick={fetchAdminLogs}>
           <RefreshCwIcon />
         </Button>
@@ -128,9 +150,9 @@
         {#if adminLogs.length >= 1}
           {#each adminLogs as log}
             <div class="flex flex-row mb-2">
-              {#if log.level === 'error'}
+              {#if log.level === "error"}
                 <p class="text-red-500 font-mono"><strong>[{new Date(log.timestamp).toLocaleString()}] [{log.level.toUpperCase()}]</strong> {log.message}</p>
-              {:else if log.level === 'warn'}
+              {:else if log.level === "warn"}
                 <p class="text-yellow-500 font-mono"><strong>[{new Date(log.timestamp).toLocaleString()}] [{log.level.toUpperCase()}]</strong> {log.message}</p>
               {:else}
                 <p class="font-mono"><strong>[{new Date(log.timestamp).toLocaleString()}] [{log.level.toUpperCase()}]</strong> {log.message}</p>
@@ -191,58 +213,126 @@
           <!-- Role Panel -->
           <Label class="mt-4 mb-2">Target User</Label>
           <div class="flex flex-row">
-            <Input bind:value={roleUserId} class="w-3/4 mr-1" placeholder="User ID" oninput={() => {
-              hasBeenLoaded = false;
-              clearRoleSelections();
-            }}/>
+            <Input
+              bind:value={roleUserId}
+              class="w-3/4 mr-1"
+              placeholder="User ID"
+              oninput={() => {
+                hasBeenLoaded = false;
+                clearRoleSelections();
+              }} />
             <Button onclick={loadUserRoles} class="w-1/4">Fetch</Button>
           </div>
           <Label class="mt-4 mb-2">Permissions</Label>
-          <div class="flex flex-row flex-wrap gap-2 m-2">
-            {#each Object.values(UserPermissions) as item}
-              <div class="flex flex-row items-center gap-1">
-                <Checkbox bind:checked={() => {return rolePermissions.includes(item)}, (val) => {
-                  if (val) {
-                    rolePermissions = [...rolePermissions, item];
-                  } else {
-                    rolePermissions = rolePermissions.filter((perm) => perm !== item);
-                  }
-                }} id={item} />
-                <Label for={item}>{item}</Label>
-              </div>
+          <Accordion.Root type="single" class="w-full">
+            <Accordion.Item value="sitewide" class="border rounded-md mb-2">
+              <Accordion.Trigger class="bg-secondary p-2 rounded-t-md w-full text-left">Sitewide Permissions</Accordion.Trigger>
+              <Accordion.Content class="p-2">
+                <div class="flex flex-row flex-wrap gap-2 m-2">
+                  {#each Object.values(UserPermissions) as item}
+                    <div class="flex flex-row items-center gap-1">
+                      <Checkbox
+                        bind:checked={
+                          () => {
+                            return sitewidePermissions.includes(item);
+                          },
+                          (val) => {
+                            if (val) {
+                              sitewidePermissions = [...sitewidePermissions, item];
+                            } else {
+                              sitewidePermissions = sitewidePermissions.filter((perm) => perm !== item);
+                            }
+                          }
+                        }
+                        id={`sw_${item}`} />
+                      <Label for={`sw_${item}`}>{item}</Label>
+                    </div>
+                  {/each}
+                </div>
+              </Accordion.Content>
+            </Accordion.Item>
+            {#each Object.keys(perGamePermissions) as game}
+              <Accordion.Item value={game} class="border rounded-md mb-2">
+                <Accordion.Trigger class="bg-secondary p-2 rounded-t-md w-full text-left">{game} Permissions</Accordion.Trigger>
+                <Accordion.Content class="p-2">
+                  <div class="flex flex-row flex-wrap gap-2 m-2">
+                    {#each Object.values(UserPermissions) as item}
+                      <div class="flex flex-row items-center gap-1">
+                        <Checkbox
+                          bind:checked={
+                            () => {
+                              return perGamePermissions[game]?.includes(item) ?? false;
+                            },
+                            (val) => {
+                              if (val) {
+                                perGamePermissions = {
+                                  ...perGamePermissions,
+                                  [game]: [...(perGamePermissions[game] ?? []), item],
+                                };
+                              } else {
+                                perGamePermissions = {
+                                  ...perGamePermissions,
+                                  [game]: perGamePermissions[game]?.filter((perm) => perm !== item) ?? [],
+                                };
+                              }
+                            }
+                          }
+                          id={`${game}_${item}`} />
+                        <Label for={`${game}_${item}`}>{item}</Label>
+                      </div>
+                    {/each}
+                  </div>
+                </Accordion.Content>
+              </Accordion.Item>
             {/each}
-          </div>
+          </Accordion.Root>
           <Button class="mt-4 mb-2 w-full" onclick={sendUserRoles} disabled={!hasBeenLoaded}>Update Roles</Button>
         </Tabs.Content>
       </Tabs.Root>
     </div>
     <div class="flex flex-col items-center justify-center p-4 bg-accent rounded-lg m-auto w-[400px]">
       <p>One-Shots</p>
-      <Button class="mt-4 mb-2 w-full" onclick={() => {
-        trpc.AdminRouter.importOldModelSaberData.mutate().then(() => {
-          toast.success("Import started.");
-        }).catch((err) => {
-          console.error(err);
-          toast.error("Failed to start import.");
-        });
-      }}>Import Old ModelSaber Data</Button>
-      <Button variant="destructive" class="mt-4 mb-2 w-full" onclick={() => {
-        trpc.AdminRouter.resetSchema.mutate().then(() => {
-          toast.success("Schema reset started.");
-        }).catch((err) => {
-          console.error(err);
-          toast.error("Failed to start schema reset.");
-        });
-
-      }}>Reset Database Schema</Button>
-      <Button variant="destructive" class="mt-4 mb-2 w-full" onclick={() => {
-        trpc.AdminRouter.importFakeData.mutate().then(() => {
-          toast.success("Fake data import started.");
-        }).catch((err) => {
-          console.error(err);
-          toast.error("Failed to start fake data import.");
-        });
-      }}>Import Fake Data</Button>
+      <Button
+        class="mt-4 mb-2 w-full"
+        onclick={() => {
+          trpc.internal.admin.importOldModelSaberData
+            .mutate()
+            .then(() => {
+              toast.success("Import started.");
+            })
+            .catch((err) => {
+              console.error(err);
+              toast.error("Failed to start import.");
+            });
+        }}>Import Old ModelSaber Data</Button>
+      <Button
+        variant="destructive"
+        class="mt-4 mb-2 w-full"
+        onclick={() => {
+          trpc.internal.admin.resetSchema
+            .mutate()
+            .then(() => {
+              toast.success("Schema reset started.");
+            })
+            .catch((err) => {
+              console.error(err);
+              toast.error("Failed to start schema reset.");
+            });
+        }}>Reset Database Schema</Button>
+      <Button
+        variant="destructive"
+        class="mt-4 mb-2 w-full"
+        onclick={() => {
+          trpc.internal.admin.importFakeData
+            .mutate()
+            .then(() => {
+              toast.success("Fake data import started.");
+            })
+            .catch((err) => {
+              console.error(err);
+              toast.error("Failed to start fake data import.");
+            });
+        }}>Import Fake Data</Button>
     </div>
   </div>
 </div>

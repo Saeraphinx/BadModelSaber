@@ -49,6 +49,7 @@ export const assetsRouterV3 = router({
             if (input.tags) {
                 whereOptions.tags = { [Op.contains]: input.tags };
             }
+            const assetCount = Asset.count({ where: whereOptions });
             const assets = await Asset.findAll({
                 where: whereOptions,
                 limit: input.limit ?? undefined,
@@ -57,7 +58,7 @@ export const assetsRouterV3 = router({
                 include: { all: true }
             });
             let response = await Promise.all(assets.map(asset => asset.toApiV3()));
-            return { assets: response, total: assets.length, page: input.page ?? null };
+            return { assets: response, total: await assetCount, page: input.page ?? null };
         }),
     getAssetById: anyProcedure()
         .meta({

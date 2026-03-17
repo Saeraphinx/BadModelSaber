@@ -30,7 +30,7 @@
   import { Toaster } from "$shadcn/components/ui/sonner";
   import { toast, type ExternalToast } from "svelte-sonner";
   import { env } from "$env/dynamic/public";
-  import { UserPermissions, type AlertPublicAPIv3 } from "$lib/scripts/api/DBTypes";
+  import { UserPermissions, type AlertApiV3 } from "$lib/scripts/api/DBTypes";
   import Separator from "$shadcn/components/ui/separator/separator.svelte";
   import { Badge } from "$shadcn/components/ui/badge";
   import * as Sheet from "$shadcn/components/ui/sheet";
@@ -43,6 +43,7 @@
   import { getLocale } from "$lib/paraglide/runtime";
   import { m } from "$lib/paraglide/messages";
   import { Spinner } from "$shadcn/components/ui/spinner";
+  import { checkRoles } from "$lib/scripts/utils/checkRoles";
 
   let { data, children } = $props();
   let theme: `system` | `light` | `dark` = $state("system");
@@ -51,7 +52,7 @@
 
   // #region KonamiListener
   onMount(() => {
-    if (data.user && data.user.id && !data.user.roles.includes(UserPermissions.Create_Assets)) return;
+    if (data.user && data.user.id && checkRoles(data.user, [UserPermissions.C_Banned])) return;
     const konamiCode = ["ArrowUp", "ArrowUp", "ArrowDown", "ArrowDown", "ArrowLeft", "ArrowRight", "ArrowLeft", "ArrowRight", "b", "a"];
 
     let inputSequence: string[] = [];
@@ -77,7 +78,7 @@
           });
           return;
         }
-        if (data.user.roles.includes(UserPermissions.View_Pending_Assets)) {
+        if (checkRoles(data.user, [UserPermissions.Secret_Features])) {
           toast.info("You have already activated the secret features.", {
             description: "If you want to disable them, disable them in your user settings.",
             duration: 5000,
@@ -94,8 +95,8 @@
           action: {
             label: "Enable",
             onClick: () => {
-              trpc.konamiRouter.konami
-                .mutate(`add`)
+              trpc.internal.updateUser.toggleSecretFeatures
+                .mutate({ enabled: true })
                 .then(() => {
                   toast.success("Secret features enabled!", {
                     description: "You can now access hidden content and features on ModelSaber. Use responsibly!",
@@ -124,8 +125,8 @@
   });
 
   function removeSecret() {
-    trpc.konamiRouter.konami
-      .mutate(`remove`)
+    trpc.internal.updateUser.toggleSecretFeatures
+      .mutate({ enabled: false })
       .then(() => {
         toast.info("Secret features disabled!", {
           description: "Access to hidden content and features has been revoked.",
@@ -166,8 +167,16 @@
   // #endregion Theme
 
   // #region Alerts
-  let allAlerts = $state<AlertPublicAPIv3[]>(data.alerts);
+  let allAlerts = $state<AlertApiV3[]>([]);
   let unreadAlerts = $derived(allAlerts.filter((alert) => !alert.read));
+  let wasEverFetchedAlerts = $state(false);
+  let unreadAlertCount = $derived.by(() => {
+    if (wasEverFetchedAlerts) {
+      return unreadAlerts.length;
+    } else {
+      return data.alertCount ?? 0;
+    }
+  })
   let isPendingAlerts = $derived(unreadAlerts.length > 0);
   let openAlerts = $state(false);
   let showRead = $state(false);
@@ -175,11 +184,12 @@
   async function updateAlerts() {
     // this is honestly a fucking mess but its what works for now
     isLoadingAlerts = true;
-    trpc.alertsRouter.getAlerts
+    trpc.internal.alerts.getMyAlerts
       .query({ read: `all` })
       .then((val) => {
         allAlerts = val;
         isLoadingAlerts = false;
+        wasEverFetchedAlerts = true;
       })
       .catch((error) => {
         toast.error("Failed to fetch read alerts.", {
@@ -233,6 +243,7 @@
 
   const links = [
     { href: "/", label: m["layout.navbar.home"](), target: undefined },
+    { href: "/mods", label: m["layout.navbar.mods"](), target: undefined },
     { href: "/assets", label: m["layout.navbar.assets"](), target: undefined },
     { href: "https://bsmg.wiki/models", label: m["layout.navbar.modelWiki"](), target: "_blank" },
   ];
@@ -328,7 +339,7 @@
                 {m["layout.userMenu.requests"]()}
               </DropdownMenu.Item>
             </a>
-            {#if data.user.roles.includes(UserPermissions.Manage_NonMod_Users) || data.user.roles.includes(UserPermissions.Manage_All_Users)}
+            {#if checkRoles(data.user, [UserPermissions.Administrative_Tasks], `any`)}
               <a href="/admin">
                 <DropdownMenu.Item>
                   <Settings />
@@ -336,7 +347,7 @@
                 </DropdownMenu.Item>
               </a>
             {/if}
-            {#if data.user.roles.includes(UserPermissions.View_Pending_Assets)}
+            {#if checkRoles(data.user, [UserPermissions.Secret_Features])}
               <button onclick={removeSecret}>
                 <DropdownMenu.Item>
                   <TrafficConeIcon class="text-orange-500" />
@@ -344,7 +355,7 @@
                 </DropdownMenu.Item>
               </button>
             {/if}
-            {#if data.user.roles.includes(UserPermissions.Create_Assets)}
+            {#if checkRoles(data.user, [UserPermissions.Asset_Create], `any`)}
               <a href="/create">
                 <DropdownMenu.Item>
                   <PlusIcon />
@@ -391,7 +402,7 @@
           {#if isLoggedIn}
             <button
               onclick={() => {
-                trpc.authRouter.logout.mutate({}).then(() => {
+                trpc.internal.auth.logout.mutate({}).then(() => {
                   invalidateAll();
                 });
               }}>
@@ -403,7 +414,7 @@
           {:else}
             <button
               onclick={async () => {
-                let url = await trpc.authRouter.discordAuthInit.query({
+                let url = await trpc.internal.auth.discordAuthInit.query({
                   redirect: `${env.PUBLIC_BASE_URL}${page.url.pathname}`,
                 });
                 window.location.href = url.url;
@@ -416,7 +427,7 @@
           {/if}
           <DropdownMenu.Separator />
           <p class="text-xs text-muted-foreground text-center p-1"><a href="https://github.com/Saeraphinx/BadModelSaber" target="_blank">{m["layout.userMenu.modelsaberOpenSource"]()}</a></p>
-          {#if data.user && data.user.roles.includes(UserPermissions.Administative_Tasks)}
+          {#if data.user && checkRoles(data.user, { hasOneOf: [UserPermissions.Administrative_Tasks, UserPermissions.Secret_Features] }) }
             <DropdownMenu.Separator />
             <span class="text-xs text-muted-foreground text-center p-1">
               Administrative Information<br />

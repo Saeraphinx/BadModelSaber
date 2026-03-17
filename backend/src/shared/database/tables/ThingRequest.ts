@@ -358,6 +358,7 @@ export class ThingRequest extends Model<InferAttributes<ThingRequest>, InferCrea
             id: this.id,
             refrencedThingId: this.refrencedId,
             refrencedThing: refThingApi,
+            refrencedGameName: this.refrencedGameName,
             requesterId: this.requesterId,
             requester: requesterApi,
             requestResponseBy: this.requestResponseBy,

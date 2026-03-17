@@ -9,6 +9,15 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod/v4";
 
 export const alertsRouter = router({
+    getMyAlertCount: loggedInProcedure().query(async ({ ctx }) => {
+        const count = await Alert.count({
+            where: {
+                userId: ctx.user.id,
+                read: false,
+            }
+        }).catch(handleTRPCPromiseCatch);
+        return count;
+    }),
     getMyAlerts: loggedInProcedure()
         .input(z.object({ 
             read: z.enum([`true`, `false`, `all`]).default(`false`) }

@@ -12,7 +12,7 @@
   import { parseErrorMessage, trpc } from "$lib/scripts/utils/api";
   import { redirect } from "@sveltejs/kit";
   import { toast } from "svelte-sonner";
-  import { zAsset } from "$lib/scripts/api/validator";
+  import { zAsset } from "$lib/scripts/api/validators";
   import { m } from "$lib/paraglide/messages";
 
   let type = $state(AssetFileFormat.Note_Bloq);
@@ -65,7 +65,7 @@
     }
 
     // needs to be awaited since redirect is an error throw
-    let newAsset = trpc.uploadAssetV3.part1.mutate(formData).catch((err) => {
+    let newAsset = trpc.v3.upload.assetUpload.mutate(formData).catch((err) => {
       toast.error(`Failed to submit asset: ${parseErrorMessage(err)}`);
       console.error(err);
     });

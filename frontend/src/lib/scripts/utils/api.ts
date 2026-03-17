@@ -1,16 +1,16 @@
 import { env } from "$env/dynamic/public";
-import type { AssetPublicAPIv3 } from "../api/DBTypes";
+import type { AssetApiV3 } from "../api/DBTypes";
 
 export function getThumbnailUrl(id: number | string, thumbnailName:string): string {
   return `${env.PUBLIC_ASSET_URL}/${id}/${thumbnailName}`;
 }
 
-export function getAssetDownloadUrl(asset: AssetPublicAPIv3): string {
+export function getAssetDownloadUrl(asset: AssetApiV3): string {
   return asset.downloadUrl;
   //return `${env.PUBLIC_ASSET_URL}/${assetId}/${fileName}`;
 }
 
-export function getOneClickUrl(asset: AssetPublicAPIv3): string {
+export function getOneClickUrl(asset: AssetApiV3): string {
   const baseUrl = "modelsaber://";
   let modelType: string;
   switch (asset.type) {
@@ -33,9 +33,10 @@ export function getOneClickUrl(asset: AssetPublicAPIv3): string {
   return `${baseUrl}${modelType}/${asset.id}/${asset.fileSafeName}.${asset.type.split("_")[1]}`;
 }
 
-import { createTRPCClient, httpBatchLink, httpLink, isNonJsonSerializable, splitLink } from '@trpc/client';
+import { createTRPCClient, httpBatchLink, httpLink, isNonJsonSerializable, isTRPCClientError, splitLink } from '@trpc/client';
 import type { AppRouter } from '../../../../../backend/src/api/routers';
 import SuperJSON from "superjson";
+import { error } from "@sveltejs/kit";
 
 export const trpc = createTRPC();
 
@@ -76,6 +77,12 @@ export function parseError(err: unknown): {
   message: string;
   code: number;
 } {
+  if (isTRPCClientError(err)) {
+    return {
+      message: err.message,
+      code: err.data?.httpStatus ?? 500,
+    };
+  }
   try {
     let anyErr = err as any;
     if (anyErr) {
@@ -106,7 +113,6 @@ export function parseError(err: unknown): {
   }
 }
 
-
 export function parseErrorMessage(err: unknown): string {
   try {
     let anyErr = err as any;
@@ -126,5 +132,13 @@ export function parseErrorMessage(err: unknown): string {
   } catch (e) {
     console.error(`Error parsing error message: ${e}`);
     return `Unknown error`;
+  }
+}
+
+export function handleTrpcError() : (err: unknown) => never {
+  return (err: unknown) => {
+    console.error(err);
+    let parsedError = parseError(err);
+    error(parsedError.code, { message: parsedError.message });
   }
 }

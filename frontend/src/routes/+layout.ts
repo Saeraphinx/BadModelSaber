@@ -3,24 +3,21 @@ import { createTRPC, parseError } from "$lib/scripts/utils/api";
 
 export const load: LayoutLoad = async ({ fetch }) => {
   let pendingToasts: Awaited<ReturnType<LayoutLoad>>['pendingToasts'] = [];
-  let userToasted = false;
-  let alertsToasted = false;
+
   const trpc = createTRPC(fetch);
   const defaultObj = {
-    alerts: [],
+    alertCount: 0,
     requestCounts: {
       incoming: 0,
       outgoing: 0,
-      reports: null,
     },
     user: undefined,
     pendingToasts: pendingToasts,
     trpc
-  }
-  let userRes = await trpc.userRouterV3.getMe.query().catch((err) => {
+  } satisfies Awaited<ReturnType<LayoutLoad>>;
+  let userRes = await trpc.v3.user.getMe.query().catch((err) => {
     console.error(err);
     let error = parseError(err);
-    userToasted = true;
     if (error.code == 403) {
       pendingToasts.push({
         type: 'error',
@@ -34,30 +31,22 @@ export const load: LayoutLoad = async ({ fetch }) => {
     return defaultObj;
   }
 
-  let alertRes = await trpc.alertsRouter.getAlerts.query({ read: `false` }).catch((error) => {
-    console.error(`Failed to fetch alerts:`, error)
-    alertsToasted = true;
-    pendingToasts.push({
-      type: 'error',
-      title: `Unable to fetch alerts`,
-      description: `Error: ${error.message}`,
-    });
+  let alertRes = await trpc.internal.alerts.getMyAlertCount.query().catch((err) => {
+    console.error(err);
   });
 
-  let requestRes = await trpc.RequestRouter.requestCounts.query().catch((error) => {
-    console.error(`Failed to fetch requests:`, error);
-
+  let requestRes = await trpc.internal.requests.requestCounts.query().catch((err) => {
+    console.error(err);
   });
 
   return {
-      pendingToasts: pendingToasts,
-      requestCounts: {
-        incoming: !requestRes ? 0 : requestRes.incoming || 0,
-        outgoing: !requestRes ? 0 : requestRes.outgoing || 0,
-        reports: !requestRes ? null : requestRes.reports || null,
-      },
-      user: userRes,
-      alerts: !alertRes ? [] : (alertRes || []),
-      trpc
-    }
+    pendingToasts: pendingToasts,
+    requestCounts: {
+      incoming: !requestRes ? 0 : requestRes.incoming || 0,
+      outgoing: !requestRes ? 0 : requestRes.outgoing || 0,
+    },
+    user: userRes,
+    alertCount: !alertRes ? 0 : (alertRes || 0),
+    trpc
+  } satisfies Awaited<ReturnType<LayoutLoad>>;
 }

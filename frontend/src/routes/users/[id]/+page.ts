@@ -1,13 +1,12 @@
-import { AssetFileFormat, LinkedAssetLinkType, Status, type AssetPublicAPIv3, type UserPublicAPIv3 } from '$lib/scripts/api/DBTypes';
-import { trpc } from '$lib/scripts/utils/api';
+import { type UserApiV3 } from '$lib/scripts/api/DBTypes';
 import { error } from '@sveltejs/kit';
 import type { PageLoad } from './$types';
 
 export const ssr = false;
 export const load = (async ({ fetch, params, parent }) => {
   const parentData = await parent();
-  const { user } = parentData;
-  let userData: UserPublicAPIv3;
+  const { user, trpc } = parentData;
+  let userData: UserApiV3;
   if (params.id === 'me') {
     console.log('User from parent:', user);
     console.log('Full parent data:', parentData);
@@ -16,7 +15,8 @@ export const load = (async ({ fetch, params, parent }) => {
     }
     userData = user;
   } else {
-    userData = await trpc.userRouterV3.getUserById.query({ id: params.id }).then((res) => {
+    let id = parseInt(params.id, 10);
+    userData = await trpc.v3.user.getUserById.query({ id: id }).then((res) => {
       return res;
     }).catch((err) => {
       console.error(`Failed to fetch user with ID ${params.id}`);
@@ -24,7 +24,7 @@ export const load = (async ({ fetch, params, parent }) => {
     });
   }
 
-  let assets = await trpc.userRouterV3.getAssetsByUserId.query({ id: userData.id }).then((res) => {
+  let assets = await trpc.v3.user.getAssetsByUserId.query({ id: userData.id }).then((res) => {
     return res;
   }).catch((err) => {
     console.error(`Failed to fetch assets for user ${userData.id}`);

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { AssetFileFormat, Status, UserPermissions, type AssetPublicAPIv3 } from "$lib/scripts/api/DBTypes";
+  import { AssetFileFormat, Status, UserPermissions, type AssetApiV3 } from "$lib/scripts/api/DBTypes";
   import AssetCard from "$lib/components/assets/AssetCard.svelte";
   import * as RadioGroup from "$shadcn/components/ui/radio-group/index.js";
   import * as Pagination from "$shadcn/components/ui/pagination";
@@ -20,17 +20,21 @@
   import ApprovalPopup from "$lib/components/assets/ApprovalDialog.svelte";
   import { toast } from "svelte-sonner";
   import { getAssetTypeCategories, getStatusString } from "$lib/scripts/utils/stylizer.js";
-  import { trpc } from "$lib/scripts/utils/api.js";
   import { m } from "$lib/paraglide/messages.js";
+  import MiniPagination from "$lib/components/generic/MiniPagination.svelte";
+  import BigPagination from "$lib/components/generic/BigPagination.svelte";
+  import { checkRoles } from "$lib/scripts/utils/checkRoles.js";
 
-  let { data } = $props();
+  const { data } = $props();
+  // svelte-ignore state_referenced_locally
+  const { trpc, user } = data;
   // Generic Page Data
   let smallerIcons = new MediaQuery("max-width: 1000px");
   let tooSmall = new MediaQuery("max-width: 768px");
 
   // Asset Data
   let assetsLoading = $state(false);
-  let assetArray = $state<AssetPublicAPIv3[]>([]);
+  let assetArray = $state<AssetApiV3[]>([]);
   let searchEngine = $state<ReturnType<typeof generateAssetSearchEngine>>();
   let dialog = $state<ApprovalPopup>();
 
@@ -46,15 +50,15 @@
   let selectedStatuses = $state<Status[]>([Status.Verified]);
   let searchQuery = $state<string>("");
   let assetStatuses = $derived.by(() => {
-    if (!data.user) return [Status.Verified, Status.Unverified];
-    if (data.user.roles.includes(UserPermissions.View_All_Assets)) {
+    if (!user) return [Status.Verified, Status.Unverified];
+    if (checkRoles(user, [UserPermissions.Asset_ViewAll], `any`)) {
       return Object.values(Status);
     }
-    return data.user.roles.includes(UserPermissions.View_Pending_Assets) ? [Status.Verified, Status.Unverified, Status.Pending] : [Status.Verified, Status.Unverified];
+    return [Status.Verified, Status.Unverified];
   });
   
   // Filters Themselves
-  let filteredAssets = $derived.by(() => {
+  let filteredAssets: AssetApiV3[] = $derived.by(() => {
     // Filter Only
     if (!assetArray || assetArray.length === 0) return [];
 
@@ -66,7 +70,7 @@
       return matchesFormat && matchesStatus;
     });
   });
-  let currentAssetArray = $derived.by(() => {
+  let currentAssetArray: AssetApiV3[] = $derived.by(() => {
     // Filter + Pagination
     if (!filteredAssets || filteredAssets.length === 0) return [];
     let start = (currentPage - 1) * selectedPageSize;
@@ -76,7 +80,7 @@
   // Asset Fetch
   async function fetchAssets() {
     assetsLoading = true;
-    let assets = await trpc.assetsRouterV3.getAssets
+    let assets = await trpc.v3.assets.getAssets
       .query({})
       .then((response) => {
         return response.assets;
@@ -100,56 +104,6 @@
     fetchAssets();
   });
 </script>
-
-{#snippet pagination()}
-  <Pagination.Root
-    count={filteredAssets.length}
-    perPage={selectedPageSize}
-    bind:page={currentPage}
-    onPageChange={() => {
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    }}>
-    {#snippet children({ pages, currentPage })}
-      <Pagination.Content>
-        <Pagination.Item>
-          <Pagination.PrevButton />
-        </Pagination.Item>
-        {#each pages as page (page.key)}
-          {#if page.type === "ellipsis"}
-            <Pagination.Item>
-              <Pagination.Ellipsis />
-            </Pagination.Item>
-          {:else}
-            <Pagination.Item>
-              <Pagination.Link {page} isActive={currentPage === page.value}>
-                {page.value}
-              </Pagination.Link>
-            </Pagination.Item>
-          {/if}
-        {/each}
-        <Pagination.Item>
-          <Pagination.NextButton />
-        </Pagination.Item>
-      </Pagination.Content>
-    {/snippet}
-  </Pagination.Root>
-{/snippet}
-
-{#snippet miniPagination()}
-  <div class="flex flex-row items-center">
-    <Button variant="outline" size="icon" onclick={() => (currentPage > 1 ? currentPage-- : null)}>
-      <ChevronLeft class="h-4 w-4" />
-    </Button>
-    <span class="text-sm whitespace-nowrap mx-2">{m["assets.search.xToYOfZAssets"]({
-      start: (currentPage - 1) * selectedPageSize + 1,
-      end: selectedPageSize * currentPage > filteredAssets.length ? filteredAssets.length : selectedPageSize * currentPage,
-      total: filteredAssets.length
-    })}</span>
-    <Button variant="outline" size="icon" onclick={() => currentPage++}>
-      <ChevronRight class="h-4 w-4" />
-    </Button>
-  </div>
-{/snippet}
 
 {#snippet filters()}
   <!-- File Type Filter -->
@@ -255,7 +209,7 @@
             </Button>
           {/if}
           <div class="flex-1 flex justify-end">
-            {@render miniPagination()}
+            <MiniPagination {selectedPageSize} bind:currentPage={currentPage} totalCount={filteredAssets.length} />
           </div>
         </div>
       </div>
@@ -270,15 +224,15 @@
             <span class="text-gray-500 dark:text-gray-400 w-full py-8 text-center">{m["assets.noAssetsFound"]()}</span>
           {/if}
           {#each currentAssetArray as asset (asset.id)}
-            <AssetCard {asset} approvalDialog={data.user?.roles.includes(UserPermissions.Approve_Assets) ? dialog : undefined} size={smallerIcons.current ? `normal` : `large`} />
+            <AssetCard {asset} approvalDialog={checkRoles(user, [UserPermissions.Asset_Approval], asset.gameName) ? dialog : undefined} size={smallerIcons.current ? `normal` : `large`} />
           {/each}
         {/if}
       </div>
       <Separator class="my-4 w-full" />
       {#if !smallerIcons.current}
-        {@render pagination()}
+        <BigPagination {selectedPageSize} bind:currentPage={currentPage} totalItems={filteredAssets.length} />
       {:else}
-        {@render miniPagination()}
+        <MiniPagination {selectedPageSize} bind:currentPage={currentPage} totalCount={filteredAssets.length} />
       {/if}
     </div>
   </div>

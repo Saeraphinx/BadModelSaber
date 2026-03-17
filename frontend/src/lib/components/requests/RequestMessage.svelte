@@ -11,7 +11,7 @@
     accept,
     reject,
     user = {
-      id: "unknown",
+      id: -1,
       displayName: "Unknown User",
       avatarUrl: "/default-avatar.png",
     },
@@ -20,7 +20,7 @@
     accept: Function,
     reject: Function,
     message: RequestMessage & { initMessage?: boolean };
-    user?: { id:string, displayName: string; avatarUrl: string };
+    user?: { id:number, displayName: string; avatarUrl: string };
     class?: ClassValue;
   } = $props();
 </script>

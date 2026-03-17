@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Status, Tags, UserPermissions, type AssetPublicAPIv3 } from "$lib/scripts/api/DBTypes.js";
+  import { Status, Tags, UserPermissions, type AssetApiV3 } from "$lib/scripts/api/DBTypes.js";
   import AssetCard from "$lib/components/assets/AssetCard.svelte";
   import Badge from "$shadcn/components/ui/badge/badge.svelte";
   import Button from "$shadcn/components/ui/button/button.svelte";
@@ -28,7 +28,7 @@
   import { navigating, page } from "$app/state";
   import Skeleton from "$shadcn/components/ui/skeleton/skeleton.svelte";
   import CarouselNavigator from "$lib/components/generic/CarouselNavigator.svelte";
-  import { getOneClickUrl, getAssetDownloadUrl, trpc, getThumbnailUrl, parseErrorMessage } from "$lib/scripts/utils/api.js";
+  import { getOneClickUrl, getAssetDownloadUrl, getThumbnailUrl, parseErrorMessage } from "$lib/scripts/utils/api.js";
   import ApprovalPopup from "$lib/components/assets/ApprovalDialog.svelte";
   import { onMount } from "svelte";
   import { toast } from "svelte-sonner";
@@ -37,7 +37,7 @@
   import Input from "$shadcn/components/ui/input/input.svelte";
   import Textarea from "$shadcn/components/ui/textarea/textarea.svelte";
   import TagPickerDialog from "$lib/components/forms/TagPickerDialog.svelte";
-  import { zAsset } from "$lib/scripts/api/validator.js";
+  import { zAsset } from "$lib/scripts/api/validators";
   import { cn } from "$shadcn/utils";
   import LinkAssetDialog from "$lib/components/assets/LinkAssetDialog.svelte";
   import { invalidateAll } from "$app/navigation";
@@ -46,8 +46,11 @@
   import DownloadButton from "$lib/components/assets/DownloadButton.svelte";
   import ReportDialog from "$lib/components/assets/ReportDialog.svelte";
   import { m } from "$lib/paraglide/messages.js";
+  import { checkRoles } from "$lib/scripts/utils/checkRoles.js";
 
-  let { data } = $props();
+  const { data } = $props();
+  // svelte-ignore state_referenced_locally
+  const { trpc, user, pageData } = data;
   const typeData = $derived.by(() => getAssetTypeData(data.pageData.type));
 
   let mobileView = new MediaQuery("max-width: 767px"); // something something inclusivity
@@ -60,29 +63,29 @@
 
   // #region Report
   let allowedToReport = $derived.by(() => {
-    if (!data.user) return false;
-    if (data.user.id === data.pageData.uploaderId) return false; // Can't report your own asset
+    if (!user) return false;
+    if (user.id === pageData.uploaderId) return false; // Can't report your own asset
     return true; // Allow reporting if the user is logged in and not the uploader
   });
   // #endregion
   // #region Editing
   let allowedToEdit = $derived.by(() => {
-    if (!data.user) return false;
-    if (data.user.roles.includes(UserPermissions.Edit_Any_Asset)) return true;
-    if (data.pageData.uploaderId === data.user.id) return true;
+    if (!user) return false;
+    if (checkRoles(user, [UserPermissions.Asset_EditAll], pageData.gameName)) return true;
+    if (pageData.uploaderId === user.id) return true;
     return false;
   });
   let isEditing = $state<boolean>(false);
-  let editName = $state<string>(data.pageData.name);
-  let editDescription = $state<string>(data.pageData.description || "");
-  let editTags = $state<Tags[]>((data.pageData.tags as Tags[]) || []);
+  let editName = $state<string>(pageData.name);
+  let editDescription = $state<string>(pageData.description || "");
+  let editTags = $state<Tags[]>((pageData.tags as Tags[]) || []);
   let openTagPicker = $state<boolean>(false);
   let isPendingSave = $derived.by(() => {
-    return editName !== data.pageData.name || editDescription !== data.pageData.description || !editTags.every((tag) => data.pageData.tags.includes(tag));
+    return editName !== pageData.name || editDescription !== pageData.description || !editTags.every((tag) => pageData.tags.includes(tag));
   });
   let zAssetName = $derived.by(() => zAsset.shape.name.safeParse(editName));
   let zAssetDescription = $derived.by(() => zAsset.shape.description.safeParse(editDescription));
-  let isBlurred = $state<boolean>(data.pageData.tags.includes(Tags.NSFW));
+  let isBlurred = $state<boolean>(pageData.tags.includes(Tags.NSFW));
   //#endregion
 
   // #region Edit Submissions
@@ -97,9 +100,9 @@
       return;
     }
 
-    trpc.UpdateAssetRouter.updateAsset
+    trpc.internal.updateAsset.updateAsset
       .mutate({
-        assetId: data.pageData.id,
+        assetId: pageData.id,
         data: {
           name: editName,
           description: editDescription,
@@ -129,15 +132,15 @@
 
   // #region Loading
   let isRelatedLoading = $state<boolean>(true);
-  let relatedAssets = $state<AssetPublicAPIv3[]>([]);
+  let relatedAssets = $state<AssetApiV3[]>([]);
   let isAuthorLoading = $state<boolean>(true);
-  let authorAssets = $state<AssetPublicAPIv3[]>([]);
+  let authorAssets = $state<AssetApiV3[]>([]);
 
   onMount(async () => {
     let pa = Promise.resolve()
-    if (data.pageData.linkedIds.length > 0) {
-      pa = trpc.assetsRouterV3.getMultipleAssetsById
-        .query({ id: data.pageData.linkedIds.map((li) => li.id).splice(0, 20) })
+    if (pageData.linkedIds.length > 0) {
+      pa = trpc.v3.assets.getMultipleAssetsById
+        .query({ id: pageData.linkedIds.map((li) => li.id).splice(0, 20) })
         .then((res) => {
           relatedAssets = res ? Object.values(res) : [];
           isRelatedLoading = false;
@@ -149,10 +152,10 @@
     } else {
       isRelatedLoading = false;
     }
-    let pb=trpc.userRouterV3.getAssetsByUserId
-      .query({ id: data.pageData.uploaderId, limit: 20 })
+    let pb=trpc.v3.user.getAssetsByUserId
+      .query({ id: pageData.uploaderId, limit: 20 })
       .then((res) => {
-        authorAssets = res.assets.filter((i) => i.id !== data.pageData.id) || [];
+        authorAssets = res.assets.filter((i) => i.id !== pageData.id) || [];
         isAuthorLoading = false;
       })
       .catch((err) => {
@@ -300,7 +303,7 @@
   </Carousel.Root>
 {/snippet}
 
-{#snippet assetCarousel(assets: AssetPublicAPIv3[], isLoading: boolean, apiType: `author` | `related`, title = "Related Assets", ifNoFound = "No related assets found.", guessNumber = 5)}
+{#snippet assetCarousel(assets: AssetApiV3[], isLoading: boolean, apiType: `author` | `related`, title = "Related Assets", ifNoFound = "No related assets found.", guessNumber = 5)}
   <div class="w-full px-2">
     <div class="flex justify-between items-center">
       <span class="text-lg font-semibold">{title}</span>
@@ -376,7 +379,7 @@
           <Button
             variant="secondary"
             onclick={() => {
-              trpc.UpdateAssetRouter.submitForApproval
+              trpc.internal.updateAsset.submitAssetForApproval
                 .mutate({ assetId: data.pageData.id })
                 .then(() => {
                   toast.success("Asset submitted for approval!");
@@ -390,11 +393,11 @@
           </Button>
         </div>
       {/if}
-      {#if data.user && data.user.roles.includes(UserPermissions.Approve_Assets)}
+      {#if user && checkRoles(user, [UserPermissions.Asset_Approval], pageData.gameName)}
         <Button
           variant="secondary"
           onclick={() => {
-            approvalDialog?.showDialog(data.pageData.id, data.pageData.name);
+            approvalDialog?.showDialog(pageData.id, pageData.name);
           }}>
           <BadgeAlert />
           {m["assets.buttons.approvalDialog"]()}
@@ -497,7 +500,7 @@
 
 <ApprovalPopup bind:this={approvalDialog} />
 <LinkAssetDialog bind:this={addRelatedDialog} />
-<TagPickerDialog bind:open={openTagPicker} bind:selectedTags={editTags} showInternalTags={data.user?.roles.includes(UserPermissions.Allow_Internal_Tags)} type={data.pageData.type} />
+<TagPickerDialog bind:open={openTagPicker} bind:selectedTags={editTags} showInternalTags={checkRoles(user, [UserPermissions.Asset_InternalTags], pageData.gameName)} type={data.pageData.type} />
 <ReportDialog bind:this={reportDialog} />
 
 <style>

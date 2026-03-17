@@ -227,8 +227,8 @@ export class Game extends Model<InferAttributes<Game>, InferCreationAttributes<G
         return {
             name: this.name,
             displayName: this.displayName,
-            categories: this.categories,
-            platforms: this.platforms,
+            categories: this.categories as string[],
+            platforms: this.platforms as string[],
             webhooks: this.getAPIWebhooks(),
             default: this.default,
         };

@@ -191,6 +191,7 @@ export class DatabaseManager {
             throw new Error(`Invalid fake data format`);
         }
 
+        let totalRows = 0;
         for (const model in data) {
             if (model.toLowerCase().includes(`sequalize`)) {
                 Logger.warn(`Skipping Sequelize internal model: ${model}`);
@@ -213,7 +214,11 @@ export class DatabaseManager {
             } else {
                 Logger.log(`No data to import for table ${table.name}. Skipping.`);
             }
+            totalRows += data[model].length;
         }
+        // set global_id_seq to the # of rows added
+        await this.sequelize.query(`SELECT setval('global_id_seq', ${totalRows != 0 ? totalRows : 1}, true);`);
+        Logger.log(`Database import complete. Imported a total of ${totalRows} rows.`);
     }
 
     public async export() {

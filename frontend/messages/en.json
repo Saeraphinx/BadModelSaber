@@ -10,6 +10,7 @@
   "layout": {
     "navbar": {
       "home": "Home",
+      "mods": "Mods",
       "assets": "Assets",
       "modelWiki": "Model Wiki"
     },
@@ -253,9 +254,12 @@
       }
     },
     "requestTypes": {
-      "credit": "Credit",
-      "link": "Link",
-      "report": "Report"
+      "asset_credit": "Credit",
+      "asset_link": "Link",
+      "asset_report": "Asset Report",
+      "project_report": "Project Report",
+      "version_report": "Version Report",
+      "user_report": "User Report"
     }
   },
   "dialogs": {

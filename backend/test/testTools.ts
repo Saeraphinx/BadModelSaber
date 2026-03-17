@@ -26,8 +26,8 @@ export function createDummyUser(id?: number, permissions: UserPermissions[] | { 
     }
     return new User({
         id: id,
-        username: `user${id}`,
-        discordId: `discord${id}`,
+        username: `user${id ? id : Math.floor(Math.random() * 100000)}`,
+        discordId: `discord${id ? id : Math.floor(Math.random() * 100000)}`,
         permissions: permissions,
         displayName: `User ${id}`,
         avatarUrl: `https://example.com/`,
@@ -48,8 +48,13 @@ function getRandomString(length: number): string {
 }
 
 export function createDummyAsset(uploader: number | undefined = 5, id?: number, overrides: Partial<CreationAttributes<Asset>> = {}): Asset {
+    if (id) {
+        overrides = {
+            ...overrides,
+            id: id
+        }
+    }
     return new Asset({
-        id: id,
         name: `Asset ${id}`,
         type: AssetFileFormat.Avatar_Avatar,
         description: "This is a test asset",

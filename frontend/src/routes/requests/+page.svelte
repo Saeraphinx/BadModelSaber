@@ -1,6 +1,6 @@
 <script lang="ts">
   import RequestCard from "$lib/components/requests/RequestCard.svelte";
-  import { type AssetRequestPublicAPIv3 } from "$lib/scripts/api/DBTypes.js";
+  import { type ThingRequestApiV3 } from "$lib/scripts/api/DBTypes.js";
   import { trpc } from "$lib/scripts/utils/api.js";
   import Badge from "$shadcn/components/ui/badge/badge.svelte";
   import * as Tabs from "$shadcn/components/ui/tabs/index.js";
@@ -8,24 +8,24 @@
   import { UserPermissions } from "$lib/scripts/api/DBTypes";
   import Button from "$shadcn/components/ui/button/button.svelte";
   import { RefreshCwIcon } from "@lucide/svelte";
+  import { checkRoles } from "$lib/scripts/utils/checkRoles.js";
 
   let { data } = $props();
 
-  let incomingRequests: AssetRequestPublicAPIv3[] = $state([]);
-  let outgoingRequests: AssetRequestPublicAPIv3[] = $state([]);
-  let reports: AssetRequestPublicAPIv3[] | null = $state([]);
+  let incomingRequests: ThingRequestApiV3[] = $state([]);
+  let outgoingRequests: ThingRequestApiV3[] = $state([]);
+  let reports: ThingRequestApiV3[] | null = $state([]);
 
   onMount(() => {
     getRequests();
   });
 
   function getRequests() {
-    trpc.RequestRouter.getRequests.query({})
+    trpc.internal.requests.getMyRequests.query({})
       .then((res) => {
         console.log(res);
         incomingRequests = res.incoming || [];
         outgoingRequests = res.outgoing || [];
-        reports = res.reports || null;
       })
       .catch((err) => {
         console.error("Failed to fetch requests:", err);
@@ -33,7 +33,7 @@
   }
 </script>
 
-{#snippet requestCards(requests: AssetRequestPublicAPIv3[])}
+{#snippet requestCards(requests: ThingRequestApiV3[])}
   {#if requests.length > 0}
     <div class="w-full max-w-2xl">
       {#each requests as request}
@@ -60,11 +60,11 @@
             {data.requestCounts.incoming}
           </Badge>
         </Tabs.Trigger>
-        {#if data.user.roles.includes(UserPermissions.View_All_Reports)}
+        {#if checkRoles(data.user, { hasOneOf: [UserPermissions.Requests_ViewAll, UserPermissions.Requests_ViewAssets, UserPermissions.Requests_ViewUsers, UserPermissions.Requests_ManageAll] }, `any`) }
         <Tabs.Trigger value="admin">
-          Admin
+          Reports
           <Badge variant="outline">
-            {data.requestCounts.reports}
+            ?
           </Badge>
         </Tabs.Trigger>
         {/if}

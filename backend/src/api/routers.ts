@@ -17,6 +17,7 @@ import { statusRouter } from './routes/private/getstatus.ts';
 import { GetV2Router } from './routes/public/v2/getAsset.ts';
 
 const appRouter = router({
+    admin: AdminRouter,
     internal: {
         admin: AdminRouter,
         alerts: alertsRouter,

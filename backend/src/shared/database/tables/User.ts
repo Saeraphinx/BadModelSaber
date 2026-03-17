@@ -5,6 +5,7 @@ import { Alert } from "./Alert.ts";
 import { Logger } from "../../Logger.ts";
 import z from "zod";
 import { Literal } from "sequelize/lib/utils";
+import { parseErrorMessage } from "../../Tools.ts";
 
 export const DefaultPermissions = [UserPermissions.Asset_Create, UserPermissions.Mods_Create, UserPermissions.Users_EditSelf];
 export const DefaultPermissionsObject = {
@@ -32,7 +33,7 @@ export class User extends Model<InferAttributes<User>, InferCreationAttributes<U
     @AllowNull(true)
     @Unique
     @Column(DataType.STRING(32))
-    
+
     declare discordId: string | null;
     @AllowNull(true)
     @Unique
@@ -108,7 +109,7 @@ export class User extends Model<InferAttributes<User>, InferCreationAttributes<U
 
     public static validatorCreation = z.object({
         ...User.validator.shape,
-        id: User.validator.shape.id.or(z.instanceof(Literal)).nullish(),
+        id: z.union([User.validator.shape.id, z.instanceof(Literal)]).nullish(),
         discordId: User.validator.shape.discordId.nullish(),
         githubId: User.validator.shape.githubId.nullish(),
         displayName: User.validator.shape.displayName.nullish(),
@@ -123,15 +124,33 @@ export class User extends Model<InferAttributes<User>, InferCreationAttributes<U
 
     public static validateExtended(data: User | UserInfer): string | null {
         if (!data.githubId && !data.discordId && data.id >= 10) return `User must have at least one of discordId or githubId`;
+
+        // no cos roles in pergame perms
+        for (const game in data.permissions.perGame) {
+            if (data.permissions.perGame[game].some(r => r.startsWith(`cos_`))) {
+                return `Cosmetic roles cannot be assigned as per-game permissions (game: ${game})`;
+            }
+        }
+
+        if (data.permissions.sitewide.includes(UserPermissions.C_Banned)){
+           let hasOtherRoles = Object.values(data.permissions.perGame).some(perms => perms.length > 0) || data.permissions.sitewide.some(perm => perm !== UserPermissions.C_Banned);
+           if (hasOtherRoles) return `User with C_Banned role cannot have any other roles`
+        };
         return null;
     }
 
     @AfterValidate
     private static async runValidators(user: User) {
         if (user.isNewRecord) {
-            await User.validatorCreation.parseAsync(user);
+            await User.validatorCreation.parseAsync(user).catch(err => {
+                Logger.warn(`DB Validator failed - ${parseErrorMessage(err)}`);
+                throw err
+            });
         } else {
-            await User.validator.parseAsync(user);
+            await User.validator.parseAsync(user).catch(err => {
+                Logger.warn(`DB Validator failed - ${parseErrorMessage(err)}`);
+                throw err
+            });
         }
         let isNotValid = User.validateExtended(user);
         if (isNotValid) {
@@ -148,7 +167,7 @@ export class User extends Model<InferAttributes<User>, InferCreationAttributes<U
         }
     }
 
-    public getAllowedStatuses(type: `asset`|`mod`, gameName?: string): Status[] {
+    public getAllowedStatuses(type: `asset` | `mod`, gameName?: string): Status[] {
         if (type === `asset`) {
             if (!this.checkRoles([UserPermissions.Asset_ViewAll], gameName)) {
                 return User.getAllowedStatuses();
@@ -160,7 +179,7 @@ export class User extends Model<InferAttributes<User>, InferCreationAttributes<U
         }
         return Object.values(Status);
     }
-            
+
     // #endregion
 
     // #region createAlert

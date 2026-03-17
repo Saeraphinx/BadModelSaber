@@ -3,6 +3,7 @@
 import type { AlertPublicAPIv3, AssetRequestPublicAPIv3, UserPublicAPI } from '$lib/scripts/api/DBTypes';
 import 'unplugin-icons/types/svelte'
 import type { AppRouter } from '../../../../../backend/src/api/routers';
+import type { trpc } from '$lib/scripts/utils/api';
 
 declare global {
   namespace App {
@@ -14,11 +15,12 @@ declare global {
     }
     // interface Locals {}
     interface PageData {
-      user?: UserPublicAPI;
+      user: UserPublicAPI | undefined;
+      trpc: typeof trpc;
+      alertCount: number;
       requestCounts: {
         incoming: number;
         outgoing: number;
-        reports: number | null; // Optional, can be null if not available
       };
       pendingToasts?: {
         type: 'info' | 'success' | 'error';

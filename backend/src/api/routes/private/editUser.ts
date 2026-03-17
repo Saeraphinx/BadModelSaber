@@ -49,4 +49,17 @@ export const konamiRouter = router({
             }
             targetUser.save();
         }),
+    toggleSecretFeatures: loggedInProcedure([UserPermissions.Secret_Features]).input(z.object({
+        enabled: z.boolean(),
+    })).mutation(async ({ ctx }) => {
+        if (ctx.user.checkRoles([UserPermissions.Secret_Features])) {
+            ctx.user.permissions.sitewide = ctx.user.permissions.sitewide.filter(r => r !== UserPermissions.Secret_Features);
+        } else {
+            ctx.user.permissions = {
+                sitewide: dedupeArray([...ctx.user.permissions.sitewide, UserPermissions.Secret_Features]),
+                perGame: ctx.user.permissions.perGame
+            };
+        }
+        await ctx.user.save();
+    })
 });
