@@ -1,4 +1,3 @@
-import { type AssetRequestPublicAPIv3, type AssetFileFormat, RequestType } from "$lib/scripts/api/DBTypes";
 import { error } from "@sveltejs/kit";
 import type { PageLoad } from "./$types.js";
 

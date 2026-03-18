@@ -1,8 +1,8 @@
 import { type UserApiV3 } from '$lib/scripts/api/DBTypes';
-import { error } from '@sveltejs/kit';
+import { error, redirect } from '@sveltejs/kit';
 import type { PageLoad } from './$types';
 
-export const ssr = false;
+//export const ssr = false;
 export const load = (async ({ fetch, params, parent }) => {
   const parentData = await parent();
   const { user, trpc } = parentData;
@@ -14,6 +14,7 @@ export const load = (async ({ fetch, params, parent }) => {
       error(403, { message: 'You must be logged in to view your profile', subtitle: `You must be logged in to view your profile` });
     }
     userData = user;
+    throw redirect(307, `/users/${user.id}`);
   } else {
     let id = parseInt(params.id, 10);
     userData = await trpc.v3.user.getUserById.query({ id: id }).then((res) => {

@@ -1,7 +1,6 @@
 <script lang="ts">
   import RequestCard from "$lib/components/requests/RequestCard.svelte";
   import { type ThingRequestApiV3 } from "$lib/scripts/api/DBTypes.js";
-  import { trpc } from "$lib/scripts/utils/api.js";
   import Badge from "$shadcn/components/ui/badge/badge.svelte";
   import * as Tabs from "$shadcn/components/ui/tabs/index.js";
   import { onMount } from "svelte";
@@ -10,7 +9,8 @@
   import { RefreshCwIcon } from "@lucide/svelte";
   import { checkRoles } from "$lib/scripts/utils/checkRoles.js";
 
-  let { data } = $props();
+  let { data: _internal } = $props();
+  const { requestCounts, trpc, user } = $derived(_internal);
 
   let incomingRequests: ThingRequestApiV3[] = $state([]);
   let outgoingRequests: ThingRequestApiV3[] = $state([]);
@@ -51,16 +51,16 @@
         <Tabs.Trigger value="outgoing">
           My Outgoing Requests
           <Badge variant="outline">
-            {data.requestCounts.outgoing}
+            {requestCounts.outgoing}
           </Badge>
         </Tabs.Trigger>
         <Tabs.Trigger value="incoming">
           Incoming Requests
           <Badge variant="outline">
-            {data.requestCounts.incoming}
+            {requestCounts.incoming}
           </Badge>
         </Tabs.Trigger>
-        {#if checkRoles(data.user, { hasOneOf: [UserPermissions.Requests_ViewAll, UserPermissions.Requests_ViewAssets, UserPermissions.Requests_ViewUsers, UserPermissions.Requests_ManageAll] }, `any`) }
+        {#if checkRoles(user, { hasOneOf: [UserPermissions.Requests_ViewAll, UserPermissions.Requests_ViewAssets, UserPermissions.Requests_ViewUsers, UserPermissions.Requests_ManageAll] }, `any`) }
         <Tabs.Trigger value="admin">
           Reports
           <Badge variant="outline">

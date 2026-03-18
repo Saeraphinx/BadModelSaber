@@ -3,7 +3,7 @@ import { error } from "@sveltejs/kit";
 import type { PageLoad } from "./$types.js";
 import { checkRoles } from "$lib/scripts/utils/checkRoles.js";
 
-export const ssr = false;
+//export const ssr = false;
 export const load: PageLoad = async ({ parent }) => {
   const { user } = await parent();
   if (!user) {

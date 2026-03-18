@@ -10,11 +10,10 @@
   import { Checkbox } from "$shadcn/components/ui/checkbox";
   import { toast } from "svelte-sonner";
   import { RefreshCwIcon } from "@lucide/svelte";
-  import type { PageData } from "../$types";
 
-  const { data } = $props();
+  const { data: _internal } = $props();
   // svelte-ignore state_referenced_locally
-  const { user, trpc } = data;
+  const { user, trpc } = $derived(_internal);
   // #region Alert
   let alertType = $state(AlertType.Generic);
   let alertUserId = $state(5);

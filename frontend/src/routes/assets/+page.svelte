@@ -25,9 +25,9 @@
   import BigPagination from "$lib/components/generic/BigPagination.svelte";
   import { checkRoles } from "$lib/scripts/utils/checkRoles.js";
 
-  const { data } = $props();
+  const { data: _internal } = $props();
   // svelte-ignore state_referenced_locally
-  const { trpc, user } = data;
+  const { trpc, user } = $derived(_internal);
   // Generic Page Data
   let smallerIcons = new MediaQuery("max-width: 1000px");
   let tooSmall = new MediaQuery("max-width: 768px");

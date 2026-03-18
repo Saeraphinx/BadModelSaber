@@ -19,12 +19,12 @@ import { file } from "jszip";
         }
     }
 
-export async function init(overrideDbName: string = `public`) {
+export async function init(overrideDbName?: string) {
     console.log(`Initializing BadModelSaber...`);
     EnvConfig.load();
     Logger.init();
     EnvConfig.server.authBypass ? Logger.warn(`Auth bypass is enabled. This should only be used in development or testing environments.`) : null;
-    const schemaToUse = EnvConfig.isDevMode ? `dev_${overrideDbName}` : overrideDbName;
+    const schemaToUse = overrideDbName ? `${EnvConfig.database.schema}` : overrideDbName;
     const db = new DatabaseManager(schemaToUse);
     await db.init();
 

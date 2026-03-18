@@ -2,7 +2,6 @@ import { error } from "@sveltejs/kit";
 import type { PageLoad } from "./$types";
 import { handleTrpcError } from "$lib/scripts/utils/api";
 
-export const ssr = false;
 export const load: PageLoad = async ({ params, fetch, parent }) => {
   const { trpc, user } = await parent();
   if (!user) {

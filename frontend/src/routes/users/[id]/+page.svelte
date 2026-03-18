@@ -1,13 +1,14 @@
 <script lang="ts">
   import ApprovalDialog from "$lib/components/assets/ApprovalDialog.svelte";
   import AssetCard from "$lib/components/assets/AssetCard.svelte";
-    import SponsorButton from "$lib/components/users/SponsorButton.svelte";
+  import SponsorButton from "$lib/components/users/SponsorButton.svelte";
   import UserCard from "$lib/components/users/UserCard.svelte";
   import Separator from "$shadcn/components/ui/separator/separator.svelte";
 
-  const { data } = $props();
-  const user = $derived(data.pageData.user);
-  const assets = $derived(data.pageData.assets.assets);
+  const { data: _internal } = $props();
+  const { pageData, trpc } = $derived(_internal);
+  const user = $derived(pageData.user);
+  const assets = $derived(pageData.assets.assets);
   let dialog = $state<ApprovalDialog>();
 
   // #region Edit User

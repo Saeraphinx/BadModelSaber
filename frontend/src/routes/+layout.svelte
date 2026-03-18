@@ -38,21 +38,21 @@
   import { Switch } from "$shadcn/components/ui/switch";
   import { Label } from "$shadcn/components/ui/label";
   import ScrollArea from "$shadcn/components/ui/scroll-area/scroll-area.svelte";
-  import { trpc } from "$lib/scripts/utils/api";
   import { invalidateAll } from "$app/navigation";
   import { getLocale } from "$lib/paraglide/runtime";
   import { m } from "$lib/paraglide/messages";
   import { Spinner } from "$shadcn/components/ui/spinner";
   import { checkRoles } from "$lib/scripts/utils/checkRoles";
 
-  let { data, children } = $props();
+  const { data: _internal, children } = $props();
+  const { user, alertCount, pendingToasts, trpc } = $derived(_internal);
   let theme: `system` | `light` | `dark` = $state("system");
   let showFullBar = new MediaQuery("min-width: 769px");
-  let isLoggedIn = $derived(!!(data.user && data.user.id));
+  let isLoggedIn = $derived(!!(user && user.id));
 
   // #region KonamiListener
   onMount(() => {
-    if (data.user && data.user.id && checkRoles(data.user, [UserPermissions.C_Banned])) return;
+    if (!isLoggedIn && checkRoles(user, [UserPermissions.C_Banned])) return;
     const konamiCode = ["ArrowUp", "ArrowUp", "ArrowDown", "ArrowDown", "ArrowLeft", "ArrowRight", "ArrowLeft", "ArrowRight", "b", "a"];
 
     let inputSequence: string[] = [];
@@ -70,7 +70,7 @@
       }
 
       if (inputSequence.join("") === konamiCode.join("")) {
-        if (!data.user || !data.user.id) {
+        if (!isLoggedIn) {
           toast.error("You must be logged in to activate this feature.", {
             duration: 5000,
             closeButton: true,
@@ -78,7 +78,7 @@
           });
           return;
         }
-        if (checkRoles(data.user, [UserPermissions.Secret_Features])) {
+        if (checkRoles(user, [UserPermissions.Secret_Features])) {
           toast.info("You have already activated the secret features.", {
             description: "If you want to disable them, disable them in your user settings.",
             duration: 5000,
@@ -174,7 +174,7 @@
     if (wasEverFetchedAlerts) {
       return unreadAlerts.length;
     } else {
-      return data.alertCount ?? 0;
+      return alertCount ?? 0;
     }
   })
   let isPendingAlerts = $derived(unreadAlerts.length > 0);
@@ -221,7 +221,7 @@
 
   // Layout Error Toasts
   onMount(() => {
-    for (const pendingToast of data.pendingToasts || []) {
+    for (const pendingToast of pendingToasts || []) {
       let options: ExternalToast = {
         description: pendingToast.description,
         closeButton: true,
@@ -305,17 +305,17 @@
       <!-- User Avatar or Login Button -->
       <DropdownMenu.Root>
         <DropdownMenu.Trigger class="p-2 rounded-full hover:bg-accent transition-colors duration-300">
-          {#if data.user}
+          {#if isLoggedIn}
             <Avatar.Root>
-              <Avatar.Image src={data.user.avatarUrl} alt={data.user.displayName} />
-              <Avatar.Fallback>{data.user.displayName}</Avatar.Fallback>
+              <Avatar.Image src={user?.avatarUrl} alt={user?.displayName} />
+              <Avatar.Fallback>{user?.displayName}</Avatar.Fallback>
             </Avatar.Root>
           {:else}
             <SettingsIcon />
           {/if}
         </DropdownMenu.Trigger>
         <DropdownMenu.Content class="mr-10 flex flex-col">
-          {#if data.user}
+          {#if isLoggedIn}
             <a href="/users/me">
               <DropdownMenu.Item>
                 <UserIcon />
@@ -339,7 +339,7 @@
                 {m["layout.userMenu.requests"]()}
               </DropdownMenu.Item>
             </a>
-            {#if checkRoles(data.user, [UserPermissions.Administrative_Tasks], `any`)}
+            {#if checkRoles(user, [UserPermissions.Administrative_Tasks], `any`)}
               <a href="/admin">
                 <DropdownMenu.Item>
                   <Settings />
@@ -347,7 +347,7 @@
                 </DropdownMenu.Item>
               </a>
             {/if}
-            {#if checkRoles(data.user, [UserPermissions.Secret_Features])}
+            {#if checkRoles(user, [UserPermissions.Secret_Features])}
               <button onclick={removeSecret}>
                 <DropdownMenu.Item>
                   <TrafficConeIcon class="text-orange-500" />
@@ -355,7 +355,7 @@
                 </DropdownMenu.Item>
               </button>
             {/if}
-            {#if checkRoles(data.user, [UserPermissions.Asset_Create], `any`)}
+            {#if checkRoles(user, [UserPermissions.Asset_Create], `any`)}
               <a href="/create">
                 <DropdownMenu.Item>
                   <PlusIcon />
@@ -427,12 +427,12 @@
           {/if}
           <DropdownMenu.Separator />
           <p class="text-xs text-muted-foreground text-center p-1"><a href="https://github.com/Saeraphinx/BadModelSaber" target="_blank">{m["layout.userMenu.modelsaberOpenSource"]()}</a></p>
-          {#if data.user && checkRoles(data.user, { hasOneOf: [UserPermissions.Administrative_Tasks, UserPermissions.Secret_Features] }) }
+          {#if user && checkRoles(user, { hasOneOf: [UserPermissions.Administrative_Tasks, UserPermissions.Secret_Features] }) }
             <DropdownMenu.Separator />
             <span class="text-xs text-muted-foreground text-center p-1">
               Administrative Information<br />
-              Logged in as {data.user.displayName}<br />
-              {data.user.id}
+              Logged in as {user.displayName}<br />
+              {user.id}
             </span>
           {/if}
         </DropdownMenu.Content>

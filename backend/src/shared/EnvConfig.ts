@@ -34,6 +34,7 @@ export const DEFAULT_CONFIG = {
     },
     database: {
         connectionString: ``, // the connection string for the database
+        schema: `public`, // the database schema to use
     }
 }
 
@@ -165,6 +166,7 @@ export class EnvConfig {
 
         EnvConfig.database = {
             connectionString: process.env.DB_CONNECTION_STRING || DEFAULT_CONFIG.database.connectionString,
+            schema: process.env.DB_SCHEMA || DEFAULT_CONFIG.database.schema,
         };
     }
 }
