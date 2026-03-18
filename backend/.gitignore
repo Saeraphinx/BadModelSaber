@@ -9,3 +9,4 @@ converts
 .*.env
 !.default.env
 .DS_Store
+.tsbuildinfo
