@@ -25,8 +25,6 @@
     "strictPropertyInitialization": false,
     "noImplicitThis": true,
     "noFallthroughCasesInSwitch": false,
-    "skipLibCheck": true,
-    "composite": true,
-    "emitDeclarationOnly": true
+    "skipLibCheck": true
   }
 }

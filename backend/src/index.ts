@@ -23,8 +23,8 @@ export async function init(overrideDbName?: string) {
     console.log(`Initializing BadModelSaber...`);
     EnvConfig.load();
     Logger.init();
-    EnvConfig.server.authBypass ? Logger.warn(`Auth bypass is enabled. This should only be used in development or testing environments.`) : null;
-    const schemaToUse = overrideDbName ? `${EnvConfig.database.schema}` : overrideDbName;
+    EnvConfig.server.authBypass != -1 ? Logger.warn(`Auth bypass is enabled. This should only be used in development or testing environments.`) : null;
+    const schemaToUse = overrideDbName ? overrideDbName : `${EnvConfig.database.schema}`;
     const db = new DatabaseManager(schemaToUse);
     await db.init();
 
@@ -76,8 +76,8 @@ export async function init(overrideDbName?: string) {
         if (!EnvConfig.isProduction && EnvConfig.server.authBypass && !req.session['userId']) {
             if (EnvConfig.server.authBypass !== -1) {
                 req.session.userId = EnvConfig.server.authBypass;
+                Logger.warn(`Auth bypass enabled - automatically logged in as user ID ${req.session.userId}`);
             }
-            Logger.warn(`Auth bypass enabled - automatically logged in as user ID ${req.session.userId}`);
         }
         next();
     });
@@ -117,6 +117,10 @@ export async function init(overrideDbName?: string) {
 
     // catch all unknown routes and return a 404
     app.use((err:any, req:any, res:any, next:any) => {
+        if (err.message === `Cannot set headers after they are sent to the client`) {
+            Logger.debug(`Attempted to send headers after response was already sent. Likely caused by authentication.`);
+            return;
+        }
         Logger.error(err.stack);
         if (!res.headersSent) {
             res.status(500).send({message: `Server error`});

@@ -39,7 +39,7 @@
   import { Label } from "$shadcn/components/ui/label";
   import ScrollArea from "$shadcn/components/ui/scroll-area/scroll-area.svelte";
   import { invalidateAll } from "$app/navigation";
-  import { getLocale } from "$lib/paraglide/runtime";
+  import { getLocale, setLocale, type Locale } from "$lib/paraglide/runtime";
   import { m } from "$lib/paraglide/messages";
   import { Spinner } from "$shadcn/components/ui/spinner";
   import { checkRoles } from "$lib/scripts/utils/checkRoles";
@@ -177,14 +177,14 @@
       return alertCount ?? 0;
     }
   })
-  let isPendingAlerts = $derived(unreadAlerts.length > 0);
+  let isPendingAlerts = $derived(unreadAlertCount > 0);
   let openAlerts = $state(false);
   let showRead = $state(false);
   let isLoadingAlerts = $state(false);
   async function updateAlerts() {
     // this is honestly a fucking mess but its what works for now
     isLoadingAlerts = true;
-    trpc.internal.alerts.getMyAlerts
+    await trpc.internal.alerts.getAlerts
       .query({ read: `all` })
       .then((val) => {
         allAlerts = val;
@@ -198,22 +198,24 @@
         return [];
       });
   }
+  async function openAlertsSidebar() {
+    openAlerts = true;
+    await updateAlerts();
+  }
   // #endregion Alerts
 
   // #region Toasts
   // Alert count toast
   onMount(() => {
     if (isPendingAlerts) {
-      toast.info(`You have ${allAlerts.length} unread alert${allAlerts.length == 1 ? `` : `s`}.`, {
+      toast.info(`You have ${unreadAlertCount} unread alert${unreadAlertCount == 1 ? `` : `s`}.`, {
         description: "",
         duration: 10000,
         closeButton: true,
         dismissable: true,
         action: {
           label: "View",
-          onClick: () => {
-            openAlerts = true;
-          },
+          onClick: openAlertsSidebar,
         },
       });
     }
@@ -307,9 +309,13 @@
         <DropdownMenu.Trigger class="p-2 rounded-full hover:bg-accent transition-colors duration-300">
           {#if isLoggedIn}
             <Avatar.Root>
+              {#if isPendingAlerts}
+                <Avatar.Badge class="bg-red-400 top-0" />
+              {/if}
               <Avatar.Image src={user?.avatarUrl} alt={user?.displayName} />
               <Avatar.Fallback>{user?.displayName}</Avatar.Fallback>
             </Avatar.Root>
+            
           {:else}
             <SettingsIcon />
           {/if}
@@ -322,13 +328,13 @@
                 {m["layout.userMenu.profile"]()}
               </DropdownMenu.Item>
             </a>
-            <button onclick={() => (openAlerts = true)}>
+            <button onclick={openAlertsSidebar}>
               <DropdownMenu.Item>
                 <BellIcon />
                 {m["layout.userMenu.alerts"]()}
                 {#if isPendingAlerts}
-                  <Badge class="ml-1" variant="destructive">
-                    {allAlerts.length}
+                  <Badge class="ml-0.5" variant="destructive">
+                    {unreadAlertCount}
                   </Badge>
                 {/if}
               </DropdownMenu.Item>
@@ -389,7 +395,7 @@
               <DropdownMenu.RadioGroup
                 value={currentLocale}
                 onValueChange={(val) => {
-                  setContext("locale", val);
+                  setLocale(val as Locale);
                 }}>
                 <DropdownMenu.Label>{m["layout.userMenu.language"]()}</DropdownMenu.Label>
                 {#each availableLocales as [code, name]}
@@ -457,6 +463,11 @@
             {:else}
               {m["layout.alertSidebar.unreadAlerts"]({ count: unreadAlerts.length })}
             {/if}
+          {:else}
+            <div class="flex flex-row items-center justify-center gap-2">
+              <Spinner class="text-gray-500"/>
+              <p class="text-gray-500">Loading...</p>
+            </div>
           {/if}
         </Sheet.Description>
         <div class="flex items-center space-x-2">
@@ -466,12 +477,7 @@
       </div>
     </Sheet.Header>
     <ScrollArea class="mx-4 min-h-0">
-      {#if isLoadingAlerts}
-        <div class="flex flex-row items-center justify-center gap-2">
-          <Spinner class="text-gray-500"/>
-          <p class="text-gray-500">Loading...</p>
-        </div>
-      {:else if showRead}
+      {#if showRead}
         {#if allAlerts.length > 0}
           {#each allAlerts as alert}
             <Alert

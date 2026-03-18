@@ -1,6 +1,6 @@
 <script lang="ts">
   import AssetCard from "$lib/components/assets/AssetCard.svelte";
-  import { Status, type AssetApiV3 } from "$lib/scripts/api/DBTypes";
+  import { Status, UserPermissions, type AssetApiV3 } from "$lib/scripts/api/DBTypes";
   import { trpc } from "$lib/scripts/utils/api";
   import { Button } from "$shadcn/components/ui/button";
   import * as Carousel from "$shadcn/components/ui/carousel";
@@ -11,18 +11,28 @@
   import Separator from "$shadcn/components/ui/separator/separator.svelte";
   import { m } from "$lib/paraglide/messages";
 
+  const { data: _internal } = $props();
+  const { user, fetch } = $derived(_internal);
+
+  let subtitle: string = $state(m["homepage.subtitle"]());
   let recentlyUploadedVerified: AssetApiV3[] = $state([]);
   onMount(async () => {
     trpc.v3.assets.getFrontPageAssets.query().then((data) => {
       recentlyUploadedVerified = data;
     });
+
+    if (user) {
+      fetch("https://cdn.saeraphinx.dev/splashtext").then((res) => res.text()).then((text) => {
+        subtitle = text.split("\n")[Math.floor(Math.random() * text.split("\n").length)];
+      });
+    }
   });
 </script>
 
 <div class="flex flex-col align-middle justify-center-safe items-center h-screen-nav min-h-[300px]">
   <img src="/modelsaber-logo-web.svg" alt="ModelSaber Logo" class="h-24 w-24" />
   <h1 class="text-4xl font-bold">{ m["homepage.title"]() }</h1>
-  <p class="text-lg text-gray-500">{ m["homepage.subtitle"]()}</p>
+  <p class="text-lg text-gray-500">{ subtitle }</p>
   <div>
     <Button class="mt-2" href="/assets">{ m["homepage.browseButton"]()}</Button>
     <Button class="mt-2 ml-2" variant="outline" href="https://bsmg.wiki/models">{m["homepage.wikiButton"]()} <ExternalLinkIcon /></Button>

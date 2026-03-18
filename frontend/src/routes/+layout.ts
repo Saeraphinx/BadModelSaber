@@ -3,7 +3,6 @@ import { createTRPC, parseError } from "$lib/scripts/utils/api";
 
 export const load: LayoutLoad = async ({ fetch }) => {
   let pendingToasts: Awaited<ReturnType<LayoutLoad>>['pendingToasts'] = [];
-
   const trpc = createTRPC(fetch);
   const defaultObj = {
     alertCount: 0,
@@ -13,12 +12,13 @@ export const load: LayoutLoad = async ({ fetch }) => {
     },
     user: undefined,
     pendingToasts: pendingToasts,
-    trpc
+    trpc: trpc,
+    fetch: fetch,
   } satisfies Awaited<ReturnType<LayoutLoad>>;
   let userRes = await trpc.v3.user.getMe.query().catch((err) => {
-    console.error(err);
     let error = parseError(err);
-    if (error.code == 403) {
+    if (error.code !== 401) {
+      console.error(err);
       pendingToasts.push({
         type: 'error',
         title: `Unable to fetch user data`,
@@ -31,7 +31,7 @@ export const load: LayoutLoad = async ({ fetch }) => {
     return defaultObj;
   }
 
-  let alertRes = await trpc.internal.alerts.getMyAlertCount.query().catch((err) => {
+  let alertRes = await trpc.internal.alerts.getAlertCount.query().catch((err) => {
     console.error(err);
   });
 
@@ -42,11 +42,12 @@ export const load: LayoutLoad = async ({ fetch }) => {
   return {
     pendingToasts: pendingToasts,
     requestCounts: {
-      incoming: !requestRes ? 0 : requestRes.incoming || 0,
-      outgoing: !requestRes ? 0 : requestRes.outgoing || 0,
+      incoming: requestRes ? requestRes.incoming || 0 : 0,
+      outgoing: requestRes ? requestRes.outgoing || 0 : 0,
     },
     user: userRes,
-    alertCount: !alertRes ? 0 : (alertRes || 0),
-    trpc
+    alertCount: alertRes ? alertRes : 0,
+    trpc: trpc,
+    fetch: fetch,
   } satisfies Awaited<ReturnType<LayoutLoad>>;
 }

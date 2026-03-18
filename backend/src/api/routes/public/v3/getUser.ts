@@ -21,7 +21,7 @@ export const userRouterV3 = router({
         .query(({ctx}) => {
         return ctx.user.toApiV3();
     }),
-    getUserById: loggedInProcedure().input(z.object({
+    getUserById: anyProcedure().input(z.object({
         id: z.int().positive()
     })).query(async ({input, ctx}) => {
         const user = await User.findByPk(input.id);

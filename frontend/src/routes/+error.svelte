@@ -6,6 +6,7 @@
   import { CodeXmlIcon, HomeIcon } from "@lucide/svelte";
   import { onMount } from "svelte";
   import { toast } from "svelte-sonner";
+  import { set } from "zod";
 
   let pageUserOmitted = $derived.by(() => {
     return {
@@ -18,7 +19,7 @@
         user: {
           id: page.data.user?.id,
           displayName: page.data.user?.displayName,
-          roles: page.data.user?.roles,
+          permissions: page.data.user?.permissions,
         },
         requests: {
           incoming: page.data.requestCounts?.incoming || null,
@@ -47,10 +48,16 @@
     }
   });
 
+  let timeTill = $state(5);
   onMount(() => {
     if (page.error?.redirectToHome) {
-      window.location.href = "/";
-      return;
+      let interval = setInterval(() => {
+        timeTill--;
+      }, 1000);
+      setTimeout(() => {
+        clearInterval(interval);
+        window.location.href = "/";
+      }, 5000);
     }
   });
 </script>
@@ -72,7 +79,10 @@
     </Button>
     <Button variant="default" class="ml-2" href="/" disabled={page.url.pathname === "/"}>
       <HomeIcon />
-      Go to Home
+      Go to Home 
+      {#if timeTill !== null}
+        ({timeTill})
+      {/if}
     </Button>
   </div>
   <Separator class="my-4 w-full max-w-md" />

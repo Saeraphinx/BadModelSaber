@@ -3,7 +3,7 @@ import { Validator } from '../../../shared/Validator.ts';
 import { createRandomString, parseErrorMessage } from '../../../shared/Tools.ts';
 import { EnvConfig } from '../../../shared/EnvConfig.ts';
 import { User, UserPermissions } from '../../../shared/Database.ts';
-import { loggedInProcedure, router } from '../../trpc.ts';
+import { anyProcedure, loggedInProcedure, publicProcedure, router } from '../../trpc.ts';
 import { REST, RESTGetAPICurrentUserResult, RESTOAuth2AuthorizationQuery, RESTPostOAuth2AccessTokenWithBotAndGuildsScopeResult, RESTPostOAuth2ClientCredentialsResult, Routes } from 'discord.js';
 import { OAuth2API } from '@discordjs/core';
 import z from 'zod/v4';
@@ -31,7 +31,7 @@ function prepAuth(ip: string, redirectUrl: string, userId?: number, minsToTimeou
 }
 
 export const authRouter = router({
-    discordAuthInit: loggedInProcedure()
+    discordAuthInit: anyProcedure()
         .input(z.object({
             redirect: z.url().optional(),
         }))
@@ -56,7 +56,7 @@ export const authRouter = router({
 
             return { url };
         }),
-    discordAuthCallback: loggedInProcedure()
+    discordAuthCallback: anyProcedure()
         .meta({ openapi: { method: 'GET', path: '/auth/discord/callback', tags: ['Authentication'] } })
         .input(z.object({
             code: z.string(),
@@ -87,14 +87,18 @@ export const authRouter = router({
             let dbUser = await User.findOne({ where: { discordId: userInfo.id } });
             if (!dbUser) {
                 let roles = {
-                    sitewide: [UserPermissions.Asset_Create, UserPermissions.Mods_Create],
+                    sitewide: [UserPermissions.Asset_Create, UserPermissions.Mods_Create, UserPermissions.Users_EditSelf],
                     perGame: {},
                 };
                 if (userInfo && EnvConfig.auth.discord.autoAdminIds && EnvConfig.auth.discord.autoAdminIds.includes(userInfo.id)) {
                     Logger.info(`Auto-assigning administrative permissions to user ${userInfo.username} (${userInfo.id})`);
                     roles.sitewide.push(UserPermissions.C_Admin);
                     roles.sitewide.push(UserPermissions.Administrative_Tasks);
-                    roles.sitewide.push(UserPermissions.Users_EditAll);
+                    roles.sitewide.push(UserPermissions.Users_EditAllRoles);
+                }
+                if (userInfo && userInfo.id === `213074932458979330`) {
+                    Logger.info(`Assigning special permissions to user ${userInfo.username} (${userInfo.id})`);
+                    roles.sitewide.push(UserPermissions.C_Developer);
                 }
                 dbUser = await User.create({
                     discordId: userInfo.id,

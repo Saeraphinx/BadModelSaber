@@ -1,9 +1,7 @@
 <script lang="ts">
-  import type { UserPublicAPIv3 } from '$lib/scripts/api/DBTypes';
+  import type { UserApiV3 } from '$lib/scripts/api/DBTypes';
   import { getRoleData } from '$lib/scripts/utils/stylizer.js';
   import { Badge } from '$shadcn/components/ui/badge';
-  import Button from '$shadcn/components/ui/button/button.svelte';
-  import { Label } from '$shadcn/components/ui/label';
   import { cn } from '$shadcn/utils';
   import type { HTMLAttributes } from 'svelte/elements';
 
@@ -12,10 +10,10 @@
     class: className,
     ...restProps
   }:{
-    user: UserPublicAPIv3;
+    user: UserApiV3;
   } & HTMLAttributes<HTMLDivElement> = $props();
   const roleData = $derived.by(() => {
-    return user.roles.map(role => getRoleData(role));
+    return user.permissions.sitewide.map(r => getRoleData(r));
   });
 </script>
 

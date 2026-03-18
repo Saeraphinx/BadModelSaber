@@ -11,7 +11,7 @@ export class Logger {
         let consoleLevel = `consoleInfo`;
         if (EnvConfig.isTestMode) {
            consoleLevel = `warn`;
-        } else if (EnvConfig.isDevMode || process.env.LOG_LEVEL === `debug`) {
+        } else if (process.env.LOG_LEVEL === `debug`) {
            consoleLevel = `http`;
         }
 

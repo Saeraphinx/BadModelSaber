@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Status, Tags, type AssetPublicAPIv3, type UserPublicAPIv3 } from "$lib/scripts/api/DBTypes";
+  import { Status, Tags, type AssetApiV3 } from "$lib/scripts/api/DBTypes";
   import Button from "$shadcn/components/ui/button/button.svelte";
   import { BadgeAlert, BadgeCheck, BadgeX, Download, DownloadCloud, InfoIcon, CircleHelp } from "@lucide/svelte";
   import ApprovalDialog from "./ApprovalDialog.svelte";
@@ -13,7 +13,7 @@
   import { m } from "$lib/paraglide/messages";
 
   let props: {
-    asset: AssetPublicAPIv3;
+    asset: AssetApiV3;
     size?: "linked" | "normal" | "large";
     approvalDialog?: ApprovalDialog;
     alwaysShowHover?: boolean;
@@ -42,8 +42,8 @@
         };
     }
   });
-  let downloadUrl = getAssetDownloadUrl(props.asset);
-  let oneClickUrl = getOneClickUrl(props.asset);
+  let downloadUrl = $derived(getAssetDownloadUrl(props.asset));
+  let oneClickUrl = $derived(getOneClickUrl(props.asset));
 </script>
 
 <div class="relative {sizeClasses.size}">

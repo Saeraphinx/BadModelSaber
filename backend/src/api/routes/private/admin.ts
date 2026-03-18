@@ -32,7 +32,7 @@ export const AdminRouter = router({
                 throw new Error(`Failed to save user roles`);
             });
         }),
-    createAlert: loggedInProcedure([UserPermissions.Users_EditAll, UserPermissions.Users_Ban])
+    createAlert: loggedInProcedure([UserPermissions.Administrative_Tasks, UserPermissions.Users_EditAll, UserPermissions.Users_Ban])
         .input(Alert.validatorCreation.pick({
             header: true,
             message: true,

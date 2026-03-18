@@ -41,6 +41,7 @@ import { error } from "@sveltejs/kit";
 export const trpc = createTRPC();
 
 export function createTRPC(svelteFetch: typeof fetch = fetch) {
+  //let svelteFetch = svelteFetcht;
   return createTRPCClient<AppRouter>({
     links: [
       splitLink({
@@ -61,6 +62,7 @@ export function createTRPC(svelteFetch: typeof fetch = fetch) {
         false: httpBatchLink({
           url: `${env.PUBLIC_API_URL}/trpc`,
           fetch: (input, init) => {
+            //console.log(`Fetching ${input} with init:`, init);
             return svelteFetch(input, {
               ...init,
               credentials: 'include',
@@ -139,6 +141,6 @@ export function handleTrpcError() : (err: unknown) => never {
   return (err: unknown) => {
     console.error(err);
     let parsedError = parseError(err);
-    error(parsedError.code, { message: parsedError.message });
+    throw error(parsedError.code, { message: parsedError.message });
   }
 }

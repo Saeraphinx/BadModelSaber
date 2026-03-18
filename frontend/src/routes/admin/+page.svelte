@@ -16,7 +16,7 @@
   const { user, trpc } = $derived(_internal);
   // #region Alert
   let alertType = $state(AlertType.Generic);
-  let alertUserId = $state(5);
+  let alertUserId = $state("5");
   let alertAssetId = $state("");
   let alertRequestId = $state("");
   let alertHeader = $state("");
@@ -24,7 +24,7 @@
   function sendAdminAlert() {
     trpc.internal.admin.createAlert
       .mutate({
-        userId: alertUserId,
+        userId: parseInt(alertUserId),
         type: alertType,
         assetId: parseInt(alertAssetId) || undefined,
         requestId: parseInt(alertRequestId) || undefined,
@@ -42,7 +42,8 @@
   // #endregion
 
   // #region Roles
-  let roleUserId = $state(user.id);
+  // svelte-ignore state_referenced_locally
+    let roleUserId = $state(user.id);
   let sitewidePermissions = $state<UserPermissions[]>([]);
   let perGamePermissions = $state<Record<string, UserPermissions[]>>({});
   let hasBeenLoaded = $state(false);
@@ -120,6 +121,7 @@
         return undefined;
       });
   }
+  // #endregion
 </script>
 
 <div class="flex flex-col gap-4 m-auto p-4 justify-center">
@@ -178,7 +180,7 @@
           <div class="flex flex-row gap-2">
             <div class="flex flex-col">
               <Label class="mt-4 mb-2">Target User</Label>
-              <Input placeholder="User ID" />
+              <Input bind:value={alertUserId} placeholder="User ID" />
             </div>
             <div class="flex flex-col">
               <Select.Root type="single" bind:value={alertType}>
@@ -195,17 +197,17 @@
           <div class="flex flex-row gap-2">
             <div class="flex flex-col">
               <Label class="mt-4 mb-2">Asset ID</Label>
-              <Input class="" placeholder="1234" />
+              <Input bind:value={alertAssetId} placeholder="1234" />
             </div>
             <div class="flex flex-col">
               <Label class="mt-4 mb-2">Request ID</Label>
-              <Input class="" placeholder="1234" />
+              <Input bind:value={alertRequestId} placeholder="1234" />
             </div>
           </div>
           <Label class="mt-4 mb-2">Header</Label>
-          <Input placeholder="Test Message" />
+          <Input bind:value={alertHeader} placeholder="Test Message" />
           <Label class="mt-4 mb-2">Message</Label>
-          <Textarea placeholder="This is a test message from the admins." />
+          <Textarea bind:value={alertMessage} placeholder="This is a test message from the admins." />
           <Button onclick={sendAdminAlert} class="mt-4 mb-2 w-full">Send Alert</Button>
         </Tabs.Content>
         <Tabs.Content value="roles">

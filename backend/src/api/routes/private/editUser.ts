@@ -30,11 +30,12 @@ export const konamiRouter = router({
             }
             if (input.ban) {
                 targetUser.permissions = {
-                    sitewide: targetUser.permissions.sitewide.filter(r => 
+                    sitewide: dedupeArray([...targetUser.permissions.sitewide.filter(r => 
                         r !== UserPermissions.Asset_Create && 
                         r !== UserPermissions.Mods_Create &&
-                        r !== UserPermissions.Users_EditSelf
-                    ),
+                        r !== UserPermissions.Users_EditSelf &&
+                        r !== UserPermissions.Secret_Features
+                    ), UserPermissions.C_Banned]),
                     perGame: targetUser.permissions.perGame
                 }
             } else {
@@ -49,7 +50,7 @@ export const konamiRouter = router({
             }
             targetUser.save();
         }),
-    toggleSecretFeatures: loggedInProcedure([UserPermissions.Secret_Features]).input(z.object({
+    toggleSecretFeatures: loggedInProcedure({denied: [UserPermissions.C_Banned]}).input(z.object({
         enabled: z.boolean(),
     })).mutation(async ({ ctx }) => {
         if (ctx.user.checkRoles([UserPermissions.Secret_Features])) {

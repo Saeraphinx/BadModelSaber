@@ -20,16 +20,18 @@
 <div class="flex flex-col items-center mx-4">
   <div class="flex flex-col md:flex-row gap-4 w-full">
     <UserCard {user} class="md:min-w-92" />
-    <div class="flex flex-col bg-accent p-4 rounded-lg w-full">
-      <div class="flex flex-col w-64">
-        <div class="flex flex-row flex-wrap gap-2">
-          {#each user.userPlatforms as sponsorUrl}
-            <SponsorButton type={sponsorUrl.platform} url={sponsorUrl.url} />
-          {/each}
-        </div>
-        <Separator class="my-4 w-full" />
-      </div>
+    <div class="flex flex-row bg-accent p-4 rounded-lg w-full">
       <p class="text-base whitespace-pre-line text-wrap wrap-anywhere">{user.bio}</p>
+      {#if user.userPlatforms?.length || 0 > 0}
+        <Separator orientation="vertical" class="mx-4" />
+        <div class="flex flex-col w-82">
+          <div class="flex flex-row flex-wrap gap-2">
+            {#each user.userPlatforms as sponsorUrl}
+              <SponsorButton class="w-full" type={sponsorUrl.platform} url={sponsorUrl.url} />
+            {/each}
+          </div>
+        </div>
+      {/if}
     </div>
   </div>
   <Separator class="my-4 w-full" />

@@ -1,24 +1,27 @@
 <script lang="ts">
-    import { SponsorType } from "$lib/scripts/api/DBTypes";
+    import { PlatformType } from "$lib/scripts/api/DBTypes";
     import { Button } from "$shadcn/components/ui/button";
+  import type { HTMLAttributes } from "svelte/elements";
 
   let { 
     type,
-    url
+    url,
+    class: className,
+    ...restProps
    } : {
-    type: SponsorType;
+    type: PlatformType;
     url: string;
-   } = $props();
+  } & HTMLAttributes<HTMLElement> = $props();
 </script>
 
-<Button variant="outline" class="mt-4" href={url} target="_blank">
-  {#if type === SponsorType.GitHub}
+<Button class={className} variant="outline" href={url} target="_blank" {...restProps}>
+  {#if type === PlatformType.GitHub}
     <img src="/github.svg" alt="GitHub logo" class="w-5 h-5 mr-2" />
     GitHub
-  {:else if type === SponsorType.KoFi}
-    <img src="/kofi.svg" alt="Ko-fi logo" class="w-5 h-5 mr-2" />
+  {:else if type === PlatformType.KoFi}
+    <img src="/ko-fi.svg" alt="Ko-fi logo" class="w-5 h-5 mr-2" />
     Ko-fi
-  {:else if type === SponsorType.Patreon}
+  {:else if type === PlatformType.Patreon}
     <img src="/patreon.svg" alt="Patreon logo" class="w-5 h-5 mr-2" />
     Patreon
   {:else}
