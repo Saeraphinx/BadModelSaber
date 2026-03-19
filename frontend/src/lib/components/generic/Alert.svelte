@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { AlertType, type AlertPublicAPIv3 } from '$lib/scripts/api/DBTypes';
+  import { AlertType, type AlertApiV3 } from '$lib/scripts/api/DBTypes';
   import { trpc } from '$lib/scripts/utils/api';
   import Button from '$shadcn/components/ui/button/button.svelte';
   import { cn } from '$shadcn/utils';
@@ -14,7 +14,7 @@
     class: className,
     ...restProps
   }: {
-    alert: AlertPublicAPIv3;
+    alert: AlertApiV3;
     deleteFromArray?: () => void;
     showRead?: boolean;
   } & HTMLAttributes<HTMLDivElement> = $props();
@@ -24,12 +24,12 @@
   let bgColor = $derived.by(() => {
     switch (alert.type) {
       case AlertType.RequestAccepted:
-      case AlertType.AssetVerified:
+      case AlertType.ThingVerified:
         return 'bg-green-800/20';
-      case AlertType.AssetRejected:
+      case AlertType.ThingRejected:
         return 'bg-red-800/20';
       case AlertType.RequestDeclined:
-      case AlertType.AssetRemoval:
+      case AlertType.ThingRemoval:
         return 'bg-yellow-800/20';
       default:
         return 'bg-gray-800';
@@ -38,7 +38,7 @@
 
   function markRead() {
     isVisible = false;
-    trpc.alertsRouter.markAlertRead.mutate({ id: alert.id }).catch((error) => {
+    trpc.internal.alerts.markAlertRead.mutate({ id: alert.id }).catch((error) => {
       console.error('Failed to mark alert as read:', error);
       toast.error('Failed to mark alert as read.', {
         description: error.message,
@@ -51,7 +51,7 @@
 
   function deleteAlert() {
     isVisible = false;
-     trpc.alertsRouter.deleteAlert.mutate({ id: alert.id }).catch((error) => {
+     trpc.internal.alerts.deleteAlert.mutate({ id: alert.id }).catch((error) => {
       console.error('Failed to delete alert:', error);
       toast.error('Failed to delete alert.', {
         description: error.message,

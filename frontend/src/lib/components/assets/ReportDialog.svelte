@@ -21,7 +21,7 @@
 
   function handleSubmit() {
     console.log(`Reporting asset ${id} with reason: ${reason}`);
-    let res = trpc.RequestRouter.reportAsset.mutate({
+    let res = trpc.internal.requests.reportAsset.mutate({
         assetId: id,
         reason: reason,
       }).then((res) => {

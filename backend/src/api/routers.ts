@@ -11,10 +11,12 @@ import { createOpenApiExpressMiddleware, generateOpenApiDocument } from 'trpc-to
 import { authRouter } from './routes/private/auth.ts';
 import { konamiRouter } from './routes/private/editUser.ts';
 import { Logger } from '../shared/Logger.ts';
-import { uploadStuff } from './routes/private/upload.ts';
+import { uploadStuff } from './routes/public/v3/upload.js';
 import { parseErrorMessage } from '../shared/Tools.ts';
 import { statusRouter } from './routes/private/getstatus.ts';
 import { GetV2Router } from './routes/public/v2/getAsset.ts';
+import { GetModsV3 } from './routes/public/v3/getMods.ts';
+import { gameRouter } from './routes/public/v3/getGames.ts';
 
 const appRouter = router({
     admin: AdminRouter,
@@ -35,6 +37,8 @@ const appRouter = router({
         user: userRouterV3,
         upload: uploadStuff,
         assets: assetsRouterV3,
+        mods: GetModsV3,
+        games: gameRouter,
     }
 });
 

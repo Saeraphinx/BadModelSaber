@@ -80,7 +80,7 @@
     <Button variant="default" class="ml-2" href="/" disabled={page.url.pathname === "/"}>
       <HomeIcon />
       Go to Home 
-      {#if timeTill !== null}
+      {#if timeTill !== null && page.error?.redirectToHome}
         ({timeTill})
       {/if}
     </Button>

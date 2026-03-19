@@ -1,3 +1,4 @@
+import { ref } from "node:process";
 import { validRange } from "semver";
 import z from "zod/v4";
 
@@ -137,6 +138,7 @@ export enum UserPermissions {
   Mods_Create = "mods_create", // User can create new mods (e.g. sabers, platforms, etc.)
   Mods_ViewAll = "mods_view_all", // User can view all mods, including private ones 
   Mods_EditAll = "mods_edit_all", // User can edit all mods, including those created by other users
+  Mods_UploadAll = "mods_upload_all", // User can upload new versions for all mods, including those created by other users
   Mods_Approval = "mods_approval", // User can approve/reject pending mods
 
   Asset_Create = "asset_create", // User can create/upload assets
@@ -158,6 +160,8 @@ export enum UserPermissions {
   Users_Ban = "users_ban", // User can ban/unban other users
   Users_EditAll = "users_edit_all", // User can edit other users' profiles (e.g. edit bio, etc.)
   Users_EditAllRoles = "users_edit_all_roles", // User can edit all roles of other users. basically allows all permissions
+
+  Game_Management = "game_management", // User can manage games and game versions (e.g. add new games, add new game versions, etc.)
 
   Administrative_Tasks = "administrative_tasks", // User can perform high-level admin tasks
 
@@ -522,8 +526,8 @@ export type AssetApiV3 = z.infer<typeof assetApiV3Schema>;
 export const assetApiV3Schema = z.object({
   id: dbId,
   oldId: z.number().nullable(),
-  linkedIds: z.array(linkedAssetSchema),
   gameName: z.string(),
+  linkedIds: z.array(linkedAssetSchema),
   type: assetFileFormatSchema,
   uploaderId: dbId,
   uploader: userApiV3Schema.nullable(),

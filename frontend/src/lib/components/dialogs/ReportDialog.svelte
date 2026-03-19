@@ -3,7 +3,6 @@
   import { trpc } from "$lib/scripts/utils/api";
   import { Button } from "$shadcn/components/ui/button";
   import * as Dialog from "$shadcn/components/ui/dialog";
-  import Input from "$shadcn/components/ui/input/input.svelte";
   import { Textarea } from "$shadcn/components/ui/textarea";
   import { toast } from "svelte-sonner";
 
@@ -21,7 +20,7 @@
 
   function handleSubmit() {
     console.log(`Reporting asset ${id} with reason: ${reason}`);
-    let res = trpc.RequestRouter.reportAsset.mutate({
+    let res = trpc.internal.requests.reportAsset.mutate({
         assetId: id,
         reason: reason,
       }).then((res) => {

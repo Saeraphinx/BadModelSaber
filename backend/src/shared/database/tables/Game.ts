@@ -223,13 +223,13 @@ export class Game extends Model<InferAttributes<Game>, InferCreationAttributes<G
     }
     // #endregion
 
-    public toApiV3() {
+    public toApiV3(includeWebhooks = false) {
         return {
             name: this.name,
             displayName: this.displayName,
             categories: this.categories as string[],
             platforms: this.platforms as string[],
-            webhooks: this.getAPIWebhooks(),
+            webhooks: includeWebhooks ? this.getAPIWebhooks() : null,
             default: this.default,
         };
     }

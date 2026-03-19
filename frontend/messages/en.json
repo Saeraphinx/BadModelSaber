@@ -150,6 +150,24 @@
       "failedToLoadError": "Failed to load preview data: {error}"
     }
   },
+  "mods": {
+
+    "createProject": {
+      "title": "Create Project",
+      "subtitle": "Please fill out the form below to create a new project.",
+      "name": "Name",
+      "description": "Description",
+      "category": "Category",
+      "game": "Game",
+      "thumbnailRileListHeader": "Thumbnail Rules:",
+      "thumbnailRuleList1": "Must be a square image (1:1 aspect ratio).",
+      "thumbnailRuleList2": "Should be at least 128x128 pixels.",
+      "thumbnailRuleList3": "Must be in .png, .jpeg, .webp, or .gif.",
+      "thumbnailRuleList4": "Should be tasteful and appropriate",
+      "thumbnail": "Thumbnail",
+      "thumbnailFooter": "Please ensure your thumbnail follows the rules listed above."
+    }
+  },
   "requests": {
     "wouldYouLikeToAcceptOrReject": "Would you like to accept or reject this request?",
     "initialMessageCredit": "{name} would like to add you as a collaborator to the asset {assetName}.",

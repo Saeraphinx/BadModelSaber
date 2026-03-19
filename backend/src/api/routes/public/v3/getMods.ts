@@ -4,7 +4,6 @@ import { anyProcedure, gameProcedure, router } from "../../../trpc.ts";
 import z from "zod/v4";
 import { TRPCError } from "@trpc/server";
 import { Op } from "sequelize";
-import { platform } from "node:os";
 
 export const GetModsV3 = router({
     // #region getMods
@@ -12,14 +11,15 @@ export const GetModsV3 = router({
         .meta({
             openapi: {
                 method: `GET`,
-                path: `/v3/{gameName}/mods`,
+                path: `/v3/mods`,
+                tags: ['Mods'],
             }
         })
         .input(z.object({
             gameVersion: z.string().optional(),
             status: z.array(z.enum(Status)).optional().default([Status.Verified, Status.Pending]),
             name: z.string().optional(),
-            authors: z.array(z.int()).or(z.int()).optional(),
+            authors: z.array(z.int()).optional(),
             platform: z.string().optional(),
         }))
         .output(z.array(z.object({
@@ -130,6 +130,7 @@ export const GetModsV3 = router({
             openapi: {
                 method: `GET`,
                 path: `/v3/project/{projectId}`,
+                tags: ['Mods'],
             }
         })
         .input(z.object({

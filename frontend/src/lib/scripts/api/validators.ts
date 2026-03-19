@@ -1,5 +1,7 @@
 import z from "zod";
-import { AssetFileFormat, dbId, License, LinkedAssetLinkType, Status, Tags } from "./DBTypes";
+import { AssetFileFormat, dbId, License, LinkedAssetLinkType, Status, statusHistorySchema, Tags } from "./DBTypes";
+import type { AssetInfer } from "../../../../../backend/src/shared/Database";
+import type { ProjectInfer } from "../../../../../backend/src/shared/Database";
 
 class Asset {
   public static readonly invalidFileNameChars = /[<>:"/\\|?*\x00-\x1F]/gi;
@@ -49,4 +51,24 @@ export const zAsset = z.object({
   createdAt: z.date(),
   updatedAt: z.date(),
   deletedAt: z.date().nullable(),
-});
+}) satisfies z.ZodType<AssetInfer>;
+
+export const zProject = z.object({
+  id: dbId,
+  name: z.string().max(128),
+  summary: z.string().max(256),
+  description: z.string().max(4096),
+  gameName: z.string(),
+  category: z.string(),
+  authorIds: z.array(dbId).min(1),
+  status: z.enum(Status),
+  iconFileName: z.string(),
+  gitUrl: z.url(),
+  lastApprovedById: dbId.nullable(),
+  lastUpdatedById: dbId,
+  collaboratorIds: z.array(dbId),
+  statusHistory: z.array(statusHistorySchema),
+  createdAt: z.date(),
+  updatedAt: z.date(),
+  deletedAt: z.date().nullable(),
+}) satisfies z.ZodType<ProjectInfer>;

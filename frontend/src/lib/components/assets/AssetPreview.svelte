@@ -1,11 +1,11 @@
 <script lang="ts">
   import { m } from "$lib/paraglide/messages";
-  import { AssetFileFormat, type AssetPublicAPIv3 } from "$lib/scripts/api/DBTypes";
+  import { AssetFileFormat, type AssetApiV3 } from "$lib/scripts/api/DBTypes";
   import { getAssetDownloadUrl } from "$lib/scripts/utils/api";
   import Button from "$shadcn/components/ui/button/button.svelte";
     
   let props : {
-    asset: AssetPublicAPIv3;
+    asset: AssetApiV3;
   } = $props();
 
   let isPreviewLoaded = $state(false);

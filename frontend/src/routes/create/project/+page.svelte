@@ -1,0 +1,105 @@
+<script lang="ts">
+  import { m } from "$lib/paraglide/messages";
+  import { AssetFileFormat } from "$lib/scripts/api/DBTypes";
+  import { zProject } from "$lib/scripts/api/validators";
+  import { Button } from "$shadcn/components/ui/button";
+  import * as DropdownMenu from "$shadcn/components/ui/dropdown-menu";
+  import { Input } from "$shadcn/components/ui/input";
+  import { Label } from "$shadcn/components/ui/label";
+  import { Textarea } from "$shadcn/components/ui/textarea";
+  import { onMount } from "svelte";
+
+  const { data: _internal } = $props();
+  const { trpc } = $derived(_internal);
+
+  let projectName = $state("");
+  let projectDescription = $state("");
+  let projectCategory = $state(`Other`);
+  let projectGameName = $state(`Other`);
+  let projectGitUrl = $state("");
+  let projectThumbnail: FileList | undefined = $state(undefined);
+
+  let gameOptions: {
+    name: string;
+    displayName: string;
+    categories: string[];
+    platforms: string[];
+    webhooks: any;
+    default: boolean;
+  }[] = $state([]);
+
+  function submitProject() {}
+
+  onMount(() => {
+    trpc.v3.games.getGames.query().then((games) => {
+      let defaultGame = games.find((game) => game.default === true);
+      if (defaultGame) {
+        projectGameName = defaultGame.name;
+        projectCategory = defaultGame.categories[0] == `Core` ? `Other` : defaultGame.categories[1] || `Other`;
+      }
+      gameOptions = games;
+    });
+  });
+</script>
+
+<div class="flex flex-col text-center w-full p-4">
+  <h1 class="text-2xl font-bold mb-4">{m["mods.createProject.title"]()}</h1>
+  <p class="text-base mb-4">{m["mods.createProject.subtitle"]()}</p>
+</div>
+<div class="flex flex-row flex-wrap justify-center p-4 gap-4">
+  <div class="flex flex-col w-full max-w-md">
+    <!-- left side -->
+    <div class="flex flex-col justify-center w-full max-w-md p-4 gap-2 bg-card rounded-lg shadow-md">
+      <span>
+        <Label class="p-1 pb-2" for="name">{m["mods.createProject.name"]()}</Label>
+        <Input bind:value={projectName} aria-invalid={!zProject.shape.name.safeParse(projectName).success} id="name" />
+      </span>
+      <span>
+        <Label class="p-1 pb-2" for="category">{m["mods.createProject.category"]()}</Label>
+        <Input bind:value={projectCategory} aria-invalid={!zProject.shape.category.safeParse(projectCategory).success} id="category" />
+      </span>
+      <span>
+        <Label class="p-1 pb-2" for="game">{m["mods.createProject.game"]()}</Label>
+        <DropdownMenu.Root>
+          <DropdownMenu.Trigger>
+            <Button variant="outline" class="w-full justify-between">
+              {gameOptions.find((game) => game.name === projectGameName)?.displayName}
+            </Button>
+          </DropdownMenu.Trigger>
+          <DropdownMenu.Content class="min-w-40">
+            {#each gameOptions as game}
+              <DropdownMenu.Item onselect={() => (projectGameName = game.name)}>
+                {game.displayName}
+              </DropdownMenu.Item>
+            {/each}
+          </DropdownMenu.Content>
+        </DropdownMenu.Root>
+      </span>
+      <span>
+        <Label class="p-1 pb-2" for="description">{m["mods.createProject.description"]()}</Label>
+        <Textarea class="min-h-32" bind:value={projectDescription} aria-invalid={!zProject.shape.description.safeParse(projectDescription).success} id="description" />
+      </span>
+    </div>
+  </div>
+  <div class="flex flex-col w-full max-w-md">
+    <!-- right side -->
+    <div class="flex flex-col justify-center w-full max-w-md p-4 bg-card rounded-lg shadow-md">
+      <p>{m["mods.createProject.thumbnailRileListHeader"]()}</p>
+      <ul class="list-disc ml-6">
+        <li>{m["mods.createProject.thumbnailRuleList1"]()}</li>
+        <li>{m["mods.createProject.thumbnailRuleList2"]()}</li>
+        <li>{m["mods.createProject.thumbnailRuleList3"]()}</li>
+        <li>{m["mods.createProject.thumbnailRuleList4"]()}</li>
+      </ul>
+    </div>
+    <div class="flex flex-col justify-center w-full max-w-md p-4 bg-card rounded-lg shadow-md mt-4">
+      <!-- value is the first file in the files array -->
+      <Label class="p-1 pb-2" for="thumbnail">{m["mods.createProject.thumbnail"]()}</Label>
+      <Input id="thumbnail" type="file" bind:files={projectThumbnail} accept=".png,.jpeg,.webp,.gif" multiple />
+      <p class="text-sm text-muted-foreground mt-2 pl-1">{m["mods.createProject.thumbnailFooter"]()}</p>
+    </div>
+    <div class="flex flex-col justify-center w-full max-w-md p-4 bg-card rounded-lg shadow-md mt-4">
+      <Button onclick={submitProject} class="w-full">{m["dialogs.submit"]()}</Button>
+    </div>
+  </div>
+</div>

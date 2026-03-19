@@ -33,7 +33,7 @@
 
   function handleSubmit() {
     console.log(`Updating asset ${id} (${name}) to status ${selectedStatus} with reason: ${reason}`);
-    let res = trpc.approvalRouter.approveAsset.mutate({
+    let res = trpc.internal.approval.setStatusAsset.mutate({
         id: id,
         status: selectedStatus,
         reason: reason,

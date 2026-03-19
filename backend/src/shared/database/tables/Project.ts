@@ -11,6 +11,8 @@ import { Translation } from "./Translation.ts";
 import { IReportable, IPermissionsChecks } from "./common.ts";
 import { ThingRequest } from "./ThingRequest.ts";
 import { Literal } from "sequelize/lib/utils";
+import { EnvConfig } from "../../EnvConfig.ts";
+import path from "path";
 
 
 export type ProjectInfer = InferAttributes<Project>;
@@ -104,6 +106,10 @@ export class Project extends Model<InferAttributes<Project>, InferCreationAttrib
             Logger.debug(`Game not loaded, fetching from DB for gameName: ${this.gameName}`);
             return Game.findByPk(this.gameName) || null;
         }
+    }
+
+    get folderPath(): NonAttribute<string> {
+        return path.join(EnvConfig.storage.uploads, this.id.toString());
     }
     // #endregion
     // #region Validatiors
@@ -213,6 +219,22 @@ export class Project extends Model<InferAttributes<Project>, InferCreationAttrib
         }
 
         return Promise.resolve(user.checkRoles([UserPermissions.Mods_EditAll], this.gameName));
+    }
+
+    public canUploadVersion(user: User | null | undefined): Promise<boolean> {
+        if (!user) {
+            return Promise.resolve(false);
+        }
+
+        if (this.authorIds.includes(user.id)) {
+            return Promise.resolve(true);
+        }
+
+        if (this.collaboratorIds.includes(user.id)) {
+            return Promise.resolve(true);
+        }
+
+        return Promise.resolve(user.checkRoles([UserPermissions.Mods_UploadAll], this.gameName));
     }
     // #endregion
     // #region Version Lookups

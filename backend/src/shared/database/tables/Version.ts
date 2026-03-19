@@ -122,6 +122,14 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
             return Project.findByPk(this.projectId) || null;
         }
     }
+
+    get fileName(): NonAttribute<Promise<string>> {
+        return (async () => `${(await this.project)?.name}_${this.platform}_v${this.semver.raw}.zip`)();
+    }
+
+    get manifestName(): NonAttribute<Promise<string>> {
+        return (async () => `${(await this.project)?.name}_${this.platform}_v${this.semver.raw}_manifest.json`)();
+    }
     // #endregion
     // #region Validators
     /*

@@ -53,7 +53,7 @@
       return;
     }
     showLoading = true;
-    trpc.UpdateAssetRouter.linkAsset.mutate({
+    trpc.internal.updateAsset.linkAsset.mutate({
       assetId: assetId,
       type: selectedLinkType,
       linkToId: id

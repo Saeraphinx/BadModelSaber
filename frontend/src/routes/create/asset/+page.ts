@@ -1,6 +1,6 @@
 import { UserPermissions } from "$lib/scripts/api/DBTypes";
 import { error } from "@sveltejs/kit";
-import type { PageLoad } from "./$types.js";
+import type { PageLoad } from "../$types.js";
 import { checkRoles } from "$lib/scripts/utils/checkRoles.js";
 
 //export const ssr = false;
@@ -16,7 +16,7 @@ export const load: PageLoad = async ({ parent }) => {
 
   return {
     pageMetadata: {
-      title: 'Create Asset - ModelSaber',
+      title: 'Create Asset',
     },
     user: user,
   };

@@ -110,13 +110,13 @@
         </span>
       {/if}
       <span>
-        <Label class="p-1 pb-2" for="tags">{m["assets.dataTable.tags"]}</Label>
+        <Label class="p-1 pb-2" for="tags">{m["assets.dataTable.tags"]()}</Label>
         <div class="flex flex-row items-center justify-between">
           <div class="flex flex-wrap gap-2 pl-1">
             {#each tags as tag}
               <TagBadge {tag} />
             {:else}
-              <span class="text-muted-foreground">{m["assets.dataTable.noTags"]}</span>
+              <span class="text-muted-foreground">{m["assets.dataTable.noTags"]()}</span>
             {/each}
           </div>
           <Button variant="secondary" onclick={() => openTagPicker = true}>
