@@ -10,7 +10,7 @@ export const load: PageLoad = async ({ parent }) => {
     return error(401, {message: 'You must be logged in to view this page', redirectToHome: true});
   }
 
-  if (!checkRoles(user, [UserPermissions.Asset_Create], `any`)) {
+  if (!checkRoles(user, [UserPermissions.Mods_Create], `any`)) {
     return error(403, {message: 'You do not have permission to view this page'});
   }
 

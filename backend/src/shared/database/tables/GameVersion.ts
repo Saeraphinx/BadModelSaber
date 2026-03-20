@@ -1,7 +1,8 @@
 import { InferAttributes, InferCreationAttributes, CreationOptional, WhereOptions, Op } from "sequelize";
 import { AllowNull, Column, CreatedAt, DataType, Default, DeletedAt, Model, Sequelize, Table, UpdatedAt } from "sequelize-typescript";
-import { GameVersionApiV2 } from "../DBExtras.ts";
+import { GameVersionApiV2, GameVersionApiV3 } from "../DBExtras.ts";
 import { Version } from "./Version.ts";
+import { parseErrorMessage } from "../../Tools.ts";
 
 export type GameVersionInfer = InferAttributes<GameVersion>;
 export type GameVersionWhereOptions = WhereOptions<GameVersion>;
@@ -96,11 +97,37 @@ export class GameVersion extends Model<InferAttributes<GameVersion>, InferCreati
         return { gv1, gv2 };
     }
 
-    public toApiV3() {
+    public async setDefault() {
+        await GameVersion.update({ defaultVersion: false }, {
+            where: {
+                gameName: this.gameName,
+                id: {
+                    [Op.ne]: this.id,
+                },
+            },
+        }).then(async () => {
+            this.defaultVersion = true;
+            return await this.save();
+        });
+    }
+
+    public toApiV3(): GameVersionApiV3 {
         return {
             id: this.id as number,
             gameName: this.gameName,
             version: this.version,
+        };
+    }
+
+    public toApiV3_full() {
+        return {
+            id: this.id as number,
+            gameName: this.gameName,
+            version: this.version,
+            defaultVersion: this.defaultVersion,
+            linkedVersionIds: this.linkedVersionIds || [],
+            createdAt: this.createdAt,
+            updatedAt: this.updatedAt,
         };
     }
 

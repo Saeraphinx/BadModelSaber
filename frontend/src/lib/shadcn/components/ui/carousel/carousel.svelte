@@ -18,7 +18,7 @@
 		...restProps
 	}: WithElementRef<CarouselProps> = $props();
 
-	let carouselState = $state<EmblaContext>({
+	let carouselState = $derived<EmblaContext>({
 		api: undefined,
 		scrollPrev,
 		scrollNext,
@@ -34,6 +34,7 @@
 		scrollTo,
 	});
 
+	// svelte-ignore state_referenced_locally
 	setEmblaContext(carouselState);
 
 	function scrollPrev() {

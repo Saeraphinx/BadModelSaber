@@ -22,7 +22,7 @@ export const load = (async ({ fetch, params, parent }) => {
 
   return {
     pageMetadata: {
-      title: `${asset.name || `Error`} - ModelSaber`,
+      title: `${asset.name || `Error`}`,
       description: asset.description,
     },
     pageData: asset,

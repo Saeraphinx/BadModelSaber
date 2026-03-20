@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { Alert, AlertInfer, alertApiV3Schema } from "../../../shared/Database.ts";
 import { Validator } from "../../../shared/Validator.ts";
-import { handleTRPCPromiseCatch, parseErrorMessage } from "../../../shared/Tools.ts";
+import { handleCatch, parseErrorMessage } from "../../../shared/Tools.ts";
 import { Logger } from "../../../shared/Logger.ts";
 import { WhereOptions } from "sequelize";
 import { loggedInProcedure, router } from "../../trpc.ts";
@@ -15,7 +15,7 @@ export const alertsRouter = router({
                 userId: ctx.user.id,
                 read: false,
             }
-        }).catch(handleTRPCPromiseCatch);
+        }).catch(handleCatch());
         return count;
     }),
     getAlerts: loggedInProcedure()
@@ -50,7 +50,7 @@ export const alertsRouter = router({
         }
         alert.read = true;
         alert.discordMessageSent = true;
-        await alert.save().catch(handleTRPCPromiseCatch);
+        await alert.save().catch(handleCatch());
         Logger.debug(`Alert ${alert.id} marked as read for user ${ctx.user.id}`);
         return alert.toApiV3();
     }),
@@ -64,7 +64,7 @@ export const alertsRouter = router({
         if (alert.userId !== ctx.user.id) {
             throw new TRPCError({ code: `FORBIDDEN`, message: `You are not allowed to delete this alert`});
         }
-        await alert.destroy().catch(handleTRPCPromiseCatch);
+        await alert.destroy().catch(handleCatch());
         Logger.debug(`Alert ${alert.id} deleted for user ${ctx.user.id}`);
         return;
     })

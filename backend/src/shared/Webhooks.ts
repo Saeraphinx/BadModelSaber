@@ -17,6 +17,15 @@ export class Webhooks {
 
 
     // #region Webhook Management
+    public static testWebhook(url: string): boolean {
+        try {
+            let testClient = new WebhookClient({ url: url });
+            return true;
+        } catch (error) {
+            return false;
+        }
+    }
+
     public static async registerWebhooks() {
         let games = await Game.findAll();
 

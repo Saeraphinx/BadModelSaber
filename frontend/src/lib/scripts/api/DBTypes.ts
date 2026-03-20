@@ -1,4 +1,3 @@
-import { ref } from "node:process";
 import { validRange } from "semver";
 import z from "zod/v4";
 
@@ -161,7 +160,10 @@ export enum UserPermissions {
   Users_EditAll = "users_edit_all", // User can edit other users' profiles (e.g. edit bio, etc.)
   Users_EditAllRoles = "users_edit_all_roles", // User can edit all roles of other users. basically allows all permissions
 
-  Game_Management = "game_management", // User can manage games and game versions (e.g. add new games, add new game versions, etc.)
+  Game_ViewExtras = "game_view_extras", // User can view extra details about games (e.g. webhooks)
+  Game_Create = "game_create", // User can create new games
+  Game_Edit = "game_edit", // User can edit game details (e.g. display name, categories, platforms, etc.)
+  Game_EditVersions = "game_edit_versions", // User can create/edit game versions
 
   Administrative_Tasks = "administrative_tasks", // User can perform high-level admin tasks
 
@@ -453,6 +455,12 @@ let GameVersionApiV3Schema = z.object({
   version: z.string(),
 });
 export type GameVersionApiV3 = z.infer<typeof GameVersionApiV3Schema>;
+export type GameVersionApiV3_full = GameVersionApiV3 & {
+  defaultVersion: boolean,
+  linkedVersionIds: number[],
+  createdAt: Date,
+  updatedAt: Date,
+}
 
 export type UserApiV3 = z.infer<typeof userApiV3Schema>;
 export const userApiV3Schema = z.object({

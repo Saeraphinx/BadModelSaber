@@ -16,7 +16,7 @@ export const load: PageLoad = async ({ parent }) => {
 
   return {
     pageMetadata: {
-      title: 'Admin Panel - ModelSaber',
+      title: 'Admin Panel',
     },
     user: parentData.user,
   };

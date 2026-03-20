@@ -9,7 +9,7 @@ export const load: PageLoad = async ({ parent }) => {
 
   return {
     pageMetadata: {
-      title: 'Requests - ModelSaber',
+      title: 'Requests',
     },
     user: parentData.user,
   };

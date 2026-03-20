@@ -1,6 +1,6 @@
 import { initTRPC, TRPCError } from '@trpc/server';
 import { type CreateExpressContextOptions, createExpressMiddleware } from '@trpc/server/adapters/express';
-import { User, UserPermissions } from '../shared/Database.ts';
+import { Game, User, UserPermissions } from '../shared/Database.ts';
 import { OpenApiMeta } from 'trpc-to-openapi';
 import SuperJSON from 'superjson';
 import { parseErrorMessage } from '../shared/Tools.ts';
@@ -37,19 +37,19 @@ export type Context = Awaited<ReturnType<typeof createContext>>;
 const t = initTRPC.context<Context>().meta<OpenApiMeta>().create({
     transformer: SuperJSON,
     errorFormatter(opts) {
-    const { shape, error } = opts;
-    return {
-      ...shape,
-      data: {
-        ...shape.data,
-        formattedMessage: parseErrorMessage(error.cause),
-        zodError:
-          error.code === 'BAD_REQUEST' && error.cause instanceof ZodError
-            ? error.cause.flatten()
-            : null,
-      },
-    };
-  },
+        const { shape, error } = opts;
+        return {
+            ...shape,
+            data: {
+                ...shape.data,
+                formattedMessage: parseErrorMessage(error.cause),
+                zodError:
+                    error.code === 'BAD_REQUEST' && error.cause instanceof ZodError
+                        ? error.cause.flatten()
+                        : null,
+            },
+        };
+    },
 });
 
 export const createCallerFactory = t.createCallerFactory;
@@ -123,48 +123,61 @@ export function anyProcedure(): ReturnType<typeof dummyAnyLoggedIn> {
 }
 export function loggedInProcedure(roles?: UserPermissions[] | { hasAllOf?: UserPermissions[], hasOneOf?: UserPermissions[], denied?: UserPermissions[] }): ReturnType<typeof dummyLoggedIn> {
     return t.procedure.use(async ({ ctx, next }) => {
-        if (!ctx.userId) {
-            throw new TRPCError({ code: 'UNAUTHORIZED', message: 'You are not logged in.' });
-        }
-
-        // Fetch user from database
-        const user = await User.findByPk(ctx.userId);
-        if (!user) {
-            throw new TRPCError({ code: 'UNAUTHORIZED', message: 'User not found.' });
-        }
-
-        if (roles) {
-            try {
-                // stupid typescript overloading
-                const hasPermission = Array.isArray(roles) 
-                    ? user.checkRoles(roles) 
-                    : user.checkRoles(roles);
-                
-                if (hasPermission) {
-                    return next({
-                        ctx: {
-                            ...ctx,
-                            user: user,
-                        }
-                    });
-                } else {
-                    throw new TRPCError({ code: 'FORBIDDEN', message: 'You do not have the required permissions.' });
-                };
-            } catch (error) {
-                throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: parseErrorMessage(error) });
+        let user = await roleCheckLogic(ctx, roles);
+        return next({
+            ctx: {
+                ...ctx,
+                user: user,
             }
-        } else {
-            return next({
-                ctx: {
-                    ...ctx,
-                    user: user,
-                }
-            });
-        }
+        });
     });
 }
 export function gameProcedure(roles?: UserPermissions[] | { hasAllOf?: UserPermissions[], hasOneOf?: UserPermissions[], denied?: UserPermissions[] }) {
-    return loggedInProcedure(roles).input(z.object({
-        gameName: z.string().optional()
-    }))
+    return t.procedure.input(z.object({
+        gameName: z.string()
+    })).use(async ({ ctx, next, input }) => {
+        let user = await roleCheckLogic(ctx, roles, input.gameName);
+        let game = await Game.findByPk(input.gameName);
+        if (!game) {
+            throw new TRPCError({ code: 'NOT_FOUND', message: `Game with name ${input.gameName} not found.` });
+        }
+        return next({
+            ctx: {
+                ...ctx,
+                user: user,
+                game: game,
+            }
+        });
+    });
+}
+
+async function roleCheckLogic(ctx: Context, roles?: UserPermissions[] | { hasAllOf?: UserPermissions[], hasOneOf?: UserPermissions[], denied?: UserPermissions[] }, gameName?:string): Promise<User> {
+    if (!ctx.userId) {
+        throw new TRPCError({ code: 'UNAUTHORIZED', message: 'You are not logged in.' });
+    }
+
+    // Fetch user from database
+    const user = await User.findByPk(ctx.userId);
+    if (!user) {
+        throw new TRPCError({ code: 'UNAUTHORIZED', message: 'User not found.' });
+    }
+
+    if (roles) {
+        try {
+            // stupid typescript overloading
+            const hasPermission = Array.isArray(roles)
+                ? user.checkRoles(roles, gameName)
+                : user.checkRoles(roles, gameName);
+
+            if (hasPermission) {
+                return user;
+            } else {
+                throw new TRPCError({ code: 'FORBIDDEN', message: 'You do not have the required permissions.' });
+            };
+        } catch (error) {
+            throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: parseErrorMessage(error) });
+        }
+    } else {
+        return user;
+    }
 }

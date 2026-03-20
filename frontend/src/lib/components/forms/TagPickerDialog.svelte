@@ -24,7 +24,8 @@
     class?: ClassValue;
   } = $props();
 
-  let allTags = getAllTagsData(type, showInternalTags);
+  // svelte-ignore state_referenced_locally
+    let allTags = getAllTagsData(type, showInternalTags);
   let filteredTags = $derived.by(() => {
     let tags: Map<string, Tags[]> = new Map();
     allTags.forEach(({ tag, data }) => {

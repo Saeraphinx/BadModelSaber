@@ -3,9 +3,9 @@
   import { AssetFileFormat } from "$lib/scripts/api/DBTypes";
   import { zProject } from "$lib/scripts/api/validators";
   import { Button } from "$shadcn/components/ui/button";
-  import * as DropdownMenu from "$shadcn/components/ui/dropdown-menu";
   import { Input } from "$shadcn/components/ui/input";
   import { Label } from "$shadcn/components/ui/label";
+  import * as Select from "$shadcn/components/ui/select/index.js";
   import { Textarea } from "$shadcn/components/ui/textarea";
   import { onMount } from "svelte";
 
@@ -13,9 +13,10 @@
   const { trpc } = $derived(_internal);
 
   let projectName = $state("");
+  let projectSummary = $state("");
   let projectDescription = $state("");
   let projectCategory = $state(`Other`);
-  let projectGameName = $state(`Other`);
+  let projectGameName = $state(``);
   let projectGitUrl = $state("");
   let projectThumbnail: FileList | undefined = $state(undefined);
 
@@ -28,10 +29,16 @@
     default: boolean;
   }[] = $state([]);
 
-  function submitProject() {}
+  let selectedGame = $derived.by(() => {
+    return gameOptions.find((game) => game.name === projectGameName);
+  });
+  let selectedGameCategories: string[] = $derived.by(() => {
+    const game = gameOptions.find((game) => game.name === projectGameName);
+    return game ? game.categories : [];
+  });
 
-  onMount(() => {
-    trpc.v3.games.getGames.query().then((games) => {
+  onMount(async () => {
+    await trpc.v3.games.getGames.query().then((games) => {
       let defaultGame = games.find((game) => game.default === true);
       if (defaultGame) {
         projectGameName = defaultGame.name;
@@ -55,35 +62,33 @@
         <Input bind:value={projectName} aria-invalid={!zProject.shape.name.safeParse(projectName).success} id="name" />
       </span>
       <span>
-        <Label class="p-1 pb-2" for="category">{m["mods.createProject.category"]()}</Label>
-        <Input bind:value={projectCategory} aria-invalid={!zProject.shape.category.safeParse(projectCategory).success} id="category" />
-      </span>
-      <span>
         <Label class="p-1 pb-2" for="game">{m["mods.createProject.game"]()}</Label>
-        <DropdownMenu.Root>
-          <DropdownMenu.Trigger>
-            <Button variant="outline" class="w-full justify-between">
-              {gameOptions.find((game) => game.name === projectGameName)?.displayName}
-            </Button>
-          </DropdownMenu.Trigger>
-          <DropdownMenu.Content class="min-w-40">
+        <Select.Root type="single" bind:value={projectGameName}>
+          <Select.Trigger class="w-full">
+            {selectedGame ? selectedGame.displayName : ""}
+          </Select.Trigger>
+          <Select.Content>
             {#each gameOptions as game}
-              <DropdownMenu.Item onselect={() => (projectGameName = game.name)}>
-                {game.displayName}
-              </DropdownMenu.Item>
+              <Select.Item value={game.name}>{game.displayName}</Select.Item>
             {/each}
-          </DropdownMenu.Content>
-        </DropdownMenu.Root>
+          </Select.Content>
+        </Select.Root>
       </span>
       <span>
-        <Label class="p-1 pb-2" for="description">{m["mods.createProject.description"]()}</Label>
-        <Textarea class="min-h-32" bind:value={projectDescription} aria-invalid={!zProject.shape.description.safeParse(projectDescription).success} id="description" />
+        <Label class="p-1 pb-2" for="category">{m["mods.createProject.category"]()}</Label>
+        <Select.Root type="single" bind:value={projectCategory}>
+          <Select.Trigger class="w-full">
+            {projectCategory}
+          </Select.Trigger>
+          <Select.Content>
+            {#each selectedGameCategories as category}
+              <Select.Item value={category}>{category}</Select.Item>
+            {/each}
+          </Select.Content>
+        </Select.Root>
       </span>
     </div>
-  </div>
-  <div class="flex flex-col w-full max-w-md">
-    <!-- right side -->
-    <div class="flex flex-col justify-center w-full max-w-md p-4 bg-card rounded-lg shadow-md">
+    <div class="flex flex-col justify-center w-full max-w-md p-4 bg-card rounded-lg shadow-md mt-4">
       <p>{m["mods.createProject.thumbnailRileListHeader"]()}</p>
       <ul class="list-disc ml-6">
         <li>{m["mods.createProject.thumbnailRuleList1"]()}</li>
@@ -98,8 +103,21 @@
       <Input id="thumbnail" type="file" bind:files={projectThumbnail} accept=".png,.jpeg,.webp,.gif" multiple />
       <p class="text-sm text-muted-foreground mt-2 pl-1">{m["mods.createProject.thumbnailFooter"]()}</p>
     </div>
+  </div>
+  <div class="flex flex-col w-full max-w-md">
+    <!-- right side -->
+    <div class="flex flex-col justify-center w-full max-w-md p-4 gap-2 bg-card rounded-lg shadow-md">
+      <span>
+        <Label class="p-1 pb-2" for="summary">{m["mods.createProject.summary"]()}</Label>
+        <Textarea class="min-h-16" bind:value={projectSummary} aria-invalid={!zProject.shape.summary.safeParse(projectSummary).success} id="summary" />
+      </span>
+      <span>
+        <Label class="p-1 pb-2" for="description">{m["mods.createProject.description"]()}</Label>
+        <Textarea class="min-h-64" bind:value={projectDescription} aria-invalid={!zProject.shape.description.safeParse(projectDescription).success} id="description" />
+      </span>
+    </div>
     <div class="flex flex-col justify-center w-full max-w-md p-4 bg-card rounded-lg shadow-md mt-4">
-      <Button onclick={submitProject} class="w-full">{m["dialogs.submit"]()}</Button>
+      <Button class="w-full">{m["dialogs.submit"]()}</Button>
     </div>
   </div>
 </div>

@@ -267,7 +267,7 @@
 
 <!-- #region Page title & favicon -->
 <svelte:head>
-  <title>{page.data.pageMetadata?.title || `ModelSaber`}</title>
+  <title>{page.data.pageMetadata?.title ? `${page.data.pageMetadata.title} - ${m.name()}` : `${m.name()}`}</title>
   <link rel="icon" href="/favicon.png" />
 </svelte:head>
 

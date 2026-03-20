@@ -4,9 +4,6 @@ import * as fs from "fs";
 import { randomBytes } from "crypto";
 import { TRPCError } from "@trpc/server";
 import { Logger } from "./Logger.ts";
-import { Context } from "../api/trpc.ts";
-import { UserPermissions } from "./database/DBExtras.ts";
-import { User } from "./database/tables/User.ts";
 
 export type If<Value extends boolean, TrueResult, FalseResult = null> = Value extends true ? TrueResult : Value extends false  ? FalseResult  : TrueResult | FalseResult;
 
@@ -30,10 +27,17 @@ export function parseErrorMessage(err: unknown): string {
     }
 }
 
-export function handleTRPCPromiseCatch(err: unknown): never {
-    Logger.debug(`handleTRPCPRomiseCatch called`)
-    Logger.debug(err);
-    throw new TRPCError({code: `INTERNAL_SERVER_ERROR`, message: parseErrorMessage(err)})
+export function handleCatch(where?: string): (err: unknown) => never {
+    return (err: unknown) => {
+        let message = parseErrorMessage(err);
+        Logger.log(`${where ? `Error in ${where}` : `Error`}: ${message}`);
+        Logger.debug(JSON.stringify(err));
+        if (isZodErrorLike(err) || err instanceof ValidationError || err instanceof UniqueConstraintError) {
+            throw new TRPCError({ code: "BAD_REQUEST", message });
+        } else {
+            throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message });
+        }
+    };
 }
 
 export function createRandomString(byteCount: number): string {

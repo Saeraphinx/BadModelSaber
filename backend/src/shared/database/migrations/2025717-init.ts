@@ -407,6 +407,11 @@ export const up: Migration = async ({ context: db }) => {
             type: DataTypes.TEXT,
             allowNull: false,
         },
+        statusHistory: {
+            type: DataTypes.ARRAY(DataTypes.JSONB),
+            allowNull: false,
+            defaultValue: [],
+        },
         lastApprovedById: {
             type: DataTypes.INTEGER,
             allowNull: true,
@@ -560,7 +565,8 @@ export const up: Migration = async ({ context: db }) => {
         },
         objectToAdd: {
             type: DataTypes.JSONB,
-            allowNull: false,
+            allowNull: true,
+            defaultValue: null,
         },
         requestType: {
             type: DataTypes.STRING,

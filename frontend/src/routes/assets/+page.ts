@@ -21,7 +21,7 @@ export const load = (async (data) => {
       fileFormat: fileFormat
     },
     pageMetadata: {
-      title: `${typeCapital === `all` ? `Assets` : typeCapital} - ModelSaber`,
+      title: `${typeCapital === `all` ? `Assets` : typeCapital}`,
     },
   };
 }) satisfies PageLoad;

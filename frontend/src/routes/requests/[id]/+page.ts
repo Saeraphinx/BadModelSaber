@@ -19,7 +19,7 @@ export const load: PageLoad = async ({ params, fetch, parent }) => {
     pageData: data,
     user: user,
     pageMetadata: {
-      title: `Request ${params.id} - ModelSaber`,
+      title: `Request ${params.id}`,
     },
   };
 };

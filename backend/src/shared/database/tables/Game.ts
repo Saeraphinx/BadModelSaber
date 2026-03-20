@@ -138,6 +138,14 @@ export class Game extends Model<InferAttributes<Game>, InferCreationAttributes<G
     public async addWebhook(webhook: Omit<GameWebhookConfig, `id`>): Promise<{ game: Game, webhook: GameWebhookConfig }> {
         let newWebhooks = this.webhookConfig ? [...this.webhookConfig] : []; // you have to make a new array if youre saving stuff to the db
 
+        if (!webhook.url || webhook.url.trim() === "") {
+            throw new Error(`Webhook URL cannot be empty.`);
+        }
+
+        if (!Webhooks.testWebhook(webhook.url)) {
+            throw new Error(`Invalid webhook URL.`);
+        }
+
         if (!newWebhooks.some((w) => webhook.url === w.url)) {
             let id = this.generateWebhookId();
             newWebhooks.push({

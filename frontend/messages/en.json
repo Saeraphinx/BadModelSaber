@@ -151,11 +151,11 @@
     }
   },
   "mods": {
-
     "createProject": {
       "title": "Create Project",
       "subtitle": "Please fill out the form below to create a new project.",
       "name": "Name",
+      "summary": "Summary",
       "description": "Description",
       "category": "Category",
       "game": "Game",

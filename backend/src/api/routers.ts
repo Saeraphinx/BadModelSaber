@@ -17,6 +17,7 @@ import { statusRouter } from './routes/private/getstatus.ts';
 import { GetV2Router } from './routes/public/v2/getAsset.ts';
 import { GetModsV3 } from './routes/public/v3/getMods.ts';
 import { gameRouter } from './routes/public/v3/getGames.ts';
+import { editGameRouter } from './routes/private/editGames.ts';
 
 const appRouter = router({
     admin: AdminRouter,
@@ -29,6 +30,7 @@ const appRouter = router({
         updateUser: konamiRouter,
         auth: authRouter,
         status: statusRouter,
+        games: editGameRouter,
     },
     v2: {
         assets: GetV2Router

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { AlertType, UserPermissions } from "$lib/scripts/api/DBTypes";
+  import { AlertType, UserPermissions, WebhookLogType, type GameVersionApiV3, type GameVersionApiV3_full } from "$lib/scripts/api/DBTypes";
   import * as Tabs from "$shadcn/components/ui/tabs/index.js";
   import * as Select from "$shadcn/components/ui/select/index.js";
   import * as Accordion from "$shadcn/components/ui/accordion/index.js";
@@ -9,8 +9,11 @@
   import { Button } from "$shadcn/components/ui/button";
   import { Checkbox } from "$shadcn/components/ui/checkbox";
   import { toast } from "svelte-sonner";
-  import { RefreshCwIcon, PlusIcon } from "@lucide/svelte";
-  import { Dialog, DialogContent, DialogTrigger } from "$shadcn/components/ui/dialog/index.js";
+  import { RefreshCwIcon, PlusIcon, PencilLine, TrashIcon } from "@lucide/svelte";
+  import { Dialog, DialogContent } from "$shadcn/components/ui/dialog/index.js";
+  import { checkRoles } from "$lib/scripts/utils/checkRoles.js";
+  import { onMount } from "svelte";
+  import { parseErrorMessage } from "$lib/scripts/utils/api.js";
 
   const { data: _internal } = $props();
   // svelte-ignore state_referenced_locally
@@ -125,27 +128,61 @@
   // #endregion
 
   // #region Game Management
-  let games: Exclude<Awaited<ReturnType<typeof fetchGames>>, void> = $state([]);
+  let games: Exclude<Awaited<ReturnType<typeof fetchGames>>, never[]> = $state([]);
+  let gameVersions: Record<string, GameVersionApiV3_full[]> = $state({});
   let selectedGame = $derived.by(() => games.find((game) => game.name === selectedGameName));
   let selectedGameName: string = $state("");
+  let selectedGameCanVersion = $derived.by(() => checkRoles(user, [UserPermissions.Game_EditVersions], selectedGame?.name));
+  let selectedGameCanEdit = $derived.by(() => checkRoles(user, [UserPermissions.Game_Edit], selectedGame?.name));
 
-  // createNewGame states
+  // dialogs
   let createGameDialogOpen = $state(false);
   let newGameName = $state("");
   let newGameDisplayName = $state("");
 
+  let createVersionDialogOpen = $state(false);
+  let createVersionVersion = $state("");
+
+  let linkVersionDialogOpen = $state(false);
+  let linkVersionSourceId = $state("");
+  let linkVersionTargetId = $state("");
+
+  let createWebhookDialogOpen = $state(false);
+  let newWebhookUrl = $state("");
+  let newWebhookTypes: WebhookLogType[] = $state([]);
+  let newWebhookIsAsset = $state(false);
+
   async function fetchGames() {
+    let showExtra = checkRoles(user, [UserPermissions.Game_ViewExtras]);
     return await trpc.v3.games.getGames
-      .query()
-      .then((games) => {
-        toast.success("Games fetched.");
-        return games;
+      .query(showExtra)
+      .then(async (fetchedGames) => {
+        games = fetchedGames;
+        for (const game of games) {
+          await trpc.v3.games.getGameVersions
+            .query({ gameName: game.name, includeExtras: true })
+            .then((res) => {
+              gameVersions[game.name] = res.gameVersions as GameVersionApiV3_full[];
+            })
+            .catch((err) => {
+              console.error(err);
+              toast.error(`Failed to fetch versions for ${game.displayName}.`);
+            });
+        }
+        return fetchedGames;
       })
       .catch((err) => {
         console.error(err);
         toast.error("Failed to fetch games.");
+        return [];
       });
   }
+
+  onMount(async () => {
+    await fetchGames();
+    selectedGameName = games.find((game) => game.default)?.name ?? "";
+  });
+  // #endregion
 </script>
 
 <div class="flex flex-col gap-4 m-auto p-4 justify-center">
@@ -373,8 +410,7 @@
         </div>
       </div>
     </Tabs.Content>
-    <Tabs.Content value="users">
-    </Tabs.Content>
+    <Tabs.Content value="users"></Tabs.Content>
     <Tabs.Content value="games">
       <div class="flex flex-col m-auto w-[400px] items-center p-4 bg-accent rounded-lg justify-center">
         <p class="p-2 text-2xl">Selected Game</p>
@@ -387,22 +423,122 @@
               {/each}
             </Select.Content>
           </Select.Root>
-          <Button variant="outline" size="icon" onclick={fetchGames}><RefreshCwIcon /></Button>
-          <Button variant="default" size="icon" onclick={() => (createGameDialogOpen = true)}><PlusIcon /></Button>
+          <Button variant="outline" size="icon" onclick={() => {fetchGames(); toast.success("Games fetched.");}}><RefreshCwIcon /></Button>
+          {#if checkRoles(user, [UserPermissions.Game_Create])}
+            <Button variant="default" size="icon" onclick={() => (createGameDialogOpen = true)}><PlusIcon /></Button>
+          {/if}
         </div>
       </div>
       {#if selectedGame}
-        <Tabs.Root class="mt-2" value="details">
+        <Tabs.Root class="mt-2" value="versions">
           <Tabs.List class="m-auto">
             <Tabs.Trigger value="details">Details</Tabs.Trigger>
-            <Tabs.Trigger value="versions">Versions</Tabs.Trigger>
-            <Tabs.Trigger value="webhooks">Webhooks</Tabs.Trigger>
+            {#if selectedGameCanVersion}
+              <Tabs.Trigger value="versions">Versions</Tabs.Trigger>
+            {/if}
+            {#if selectedGameCanEdit}
+              <Tabs.Trigger value="webhooks">Webhooks</Tabs.Trigger>
+            {/if}
           </Tabs.List>
           <Tabs.Content value="details">
+              <div class="flex flex-col items-center p-4 bg-accent rounded-lg">
+                <p><strong>Name:</strong> {selectedGame.name}</p>
+                <p><strong>Display Name:</strong> {selectedGame.displayName}</p>
+                <p><strong>Platforms:</strong> {selectedGame.platforms.join(", ")}</p>
+                <p><strong>Categories:</strong> {selectedGame.categories.join(", ")}</p>
+                <p><strong>Is Default:</strong> {selectedGame.default ? "Yes" : "No"}</p>
+              </div>
           </Tabs.Content>
-          <Tabs.Content value="versions">
+          <Tabs.Content value="versions" class="flex flex-col items-center">
+            <div class="flex flex-row mb-4 gap-2">
+              <Button variant="default" onclick={() => (createVersionDialogOpen = true)}><PlusIcon />Create New Version</Button>
+              <Button variant="default" onclick={() => (linkVersionDialogOpen = true)}>
+                <PlusIcon />Link Versions
+              </Button>
+            </div>
+            <table class="table-auto m-auto w-full">
+              <thead>
+                <tr>
+                  <th>Version ID</th>
+                  <th>Version</th>
+                  <th>Default</th>
+                  <th>Linked Versions</th>
+                  <th>Created At</th>
+                  <th>Updated At</th>
+                </tr>
+              </thead>
+              <tbody>
+                {#each gameVersions[selectedGame.name] ?? [] as version}
+                  <tr>
+                    <td>{version.id}</td>
+                    <td>{version.version}</td>
+                    <td>
+                      <Button variant={version.defaultVersion ? "default" : "outline"} disabled={version.defaultVersion} onclick={() => {
+                        trpc.internal.games.setDefaultVersion
+                          .mutate({ gameName: selectedGame.name, versionId: version.id })
+                          .then(() => {
+                            toast.success(`Version ${version.version} set as default.`);
+                            fetchGames()
+                          }).catch((err) => {
+                            console.error(err);
+                            toast.error(`Failed to set version ${version.version} as default. ${parseErrorMessage(err)}`);
+                          });
+                      }}>
+                        {version.defaultVersion ? "Default" : "Set as Default"}
+                      </Button>
+                    </td>
+                    <td>
+                      {version.linkedVersionIds.length > 0 ? `Linked to: ${version.linkedVersionIds.join(", ")}` : "No linked versions"}
+                      <Button variant="outline" size="icon" class="ml-2">
+                        <PencilLine />
+                      </Button>
+                    </td>
+                    <td>{`${new Date(version.createdAt).toLocaleString()}`}</td>
+                    <td>{`${new Date(version.updatedAt).toLocaleString()}`}</td>
+                  </tr>
+                {/each}
+              </tbody>
+            </table>
           </Tabs.Content>
-          <Tabs.Content value="webhooks">
+          <Tabs.Content value="webhooks" class="flex flex-col items-center">
+            <Button variant="default" class="mb-4" onclick={() => (createWebhookDialogOpen = true)}><PlusIcon />Create New Webhook</Button>
+            <table class="table-auto m-auto w-full">
+              <thead>
+                <tr>
+                  <th>Webhook ID</th>
+                  <th>Type</th>
+                  <th>URL</th>
+                </tr>
+              </thead>
+              <tbody>
+                {#each selectedGame.webhooks ?? [] as webhook}
+                  <tr>
+                    <td>{webhook.id}</td>
+                    <td>{webhook.types.join(", ")}</td>
+                    <td>{webhook.url}</td>
+                    <td>
+                      <Button variant="outline" size="icon">
+                        <PencilLine />
+                      </Button>
+                      <Button variant="destructive" size="icon" onclick={() => {
+                        trpc.internal.games.removeWebhook
+                          .mutate({ gameName: selectedGame.name, webhookId: webhook.id })
+                          .then(() => {
+                            toast.success("Webhook deleted.");
+                            fetchGames();
+                          })
+                          .catch((err) => {
+                            console.error(err);
+                            toast.error("Failed to delete webhook.", { description: parseErrorMessage(err) });
+                          });
+                      }}>
+                        <TrashIcon />
+                      </Button>
+                    </td>
+                  </tr>
+                {/each}
+              </tbody>
+            </table>
           </Tabs.Content>
         </Tabs.Root>
       {/if}
@@ -410,16 +546,166 @@
   </Tabs.Root>
 </div>
 
-
 <Dialog bind:open={createGameDialogOpen}>
   <DialogContent>
     <div class="flex flex-col items-center rounded-lg justify-center">
       <p class="p-2 text-2xl">Create New Game</p>
       <Input placeholder="Game Name" class="w-full mb-2" bind:value={newGameName} />
       <Input placeholder="Display Name" class="w-full mb-2" bind:value={newGameDisplayName} />
-      <Button class="w-full" onclick={() => {
-
+      <Button class="w-full" onclick={async () => {
+        if (!newGameName || !newGameDisplayName || newGameName.trim() === "" || newGameDisplayName.trim() === "") {
+      toast.error("Please fill in all fields.");
+      return;
+    }
+    return await trpc.internal.games.createGame
+      .mutate({
+        gameName: newGameName,
+        displayName: newGameDisplayName,
+      })
+      .then((game) => {
+        toast.success("Game created.");
+        newGameName = "";
+        newGameDisplayName = "";
+        createGameDialogOpen = false;
+        return game;
+      })
+      .catch((err) => {
+        console.error(err);
+        toast.error("Failed to create game.");
+      });
       }}>Create Game</Button>
     </div>
   </DialogContent>
 </Dialog>
+
+<Dialog bind:open={createVersionDialogOpen}>
+  <DialogContent>
+    <div class="flex flex-col items-center rounded-lg justify-center">
+      <p class="p-2 text-2xl">Create New Version for {selectedGame?.displayName}</p>
+      <Input placeholder="Version String" class="w-full mb-2" bind:value={createVersionVersion} />
+      <Button class="w-full" onclick={() => {
+        if (!createVersionVersion || createVersionVersion.trim() === "") {
+          toast.error("Please enter a version string.");
+          return;
+        }
+        trpc.internal.games.createGameVersion
+          .mutate({ gameName: selectedGame?.name ?? "", version: createVersionVersion })
+          .then(() => {
+            toast.success("Version created.");
+            createVersionVersion = "";
+            createVersionDialogOpen = false;
+            fetchGames();
+          })
+          .catch((err) => {
+            console.error(err);
+            toast.error("Failed to create version.");
+          });
+      }}>Create Version</Button>
+    </div>
+  </DialogContent>
+</Dialog>
+
+<Dialog bind:open={linkVersionDialogOpen}>
+  <DialogContent>
+    <div class="flex flex-col items-center rounded-lg justify-center">
+      <p class="p-2 text-2xl">Link Versions for {selectedGame?.displayName}</p>
+      <Input placeholder="Version ID #1" class="w-full mb-2" bind:value={linkVersionSourceId} />
+      <Input placeholder="Version ID #2" class="w-full mb-2" bind:value={linkVersionTargetId} />
+      <Button class="w-full" onclick={() => {
+        if (!linkVersionSourceId || !linkVersionTargetId) {
+          toast.error("Please enter both source and target version IDs.");
+          return;
+        }
+        trpc.internal.games.linkVersions
+          .mutate({ gameName: selectedGame?.name ?? "", versionId1: parseInt(linkVersionSourceId), versionId2: parseInt(linkVersionTargetId) })
+          .then(() => {
+            toast.success("Versions linked.");
+            linkVersionSourceId = "";
+            linkVersionTargetId = "";
+            linkVersionDialogOpen = false;
+            fetchGames();
+          })
+          .catch((err) => {
+            console.error(err);
+            toast.error("Failed to link versions.");
+          });
+      }}>Link Versions</Button>
+    </div>
+  </DialogContent>
+</Dialog>
+
+<Dialog bind:open={createWebhookDialogOpen}>
+  <DialogContent>
+    <div class="flex flex-col items-center rounded-lg justify-center">
+      <p class="p-2 text-2xl">Create New Webhook for {selectedGame?.displayName}</p>
+      <Input placeholder="Webhook URL" class="w-full mb-2" bind:value={newWebhookUrl} />
+      <Select.Root type="multiple" bind:value={newWebhookTypes}>
+        <Label class="mb-2">Log Types</Label>
+        <Select.Trigger class="w-full">{newWebhookTypes.length > 0 ? newWebhookTypes.join(", ") : "Select log types..."}</Select.Trigger>
+        <Select.Content>
+          {#each Object.values(WebhookLogType) as item}
+            <Select.Item value={item}>{item}</Select.Item>
+          {/each}
+        </Select.Content>
+      </Select.Root>
+      <div class="flex flex-row items-center gap-2 mt-2">
+        <Checkbox bind:checked={newWebhookIsAsset} id="isAsset" />
+        <Label for="isAsset">Is Asset Webhook</Label>
+      </div>
+      <Button class="w-full mt-4" onclick={() => {
+        if (!newWebhookUrl || newWebhookUrl.trim() === "") {
+          toast.error("Please enter a webhook URL.");
+          return;
+        }
+        if (newWebhookTypes.length === 0) {
+          toast.error("Please select at least one log type.");
+          return;
+        }
+        trpc.internal.games.addWebhook
+          .mutate({ gameName: selectedGame?.name ?? "", url: newWebhookUrl, types: newWebhookTypes, isAssetWebhook: newWebhookIsAsset })
+          .then(() => {
+            toast.success("Webhook created.");
+            newWebhookUrl = "";
+            newWebhookTypes = [];
+            newWebhookIsAsset = false;
+            createWebhookDialogOpen = false;
+            fetchGames();
+          })
+          .catch((err) => {
+            console.error(err);
+            toast.error("Failed to create webhook.", { description: parseErrorMessage(err) });
+          });
+      }}>Create Webhook</Button>
+    </div>
+  </DialogContent>
+</Dialog>
+
+<style>
+  table {
+    width: 80%;
+    border: #2c2c2c80 solid 1px;
+    border-radius: 0.5rem;
+  }
+
+  tr,
+  td,
+  th {
+    padding: 0.5rem;
+    text-align: center;
+  }
+
+  thead {
+    font-weight: bold;
+    padding: 0.5rem;
+  }
+
+  th {
+    background-color: #2c2c2c80;
+  }
+  th:first-child {
+    border-top-left-radius: 0.5rem;
+  }
+  th:last-child {
+    border-top-right-radius: 0.5rem;
+  }
+</style>

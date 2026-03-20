@@ -4,7 +4,7 @@ import { z } from "zod/v4";
 import { Op, WhereOptions } from "sequelize";
 import { loggedInProcedure, router } from "../../trpc.ts";
 import { TRPCError } from "@trpc/server";
-import { handleTRPCPromiseCatch, parseErrorMessage } from "../../../shared/Tools.ts";
+import { handleCatch, parseErrorMessage } from "../../../shared/Tools.ts";
 
 export const RequestRouter = router({
     getMyRequests: loggedInProcedure().input(z.object({
@@ -80,7 +80,7 @@ export const RequestRouter = router({
         if (!assetReq.canMessage(ctx.user)) {
             throw new TRPCError({code: `FORBIDDEN`, message: `You are not allowed to message this request`});
         }
-        await assetReq.addMessage(ctx.user, input.message).catch(handleTRPCPromiseCatch);
+        await assetReq.addMessage(ctx.user, input.message).catch(handleCatch());
         return { message: `Message added successfully` };
     }),
     handleRequest: loggedInProcedure().input(z.object({
@@ -95,10 +95,10 @@ export const RequestRouter = router({
             throw new TRPCError({code: `FORBIDDEN`, message: `You are not allowed to handle this request`});
         }
         if (input.action === `accept`) {
-            await assetReq.accept(ctx.user).catch(handleTRPCPromiseCatch);
+            await assetReq.accept(ctx.user).catch(handleCatch());
             return { message: `Request accepted successfully` };
         } else if (input.action === `decline`) {
-            await assetReq.decline(ctx.user).catch(handleTRPCPromiseCatch);
+            await assetReq.decline(ctx.user).catch(handleCatch());
             return { message: `Request declined successfully` };
         }
         throw new Error(`Invalid action`);
@@ -112,8 +112,8 @@ export const RequestRouter = router({
             throw new TRPCError({ code: `NOT_FOUND`, message: `Asset not found` });
         }
 
-        let assetReq = await asset.report(ctx.user, input.reason).catch(handleTRPCPromiseCatch);
-        return await assetReq.toApiV3().catch(handleTRPCPromiseCatch);;
+        let assetReq = await asset.report(ctx.user, input.reason).catch(handleCatch());
+        return await assetReq.toApiV3().catch(handleCatch());;
     })
 });
 
