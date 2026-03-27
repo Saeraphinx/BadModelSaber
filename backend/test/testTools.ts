@@ -1,7 +1,8 @@
 import { CreationAttributes, UniqueConstraintError, ValidationError } from "sequelize";
 import { Context } from "../src/api/trpc";
-import { Asset, AssetFileFormat, License, User, UserPermissions } from "../src/shared/Database";
+import { Asset, AssetFileFormat, License, Project, Status, User, UserPermissions, Version } from "../src/shared/Database";
 import { fromZodError, isZodErrorLike } from "zod-validation-error";
+import { SemVer } from "semver";
 
 // most endpoints don't actually need a fully functional context, so we can just kinda do this
 export function createTestContext(userId: string): Context {
@@ -66,6 +67,49 @@ export function createDummyAsset(uploader: number | undefined = 5, id?: number, 
         fileSafeName: "test_asset.avatar",
         iconNames: ["icon1.png", "icon2.png"],
         fileHash: getRandomString(16),
+        ...overrides,
+    });
+}
+
+export function createDummyProject(gameName:string, author: number | undefined = 5, id?: number, overrides: Partial<CreationAttributes<Project>> = {}): Project {
+    if (id) {
+        overrides = {
+            ...overrides,
+            id: id
+        }
+    }
+    return new Project({
+        name: `Project ${id}`,
+        description: "This is a test project",
+        gameName: gameName,
+        authorIds: [author ? author : 5],
+        category: "Other",
+        gitUrl: "https://example.com",
+        iconFileName: "icon.png",
+        lastUpdatedById: author ? author : 5,
+        summary: "This is a test project",
+        ...overrides,
+    });
+}
+
+export function createDummyVersion(projectId: number, gameVersionId: number, author: number | undefined = 5, id?: number, overrides: Partial<CreationAttributes<Project>> = {}): Version {
+    if (id) {
+        overrides = {
+            ...overrides,
+            id: id
+        }
+    }
+    return new Version({
+        projectId: projectId,
+        supportedGameVersionIds: [gameVersionId],
+        uploaderId: author ? author : 5,
+        contentHashes: [],
+        fileSize: 0,
+        dependencies: [],
+        semver: new SemVer("1.0.0"),
+        platform: "universal",
+        zipHash: getRandomString(16),
+        lastUpdatedById: author ? author : 5,
         ...overrides,
     });
 }

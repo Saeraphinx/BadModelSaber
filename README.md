@@ -19,6 +19,42 @@ Both the frontend and backend use `yarn` as their package manager. You can start
 7. Copy the `.default.env` file to `.env`.
 ## Data Storage
 The backend server stores all of its data in a folder called `storage`. If you are using docker, this folder is located at `/app/storage`. If you are running the server locally, it is located in the root directory of the backend folder (same folder that `build` & `src` are).
+The folder structure for assets is as follows:
+```
+storage/
+├── uploads/
+│   ├── {id}
+│   │   ├── {...files}
+```
+The `uploads` folder contains all of the uploaded files. Each upload is stored in a folder named after the upload's ID. Inside each upload folder are the files associated with that upload.
+Common files will be:
+### Assets
+Assets will have both the asset file and up to 5 images in the same folder. The asset file will be named using the `fileSafeName` property of the asset, and the images will be named according to the `iconNames` property of the asset. For example, if asset ID 123 has a `fileSafeName` of `example`, a type of `sound_ogg` and `iconNames` of `["icon1.png", "icon2.png"]`, the folder for that asset will look like this:
+```
+storage/
+├── uploads/
+│   ├── 123/
+│   │   ├── example.ogg
+│   │   ├── icon1.png
+│   │   ├── icon2.png
+```
+### Mods
+Versions of projects will have a similar structure, but the files will be named according to the `name` property of the project and the `version` & `platform` property of the version, as well as being in a sub folder dedicated to that version. For example, if project ID 456 had version ID 532 with a `name` of `Example Mod` and a `version` of `1.0.0` and `platform` of `universal`, the folder for that version will look like this:
+
+```
+storage/
+├── uploads/
+│   ├── 456/
+|   |   ├── {project.iconFileName}
+|   |   ├── 532/
+│   │   |   ├── Example Mod_universal_v1.0.0.zip
+|   |   |   ├── Example Mod_universal_v1.0.0_manifest.json
+|   |   |   ├── Example Mod_universal_v1.0.0.dll (if the version has been decompiled already)
+|   |   |   ├── decompiled/
+|   |   |   |   ├── {...decompiled files}
+```
+
+
 ## Translations
 The frontend uses Inlang/Paraglide for translations. All translation files are located in `frontend/src/lib/paraglide/messages/`. Translations are built when running `yarn install` in the frontend folder, but you can also run `yarn i18n` to rebuild them. 
 ## Tests

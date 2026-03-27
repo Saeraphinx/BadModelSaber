@@ -65,11 +65,12 @@ export class Project extends Model<InferAttributes<Project>, InferCreationAttrib
     @AllowNull(false)
     @Default([])
     @Column(DataType.ARRAY(DataType.INTEGER))
-    declare collaboratorIds: number[]; // the ids of the users who are collaborators on this project
+    declare collaboratorIds: CreationOptional<number[]>; // the ids of the users who are collaborators on this project
 
     @AllowNull(false)
+    @Default(Status.Private)
     @Column(DataType.STRING)
-    declare status: Status; // the current status of the project
+    declare status: CreationOptional<Status>; // the current status of the project
 
     @AllowNull(false)
     @Column(DataType.STRING)
@@ -141,6 +142,8 @@ export class Project extends Model<InferAttributes<Project>, InferCreationAttrib
     public static validatorCreation = z.object({
         ...Project.validator.shape,
         id: Project.validator.shape.id.or(z.instanceof(Literal)).nullish(),
+        collaboratorIds: Project.validator.shape.collaboratorIds.nullish(),
+        status: Project.validator.shape.status.nullish(),
         statusHistory: Project.validator.shape.statusHistory.nullish(),
         lastApprovedById: Project.validator.shape.lastApprovedById.nullish(),
         deletedAt: Project.validator.shape.deletedAt.nullish(),

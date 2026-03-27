@@ -40,7 +40,7 @@
   {#if children}
     {@render children()}
   {:else}
-    {m["assets.buttons.download"]()}
+    {m["common.buttons.download"]()}
   {/if}
 </Button>
 

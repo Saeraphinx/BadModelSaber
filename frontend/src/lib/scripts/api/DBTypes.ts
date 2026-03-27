@@ -1,6 +1,8 @@
 import { validRange } from "semver";
 import z from "zod/v4";
 
+export type ElementType<T> = T extends (infer U)[] ? U : T;
+
 export const dbId = z.int().positive();
 
 export enum PlatformType {

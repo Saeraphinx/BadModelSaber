@@ -142,7 +142,7 @@
       <!-- value is the first file in the files array -->
       <Label class="p-1 pb-2" for="thumbnail">{m["assets.upload.thumbnail"]()}</Label>
       <Input id="thumbnail" type="file" bind:files={thumbnails} accept=".png,.jpeg,.webp,.gif" multiple />
-      <p class="text-sm text-muted-foreground mt-2 pl-1">P{m["assets.upload.thumbnailFooter"]()}</p>
+      <p class="text-sm text-muted-foreground mt-2 pl-1">{m["assets.upload.thumbnailFooter"]()}</p>
       <span class="h-4"></span>
       <Label class="p-1 pb-2" for="zip">{m["assets.asset"]()}</Label>
       <Input

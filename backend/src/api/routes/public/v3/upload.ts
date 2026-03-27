@@ -11,6 +11,7 @@ import { zfd } from "zod-form-data";
 import { createHash } from "node:crypto";
 import { TRPCError } from "@trpc/server";
 import JSZip from "jszip";
+import { getManifestFromString } from "../../../../shared/ModParser.ts";
 
 /*
 Files follow this structure:
@@ -176,7 +177,7 @@ export const uploadStuff = router({
             dependencies: true,
             supportedGameVersionIds: true,
         })),
-        mod: zfd.file(), // main asset file, will be validated later based on type,
+        modZip: zfd.file(), // main asset file, will be validated later based on type,
         immidateSubmit: zfd.checkbox().optional(), // if true, will immidately submit the version for review after upload instead of saving as private
     }))
     .output(versionApiV3Schema)
@@ -193,11 +194,11 @@ export const uploadStuff = router({
             throw new TRPCError({ code: 'FORBIDDEN', message: 'You do not have permission to upload versions for this project.' });
         }
 
-        let fileHash = await getHashFromFile(input.mod);
-        if ((input.mod.type !== "application/zip" && input.mod.type !== "application/x-zip-compressed") || path.extname(input.mod.name) !== ".zip") {
+        let fileHash = await getHashFromFile(input.modZip);
+        if ((input.modZip.type !== "application/zip" && input.modZip.type !== "application/x-zip-compressed") || path.extname(input.modZip.name) !== ".zip") {
             throw new TRPCError({ code: 'BAD_REQUEST', message: 'Uploaded file is not a valid zip archive.' });
         }
-        let zip = await JSZip.loadAsync(await input.mod.arrayBuffer()).catch((err) => {
+        let zip = await JSZip.loadAsync(await input.modZip.arrayBuffer()).catch((err) => {
             Logger.error(`Error reading uploaded zip file: ${err.message}`);
             throw new TRPCError({ code: 'BAD_REQUEST', message: 'Uploaded file is not a valid zip archive.' });
         });
@@ -220,44 +221,7 @@ export const uploadStuff = router({
                 hash: md5Hash,
             });
 
-            // pull out manifest.json if it exists
-            if (file.name === "manifest.json") {
-                manifestJson = data.toString();
-            } else if (path.extname(file.name) === ".dll") {
-                // validate that dll files are actually dlls by checking the "MZ" header
-                if (data.subarray(0, 2).toString() !== "MZ") {
-                    Logger.error(`File ${relativePath} in zip archive is not a valid DLL file.`);
-                    throw new TRPCError({ code: 'BAD_REQUEST', message: `File ${relativePath} in zip archive is not a valid DLL file.` });
-                }
-
-                let discoveredJsonStrings = /({[\w\W]+})/gmi.exec(data.toString());
-                if (!discoveredJsonStrings || discoveredJsonStrings.length <= 0) {
-                    Logger.error(`No JSON string found in manifest.json for version ${input.data.semver} of project ID ${project.id}`);
-                }
-                discoveredJsonStrings?.forEach((jsonString) => {
-                    try {
-                        let parsed = JSON.parse(jsonString);
-                        if ((
-                            `$schema` in parsed && 
-                            typeof parsed.$schema === "string" && 
-                            parsed.$schema === "https://raw.githubusercontent.com/beat-saber-modding-group/BSIPA-MetadataFileSchema/master/Schema.json"
-                            ) || (
-                                `id` in parsed &&
-                                `name` in parsed &&
-                                `version` in parsed &&
-                                `gameVersion` in parsed &&
-                                `description` in parsed &&
-                                `author` in parsed
-                            )
-                        ) {
-                            manifestJson = JSON.stringify(parsed);
-                            Logger.debug(`Found manifest.json in DLL file ${relativePath} for version ${input.data.semver} of project ID ${project.id}`);
-                        }
-                    } catch (err) {
-                        // not a valid JSON string, ignore
-                    }
-                });
-            }
+            manifestJson = getManifestFromString(data.toString());
         });
 
 
@@ -268,7 +232,7 @@ export const uploadStuff = router({
             dependencies: input.data.dependencies,
             supportedGameVersionIds: input.data.supportedGameVersionIds,
             zipHash: fileHash,
-            fileSize: input.mod.size,
+            fileSize: input.modZip.size,
             uploaderId: ctx.user.id,
             lastUpdatedById: ctx.user.id,
             status: Status.Private,
@@ -277,7 +241,7 @@ export const uploadStuff = router({
             Logger.log(`Version database entry created for user ${ctx.user?.id} with version ID ${version.id} for project ID ${project.id}`);
             let versionFolder = path.join(project.folderPath, version.id.toString());
             fs.mkdirSync(versionFolder, { recursive: true });
-            await input.mod.arrayBuffer().then(async (buffer) => {
+            await input.modZip.arrayBuffer().then(async (buffer) => {
                 fs.writeFileSync(path.join(versionFolder, await version.fileName), Buffer.from(buffer));
                 if (manifestJson) {
                     fs.writeFileSync(path.join(versionFolder, await version.manifestName), manifestJson);

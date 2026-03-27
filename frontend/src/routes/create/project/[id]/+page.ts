@@ -14,7 +14,7 @@ export const load = (async ({ fetch, params, parent }) => {
     throw error(401, `You must be logged in to view this page`);
   }
 
-  let project = await trpc.v3.mods.getProject.query({
+  let project = await trpc.internal.mods.getProject.query({
     projectId: id
   }).catch(handleTrpcError());
 

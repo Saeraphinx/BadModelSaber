@@ -1,4 +1,4 @@
-import { AlertType, Asset, AssetFileFormat, AssetPublicAPIv2, DefaultPermissionsObject, Game, License, LinkedAssetLinkType, Status, Tags, User, UserPermissions } from "./Database.ts";
+import { AlertType, Asset, AssetFileFormat, AssetPublicAPIv2, DefaultPermissionsObject, Game, License, LinkedAssetLinkType, ModApiv2, ModVersionsApiv2, Project, Status, Tags, User, UserPermissions } from "./Database.ts";
 import { Logger } from "./Logger.ts";
 import * as fs from "fs";
 import * as crypto from "crypto";
@@ -15,6 +15,7 @@ type modelsaberasset= {
     [key: string]: AssetPublicAPIv2;
 }
 
+const totalBeatmodsMods = 0; // set this to the total number of mods on BeatMods to get accurate progress reporting. Currently set to 0 to avoid accidentally hitting the BeatMods API during testing.
 const hashType = `md5`;
 const conversionStorage = `./storage/converts`;
 const doAssetDownload = true; // set to false to skip downloading assets, useful for testing
@@ -399,4 +400,32 @@ export async function importFromOldModelSaber(sendMessage: (messaage: string, ty
         Logger.error(parseErrorMessage(error));
         throw error;
     }
+}
+
+export async function importFromBadBeatMods() {
+    Logger.log(`'ere Jim, have a seat and let me tell you bout a tale that'll make your blood run cold.`);
+    let mods: { mod: ModApiv2, versions: ModVersionsApiv2[] }[] = [];
+
+    for (let modId = 1; modId <= totalBeatmodsMods; modId++) {
+        try {
+            let mod = await fetch(`https://beatmods.com/api/mods/${modId}`).then(res => res.json() as Promise<{ info: ModApiv2, versions: ModVersionsApiv2[]}>);
+            mods.push({
+                mod: mod.info,
+                versions: mod.versions,
+            });
+            Logger.debug(`Fetched mod ${modId}: ${mod.info.name}`);
+        } catch (error) {
+            Logger.error(`Failed to fetch mod ${modId}: ${error}`);
+        }
+    }
+
+    let listOfAllPossibleCategories = new Set<string>();
+    let listOfAllPossiblePlatforms = new Set<string>();
+
+    // while id love to keep the IDs, theres a built in 10 ids that are saved for testing/importer accounts/other uses, so we gotta just use the automatic ones
+    for (const { mod, versions } of mods) {
+        Logger.debug(`Mod: ${mod.name} (${mod.id})`);
+    }
+
+
 }

@@ -1,6 +1,6 @@
 import { InferAttributes, InferCreationAttributes, CreationOptional, WhereOptions, Op } from "sequelize";
 import { AllowNull, Column, CreatedAt, DataType, Default, DeletedAt, Model, Sequelize, Table, UpdatedAt } from "sequelize-typescript";
-import { GameVersionApiV2, GameVersionApiV3 } from "../DBExtras.ts";
+import { GameVersionApiV2, GameVersionApiV3, GameVersionApiV3_full } from "../DBExtras.ts";
 import { Version } from "./Version.ts";
 import { parseErrorMessage } from "../../Tools.ts";
 
@@ -119,7 +119,7 @@ export class GameVersion extends Model<InferAttributes<GameVersion>, InferCreati
         };
     }
 
-    public toApiV3_full() {
+    public toApiV3_full(): GameVersionApiV3_full {
         return {
             id: this.id as number,
             gameName: this.gameName,

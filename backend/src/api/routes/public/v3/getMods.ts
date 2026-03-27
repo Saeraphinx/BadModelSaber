@@ -83,49 +83,8 @@ export const GetModsV3 = router({
             return output;
         }),
     // #endregion
-    // #region getProject
-    getProject: anyProcedure()
-        .input(z.object({
-            projectId: z.number()
-        }))
-        .output(projectApiV3Schema)
-        .query(async ({ ctx, input }) => {
-            let project = await Project.findByPk(input.projectId);
-            if (!project) {
-                throw new TRPCError({ code: 'NOT_FOUND', message: 'Project not found.' });
-            }
-            if (!project.canView(ctx.user)) {
-                throw new TRPCError({ code: 'FORBIDDEN', message: 'You do not have permission to view this project.' });
-            }
-            return await project.toApiV3() as ProjectApiV3;
-        }),
-    // #endregion
-    // #region getProjectVersions
-    getProjectVerisons: anyProcedure()
-        .input(z.object({
-            projectId: z.number()
-        }))
-        .output(z.array(versionApiV3Schema))
-        .query(async ({ ctx, input }) => {
-            let project = await Project.findByPk(input.projectId);
-            if (!project) {
-                throw new TRPCError({ code: 'NOT_FOUND', message: 'Project not found.' });
-            }
-            if (!project.canView(ctx.user)) {
-                throw new TRPCError({ code: 'FORBIDDEN', message: 'You do not have permission to view this project.' });
-            }
-            let versions = await Version.findAll({
-                where: {
-                    projectId: project.id
-                }
-            });
-            versions = versions.filter(async v => await v.canView(ctx.user, project));
-            let output = await Promise.all(versions.map(async v => await v.toApiV3()));
-            return output;
-        }),
-    // #endregion
     // #region getProjectAndVersions
-    getProjectAndVerions: anyProcedure()
+    getProjectAndVersions: anyProcedure()
         .meta({
             openapi: {
                 method: `GET`,

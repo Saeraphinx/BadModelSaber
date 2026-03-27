@@ -187,16 +187,16 @@
     <div class="flex flex-col items-center w-full">
       <!-- Top Bar -->
       <div class="flex flex-col bg-card rounded-2xl w-full p-4 pt-2 mb-4">
-        <Label for="asset-search" class="sr-only">{m["assets.search.searchLabel"]()}</Label>
-        <Input type="text" placeholder={m["assets.search.searchPlaceholder"]()} class="w-full mt-2" id="asset-search" bind:value={searchQuery} />
+        <Label for="asset-search" class="sr-only">{m["search.search"]()}</Label>
+        <Input type="text" placeholder={m["search.searchAssets"]()} class="w-full mt-2" id="asset-search" bind:value={searchQuery} />
         <div class="flex flex-row mt-2 flex-wrap gap-2">
           <div class="flex items-center gap-2">
             <Select.Root allowDeselect={false} bind:value={selectedPageSizeString} type="single" onValueChange={(value) => (currentPage = 1)}>
-              <Select.Trigger class="">{m["assets.search.perPage"]({ count: selectedPageSizeString})}</Select.Trigger>
+              <Select.Trigger class="">{m["search.perPage"]({ count: selectedPageSizeString})}</Select.Trigger>
               <Select.Content>
                 {#each [24, 48, 72] as amount}
                   <Select.Item value={amount.toString()}>
-                    {m["assets.search.perPage"]({ count: amount })}
+                    {m["search.perPage"]({ count: amount })}
                   </Select.Item>
                 {/each}
               </Select.Content>
@@ -205,7 +205,7 @@
           {#if tooSmall.current}
             <Button variant="outline">
               <FunnelIcon class="h-4 w-4" />
-              <span class="sr-only">{m["assets.search.showFilters"]()}</span>
+              <span class="sr-only">{m["search.showFilters"]()}</span>
             </Button>
           {/if}
           <div class="flex-1 flex justify-end">

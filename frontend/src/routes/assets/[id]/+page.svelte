@@ -292,7 +292,7 @@
             {#if isBlurred}
               <div class="flex flex-col absolute top-0 left-0 w-full h-full justify-center items-center">
                 <p class="text-green">{m["assets.nsfwWarning"]()}</p>
-                <Button onclick={() => (isBlurred = false)}>{m["assets.buttons.unhide"]()}</Button>
+                <Button onclick={() => (isBlurred = false)}>{m["common.buttons.unhide"]()}</Button>
               </div>
             {/if}
           </div>
@@ -362,18 +362,18 @@
     {#if !isEditing}
       <DownloadButton shouldShowWarning={pageData.status != Status.Verified} variant="default" href={getAssetDownloadUrl(pageData)} download>
         <DownloadIcon />
-        {m["assets.buttons.download"]()}
+        {m["common.buttons.download"]()}
       </DownloadButton>
       <DownloadButton variant="outline" href={getOneClickUrl(pageData)}>
         <CloudDownloadIcon />
-        {m["assets.buttons.oneClickInstall"]()}
+        {m["common.buttons.oneClickInstall"]()}
       </DownloadButton>
       {#if allowedToReport}
         <Button variant="destructive" onclick={() => {
           reportDialog?.showDialog(pageData.id, pageData.name);
         }}>
           <MegaphoneIcon />
-          {m["assets.buttons.report"]()}
+          {m["common.buttons.report"]()}
         </Button>
       {/if}
       {#if user && user.id === pageData.uploaderId && pageData.status === Status.Private}
@@ -391,7 +391,7 @@
                 });
             }}>
             <BadgeAlert />
-            {m["assets.buttons.submitForApproval"]()}
+            {m["common.buttons.submitForApproval"]()}
           </Button>
         </div>
       {/if}
@@ -402,7 +402,7 @@
             approvalDialog?.showDialog(pageData.id, pageData.name);
           }}>
           <BadgeAlert />
-          {m["assets.buttons.approvalDialog"]()}
+          {m["common.buttons.approvalDialog"]()}
         </Button>
       {/if}
     {/if}

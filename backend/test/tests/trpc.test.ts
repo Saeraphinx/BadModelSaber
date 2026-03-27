@@ -119,7 +119,7 @@ describe("trpc", () => {
             });
 
             test(`getAlerts returns only read alerts`, async () => {
-                let response = await caller.internal.alerts.getMyAlerts({ read: `true` });
+                let response = await caller.internal.alerts.getAlerts({ read: `true` });
                 expect(response.length).toBeGreaterThan(0);
                 for (const alert of response) {
                     expect(alert.read).toBe(true);
@@ -127,7 +127,7 @@ describe("trpc", () => {
             });
 
             test(`getAlerts returns only unread alerts`, async () => {
-                let response = await caller.internal.alerts.getMyAlerts({ read: `false` });
+                let response = await caller.internal.alerts.getAlerts({ read: `false` });
                 expect(response.length).toBeGreaterThan(0);
                 for (const alert of response) {
                     expect(alert.read).toBe(false);

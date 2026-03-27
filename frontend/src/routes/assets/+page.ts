@@ -21,7 +21,7 @@ export const load = (async (data) => {
       fileFormat: fileFormat
     },
     pageMetadata: {
-      title: `${typeCapital === `all` ? `Assets` : typeCapital}`,
+      title: `${typeCapital === `all` || typeCapital === `` ? `Assets` : typeCapital}`,
     },
   };
 }) satisfies PageLoad;

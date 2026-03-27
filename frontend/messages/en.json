@@ -1,6 +1,7 @@
 {
   "$schema": "https://inlang.com/schema/inlang-message-format",
   "name": "ModelSaber",
+  "loading": "Loading...",
   "homepage": {
     "title": "ModelSaber",
     "subtitle": "A collection of various assets for use within Beat Saber.",
@@ -68,21 +69,33 @@
       "noUnreadAlerts": "No unread alerts."
     }
   },
-  "assets": {
-    "asset": "Asset",
-    "noAssetsFound": "No assets found.",
-    "search": {
-      "searchLabel": "Search",
-      "searchPlaceholder": "Search Assets...",
-      "perPage": "{count} per page",
-      "showFilters": "Show Filters",
-      "xToYOfZAssets": "{start}-{end} of {total}"
+  "search": {
+    "search": "Search",
+    "searchAssets": "Search Assets...",
+    "searchMods": "Search Mods...",
+    "perPage": "{count} per page",
+    "showFilters": "Show Filters",
+    "xToYOfZResults": "{start}-{end} of {total} results"
+  },
+  "common": {
+    "buttons": {
+      "download": "Download",
+      "oneClickInstall": "OneClick Install",
+      "approvalDialog": "Approval Dialog",
+      "submitForApproval": "Submit for Approval",
+      "report": "Report",
+      "unhide": "Unhide"
     },
-    "cardhover": {
+    "hover": {
+      "goToMod": "Go to Mod Page",
       "goToAsset": "Go to Asset Page",
       "updateStatus": "Update Status",
       "openApprovalDialog": "Open Approval Dialog"
-    },
+    }
+  },
+  "assets": {
+    "asset": "Asset",
+    "noAssetsFound": "No assets found.",
     "statusHover": {
       "verified": {
         "title": "This asset has been verified by the ModelSaber team and <span class=\"text-green-600\">is safe to use!</span>",
@@ -92,14 +105,6 @@
         "title": "This asset has <b>not</b> been verified by the ModelSaber team. <span class=\"text-orange-400\">Use at your own risk!</span>",
         "description": "Unverified assets have not been checked for malware. Be cautious when downloading and using these assets."
       }
-    },
-    "buttons": {
-      "download": "Download",
-      "oneClickInstall": "OneClick Install",
-      "approvalDialog": "Approval Dialog",
-      "submitForApproval": "Submit for Approval",
-      "report": "Report",
-      "unhide": "Unhide"
     },
     "previewTitle": "Asset Preview",
     "nsfwWarning": "This asset is marked as NSFW.",
@@ -151,6 +156,12 @@
     }
   },
   "mods": {
+    "mod": "Mod",
+    "project": "Project",
+    "version": "Version",
+    "noProjectsFound": "No projects found.",
+    "noVersionsFound": "No versions found.",
+    "noModsFound": "No mods found.",
     "createProject": {
       "title": "Create Project",
       "subtitle": "Please fill out the form below to create a new project.",
@@ -166,13 +177,43 @@
       "thumbnailRuleList4": "Should be tasteful and appropriate",
       "thumbnail": "Thumbnail",
       "thumbnailFooter": "Please ensure your thumbnail follows the rules listed above."
+    },
+    "createVersion": {
+      "title": "Create Version for {projectName}",
+      "subtitle": "Please fill out the form below to create a new version for {projectName}.",
+      "semver": "Semantic Version",
+      "platform": "Platform",
+      "supportedGameVersions": "Supported Game Versions",
+      "dependencies": "Dependencies",
+      "addDependency": "Add Dependency",
+      "semverShouldMatchManifest": "The semantic version should match the version specified in your manifest.json file.",
+      "importFromOtherVersion": "Import dependencies from another version",
+      "importFromOtherVersionDialogTitle": "Import Dependencies from Another Version",
+      "importFromOtherVersionDialogDescription": "Select another version of {projectName} to import dependencies from. This will copy all dependencies from the selected version to the new version you are creating.",
+      "searchVersion": "Search Versions...",
+      "packingFileIntoZip": "Your DLL file will be packed into a zip file upon upload in the Plugins folder. If you want to include additional files, or if your DLL should be placed in a different folder, please create a zip file with the correct structure and upload that instead."
+    },
+    "manifestChecks": {
+      "manifestData": "Manifest Data",
+      "loadManifest": "Load Manifest",
+      "noIssuesFound": "No issues found.",
+      "couldNotReadManifest": "Could not read manifest from file. Please ensure it is a valid .dll or .zip file containing a manifest.json.",
+      "manifestProjectNameMismatch": "The name specified in your manifest ({manifestName}) doesn't match the name of the project you're uploading to ({expectedName}). Please ensure the 'name' field in your manifest matches the name of your project on ModelSaber.",
+      "dependencies": {
+        "manifestMissingdependsOn": "Your manifest is missing the 'dependsOn' field, which is required to specify your mod's dependencies. Please add this field to your manifest and try again.",
+        "webInvalidRange": "Dependency {depName} has an invalid game version range specified: {sv}. Please ensure all dependencies have valid semantic version ranges.",
+        "manifestInvalidRange": "Dependency {depName} has an invalid game version range specified: {sv}. Please ensure all dependencies in your manifest have valid semantic version ranges.",
+        "webDependencyNotFound": "Dependency {depName}@{sv} was not found in the manifest. Please ensure all dependencies listed are included in the manifest file.",
+        "manifestDependencyNotFound": "Dependency {depName}@{sv} specified in manifest not found. Please ensure all dependencies listed in your manifest are marked as dependencies on ModelSaber."
+      },
+      "manifestGameVersionIsntLowest": "The game version specified in your manifest ({manifestGameVersion}) isn't the lowest game version specified among your supported game versions. Please ensure the 'gameVersion' field in your manifest specifies the lowest game version your mod supports, or update your supported game versions to match the game version specified in your manifest."
     }
   },
   "requests": {
     "wouldYouLikeToAcceptOrReject": "Would you like to accept or reject this request?",
     "initialMessageCredit": "{name} would like to add you as a collaborator to the asset {assetName}.",
     "initialMessageLink": "{name} would like to link your asset, {toLinkAssetName}, to their asset, {assetName}.",
-    "initialMessageReport": "{name} would like to report the asset, {assetName}.",
+    "initialMessageReport": "{name} would like to report \"{assetName}\".",
     "tableTitle": "{type} Request",
     "requestID": "Request ID: {id}",
     "Status": "Request Status: {status}",
@@ -290,6 +331,7 @@
     "accept": "Accept",
     "reject": "Reject",
     "close": "Close",
+    "remove": "Remove",
     "approvalDialog": {
       "title": "Update Status for {name}",
       "description": "Select the new status for the asset \"{name}\". Click save to apply the changes.",

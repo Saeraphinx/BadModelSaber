@@ -8,6 +8,11 @@ import z from "zod/v4";
 import { Logger } from "../../Logger.ts";
 import { GameVersion } from "./GameVersion.ts";
 import { Literal } from "sequelize/lib/utils";
+import { EnvConfig } from "../../EnvConfig.ts";
+import path from "path";
+import JSZip from "jszip";
+import fs from "fs";
+import { decompile } from "@umbranoxio/difflux";
 
 export type VersionInfer = InferAttributes<Version>;
 export type VersionAllowedEdit = Partial<Pick<Version, `semver` | `supportedGameVersionIds` | `dependencies`>>;
@@ -61,7 +66,7 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
 
     @AllowNull(false)
     @Column(DataType.STRING)
-    declare status: Status;
+    declare status: CreationOptional<Status>;
 
     @AllowNull(false)
     @Column(DataType.ARRAY(DataType.JSONB))
@@ -122,6 +127,18 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
             return Project.findByPk(this.projectId) || null;
         }
     }
+    
+    get versionFolderPath(): NonAttribute<Promise<string>> {
+        return (async () => path.join(EnvConfig.storagePath, `${(await this.project)?.id}`, `${this.id}`))();
+    }
+
+    get zipFilePath(): NonAttribute<Promise<string>> {
+        return (async () => path.join(await this.versionFolderPath, `${await this.fileName}`))();
+    }
+
+    get dllFilePath(): NonAttribute<Promise<string>> {
+        return (async () => path.join(await this.versionFolderPath, `${(await this.fileName).replace(`.zip`, `.dll`)}`))();
+    }
 
     get fileName(): NonAttribute<Promise<string>> {
         return (async () => `${(await this.project)?.name}_${this.platform}_v${this.semver.raw}.zip`)();
@@ -162,6 +179,7 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
         ...Version.validator.shape,
         id: Version.validator.shape.id.or(z.instanceof(Literal)).nullish(),
         lastApprovedById: Version.validator.shape.lastApprovedById.nullish(),
+        status: Version.validator.shape.status.nullish(),
         statusHistory: Version.validator.shape.statusHistory.nullish(),
         createdAt: Version.validator.shape.createdAt.nullish(),
         updatedAt: Version.validator.shape.updatedAt.nullish(),
@@ -372,6 +390,46 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
         this.lastUpdatedById = user.id;
         await this.save();
         return this;
+    }
+    // #endregion
+    // #region Decompiler
+    public async doesDecompiledVersionExist(): Promise<boolean> {
+        let decompiledPath = path.join(await this.versionFolderPath, `decompiled`);
+        return fs.existsSync(decompiledPath);
+    }
+
+    public async dotnetDecompile() {
+        if (await this.doesDecompiledVersionExist()) {
+            Logger.info(`Decompiled version already exists for version id ${this.id}, skipping decompilation.`);
+            return;
+        }
+        // get dll out of zip
+        Logger.debug(`Starting decompilation for version id ${this.id}. Extracting dll from zip...`);
+        let zipFile = fs.readFileSync((await this.zipFilePath));
+        let zip = await JSZip.loadAsync(zipFile);
+        let zipDllFile: JSZip.JSZipObject | null = null;
+        try {
+            zip.folder(`Plugins`)?.forEach((relativePath, file) => {
+                if (relativePath.endsWith(`.dll`)) {
+                    zipDllFile = file;
+                    Logger.debug(`Found dll file in zip for version id ${this.id} at path ${relativePath}.`);
+                }
+            });
+        } catch (error) {
+            throw new Error(`Failed to read zip file for version id ${this.id}: ${(error as Error).message}`);
+        }
+        if (!zipDllFile) {
+            throw new Error(`Could not find dll file in zip for version id ${this.id}`);
+        }
+        Logger.debug(`Extracting dll file from zip for version id ${this.id}...`);
+        let dllData = await (zipDllFile as JSZip.JSZipObject).async(`nodebuffer`);
+        // write dll to file for decompilation & future diffing
+        let dllFilePath = await this.dllFilePath;
+        let dllFile = fs.writeFileSync(dllFilePath, dllData);
+        // decompile dll with difflux
+        Logger.debug(`Decompiling dll for version id ${this.id} at path ${dllFilePath}...`);
+        await decompile({ assemblyPath: dllFilePath }, path.join(await this.versionFolderPath, `decompiled`));
+        Logger.info(`Decompilation completed for version id ${this.id}. Decompiled files saved to ${path.join(await this.versionFolderPath, `decompiled`)}`);
     }
     // #region ToAPI
     public async toApiV3(): Promise<VersionApiV3> {

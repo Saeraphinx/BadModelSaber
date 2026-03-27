@@ -397,6 +397,7 @@ export const up: Migration = async ({ context: db }) => {
         },
         status: {
             type: DataTypes.STRING,
+            defaultValue: `private`,
             allowNull: false,
         },
         iconFileName: {
@@ -478,6 +479,7 @@ export const up: Migration = async ({ context: db }) => {
         },
         status: {
             type: DataTypes.STRING,
+            defaultValue: `private`,
             allowNull: false,
         },
         dependencies: {
