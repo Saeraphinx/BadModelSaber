@@ -141,7 +141,7 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
     }
 
     get folderPath(): NonAttribute<string> {
-        return path.join(EnvConfig.storage.uploads, this.id.toString());
+        return path.join(EnvConfig.uploadsPath, this.id.toString());
     }
 
     get assetFilePath(): NonAttribute<string> {

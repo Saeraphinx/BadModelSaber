@@ -494,6 +494,7 @@ export const alertApiV3Schema = z.object({
 export const projectApiV3Schema = z.object({
   id: dbId,
   name: z.string(),
+  nameId: z.string(),
   summary: z.string(),
   description: z.string(),
   category: z.string(),

@@ -4,7 +4,7 @@ import z from "zod/v4";
 import { dedupeArray } from "../../../shared/Tools.ts";
 import { loggedInProcedure, router } from "../../trpc.ts";
 import { Logger } from "../../../shared/Logger.ts";
-import { importFromOldModelSaber } from "../../../shared/Importer.ts";
+import { importFromBadBeatMods, importFromOldModelSaber } from "../../../shared/Importer.ts";
 import { TRPCError } from "@trpc/server";
 import { EnvConfig } from "../../../shared/EnvConfig.ts";
 
@@ -20,7 +20,7 @@ export const AdminRouter = router({
         .mutation(async ({ input, ctx }) => {
             let targetUser = await User.findByPk(input.userId);
             if (!targetUser) {
-                throw new Error(`User not found`);
+                throw new TRPCError({ code: 'NOT_FOUND', message: `User not found` });
             }
             
             targetUser.permissions = input.permissions;
@@ -29,7 +29,7 @@ export const AdminRouter = router({
                 return { message: `User roles updated successfully`, user: u };
             }).catch((e) => {
                 Logger.error(`Error saving user roles for user ${targetUser.id}: ${e}`);
-                throw new Error(`Failed to save user roles`);
+                throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: `Failed to save user roles` });
             });
         }),
     createAlert: loggedInProcedure([UserPermissions.Administrative_Tasks, UserPermissions.Users_EditAll, UserPermissions.Users_Ban])
@@ -48,6 +48,10 @@ export const AdminRouter = router({
     importOldModelSaberData: loggedInProcedure([UserPermissions.Administrative_Tasks])
         .mutation(async ({ input, ctx }) => {
             importFromOldModelSaber((message, level) => {});
+        }),
+    importFromBeatmods: loggedInProcedure([UserPermissions.Administrative_Tasks])
+        .mutation(async ({ input, ctx }) => {
+            importFromBadBeatMods();
         }),
     getAdminLogs: loggedInProcedure([UserPermissions.Administrative_Tasks])
         .query(async ({ input, ctx }) => {

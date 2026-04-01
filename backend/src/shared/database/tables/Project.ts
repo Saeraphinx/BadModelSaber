@@ -37,6 +37,10 @@ export class Project extends Model<InferAttributes<Project>, InferCreationAttrib
 
     @AllowNull(false)
     @Column(DataType.TEXT)
+    declare nameId: string; // the name of the project - but the ID version that is used for dependency resolution within BSIPA
+
+    @AllowNull(false)
+    @Column(DataType.TEXT)
     declare name: string; // the name of the project
 
     @AllowNull(false)
@@ -105,12 +109,13 @@ export class Project extends Model<InferAttributes<Project>, InferCreationAttrib
             return Promise.resolve(this._game) || null;
         } else {
             Logger.debug(`Game not loaded, fetching from DB for gameName: ${this.gameName}`);
-            return Game.findByPk(this.gameName) || null;
+            this._game = Game.findByPk(this.gameName) || null;
+            return this._game;
         }
     }
 
     get folderPath(): NonAttribute<string> {
-        return path.join(EnvConfig.storage.uploads, this.id.toString());
+        return path.join(EnvConfig.uploadsPath, this.id.toString());
     }
     // #endregion
     // #region Validatiors
@@ -121,6 +126,7 @@ export class Project extends Model<InferAttributes<Project>, InferCreationAttrib
 
     public static validator = z.object({
         id: dbId,
+        nameId: z.string().regex(new RegExp("^(.*)$")).describe("project name for dependency resolution"),
         name: z.string().max(128),
         summary: z.string().max(256),
         description: z.string().max(4096),
@@ -408,6 +414,7 @@ export class Project extends Model<InferAttributes<Project>, InferCreationAttrib
         return {
             id: this.id,
             name: this.name,
+            nameId: this.nameId,
             summary: this.summary,
             description: this.description,
             gameName: this.gameName,

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import ApprovalDialog from "$lib/components/assets/ApprovalDialog.svelte";
+  import ApprovalDialog from "$lib/components/dialogs/ApprovalDialog.svelte";
   import AssetCard from "$lib/components/assets/AssetCard.svelte";
   import SponsorButton from "$lib/components/users/SponsorButton.svelte";
   import UserCard from "$lib/components/users/UserCard.svelte";

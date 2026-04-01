@@ -3,7 +3,6 @@ import { Asset, ThingRequest, LinkedAssetLinkType, User, dbId, Project, Dependen
 import { parseErrorMessage } from "../../../shared/Tools.ts";
 import { loggedInProcedure, router } from "../../trpc.ts";
 import { TRPCError } from "@trpc/server";
-import { support } from "jszip";
 
 export const UpdateAssetRouter = router({
     // #region updateAsset
@@ -17,15 +16,15 @@ export const UpdateAssetRouter = router({
     })).mutation(async ({ input, ctx }) => {
         const asset = await Asset.findByPk(input.assetId);
         if (!asset) {
-            throw new Error(`Asset not found`);
+            throw new TRPCError({ code: 'NOT_FOUND', message: `Asset not found` });
         }
         if (!asset.canEdit(ctx.user)) {
-            throw new Error(`You are not allowed to edit this asset`);
+            throw new TRPCError({ code: 'FORBIDDEN', message: `You are not allowed to edit this asset` });
         }
         asset.updateAsset(input.data, ctx.user).then(updatedAsset => {
             return updatedAsset.toApiV3();
         }).catch(err => {
-            throw new Error(`Error updating asset: ${parseErrorMessage(err)}`);
+            throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: `Error updating asset: ${parseErrorMessage(err)}` });
         });
     }),
     // #endregion
@@ -55,14 +54,14 @@ export const UpdateAssetRouter = router({
     })).mutation(async ({ input, ctx }) => {
         const asset = await Asset.findByPk(input.assetId);
         if (!asset) {
-            throw new Error(`Asset not found`);
+            throw new TRPCError({ code: 'NOT_FOUND', message: `Asset not found` });
         }
         if (!asset.canEdit(ctx.user)) {
-            throw new Error(`You are not allowed to edit this asset`);
+            throw new TRPCError({ code: 'FORBIDDEN', message: `You are not allowed to edit this asset` });
         }
         const otherAsset = await Asset.findByPk(input.linkToId);
         if (!otherAsset) {
-            throw new Error(`Asset to link not found`);
+            throw new TRPCError({ code: 'NOT_FOUND', message: `Asset to link not found` });
         }
 
         return await asset.requestLink(ctx.user, otherAsset, input.type).then(async result => {
@@ -72,7 +71,7 @@ export const UpdateAssetRouter = router({
                 return { message: `Asset linked successfully`, asset: await result.toApiV3() };
             }
         }).catch(err => {
-            throw new Error(`Error linking asset: ${parseErrorMessage(err)}`);
+            throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: `Error linking asset: ${parseErrorMessage(err)}` });
         });
     }),
     // #endregion
@@ -83,22 +82,22 @@ export const UpdateAssetRouter = router({
     })).mutation(async ({ input, ctx }) => {
         const asset = await Asset.findByPk(input.id);
         if (!asset) {
-            throw new Error(`Asset not found`);
+            throw new TRPCError({ code: 'NOT_FOUND', message: `Asset not found` });
         }
         if (!asset.canEdit(ctx.user)) {
-            throw new Error(`You are not allowed to edit this asset`);
+            throw new TRPCError({ code: 'FORBIDDEN', message: `You are not allowed to edit this asset` });
         }
         if (asset.collaboratorIds.includes(input.userId)) {
-            throw new Error(`User is already a collaborator on this asset`);
+            throw new TRPCError({ code: 'BAD_REQUEST', message: `User is already a collaborator on this asset` });
         }
         const userToCredit = await User.findByPk(input.userId);
         if (!userToCredit) {
-            throw new Error(`User to credit not found`);
+            throw new TRPCError({ code: 'NOT_FOUND', message: `User to credit not found` });
         }
         return asset.requestCollab(ctx.user, userToCredit).then(request => {
             return request.toApiV3();
         }).catch(err => {
-            throw new Error(`Error adding collaborator: ${parseErrorMessage(err)}`);
+            throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: `Error adding collaborator: ${parseErrorMessage(err)}` });
         });
     }),
     // #endregion
@@ -115,10 +114,10 @@ export const UpdateAssetRouter = router({
     })).mutation(async ({ input, ctx }) => {
         const project = await Project.findByPk(input.projectId);
         if (!project) {
-            throw new Error(`Project not found`);
+            throw new TRPCError({ code: 'NOT_FOUND', message: `Project not found` });
         }
         if (!project.canEdit(ctx.user)) {
-            throw new Error(`You are not allowed to edit this project`);
+            throw new TRPCError({ code: 'FORBIDDEN', message: `You are not allowed to edit this project` });
         }
         return project.updateProject(input.data, ctx.user).then(updatedProject => {
             return updatedProject.toApiV3();
@@ -136,23 +135,23 @@ export const UpdateAssetRouter = router({
     })).mutation(async ({ input, ctx }) => {
         const version = await Version.findByPk(input.versionId);
         if (!version) {
-            throw new Error(`Version not found`);
+            throw new TRPCError({ code: 'NOT_FOUND', message: `Version not found` });
         }
         
         const project = await version.project;
         if (!project) {
-            throw new Error(`Project not found`);
+            throw new TRPCError({ code: 'NOT_FOUND', message: `Project not found` });
         }
 
         if (!version.canEdit(ctx.user, project)) {
-            throw new Error(`You are not allowed to edit this version`);
+            throw new TRPCError({ code: 'FORBIDDEN', message: `You are not allowed to edit this version` });
         }
         Object.assign(version, input.data);
         version.lastUpdatedById = ctx.user.id;
         return await version.save().then(updatedVersion => {
             return updatedVersion.toApiV3();
         }).catch(err => {
-            throw new Error(`Error updating version: ${parseErrorMessage(err)}`);
+            throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: `Error updating version: ${parseErrorMessage(err)}` });
         });
     }),
     // #endregion

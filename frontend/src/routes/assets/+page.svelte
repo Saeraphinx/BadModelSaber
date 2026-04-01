@@ -17,7 +17,7 @@
   import * as Collapsible from "$shadcn/components/ui/collapsible";
   import { generateAssetSearchEngine } from "$lib/scripts/utils/search.js";
   import { getContext, onMount } from "svelte";
-  import ApprovalPopup from "$lib/components/assets/ApprovalDialog.svelte";
+  import ApprovalPopup from "$lib/components/dialogs/ApprovalDialog.svelte";
   import { toast } from "svelte-sonner";
   import { getAssetTypeCategories, getStatusString } from "$lib/scripts/utils/stylizer.js";
   import { m } from "$lib/paraglide/messages.js";

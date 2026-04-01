@@ -2,7 +2,7 @@
   import { Status, Tags, type AssetApiV3 } from "$lib/scripts/api/DBTypes";
   import Button from "$shadcn/components/ui/button/button.svelte";
   import { BadgeAlert, BadgeCheck, BadgeX, Download, DownloadCloud, InfoIcon, CircleHelp } from "@lucide/svelte";
-  import ApprovalDialog from "./ApprovalDialog.svelte";
+  import ApprovalDialog from "../dialogs/ApprovalDialog.svelte";
   import { getAssetDownloadUrl, getOneClickUrl, getThumbnailUrl } from "$lib/scripts/utils/api";
   import type { ClassValue } from "svelte/elements";
   import { invalidate } from "$app/navigation";

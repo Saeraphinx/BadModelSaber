@@ -162,6 +162,23 @@
     "noProjectsFound": "No projects found.",
     "noVersionsFound": "No versions found.",
     "noModsFound": "No mods found.",
+    "dataTable": {
+      "name": "Name",
+      "description": "Description",
+      "uploadedBy": "Uploaded by",
+      "game": "Game",
+      "category": "Category",
+      "status": "Status",
+      "sourceUrl": "Source Code:",
+      "websiteUrl": "Website:",
+      "created": "Created",
+      "createdAt": "Created At",
+      "lastUpdated": "Last Updated",
+      "dependencies": "Dependencies",
+      "supportedGameVersions": "Supported Game Versions",
+      "semver": "Semantic Version",
+      "platform": "Platform"
+    },
     "createProject": {
       "title": "Create Project",
       "subtitle": "Please fill out the form below to create a new project.",
@@ -332,6 +349,7 @@
     "reject": "Reject",
     "close": "Close",
     "remove": "Remove",
+    "preview": "Preview",
     "approvalDialog": {
       "title": "Update Status for {name}",
       "description": "Select the new status for the asset \"{name}\". Click save to apply the changes.",

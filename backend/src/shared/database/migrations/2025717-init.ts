@@ -358,6 +358,10 @@ export const up: Migration = async ({ context: db }) => {
             primaryKey: true,
             defaultValue: db.sequelize.literal(`nextval('global_id_seq')`),
         },
+        nameId: {
+            type: DataTypes.STRING,
+            allowNull: false,
+        },
         name: {
             type: DataTypes.STRING,
             allowNull: false,

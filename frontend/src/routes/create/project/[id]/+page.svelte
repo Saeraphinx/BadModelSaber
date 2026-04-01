@@ -81,6 +81,7 @@
     let file = files[0];
     if (file.name.endsWith(`.zip`)) {
       manifest = await getManifestFromZip(file);
+      //debugger;
     } else {
       manifest = await getManifestFromFile(file);
     }

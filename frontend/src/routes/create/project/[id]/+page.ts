@@ -1,6 +1,6 @@
 import { error } from '@sveltejs/kit';
 import type { PageLoad } from './$types';
-import { handleTrpcError, parseError } from '$lib/scripts/utils/api';
+import { handleTrpcError, parseTRPCError } from '$lib/scripts/utils/api';
 import { UserPermissions } from '../../../../lib/scripts/api/DBTypes';
 import { checkRoles } from '../../../../lib/scripts/utils/checkRoles';
 

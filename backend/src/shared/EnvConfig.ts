@@ -79,8 +79,12 @@ export class EnvConfig {
         return process.env.NODE_ENV === `test`;
     }
 
-    public static get storagePath(): string {
-        return path.resolve(`./storage`);
+    public static get logsPath(): string {
+        return path.resolve(EnvConfig.storage.logs);
+    }
+
+    public static get uploadsPath(): string {
+        return path.resolve(EnvConfig.storage.uploads);
     }
 
     public static load(): void {

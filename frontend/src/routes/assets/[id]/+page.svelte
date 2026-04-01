@@ -29,7 +29,7 @@
   import Skeleton from "$shadcn/components/ui/skeleton/skeleton.svelte";
   import CarouselNavigator from "$lib/components/generic/CarouselNavigator.svelte";
   import { getOneClickUrl, getAssetDownloadUrl, getThumbnailUrl, parseErrorMessage } from "$lib/scripts/utils/api.js";
-  import ApprovalPopup from "$lib/components/assets/ApprovalDialog.svelte";
+  import ApprovalPopup from "$lib/components/dialogs/ApprovalDialog.svelte";
   import { onMount } from "svelte";
   import { toast } from "svelte-sonner";
   import { getAssetTypeData, getStatusString } from "$lib/scripts/utils/stylizer";
@@ -39,14 +39,16 @@
   import TagPickerDialog from "$lib/components/forms/TagPickerDialog.svelte";
   import { zAsset } from "$lib/scripts/api/validators";
   import { cn } from "$shadcn/utils";
-  import LinkAssetDialog from "$lib/components/assets/LinkAssetDialog.svelte";
+  import LinkAssetDialog from "$lib/components/dialogs/LinkAssetDialog.svelte";
   import { invalidateAll } from "$app/navigation";
   import AssetPreview from "$lib/components/assets/AssetPreview.svelte";
   import StatusHoverCard from "$lib/components/assets/StatusHoverCard.svelte";
   import DownloadButton from "$lib/components/assets/DownloadButton.svelte";
-  import ReportDialog from "$lib/components/assets/ReportDialog.svelte";
+  import ReportDialog from "$lib/components/dialogs/ReportDialog.svelte";
   import { m } from "$lib/paraglide/messages.js";
   import { checkRoles } from "$lib/scripts/utils/checkRoles.js";
+  import Markdown from "$lib/components/generic/Markdown.svelte";
+  import * as Tabs from "$shadcn/components/ui/tabs/index.js";
 
   const { data: _internal } = $props();
   const { trpc, user, pageData } = $derived(_internal);
@@ -459,9 +461,31 @@
 
 {#snippet description()}
   {#if isEditing}
-    <Textarea bind:value={editDescription} placeholder="Asset Description" class="w-full mb-2 min-h-64" />
+    <Tabs.Root value="edit" class="w-full">
+      <Tabs.List class="bg-transparent border-b border-border mb-2">
+        <Tabs.Trigger value="edit">
+          {m["dialogs.edit"]()}
+        </Tabs.Trigger>
+        <Tabs.Trigger value="preview">
+          {m["dialogs.preview"]()}
+        </Tabs.Trigger>
+      </Tabs.List>
+      <Tabs.Content value="edit">
+         <Textarea aria-invalid={!zAssetDescription.success} bind:value={editDescription} placeholder="Asset Description" class="w-full mb-2 min-h-64" />
+        {#if !zAssetDescription.success}
+          <span class="text-sm text-red-500 mt-1">{parseErrorMessage(zAssetDescription.error)}</span>
+        {/if}
+      </Tabs.Content>
+      <Tabs.Content value="preview">
+        <Markdown markdown={editDescription || "No description available."} class="text-lg text-gray-500 dark:text-gray-400 whitespace-pre-line text-wrap wrap-anywhere" />
+      </Tabs.Content>
+    </Tabs.Root>
   {:else}
-    <span class="text-lg text-gray-500 dark:text-gray-400 whitespace-pre-line text-wrap wrap-anywhere">{pageData.description || "No description available."}</span>
+    {#if pageData.status === Status.Verified}
+      <Markdown markdown={pageData.description || "No description available."} class="text-lg text-gray-500 dark:text-gray-400 whitespace-pre-line text-wrap wrap-anywhere" />
+    {:else}
+      <span class="text-lg text-gray-500 dark:text-gray-400 whitespace-pre-line text-wrap wrap-anywhere">{pageData.description || "No description available."}</span>
+    {/if}
   {/if}
 {/snippet}
 <!-- #endregion -->

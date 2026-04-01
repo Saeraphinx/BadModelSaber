@@ -11,7 +11,7 @@ import { zfd } from "zod-form-data";
 import { createHash } from "node:crypto";
 import { TRPCError } from "@trpc/server";
 import JSZip from "jszip";
-import { getManifestFromString } from "../../../../shared/ModParser.ts";
+import { getManifestFromString, Manifest } from "../../../../shared/ModParser.ts";
 
 /*
 Files follow this structure:
@@ -89,7 +89,7 @@ export const uploadStuff = router({
                 fs.writeFileSync(asset.assetFilePath, Buffer.from(buffer));
             }).catch((err) => {
                 Logger.error(`Error saving asset file: ${err.message}`)
-                throw new Error(`Failed to save asset file. Please contact a site administrator.`);
+                throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: `Failed to save asset file. Please contact a site administrator.` });
             });
 
             for (let [iconName, iconFile] of imageNames) {
@@ -99,7 +99,7 @@ export const uploadStuff = router({
                 }).catch((err) => {
                     Logger.error(`Error saving icon file: ${err.message}`)
                     fs.unlinkSync(path.join(EnvConfig.storage.uploads, asset.assetFileName));
-                    throw new Error(`Failed to save icon file. Please contact a site administrator.`);
+                    throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: `Failed to save icon file. Please contact a site administrator.` });
                 });
             }
             Logger.debug(`Asset upload completed for user ${ctx.user?.id} with asset ID ${asset.id}`);
@@ -120,6 +120,7 @@ export const uploadStuff = router({
     .input(zfd.formData({
         data: zfd.json(Project.validator.pick({
             name: true,
+            nameId: true,
             description: true,
             category: true,
             gameName: true,
@@ -142,6 +143,7 @@ export const uploadStuff = router({
         
         return await Project.create({
             name: input.data.name,
+            nameId: input.data.nameId,
             description: input.data.description,
             category: input.data.category,
             gameName: input.data.gameName,
@@ -182,7 +184,7 @@ export const uploadStuff = router({
     }))
     .output(versionApiV3Schema)
     .mutation(async ({ ctx, input }) => {
-        let project = await Project.findByPk(input.id);
+        const project = await Project.findByPk(input.id);
         if (!project) {
             throw new TRPCError({ code: 'NOT_FOUND', message: 'Project not found' });
         }
@@ -207,23 +209,35 @@ export const uploadStuff = router({
         }
 
         let hashes: ContentHash[] = [];
-        let manifestJson: any = null;
-        zip.forEach(async (relativePath, file) => {
-            if (file.dir) return;
+        let manifestJson: Manifest | null = null;
+        for (let filePath in zip.files) {
+            let file = zip.files[filePath];
+            if (file.dir) continue; // skip directories
             
             let data = await file.async("nodebuffer").catch((err) => {
-                Logger.error(`Error reading file ${relativePath} from zip archive: ${err.message}`);
+                Logger.error(`Error reading file ${filePath} from zip archive: ${err.message}`);
                 throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Failed to process zip archive. Please contact a site administrator.' });
             });
             const md5Hash = createHash('md5').update(data).digest('hex');
             hashes.push({
-                path: relativePath,
+                path: filePath,
                 hash: md5Hash,
             });
 
-            manifestJson = getManifestFromString(data.toString());
-        });
+            if (path.basename(filePath).toLowerCase() === "manifest.json") {
+                manifestJson = getManifestFromString(data.toString());
+            } else if (!manifestJson && path.extname(filePath).toLowerCase() === ".dll") {
+                manifestJson = getManifestFromString(data.toString());
+            }
+        }
 
+        if (!manifestJson) {
+            Logger.warn(`No manifest found in uploaded zip file for project ID ${project.id}. Version will be created without manifest data.`);
+        } else {
+            if (manifestJson.id !== project.nameId) {
+                throw new TRPCError({ code: 'BAD_REQUEST', message: 'Manifest mod ID does not match project nameId.' });
+            }
+        }
 
         return await Version.create({
             projectId: project.id,
@@ -244,7 +258,7 @@ export const uploadStuff = router({
             await input.modZip.arrayBuffer().then(async (buffer) => {
                 fs.writeFileSync(path.join(versionFolder, await version.fileName), Buffer.from(buffer));
                 if (manifestJson) {
-                    fs.writeFileSync(path.join(versionFolder, await version.manifestName), manifestJson);
+                    fs.writeFileSync(path.join(versionFolder, await version.manifestName), JSON.stringify(manifestJson));
                 }
             }).catch((err) => {
                 Logger.error(`Error saving version mod file: ${err.message}`)

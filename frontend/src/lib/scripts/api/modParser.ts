@@ -1,13 +1,20 @@
 import JSZip from "jszip";
 import z from "zod";
 
-export function getManifestFromString(str: string): Manifest | null {
+interface ILog {
+  debug: (message: string) => void;
+  log: (message: string) => void;
+  warn: (message: string) => void;
+  error: (message: string) => void;
+};
+
+export function getManifestFromString(str: string, doLogs: ILog | null = console): Manifest | null {
   //console.log(str);
-  let discoveredJsonStrings = /{[\w\d\s\t\n\r\!-~]+}/gmi.exec(str);
+  let discoveredJsonStrings = Array.from(str.matchAll(/{[\w\d\s\t\n\r\!-~]{10,}}/gmi).map((match) => match[0]));
   //console.log(discoveredJsonStrings);
 
   if (!discoveredJsonStrings || discoveredJsonStrings.length <= 0) {
-    console.warn(`No JSON string found in manifest.json for version`);
+    doLogs ? doLogs.warn(`No JSON string found in manifest.json for version`) : null;
   }
   let finalManifest: Manifest | null = null;
   discoveredJsonStrings?.forEach((jsonString) => {
@@ -17,58 +24,62 @@ export function getManifestFromString(str: string): Manifest | null {
       if (parsed.success) {
         finalManifest = parsed.data;
       } else {
-        console.log(`JSON string found in manifest.json did not match expected schema: ${JSON.stringify(parsed.error.issues)}`);
+        doLogs ? doLogs.debug(`JSON string found in manifest.json did not match expected schema: ${JSON.stringify(parsed.error.issues)}`) : null;
       }
     } catch (err) {
       // not a valid JSON string, ignore
-      console.log(`Failed to parse JSON string in manifest: ${err}`);
+      doLogs ? doLogs.debug(`Failed to parse JSON string in manifest: ${err}`) : null;
     }
   });
   return finalManifest;
 }
 
-export async function getManifestFromFile(file: File): Promise<Manifest | null> {
+export async function getManifestFromFile(file: File, doLogs: ILog | null = console): Promise<Manifest | null> {
   let data = await file.text().catch((err) => {
     throw new Error(`Failed to read file ${file.name}: ${err.message}`);
   });
 
-  return getManifestFromString(data)
+  return getManifestFromString(data, doLogs);
 }
 
-export async function getManifestFromZip(file: File): Promise<Manifest | null> {
-  return await JSZip.loadAsync(file).then((zip) => {
+export async function getManifestFromZip(file: File | ArrayBuffer | Buffer<ArrayBuffer>, doLogs: ILog | null = console): Promise<Manifest | null> {
+  return await JSZip.loadAsync(file).then(async (zip) => {
     let manifestJson: Manifest | null = null;
-    zip.forEach(async (relativePath, file) => {
-      if (file.dir) return;
+    for (let fileName in zip.files) {
+      const file = zip.files[fileName];
+      if (file.dir) return null;
 
       let data = await file.async("text").catch((err) => {
-        throw new Error(`Failed to read file ${relativePath} from zip archive: ${err.message}`);
+        throw new Error(`Failed to read file ${fileName} from zip archive: ${err.message}`);
       });
+
+      debugger;
 
       // pull out manifest.json if it exists
       if (file.name === "manifest.json") {
-        manifestJson = getManifestFromString(data);
+        manifestJson = getManifestFromString(data, doLogs);
       } else if (file.name.endsWith(".dll")) {
         if (!data.startsWith("MZ")) {
-          console.warn(`File ${relativePath} in zip archive is not a valid .dll file, skipping manifest extraction from this file.`);
-          return;
+          doLogs ? doLogs.warn(`File ${fileName} in zip archive is not a valid .dll file, skipping manifest extraction from this file.`) : null;
+          return null;
         }
         
         // pull from dll
-        let manifestFromDll = getManifestFromString(data);
+        let manifestFromDll = getManifestFromString(data, doLogs);
         if (manifestFromDll) {
           manifestJson = manifestFromDll;
         } else {
-          console.warn(`No valid manifest found in DLL file ${relativePath}.`);
+          doLogs ? doLogs.warn(`No valid manifest found in DLL file ${fileName}.`) : null;
         }
       }
-    });
-    return manifestJson;
+    }
+    return manifestJson as Manifest | null;
   })
 }
 
 export type Manifest = z.infer<typeof zManfiest>;
-const zManfiest =  z.object({
+const zManfiest =  z.looseObject({
+  $schema: z.string(),
   name: z.string().regex(new RegExp("^(.*)$")).describe("plugin name"),
   id: z
     .union([
@@ -99,53 +110,9 @@ const zManfiest =  z.object({
     .array(z.string().describe("the plugin id to load after"))
     .describe("plugins to load after this one")
     .optional(),
-  features: z
-    .object({})
-    .catchall(z.any())
-    .describe("features to enable for plugin")
-    .optional(),
-  icon: z
-    .string()
-    .regex(new RegExp(".*\\.png"))
-    .describe("the icon to represent the plugin, as a PNG")
-    .optional(),
-  files: z
-    .array(
-      z
-        .string()
-        .describe(
-          "the path to a file distributed with the mod, relative to the installation directory"
-        )
-    )
-    .describe(
-      "A list of files that are associated with this mod. If this is a bare manifest, must include *all* files distributed with the mod. Otherwise, it may exclude the assembly it is embedded in."
-    )
-    .optional(),
-  links: z
-    .object({
-      "project-home": z
-        .any()
-        .describe(
-          "a link to the project home page. if not specified, same as project-source"
-        )
-        .optional(),
-      "project-source": z
-        .any()
-        .describe(
-          "a link to the project source. if not specified, same as project-home."
-        )
-        .optional(),
-      donate: z.any().describe("a link to a donations page").optional(),
-    })
-    .describe("various links associated with the mod")
-    .optional(),
-  misc: z
-    .object({
-      "plugin-hint": z
-        .any()
-        .describe("a hint for the loader for where to find the plugin type")
-        .optional(),
-    })
-    .describe("miscellaneous properties")
-    .optional(),
+  features: z.unknown(),
+  icon: z.unknown(),
+  files: z.unknown(),
+  links: z.unknown(),
+  misc: z.unknown(),
 });

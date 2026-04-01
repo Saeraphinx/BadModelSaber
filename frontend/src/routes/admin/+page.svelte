@@ -379,6 +379,19 @@
                   toast.error("Failed to start import.");
                 });
             }}>Import Old ModelSaber Data</Button>
+            <Button 
+            class="mt-4 mb-2 w-full"
+            onclick={() => {
+              trpc.internal.admin.importFromBeatmods
+                .mutate()
+                .then(() => {
+                  toast.success("Import started.");
+                })
+                .catch((err) => {
+                  console.error(err);
+                  toast.error("Failed to start import.");
+                });
+            }}>Import From BadBeatMods</Button>
           <Button
             variant="destructive"
             class="mt-4 mb-2 w-full"

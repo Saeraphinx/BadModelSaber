@@ -12,6 +12,7 @@ declare global {
       subtitle?: string;
       additionalInfo?: any;
       redirectToHome?: boolean;
+      parsedErrorObj?: any;
     }
     // interface Locals {}
     interface PageData {

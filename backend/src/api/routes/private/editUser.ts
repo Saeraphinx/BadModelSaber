@@ -3,6 +3,7 @@ import { Asset, ThingRequest, LinkedAssetLinkType, RequestType, User, UserPermis
 import { Validator } from "../../../shared/Validator.ts";
 import { loggedInProcedure, router } from "../../trpc.ts";
 import { dedupeArray } from "../../../shared/Tools.ts";
+import { TRPCError } from "@trpc/server";
 
 export const konamiRouter = router({
     updateUser: loggedInProcedure([UserPermissions.Users_EditSelf]).input(z.object({
@@ -26,7 +27,7 @@ export const konamiRouter = router({
         .mutation(async ({ input, ctx }) => {
             let targetUser = await User.findByPk(input.userId);
             if (!targetUser) {
-                throw new Error(`User not found`);
+                throw new TRPCError({ code: 'NOT_FOUND', message: `User not found` });
             }
             if (input.ban) {
                 targetUser.permissions = {

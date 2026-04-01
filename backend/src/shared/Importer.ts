@@ -1,4 +1,4 @@
-import { AlertType, Asset, AssetFileFormat, AssetPublicAPIv2, DefaultPermissionsObject, Game, License, LinkedAssetLinkType, ModApiv2, ModVersionsApiv2, Project, Status, Tags, User, UserPermissions } from "./Database.ts";
+import { AlertType, Asset, AssetFileFormat, AssetPublicAPIv2, DefaultPermissionsObject, Game, GameVersion, License, LinkedAssetLinkType, ModApiv2, ModVersionsApiv2, Project, Status, Tags, User, UserPermissions, UserPublicApiV2, Version } from "./Database.ts";
 import { Logger } from "./Logger.ts";
 import * as fs from "fs";
 import * as crypto from "crypto";
@@ -8,18 +8,25 @@ import ffmpeg from "ffmpeg";
 import path from "path";
 import { EnvConfig } from "./EnvConfig.ts";
 import { Op } from "sequelize";
-import { parseErrorMessage } from "./Tools.ts";
+import { capitalizeWords, parseErrorMessage } from "./Tools.ts";
 import { APIUser, REST, Routes } from "discord.js";
+import { SemVer } from "semver";
+import { getManifestFromZip } from "./ModParser.ts";
+import z from "zod";
 
-type modelsaberasset= {
+type modelsaberasset = {
     [key: string]: AssetPublicAPIv2;
 }
 
-const totalBeatmodsMods = 0; // set this to the total number of mods on BeatMods to get accurate progress reporting. Currently set to 0 to avoid accidentally hitting the BeatMods API during testing.
+const totalBeatmodsMods = 100; // set this to the total number of mods on BeatMods to get accurate progress reporting. Currently set to 0 to avoid accidentally hitting the BeatMods API during testing.
+//const doModDownload = false; // set to true to download mod files from BeatMods, useful for testing the import process but not recommended for full imports due to the large number of mods and potential rate limits. Currently set to false to avoid accidentally hitting the BeatMods API during testing.
+const doThumbnailDownload = false;
+const doDecompile = false; // set to true to decompile mod files during import, which can help preserve metadata for mods that don't include a manifest but will significantly increase the time it takes to import each mod. Currently set to false to speed up testing.
 const hashType = `md5`;
 const conversionStorage = `./storage/converts`;
 const doAssetDownload = true; // set to false to skip downloading assets, useful for testing
 const doTumbnailDownload = true; // set to false to skip downloading thumbnails, useful for testing
+
 
 export async function importFromOldModelSaber(sendMessage: (messaage: string, type: `info` | `warn` | `error`) => void): Promise<void> {
     if (!EnvConfig.auth.discord.token) {
@@ -29,11 +36,11 @@ export async function importFromOldModelSaber(sendMessage: (messaage: string, ty
     }
     const discordRest = new REST({ version: '10' }).setToken(EnvConfig.auth.discord.token);
     const importerUser = await User.create({
-        id: 6,
+        id: 4,
         username: `ModelSaber Importer`,
         displayName: `ModelSaber Importer`,
         avatarUrl: `https://cdn.discordapp.com/embed/avatars/6.png`,
-        permissions: {sitewide: [UserPermissions.C_System], perGame: {}},
+        permissions: { sitewide: [UserPermissions.C_System], perGame: {} },
         bio: `This user was created by the ModelSaber importer for assets that couldn't be linked to a specific user during the importing process.`,
     });
     try {
@@ -58,12 +65,14 @@ export async function importFromOldModelSaber(sendMessage: (messaage: string, ty
             }
             // #region prep
             // check if asset already exists
-            const existingAsset = await Asset.findOne({ where: { 
-                [Op.or]: {
-                    oldId: asset.id,
-                    fileHash: asset.hash,
+            const existingAsset = await Asset.findOne({
+                where: {
+                    [Op.or]: {
+                        oldId: asset.id,
+                        fileHash: asset.hash,
+                    }
                 }
-            } });
+            });
 
             if (existingAsset) {
                 sendMessage(`Asset ${asset.id} (${asset.name}) already exists, skipping...`, `warn`);
@@ -128,7 +137,7 @@ export async function importFromOldModelSaber(sendMessage: (messaage: string, ty
                 Logger.error(`Failed to download asset ${asset.id} (${asset.name}), skipping...`);
                 continue;
             }
-            
+
             if (assetHash !== asset.hash) {
                 sendMessage(`Asset ${asset.id} (${asset.name}) hash mismatch: expected ${asset.hash}, got ${assetHash}. This may cause issues with the asset.`, `warn`);
                 Logger.warn(`Asset ${asset.id} (${asset.name}) hash mismatch: expected ${asset.hash}, got ${assetHash}. This may cause issues with the asset.`);
@@ -143,7 +152,7 @@ export async function importFromOldModelSaber(sendMessage: (messaage: string, ty
                 fs.mkdirSync(thumbnailOutputDir, { recursive: true });
             }
             if (doTumbnailDownload) {
-                await fetch(asset.thumbnail.startsWith(`http`) ? asset.thumbnail :`https://modelsaber.com/files/${asset.type}/${asset.id}/${asset.thumbnail}`).then(res => res.arrayBuffer()).then(async (arrayBuffer) => {
+                await fetch(asset.thumbnail.startsWith(`http`) ? asset.thumbnail : `https://modelsaber.com/files/${asset.type}/${asset.id}/${asset.thumbnail}`).then(res => res.arrayBuffer()).then(async (arrayBuffer) => {
                     const format = asset.thumbnail.split('.').pop()?.toLowerCase() ?? 'png';
                     // convert to webp if video or too large
                     if (format === 'mp4' || format === 'webm' || (arrayBuffer.byteLength > 8 * 1024 * 1024 && format === 'gif')) {
@@ -279,7 +288,7 @@ export async function importFromOldModelSaber(sendMessage: (messaage: string, ty
                 Logger.debug(`Asset ${asset.id} (${asset.name}) has invalid Discord ID (${asset.discordid}), using importer user.`);
             }
             // #endregion
-            
+
             // #region data cleanup
             const systemTags = Object.values(Tags) as string[]
             let tags: string[] = [];
@@ -293,8 +302,8 @@ export async function importFromOldModelSaber(sendMessage: (messaage: string, ty
                 for (const systemTag of systemTags as Tags[]) {
                     let systemTagLower = systemTag.toLowerCase().replaceAll(` `, ``);
                     if (systemTagLower.endsWith(`s`)) {
-                    systemTagLower = systemTagLower.slice(0, -1);
-                }
+                        systemTagLower = systemTagLower.slice(0, -1);
+                    }
                     if (msTagProcessed === systemTagLower) {
                         tags.push(systemTag);
                         tagAccepted = true;
@@ -403,29 +412,297 @@ export async function importFromOldModelSaber(sendMessage: (messaage: string, ty
 }
 
 export async function importFromBadBeatMods() {
-    Logger.log(`'ere Jim, have a seat and let me tell you bout a tale that'll make your blood run cold.`);
+    Logger.log(`'ere Jim, have a seat and let me tell you a tale that'll make your blood run cold.`);
+    const importerUser = await User.create({
+        id: 3,
+        username: `BeatMods Import`,
+        displayName: `BeatMods Importer`,
+        avatarUrl: `https://cdn.discordapp.com/embed/avatars/6.png`,
+        permissions: { sitewide: [UserPermissions.C_System], perGame: {} },
+        bio: `This user was created by the BeatMods importer for mods that couldn't be linked to a specific user during the importing process.`,
+    }).catch(async err => {
+        Logger.error(`Failed to create importer user for BeatMods import: ${err}`);
+        return await User.findByPk(3).then(user => {
+            if (user) {
+                return user;
+            } else {
+                throw new Error(`Failed to create importer user for BeatMods import, and user with ID 3 does not exist. This will cause all mods without a valid user to be linked to a non-existent user, which may cause issues. Please create a user with ID 3 and try again.`);
+            }
+        })
+    });
     let mods: { mod: ModApiv2, versions: ModVersionsApiv2[] }[] = [];
 
     for (let modId = 1; modId <= totalBeatmodsMods; modId++) {
         try {
-            let mod = await fetch(`https://beatmods.com/api/mods/${modId}`).then(res => res.json() as Promise<{ info: ModApiv2, versions: ModVersionsApiv2[]}>);
+            let mod = await fetch(`https://beatmods.com/api/mods/${modId}`).then(res => res.json() as Promise<{ mod: { info: ModApiv2, versions: ModVersionsApiv2[] } }>);
             mods.push({
-                mod: mod.info,
-                versions: mod.versions,
+                mod: mod.mod.info,
+                versions: mod.mod.versions,
             });
-            Logger.debug(`Fetched mod ${modId}: ${mod.info.name}`);
+            // timeout for 500ms to avoid hitting rate limits
+            await new Promise(resolve => setTimeout(resolve, 500));
+            Logger.debug(`Fetched mod ${modId}: ${mod.mod.info.name}`);
+            if (modId % 50 === 0 || modId === 1 || modId === totalBeatmodsMods) {
+                Logger.log(`Fetched ${modId}/${totalBeatmodsMods} mods from BeatMods...`);
+            }
         } catch (error) {
             Logger.error(`Failed to fetch mod ${modId}: ${error}`);
         }
     }
 
-    let listOfAllPossibleCategories = new Set<string>();
-    let listOfAllPossiblePlatforms = new Set<string>();
+    let newProjects = new Map<number, Project>();
 
-    // while id love to keep the IDs, theres a built in 10 ids that are saved for testing/importer accounts/other uses, so we gotta just use the automatic ones
-    for (const { mod, versions } of mods) {
-        Logger.debug(`Mod: ${mod.name} (${mod.id})`);
+    try {
+        await Game.create({
+            name: `beatsaber`,
+            displayName: `Beat Saber`,
+            default: true,
+            categories: [
+                `Core`,
+                `Essential`,
+                `Lighting`,
+                `UI Enhancement`,
+                `Gameplay`,
+                `Multiplayer`,
+                `Cosmetic`,
+                `Leaderboard`,
+                `Practice & Training`,
+                `Tweaks & Tools`,
+                `Streaming Tools`,
+                `Text Replacement`,
+                `Editor`,
+                `Library`,
+                `Other`,
+            ],
+            platforms: [
+                `universal`,
+                `steam`,
+                `oculus`
+            ],
+            webhookConfig: []
+        });
+
+        await Game.create({
+            name: `chromapper`,
+            displayName: `ChroMapper`,
+            default: false,
+            webhookConfig: []
+        });
+    } catch (error) {
+        Logger.error(`Failed to create games: ${error}`);
     }
 
+    if ((await Game.defaultGame).name !== `beatsaber`) {
+        Logger.error(`Default game is not set to Beat Saber, aborting import to avoid potential issues. Please set the default game to Beat Saber and try again.`);
+        return;
+    }
 
+    // while id love to keep the IDs, theres a built in 10 ids that are saved for testing/importer accounts/other uses that will just cause everything else to be offset, so we gotta just use the automatic ones
+    const newUsers: Map<number, User> = new Map();
+    let promises: Promise<void>[] = [];
+    for (const { mod, versions } of mods) {
+
+        for (const author of mod.authors) {
+            let user = await getNewUserFromOldUser(author);
+            newUsers.set(author.id, user);
+        }
+
+        let newGameName = mod.gameName.toLowerCase();
+        if (mod.iconFileName === `default.png`) {
+            mod.iconFileName === `default_${newGameName}.png`;
+        }
+
+        if (z.url().safeParse(mod.gitUrl).success === false) {
+            mod.gitUrl = `https://beatmods.com/mod/${mod.id}`;
+        }
+
+        promises.push(Project.create({
+            name: mod.name,
+            nameId: mod.name, // previously nameid was enforecd to just be the same
+            authorIds: mod.authors.map(a => newUsers.get(a.id)?.id || 6),
+            gameName: newGameName,
+            description: mod.description,
+            category: translateBeatModsCategory(mod.name, mod.category),
+            gitUrl: mod.gitUrl,
+            summary: mod.summary,
+            lastUpdatedById: importerUser.id,
+            iconFileName: mod.iconFileName,
+            createdAt: new Date(mod.createdAt),
+            updatedAt: new Date(mod.updatedAt),
+            statusHistory: mod.statusHistory.map(sh => ({
+                status: sh.status as Status,
+                reason: sh.reason,
+                timestamp: new Date(sh.setAt).toISOString(),
+                userId: newUsers.get(sh.userId)?.id || importerUser.id,
+            })),
+            status: mod.status as Status,
+            lastApprovedById: mod.status === Status.Verified ? importerUser.id : undefined,
+        }).then(async project => {
+            ;
+            newProjects.set(mod.id, project);
+            fs.mkdirSync(project.folderPath, { recursive: true });
+        }));
+    }
+
+    await Promise.all(promises).then(() => {
+        Logger.log(`Finished importing projects for all mods.`);
+    }).catch(err => {
+        Logger.error(`Failed to import projects: ${err}`);
+    });
+
+
+    for (const { mod, versions } of mods) {
+        const project = newProjects.get(mod.id);
+        if (!project) {
+            Logger.error(`Project not found for mod ${mod.id} (${mod.name}), skipping versions...`);
+            continue;
+        }
+        let versionPromises: Promise<Version>[] = [];
+        for (const version of versions) {
+            let dependencies: { pId: number, sv: string }[] = [];
+            let gameVersionIds: number[] = [];
+            for (const dep of version.dependencies) {
+                // find version with matching id (have to search through every mod)
+                const depVer = mods.find(pv => pv.versions.find(v => v.id === dep))?.versions.find(v => v.id === dep);
+                const pId = depVer ? newProjects.get(depVer.modId)?.id : null;
+                if (depVer && pId) {
+                    dependencies.push({
+                        pId: pId || 0,
+                        sv: `^${depVer.modVersion}`,
+                    });
+                } else {
+                    Logger.warn(`Dependency with id ${dep} not found for version ${version.id} of mod ${mod.id} (${mod.name}), skipping dependency...`);
+                }
+            }
+
+            let gameVerPromises: Promise<GameVersion>[] = [];
+            for (const gv of version.supportedGameVersions) {
+                gameVerPromises.push(GameVersion.findOrCreate({
+                    where: {
+                        gameName: project.gameName,
+                        version: gv.version,
+                    },
+                    defaults: {
+                        gameName: project.gameName,
+                        version: gv.version,
+                        createdAt: gv.createdAt
+                    }
+                }).then((record) => {
+                    return record[0];
+                }))
+            }
+            let newGameIds = (await Promise.all(gameVerPromises)).map(gv => gv.id);
+
+            versionPromises.push(Version.create({
+                projectId: project.id,
+                semver: new SemVer(version.modVersion),
+                contentHashes: version.contentHashes,
+                fileSize: version.fileSize,
+                zipHash: version.zipHash,
+                // remove last 2 chars since theyre basically always "pc"
+                platform: version.platform.slice(0, -2),
+                uploaderId: newUsers.get(version.author.id)?.id || importerUser.id,
+                dependencies: dependencies,
+                lastUpdatedById: importerUser.id,
+                supportedGameVersionIds: newGameIds,
+                createdAt: new Date(version.createdAt),
+                updatedAt: new Date(version.updatedAt),
+                status: version.status as Status,
+                statusHistory: version.statusHistory.map(sh => ({
+                    status: sh.status as Status,
+                    reason: sh.reason,
+                    timestamp: new Date(sh.setAt).toISOString(),
+                    userId: newUsers.get(sh.userId)?.id || importerUser.id,
+                })),
+                lastApprovedById: version.status === Status.Verified ? importerUser.id : undefined,
+            }));
+        }
+
+        const awaitedVersions = await Promise.all(versionPromises).then((versions) => {
+            Logger.log(`Finished importing versions for mod ${mod.id} (${mod.name})`);
+            return versions;
+        });
+
+        let decompPromises: Promise<void>[] = [];
+        for (const version of awaitedVersions) {
+            Logger.debug(`Downloading and processing files for version ${version.id} of mod ${mod.id} (${mod.name} ${version.semver.raw})...`);
+            // download files & process dlls
+            let zipBuffer = await fetch(`https://beatmods.com/cdn/mod/${version.zipHash}.zip`).then(res => {
+                if (!res.ok) {
+                    Logger.error(`Failed to download file for version ${version.id} of mod ${mod.id} (${mod.name}): ${res.statusText}`);
+                    return null;
+                }
+                return res.arrayBuffer();
+            }).then(async arrayBuffer => {
+                if (!arrayBuffer) {
+                    return;
+                }
+                fs.mkdirSync(version.versionFolderPath, { recursive: true });
+                fs.writeFileSync(path.join(version.versionFolderPath, await version.fileName), Buffer.from(arrayBuffer));
+                return Buffer.from(arrayBuffer);
+            });
+
+            if (!zipBuffer) {
+                Logger.error(`Zip buffer is null for version ${version.id} of mod ${mod.id} (${mod.name}), skipping file processing...`);
+                continue;
+            }
+
+            let manifest = await getManifestFromZip(zipBuffer, null/*, Logger*/);
+            fs.writeFileSync(path.join(version.versionFolderPath, await (version.manifestName)), JSON.stringify(manifest));
+            Logger.debug(`Finished downloading & extracting files for version ${version.id} of mod ${mod.id} (${mod.name} ${version.semver.raw}), starting decompilation...`);
+            if (doDecompile && project.name !== `BSIPA`) {
+                decompPromises.push(version.dotnetDecompile().then(() => {
+                    Logger.debug(`Finished decompilation for version ${version.id} of mod ${mod.id} (${mod.name} ${version.semver.raw})`);
+                }).catch(err => {
+                    Logger.error(`Failed to decompile DLL for version ${version.id} of mod ${mod.id} (${mod.name} ${version.semver.raw}): ${err}`);
+                }));
+            }
+            await new Promise(resolve => setTimeout(resolve, 400)); // wait a bit for ratelimits
+        }
+    }
+    Logger.log(`Finished importing ${totalBeatmodsMods} mods from BeatMods.`);
+}
+
+async function getNewUserFromOldUser(user: UserPublicApiV2): Promise<User> {
+    return await User.findOrCreate({
+        where: {
+            username: user.username,
+        },
+        defaults: {
+            username: user.username,
+            displayName: user.displayName,
+            githubId: user.githubId?.toString(),
+            permissions: DefaultPermissionsObject,
+            avatarUrl: `https://github.com/${user.username}.png`,
+            bio: user.bio,
+            createdAt: user.createdAt
+        }
+    }).then(result => result[0]);
+}
+
+function translateBeatModsCategory(modName: string, category: string): string {
+    switch (modName.toLowerCase()) {
+        case `beatleader`:
+        case `scoresaber`:
+        case `hitbloq`:
+            return `Leaderboard`;
+        default:
+            break;
+    }
+
+    switch (category.toLowerCase()) {
+        case `ui`:
+            return `UI Enhancement`;
+        case `practice`:
+            return `Practice & Training`;
+        case `streamtools`:
+            return `Streaming Tools`;
+        case `text`:
+            return `Text Replacement`;
+        case `tweaks`:
+            return `Tweaks & Tools`;
+        default:
+            // capitalize first letter
+            return capitalizeWords(category);
+    }
 }

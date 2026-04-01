@@ -1,6 +1,7 @@
 import { type UserApiV3 } from '$lib/scripts/api/DBTypes';
 import { error, redirect } from '@sveltejs/kit';
 import type { PageLoad } from './$types';
+import { handleTrpcError } from '../../../lib/scripts/utils/api';
 
 //export const ssr = false;
 export const load = (async ({ fetch, params, parent }) => {
@@ -11,7 +12,7 @@ export const load = (async ({ fetch, params, parent }) => {
     console.log('User from parent:', user);
     console.log('Full parent data:', parentData);
     if (!user) {
-      error(403, { message: 'You must be logged in to view your profile', subtitle: `You must be logged in to view your profile` });
+      error(403, { message: 'Not logged in', subtitle: `You must be logged in to view your profile` });
     }
     userData = user;
     throw redirect(307, `/users/${user.id}`);
@@ -19,18 +20,12 @@ export const load = (async ({ fetch, params, parent }) => {
     let id = parseInt(params.id, 10);
     userData = await trpc.v3.user.getUserById.query({ id: id }).then((res) => {
       return res;
-    }).catch((err) => {
-      console.error(`Failed to fetch user with ID ${params.id}`);
-      error(404, `User with ID ${params.id} not found`);
-    });
+    }).catch(handleTrpcError());
   }
 
   let assets = await trpc.v3.user.getAssetsByUserId.query({ id: userData.id }).then((res) => {
     return res;
-  }).catch((err) => {
-    console.error(`Failed to fetch assets for user ${userData.id}`);
-    error(500, `Failed to fetch assets for user ${userData.id}`);
-  });
+  }).catch(handleTrpcError());
 
   return {
     pageMetadata: {

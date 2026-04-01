@@ -6,6 +6,7 @@ import { parseErrorMessage } from "../../../../shared/Tools.ts";
 import { AssetApiV3, userApiV3Schema } from "../../../../shared/database/DBExtras.ts";
 import { anyProcedure, loggedInProcedure, router } from "../../../trpc.ts";
 import z from "zod/v4";
+import { TRPCError } from "@trpc/server";
 
 export const userRouterV3 = router({
     getMe: loggedInProcedure()
@@ -26,7 +27,7 @@ export const userRouterV3 = router({
     })).query(async ({input, ctx}) => {
         const user = await User.findByPk(input.id);
         if (!user) {
-            throw new Error(`User not found`);
+            throw new TRPCError({ code: 'NOT_FOUND', message: `User not found` });
         }
         return user.toApiV3();
     }),
@@ -37,7 +38,7 @@ export const userRouterV3 = router({
     })).query(async ({input, ctx}) => {
         const user = await User.findByPk(input.id);
         if (!user) {
-            throw new Error(`User not found`);
+            throw new TRPCError({ code: 'NOT_FOUND', message: `User not found` });
         }
         let whereOptions: WhereOptions<AssetInfer> = {
             status: User.getAllowedStatuses(ctx.user),

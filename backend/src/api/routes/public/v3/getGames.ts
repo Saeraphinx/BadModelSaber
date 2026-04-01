@@ -18,7 +18,7 @@ export const gameRouter = router({
   getGameVersions: anyProcedure().input(z.object({ gameName: z.string(), includeExtras: z.boolean().default(false) })).query(async ({ input, ctx }) => {
     let game = await Game.findByPk(input.gameName);
     if (!game) {
-      throw new Error(`Game with name ${input.gameName} not found.`);
+      throw new TRPCError({ code: "NOT_FOUND", message: `Game with name ${input.gameName} not found.` });
     }
     let gameVersions = await GameVersion.findAll({
       where: {
@@ -27,7 +27,7 @@ export const gameRouter = router({
     });
 
     if (!gameVersions) {
-      throw new Error(`Game with name ${input.gameName} not found.`);
+      throw new TRPCError({ code: "NOT_FOUND", message: `Game with name ${input.gameName} not found.` });
     }
 
     gameVersions.sort((b, a) => compare(a.version, b.version, { loose: true }));

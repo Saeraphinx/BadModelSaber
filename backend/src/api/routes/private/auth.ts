@@ -7,6 +7,7 @@ import { anyProcedure, loggedInProcedure, publicProcedure, router } from '../../
 import { REST, RESTGetAPICurrentUserResult, RESTOAuth2AuthorizationQuery, RESTPostOAuth2AccessTokenWithBotAndGuildsScopeResult, RESTPostOAuth2ClientCredentialsResult, Routes } from 'discord.js';
 import { OAuth2API } from '@discordjs/core';
 import z from 'zod/v4';
+import { TRPCError } from '@trpc/server';
 
 export function loadAuthConfig() {
     if (!EnvConfig.auth.discord.clientSecret || !EnvConfig.auth.discord.clientId) {
@@ -41,7 +42,7 @@ export const authRouter = router({
         .query(async ({ input, ctx, path }) => {
             let state = prepAuth(ctx.req.ip || ``, input.redirect ?? EnvConfig.server.frontendUrl);
             if (!state) {
-                throw new Error(`Could not prepare authentication.`);
+                throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: `Could not prepare authentication.` });
             }
 
             let RESTClient = new REST({ version: '10' });
@@ -66,7 +67,7 @@ export const authRouter = router({
         .query(async ({ input, ctx }) => {
             let stateObj = validStates.find((s) => s.stateId === input.state && s.ip === ctx.req.ip);
             if (!stateObj) {
-                throw new Error(`Invalid state.`);
+                throw new TRPCError({ code: 'BAD_REQUEST', message: `Invalid state.` });
             }
             validStates = validStates.filter((s) => s.stateId !== input.state);
 
@@ -81,7 +82,7 @@ export const authRouter = router({
             RESTClient.setToken(tokenResponse.access_token);
             let userInfo = await RESTClient.get(Routes.user(`@me`), {authPrefix: `Bearer`}).then((res) => res as RESTGetAPICurrentUserResult).catch((err) => {
                 Logger.error(`Error fetching Discord user info: ${parseErrorMessage(err)}`);
-                throw new Error(`Failed to fetch user info from Discord.`, err);
+                throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: `Failed to fetch user info from Discord.` });
             });
 
             let dbUser = await User.findOne({ where: { discordId: userInfo.id } });
@@ -121,7 +122,7 @@ export const authRouter = router({
             ctx.req.session.save((err) => {
                 if (err) {
                     Logger.error(`Error saving session: ${parseErrorMessage(err)}`);
-                    throw new Error(`Internal server error.`);
+                    throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: `Internal server error.` });
                 }
             });
             if (ctx.res) {
@@ -138,7 +139,7 @@ export const authRouter = router({
                 ctx.req.session.destroy((err) => {
                     if (err) {
                         Logger.error(`Error destroying session: ${parseErrorMessage(err)}`);
-                        return reject(new Error(`Internal server error.`));
+                        return reject(new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: `Internal server error.` }));
                     }
                     resolve({ message: `Logged out successfully.` });
                 });

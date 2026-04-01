@@ -1,5 +1,5 @@
 import type { LayoutLoad } from "./$types";
-import { createTRPC, parseError } from "$lib/scripts/utils/api";
+import { createTRPC, handleTrpcError, parseTRPCError } from "$lib/scripts/utils/api";
 
 export const load: LayoutLoad = async ({ fetch }) => {
   let pendingToasts: Awaited<ReturnType<LayoutLoad>>['pendingToasts'] = [];
@@ -16,9 +16,8 @@ export const load: LayoutLoad = async ({ fetch }) => {
     fetch: fetch,
   } satisfies Awaited<ReturnType<LayoutLoad>>;
   let userRes = await trpc.v3.user.getMe.query().catch((err) => {
-    let error = parseError(err);
-    if (error.code !== 401) {
-      console.error(err);
+    let error = handleTrpcError(false)(err);
+    if (error.httpCode !== 401) {
       pendingToasts.push({
         type: 'error',
         title: `Unable to fetch user data`,
@@ -31,13 +30,9 @@ export const load: LayoutLoad = async ({ fetch }) => {
     return defaultObj;
   }
 
-  let alertRes = await trpc.internal.alerts.getAlertCount.query().catch((err) => {
-    console.error(err);
-  });
+  let alertRes = await trpc.internal.alerts.getAlertCount.query().catch(handleTrpcError());
 
-  let requestRes = await trpc.internal.requests.requestCounts.query().catch((err) => {
-    console.error(err);
-  });
+  let requestRes = await trpc.internal.requests.requestCounts.query().catch(handleTrpcError());
 
   return {
     pendingToasts: pendingToasts,

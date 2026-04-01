@@ -204,3 +204,28 @@ export enum KnownSponsorUrls {
 export function getSponserUrlData(sponsorUrl: string | string[] | null) {
 
 }
+
+export function getRelativeTimeString(date: Date, lang = navigator.language) {
+  // Allow dates or times to be passed
+  const timeMs = typeof date === "number" ? date : date.getTime();
+  const diff = timeMs - Date.now();
+  const absDiff = Math.abs(diff);
+
+  const units = [
+    { unit: "year", ms: 31536000000 },
+    { unit: "month", ms: 2628000000 },
+    { unit: "week", ms: 604800000 },
+    { unit: "day", ms: 86400000 },
+    { unit: "hour", ms: 3600000 },
+    { unit: "minute", ms: 60000 },
+    { unit: "second", ms: 1000 },
+  ];
+
+  for (const { unit, ms } of units) {
+    if (absDiff >= ms || unit === "second") {
+      const value = Math.round(diff / ms);
+      const rtf = new Intl.RelativeTimeFormat(lang, { numeric: "auto", style: "long" });
+      return rtf.format(value, unit as Intl.RelativeTimeFormatUnit);
+    }
+  }
+}

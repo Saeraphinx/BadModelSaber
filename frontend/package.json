@@ -42,7 +42,9 @@
     "@trpc/client": "^11.6.0",
     "@trpc/server": "^11.6.0",
     "embla-carousel-auto-scroll": "^8.6.0",
+    "isomorphic-dompurify": "^3.7.1",
     "jszip": "^3.10.1",
+    "marked": "^17.0.5",
     "semver": "^7.7.4",
     "superjson": "^2.2.2",
     "zod": "^4.1.12"

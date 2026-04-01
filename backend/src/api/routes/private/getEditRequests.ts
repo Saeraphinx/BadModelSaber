@@ -101,7 +101,7 @@ export const RequestRouter = router({
             await assetReq.decline(ctx.user).catch(handleCatch());
             return { message: `Request declined successfully` };
         }
-        throw new Error(`Invalid action`);
+        throw new TRPCError({ code: `BAD_REQUEST`, message: `Invalid action` });
     }),
     reportAsset: loggedInProcedure().input(z.object({
         assetId: dbId,

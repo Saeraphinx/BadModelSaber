@@ -1,6 +1,6 @@
 import { error } from '@sveltejs/kit';
 import type { PageLoad } from './$types';
-import { parseError } from '../../../lib/scripts/utils/api';
+import { handleTrpcError, parseTRPCError } from '../../../lib/scripts/utils/api';
 
 export const load = (async ({ fetch, params, parent }) => {
   let id = parseInt(params.id, 10);
@@ -10,15 +10,7 @@ export const load = (async ({ fetch, params, parent }) => {
   const { trpc } = await parent();
   let asset = await trpc.v3.assets.getAssetById.query({
     id
-  }).catch((err) => {
-    console.error(`Error fetching asset ${id}: ${err}`);
-    let ef = parseError(err);
-    throw error(ef.code, {
-      additionalInfo: JSON.stringify(err),
-      message: `Error fetching asset`,
-      subtitle: `${ef.message}`,
-    });
-  });
+  }).catch(handleTrpcError());
 
   return {
     pageMetadata: {

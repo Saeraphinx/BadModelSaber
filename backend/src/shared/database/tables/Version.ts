@@ -115,7 +115,8 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
             return Promise.resolve(this._uploader) || null;
         } else {
             Logger.debug(`User not loaded, fetching from DB for uploaderId: ${this.uploaderId}`);
-            return User.findByPk(this.uploaderId) || null;
+            this._uploader = User.findByPk(this.uploaderId) || null;
+            return this._uploader;
         }
     }
 
@@ -124,12 +125,13 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
             return Promise.resolve(this._project) || null;
         } else {
             Logger.debug(`Project not loaded, fetching from DB for projectId: ${this.projectId}`);
-            return Project.findByPk(this.projectId) || null;
+            this._project = Project.findByPk(this.projectId) || null;
+            return this._project;
         }
     }
     
-    get versionFolderPath(): NonAttribute<Promise<string>> {
-        return (async () => path.join(EnvConfig.storagePath, `${(await this.project)?.id}`, `${this.id}`))();
+    get versionFolderPath(): NonAttribute<string> {
+        return path.join(EnvConfig.uploadsPath, `${this.projectId}`, `${this.id}`);
     }
 
     get zipFilePath(): NonAttribute<Promise<string>> {
@@ -400,11 +402,11 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
 
     public async dotnetDecompile() {
         if (await this.doesDecompiledVersionExist()) {
-            Logger.info(`Decompiled version already exists for version id ${this.id}, skipping decompilation.`);
+            Logger.info(`Decomp already exists for version id ${this.id}, skipping decomp.`);
             return;
         }
         // get dll out of zip
-        Logger.debug(`Starting decompilation for version id ${this.id}. Extracting dll from zip...`);
+        Logger.debug(`Starting decomp for version id ${this.id}. Extracting dll from zip...`);
         let zipFile = fs.readFileSync((await this.zipFilePath));
         let zip = await JSZip.loadAsync(zipFile);
         let zipDllFile: JSZip.JSZipObject | null = null;

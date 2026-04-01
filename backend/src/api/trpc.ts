@@ -43,10 +43,9 @@ const t = initTRPC.context<Context>().meta<OpenApiMeta>().create({
             data: {
                 ...shape.data,
                 formattedMessage: parseErrorMessage(error.cause),
-                zodError:
-                    error.code === 'BAD_REQUEST' && error.cause instanceof ZodError
-                        ? error.cause.flatten()
-                        : null,
+                zodError: error.code === 'BAD_REQUEST' && error.cause instanceof ZodError
+                        ? error.cause
+                        : undefined,
             },
         };
     },

@@ -1,7 +1,7 @@
 import { env } from "$env/dynamic/public";
 import type { AssetApiV3 } from "../api/DBTypes";
 
-export function getThumbnailUrl(id: number | string, thumbnailName:string): string {
+export function getThumbnailUrl(id: number | string, thumbnailName: string): string {
   return `${env.PUBLIC_ASSET_URL}/${id}/${thumbnailName}`;
 }
 
@@ -33,27 +33,33 @@ export function getOneClickUrl(asset: AssetApiV3): string {
   return `${baseUrl}${modelType}/${asset.id}/${asset.fileSafeName}.${asset.type.split("_")[1]}`;
 }
 
-import { createTRPCClient, httpBatchLink, httpLink, isNonJsonSerializable, isTRPCClientError, splitLink } from '@trpc/client';
+import { createTRPCClient, httpBatchLink, httpLink, isNonJsonSerializable, isTRPCClientError, splitLink, TRPCClientError } from '@trpc/client';
 import type { AppRouter } from '../../../../../backend/src/api/routers';
 import SuperJSON from "superjson";
 import { error } from "@sveltejs/kit";
+import z from "zod";
 
 export const trpc = createTRPC();
 
 export function createTRPC(svelteFetch: typeof fetch = fetch) {
   //let svelteFetch = svelteFetcht;
+
+  // this is to both make sure that the cookies are included in the request and that readablestream doesn't get locked
+  const safeFetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+    const response = await svelteFetch(input, {
+      ...init,
+      credentials: 'include',
+    });
+    return response.clone();
+  };
+
   return createTRPCClient<AppRouter>({
     links: [
       splitLink({
         condition: (op) => isNonJsonSerializable(op.input),
         true: httpLink({ // this section is needed for file uploads
           url: `${env.PUBLIC_API_URL}/trpc`,
-          fetch: (input, init) => {
-            return svelteFetch(input, {
-              ...init,
-              credentials: 'include',
-            });
-          },
+          fetch: safeFetch,
           transformer: {
             serialize: (data) => data,
             deserialize: SuperJSON.deserialize,
@@ -61,13 +67,7 @@ export function createTRPC(svelteFetch: typeof fetch = fetch) {
         }),
         false: httpBatchLink({
           url: `${env.PUBLIC_API_URL}/trpc`,
-          fetch: (input, init) => {
-            //console.log(`Fetching ${input} with init:`, init);
-            return svelteFetch(input, {
-              ...init,
-              credentials: 'include',
-            });
-          },
+          fetch: safeFetch,
           transformer: SuperJSON,
         }),
       }),
@@ -75,43 +75,24 @@ export function createTRPC(svelteFetch: typeof fetch = fetch) {
   });
 }
 
-export function parseError(err: unknown): {
+export function parseTRPCError(err: unknown): {
+  err: TRPCClientError<AppRouter>;
+  formattedMessage: string;
+  zodError?: z.ZodError;
   message: string;
-  code: number;
+  httpCode: number;
 } {
-  if (isTRPCClientError(err)) {
+  if (isTRPCClientError<AppRouter>(err)) {
+    //debugger;
     return {
+      err: err,
+      formattedMessage: err.data?.formattedMessage ?? err.message ?? `Unable to parse error message.`,
+      zodError: err.data?.zodError,
       message: err.message,
-      code: err.data?.httpStatus ?? 500,
+      httpCode: err.data?.httpStatus ?? 500,
     };
-  }
-  try {
-    let anyErr = err as any;
-    if (anyErr) {
-      if (anyErr.data?.httpStatus) {
-        return {
-          message: parseErrorMessage(err),
-          code: anyErr.data.httpStatus as number ?? 500,
-        };
-      }
-      else {
-        return {
-          message: parseErrorMessage(err),
-          code: 500,
-        };
-      }
-    } else {
-      return {
-        message: `Unkown error`,
-        code: 500,
-      };
-    }
-  } catch (e) {
-    console.error(`Error parsing error: ${e}`);
-    return {
-      message: `Unknown error`,
-      code: 500,
-    };
+  } else {
+    throw err;
   }
 }
 
@@ -137,10 +118,33 @@ export function parseErrorMessage(err: unknown): string {
   }
 }
 
-export function handleTrpcError() : (err: unknown) => never {
-  return (err: unknown) => {
-    console.error(err);
-    let parsedError = parseError(err);
-    throw error(parsedError.code, { message: parsedError.message });
+export function handleTrpcError(shouldThrow: false, shouldLog?: boolean): (err: unknown) => ReturnType<typeof parseTRPCError>
+export function handleTrpcError(shouldThrow?: true, shouldLog?: boolean): (err: unknown) => never
+export function handleTrpcError(shouldThrow = true, shouldLog = true): (err: unknown) => ReturnType<typeof parseTRPCError> | never {
+  return (err) => {
+    if (shouldLog) {
+      console.error(err);
+    }
+    let parsedError
+    try {
+      parsedError = parseTRPCError(err);
+    } catch (err2) {
+      throw error(500, {
+        message: parseErrorMessage(err),
+        title: "Unknown Error",
+      });
+    }
+    let isZodError = parsedError.zodError !== undefined;
+    if (shouldThrow) {
+      throw error(parsedError.httpCode, {
+        message: parsedError.formattedMessage,
+        additionalInfo: parsedError.zodError ? z.prettifyError(parsedError.zodError) : undefined,
+        title: isZodError ? "Validation Error" : undefined,
+        subtitle: parsedError.formattedMessage,
+        parsedErrorObj: JSON.stringify(parsedError),
+      });
+    } else {
+      return parsedError;
+    }
   }
 }

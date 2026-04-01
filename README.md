@@ -1,8 +1,8 @@
 # BadModelSaber
-A asset hosting platform for Beat Saber.
+A asset & mod hosting platform for Beat Saber.
 
 ## Preparing the server
-To run the server, you must have a instance of PostgreSQL & a database ready for the server to use. If you do not provide Discord OAuth2 credentials, the server will disable authentication and will not allow sign-ins. The importer also requires a Discord bot token in order to make API requests to get users when running the ModelSaber importer.
+To run the server, you must have a instance of PostgreSQL & a database ready for the server to use. If you do not provide Discord OAuth2 credentials, the server will disable authentication and will not allow sign-ins. The importer also requires a Discord bot token in order to make API requests to get users when running the ModelSaber importer. This bot token will also be used to attempt to notify users when they receive an alert, so it is recommended to provide a bot token even if you do not plan on using the importer.
 ### Running with Docker
 1. Pull the frontend and backend images.
 2. Look at the `docker-compose.example.yml` file for an example of how to set up the server with Docker Compose.
@@ -57,5 +57,8 @@ storage/
 
 ## Translations
 The frontend uses Inlang/Paraglide for translations. All translation files are located in `frontend/src/lib/paraglide/messages/`. Translations are built when running `yarn install` in the frontend folder, but you can also run `yarn i18n` to rebuild them. 
+
+The backend uses a custom translation system for user generated content, and is currently a work in progress. Errors and alerts generated do not have support for translations.
+
 ## Tests
 The backend uses Vitest for testing. Test files are located in the `test` folder. You can run the tests by executing `yarn test` in the backend folder. Docker is required for running the tests as it relies on a PostgreSQL container.
