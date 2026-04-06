@@ -42,8 +42,8 @@
   import LinkAssetDialog from "$lib/components/dialogs/LinkAssetDialog.svelte";
   import { invalidateAll } from "$app/navigation";
   import AssetPreview from "$lib/components/assets/AssetPreview.svelte";
-  import StatusHoverCard from "$lib/components/assets/StatusHoverCard.svelte";
-  import DownloadButton from "$lib/components/assets/DownloadButton.svelte";
+  import StatusHoverCard from "$lib/components/generic/StatusHoverCard.svelte";
+  import DownloadButton from "$lib/components/generic/DownloadButton.svelte";
   import ReportDialog from "$lib/components/dialogs/ReportDialog.svelte";
   import { m } from "$lib/paraglide/messages.js";
   import { checkRoles } from "$lib/scripts/utils/checkRoles.js";
@@ -362,11 +362,11 @@
 {#snippet buttons(center = mobileView.current)}
   <div class={cn("flex flex-row gap-2 flex-wrap items-center", center ? "justify-center" : "justify-start")}>
     {#if !isEditing}
-      <DownloadButton shouldShowWarning={pageData.status != Status.Verified} variant="default" href={getAssetDownloadUrl(pageData)} download>
+      <DownloadButton downloadType="asset" shouldShowWarning={pageData.status != Status.Verified} variant="default" href={getAssetDownloadUrl(pageData)} download>
         <DownloadIcon />
         {m["common.buttons.download"]()}
       </DownloadButton>
-      <DownloadButton variant="outline" href={getOneClickUrl(pageData)}>
+      <DownloadButton downloadType="asset" variant="outline" href={getOneClickUrl(pageData)}>
         <CloudDownloadIcon />
         {m["common.buttons.oneClickInstall"]()}
       </DownloadButton>

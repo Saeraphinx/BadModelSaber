@@ -194,11 +194,11 @@
   <div class="flex-1 gap-4 flex flex-row flex-wrap items-center-safe justify-center-safe">
     {#if !isLoading}
       {#each filterModsPageView as mod}
-        <ModCard project={mod.project} version={mod.version} />
+        <ModCard project={mod.project} version={mod.version} gameDisplayName={selectedGame?.displayName} />
       {/each}
     {:else}
       {#each { length: pageSize }}
-        <Skeleton class="h-20 w-64 rounded-md" />
+        <Skeleton class="w-sm h-48 rounded-md" />
       {/each}
     {/if}
 

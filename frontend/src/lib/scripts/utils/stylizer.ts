@@ -130,6 +130,7 @@ export function getAssetTypeCategories(): Map<string, ReturnType<typeof getAsset
 
 export function getRoleData(role: string): {
   bgColor: string;
+  badgeBorder: string;
   textColor: string;
   text: string;
   value: UserPermissions | undefined;
@@ -139,6 +140,7 @@ export function getRoleData(role: string): {
     case UserPermissions.C_Admin:
       return {
         bgColor: 'bg-red-500',
+        badgeBorder: 'border-red-500',
         textColor: 'text-white',
         text: m["enums.roles.admin"](),
         value: UserPermissions.C_Admin,
@@ -147,6 +149,7 @@ export function getRoleData(role: string): {
     case UserPermissions.C_Developer:
       return {
         bgColor: 'bg-pink-500',
+        badgeBorder: 'border-pink-500',
         textColor: 'text-white',
         text: m["enums.roles.developer"](),
         value: UserPermissions.C_Developer,
@@ -155,6 +158,7 @@ export function getRoleData(role: string): {
     case UserPermissions.C_Moderator:
       return {
         bgColor: 'bg-blue-500',
+        badgeBorder: 'border-blue-500',
         textColor: 'text-black',
         text: m["enums.roles.moderator"](),
         value: UserPermissions.C_Moderator,
@@ -163,14 +167,25 @@ export function getRoleData(role: string): {
     case UserPermissions.C_BSMG_Staff:
       return {
         bgColor: 'bg-[#3b397a]',
+        badgeBorder: 'border-[#3b397a]',
         textColor: 'text-white',
         text: m["enums.roles.bsmgStaff"](),
         value: UserPermissions.C_BSMG_Staff,
         hidden: false,
       }
+    case UserPermissions.C_Modder:
+      return {
+        bgColor: 'bg-[#f56b1f]',
+        badgeBorder: 'border-[#f56b1f]',
+        textColor: 'text-black',
+        text: m["enums.roles.modder"](),
+        value: UserPermissions.C_Modder,
+        hidden: false,
+      }
     case UserPermissions.C_Modeler:
       return {
         bgColor: 'bg-[#59d8f0]',
+        badgeBorder: 'border-[#59d8f0]',
         textColor: 'text-black',
         text: m["enums.roles.3dArtist"](),
         value: UserPermissions.C_Modeler,
@@ -179,6 +194,7 @@ export function getRoleData(role: string): {
     case UserPermissions.C_System:
       return {
         bgColor: 'bg-gray-800',
+        badgeBorder: 'border-gray-800',
         textColor: 'text-white',
         text: m["enums.roles.system"](),
         value: UserPermissions.C_System,
@@ -187,6 +203,7 @@ export function getRoleData(role: string): {
     default:
       return {
         bgColor: 'bg-gray-500',
+        badgeBorder: 'border-gray-500',
         textColor: 'text-white',
         text: m["enums.roles.unknown"](),
         value: undefined,

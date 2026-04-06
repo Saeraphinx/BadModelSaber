@@ -4,6 +4,7 @@
   import SponsorButton from "$lib/components/users/SponsorButton.svelte";
   import UserCard from "$lib/components/users/UserCard.svelte";
   import Separator from "$shadcn/components/ui/separator/separator.svelte";
+  import Markdown from "$lib/components/generic/Markdown.svelte";
 
   const { data: _internal } = $props();
   const { pageData, trpc } = $derived(_internal);
@@ -21,7 +22,7 @@
   <div class="flex flex-col md:flex-row gap-4 w-full">
     <UserCard {user} class="md:min-w-92" />
     <div class="flex flex-row bg-accent p-4 rounded-lg w-full">
-      <p class="text-base whitespace-pre-line text-wrap wrap-anywhere">{user.bio}</p>
+      <Markdown bind:markdown={user.bio} class="text-base" />
       {#if user.userPlatforms?.length || 0 > 0}
         <Separator orientation="vertical" class="mx-4" />
         <div class="flex flex-col w-82">

@@ -178,6 +178,7 @@ export enum UserPermissions {
   C_Admin = "cos_admin", // User is an admin of the site
   C_BSMG_Staff = "cos_bsmg_staff", // User is a member of the BSMG staff
   C_Modeler = "cos_modeler", // User is a recognized modeler on ModelSaber
+  C_Modder = "cos_modder", // User is a recognized modeler on ModelSaber
   C_System = "cos_system", // User is a system account
 }
 
@@ -527,6 +528,9 @@ export const versionApiV3Schema = z.object({
   platform: z.string(),
   zipHash: z.string(),
   contentHashes: z.array(ContentHashSchema),
+  statusHistory: z.array(statusHistorySchema),
+  baseFileName: z.string(),
+  downloadUrl: z.url(),
   fileSize: z.number(),
   createdAt: z.date(),
   updatedAt: z.date(),

@@ -12,11 +12,15 @@ export const load: PageLoad = async ({ parent, params }) => {
   }
 
   let pnv = await trpc.v3.mods.getProjectAndVersions.query({ projectId }).catch(handleTrpcError());
+  let games = await trpc.v3.games.getGameVersions.query({ gameName: pnv.project.gameName }).catch(handleTrpcError());
 
   return {
     pageMetadata: {
       title: `${pnv.project.name}`,
     },
-    pageData: pnv,
+    pageData: {
+      pnv: pnv,
+      games: games,
+    },
   };
 }

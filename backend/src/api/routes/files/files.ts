@@ -7,7 +7,15 @@ import { Logger } from "../../../shared/Logger.ts";
 
 export class FileRoutes {
     public static loadRoutes(router: Router): void {
-        router.get(`/:assetId/:fileName`, async (req, res) => {
+
+        router.use(`/`, express.static(EnvConfig.storage.uploads, {
+            dotfiles: 'deny',
+            cacheControl: true,
+            maxAge: '14d',
+            immutable: true,
+        }));
+
+        /*router.get(`/:assetId/:fileName`, async (req, res) => {
             const assetId = req.params.assetId;
             const fileName = req.params.fileName;
 
@@ -62,6 +70,6 @@ export class FileRoutes {
                 maxAge: '14d',
                 immutable: true
             });
-        });
+        });*/
     }
 }

@@ -1,5 +1,5 @@
 import { CreationOptional, InferAttributes, InferCreationAttributes, NonAttribute, Op, WhereOptions } from "sequelize";
-import { AfterCreate, AfterValidate, AllowNull, BelongsTo, Column, CreatedAt, DataType, Default, DeletedAt, ForeignKey, Model, Sequelize, Table, UpdatedAt } from "sequelize-typescript";
+import { AfterCreate, AfterValidate, AllowNull, BeforeCreate, BeforeValidate, BelongsTo, Column, CreatedAt, DataType, Default, DeletedAt, ForeignKey, Model, Sequelize, Table, UpdatedAt } from "sequelize-typescript";
 import { ContentHash, ContentHashSchema, Dependency, DependencySchema, ModApiV1, ModVersionsApiv2, Status, StatusHistory, statusHistorySchema, UserPermissions, VersionApiV3 } from "../DBExtras.ts";
 import { SemVer, parse } from "semver";
 import { Project } from "./Project.ts";
@@ -98,6 +98,10 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
     declare fileSize: number;
 
     @AllowNull(false)
+    @Column(DataType.STRING)
+    declare baseFileName: CreationOptional<string>
+
+    @AllowNull(false)
     @Default([])
     @Column(DataType.ARRAY(DataType.JSONB))
     declare statusHistory: CreationOptional<StatusHistory[]>;
@@ -134,20 +138,20 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
         return path.join(EnvConfig.uploadsPath, `${this.projectId}`, `${this.id}`);
     }
 
-    get zipFilePath(): NonAttribute<Promise<string>> {
-        return (async () => path.join(await this.versionFolderPath, `${await this.fileName}`))();
+    get zipFilePath(): NonAttribute<string> {
+        return path.join(this.versionFolderPath, `${this.zipFileName}`);
     }
 
-    get dllFilePath(): NonAttribute<Promise<string>> {
-        return (async () => path.join(await this.versionFolderPath, `${(await this.fileName).replace(`.zip`, `.dll`)}`))();
+    get dllFilePath(): NonAttribute<string> {
+        return path.join(this.versionFolderPath, `${this.baseFileName}.dll`);
     }
 
-    get fileName(): NonAttribute<Promise<string>> {
-        return (async () => `${(await this.project)?.name}_${this.platform}_v${this.semver.raw}.zip`)();
+    get zipFileName(): NonAttribute<string> {
+        return `${this.baseFileName}.zip`;
     }
 
-    get manifestName(): NonAttribute<Promise<string>> {
-        return (async () => `${(await this.project)?.name}_${this.platform}_v${this.semver.raw}_manifest.json`)();
+    get manifestName(): NonAttribute<string> {
+        return `${this.baseFileName}_manifest.json`;
     }
     // #endregion
     // #region Validators
@@ -155,7 +159,6 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
     private static validatorTypeTest1: z.infer<typeof Version.validator> = ({} as Version); // validator has property asset doesn't
     private static validatorTypeTest2: VersionInfer = ({} as z.infer<typeof Version.validator>); // asset has property validator doesn't
     */
-
 
     public static validator = z.object({
         id: z.number().int().positive(),
@@ -172,6 +175,7 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
         lastUpdatedById: z.number(),
         fileSize: z.number(),
         statusHistory: z.array(statusHistorySchema),
+        baseFileName: z.string(),
         createdAt: z.date(),
         updatedAt: z.date(),
         deletedAt: z.date().nullable(),
@@ -183,6 +187,7 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
         lastApprovedById: Version.validator.shape.lastApprovedById.nullish(),
         status: Version.validator.shape.status.nullish(),
         statusHistory: Version.validator.shape.statusHistory.nullish(),
+        baseFileName: Version.validator.shape.baseFileName.nullish(),
         createdAt: Version.validator.shape.createdAt.nullish(),
         updatedAt: Version.validator.shape.updatedAt.nullish(),
         deletedAt: Version.validator.shape.deletedAt.nullish(),
@@ -239,6 +244,14 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
             throw new Error(`Extended validation failed for Version.`);
         }
     }
+    @BeforeValidate
+    private static async runBeforeValidateOnFirstCreate(version: Version) {
+        if (!version.isNewRecord) {
+            return;
+        }
+        version.baseFileName = `${(await version.project)?.name}_${version.platform}_v${version.semver.raw}`;
+    }
+
     @AfterCreate
     private static async runCreate(version: Version) {
         for (let gameVersionId of version.supportedGameVersionIds) {
@@ -253,6 +266,7 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
                 }
             }
         }
+
         await version.save();
     }
     // #endregion
@@ -401,6 +415,7 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
     }
 
     public async dotnetDecompile() {
+        let startTime = Date.now();
         if (await this.doesDecompiledVersionExist()) {
             Logger.info(`Decomp already exists for version id ${this.id}, skipping decomp.`);
             return;
@@ -426,13 +441,14 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
         Logger.debug(`Extracting dll file from zip for version id ${this.id}...`);
         let dllData = await (zipDllFile as JSZip.JSZipObject).async(`nodebuffer`);
         // write dll to file for decompilation & future diffing
-        let dllFilePath = await this.dllFilePath;
+        let dllFilePath = this.dllFilePath;
         let dllFile = fs.writeFileSync(dllFilePath, dllData);
         // decompile dll with difflux
-        Logger.debug(`Decompiling dll for version id ${this.id} at path ${dllFilePath}...`);
-        await decompile({ assemblyPath: dllFilePath }, path.join(await this.versionFolderPath, `decompiled`));
-        Logger.info(`Decompilation completed for version id ${this.id}. Decompiled files saved to ${path.join(await this.versionFolderPath, `decompiled`)}`);
+        Logger.debug(`Decompiling dll for version id ${this.id} at path ${dllFilePath} (prep ${startTime - Date.now()}ms)...`);
+        await decompile({ assemblyPath: dllFilePath }, path.join(this.versionFolderPath, `decompiled`));
+        Logger.info(`Decompilation completed for version id ${this.id}. Decompiled files saved to ${path.join(this.versionFolderPath, `decompiled`)}. Total Time: ${startTime - Date.now()}ms`);
     }
+    // #endregion
     // #region ToAPI
     public async toApiV3(): Promise<VersionApiV3> {
         let versions = await GameVersion.findAll({
@@ -453,6 +469,9 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
             fileSize: this.fileSize,
             zipHash: this.zipHash,
             contentHashes: this.contentHashes,
+            statusHistory: this.statusHistory,
+            baseFileName: this.baseFileName,
+            downloadUrl: `${EnvConfig.server.backendUrl}${EnvConfig.server.fileRoute}/${this.projectId}/${this.id}/${this.zipFileName}`,
             createdAt: this.createdAt,
             updatedAt: this.updatedAt
         };

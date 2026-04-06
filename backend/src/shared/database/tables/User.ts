@@ -123,7 +123,7 @@ export class User extends Model<InferAttributes<User>, InferCreationAttributes<U
     });
 
     public static validateExtended(data: User | UserInfer): string | null {
-        if (!data.githubId && !data.discordId && data.id >= 10) return `User must have at least one of discordId or githubId`;
+        //if (!data.githubId && !data.discordId && data.id >= 10) return `User must have at least one of discordId or githubId`;
 
         // no cos roles in pergame perms
         for (const game in data.permissions.perGame) {

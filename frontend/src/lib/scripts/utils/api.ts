@@ -1,8 +1,8 @@
 import { env } from "$env/dynamic/public";
-import type { AssetApiV3 } from "../api/DBTypes";
+import type { AssetApiV3, ProjectApiV3, VersionApiV3 } from "../api/DBTypes";
 
 export function getThumbnailUrl(id: number | string, thumbnailName: string): string {
-  return `${env.PUBLIC_ASSET_URL}/${id}/${thumbnailName}`;
+  return `${env.PUBLIC_FILE_URL}/${id}/${thumbnailName}`;
 }
 
 export function getAssetDownloadUrl(asset: AssetApiV3): string {
@@ -31,6 +31,22 @@ export function getOneClickUrl(asset: AssetApiV3): string {
   }
 
   return `${baseUrl}${modelType}/${asset.id}/${asset.fileSafeName}.${asset.type.split("_")[1]}`;
+}
+
+export function getProjectThumbnailUrl(project: ProjectApiV3): string {
+  return `${env.PUBLIC_FILE_URL}/${project.id}/${project.iconFileName}`;
+}
+
+export function getVersionDownloadUrl(version: VersionApiV3): string {
+  return version.downloadUrl;
+}
+
+export function getVersionManifestUrl(version: VersionApiV3): string {
+  return `${env.PUBLIC_FILE_URL}/${version.projectId}/${version.id}/${version.baseFileName}_manifest.json`;
+}
+
+export function getVersionDecompUrl(version: VersionApiV3): string {
+  return `${env.PUBLIC_FILE_URL}/${version.projectId}/${version.id}/decompiled/${version.baseFileName}.decompiled.cs`;
 }
 
 import { createTRPCClient, httpBatchLink, httpLink, isNonJsonSerializable, isTRPCClientError, splitLink, TRPCClientError } from '@trpc/client';
@@ -118,14 +134,14 @@ export function parseErrorMessage(err: unknown): string {
   }
 }
 
-export function handleTrpcError(shouldThrow: false, shouldLog?: boolean): (err: unknown) => ReturnType<typeof parseTRPCError>
-export function handleTrpcError(shouldThrow?: true, shouldLog?: boolean): (err: unknown) => never
-export function handleTrpcError(shouldThrow = true, shouldLog = true): (err: unknown) => ReturnType<typeof parseTRPCError> | never {
+export function handleTrpcError(shouldThrow: false, shouldLog?: `full` | `minimal` | `none`): (err: unknown) => ReturnType<typeof parseTRPCError>
+export function handleTrpcError(shouldThrow?: true, shouldLog?: `full` | `minimal` | `none`): (err: unknown) => never
+export function handleTrpcError(shouldThrow = true, shouldLog = `minimal`): (err: unknown) => ReturnType<typeof parseTRPCError> | never {
   return (err) => {
-    if (shouldLog) {
+    if (shouldLog === `full`) {
       console.error(err);
     }
-    let parsedError
+    let parsedError;
     try {
       parsedError = parseTRPCError(err);
     } catch (err2) {
@@ -134,6 +150,16 @@ export function handleTrpcError(shouldThrow = true, shouldLog = true): (err: unk
         title: "Unknown Error",
       });
     }
+
+    if (shouldLog === `minimal`) {
+      if (parsedError.zodError) {
+        console.error(`Validation error: ${parsedError.formattedMessage}`);
+        console.error(`Zod error details: ${JSON.stringify(z.prettifyError(parsedError.zodError))}`);
+      } else {
+        console.error(`Error: ${parsedError.formattedMessage}`);
+      }
+    }
+
     let isZodError = parsedError.zodError !== undefined;
     if (shouldThrow) {
       throw error(parsedError.httpCode, {

@@ -29,12 +29,12 @@ export function checkRoles(userPermObj: UserPermObj | undefined, roles: UserPerm
       const anyGameCheck = (roles.hasAllOf ? Object.values(userPermObj.permissions.perGame).some(gameRoles => roles.hasAllOf?.every(role => gameRoles.includes(role))) : true) &&
         (roles.hasOneOf ? Object.values(userPermObj.permissions.perGame).some(gameRoles => roles.hasOneOf?.some(role => gameRoles.includes(role))) : true) &&
         (roles.denied ? Object.values(userPermObj.permissions.perGame).every(gameRoles => roles.denied?.every(role => !gameRoles.includes(role))) : true);
-      return sitewideCheck && anyGameCheck;
+      return sitewideCheck || anyGameCheck;
     } else if (gameName) {
       const perGameCheck = (roles.hasAllOf ? roles.hasAllOf.every(role => userPermObj.permissions.perGame[gameName]?.includes(role) ?? false) : true) &&
         (roles.hasOneOf ? roles.hasOneOf.some(role => userPermObj.permissions.perGame[gameName]?.includes(role) ?? false) : true) &&
         (roles.denied ? roles.denied.every(role => !(userPermObj.permissions.perGame[gameName]?.includes(role) ?? false)) : true);
-      return sitewideCheck && perGameCheck;
+      return sitewideCheck || perGameCheck;
     } else {
       return sitewideCheck;
     }

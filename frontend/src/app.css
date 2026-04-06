@@ -1,6 +1,6 @@
 @import "tailwindcss";
-
 @import "tw-animate-css";
+@plugin "@tailwindcss/typography";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -120,8 +120,13 @@
     @apply border-border outline-ring/50;
     font-family: "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", "Helvetica", "Arial", sans-serif;
   }
+
   body {
     @apply bg-background text-foreground;
+  }
+
+  .hljs * {
+    @apply font-mono;
   }
 
   .bg-pride {

@@ -7,12 +7,14 @@
 
   let {
     href,
+    downloadType,
     shouldShowWarning,
     class: _class,
     children,
     ...restProps
   }: {
     href: string;
+    downloadType: "asset" | "mod";
     shouldShowWarning?: boolean;
     class?: ClassValue;
     children?: Snippet;
@@ -20,7 +22,7 @@
 
   let dialogVisible = $state(false);
   onMount(() => {
-    if (localStorage.getItem("suppressUnverifiedDownloadWarning") === "true") {
+    if (localStorage.getItem(`suppressUnverifiedDownloadWarning-${downloadType}`) === "true") {
       shouldShowWarning = false;
     }
   });

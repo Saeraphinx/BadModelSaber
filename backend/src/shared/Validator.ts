@@ -12,7 +12,7 @@ export class Validator {
                 (file.type === `image/gif` && file.name.endsWith(`.gif`)) ||
                 (file.type === `image/webp` && file.name.endsWith(`.webp`)));
 
-        return isAcceptableImage
+        return isAcceptableImage && file.size <= 8 * 1024 * 1024; // 8MB limit
     }
 
     public static validateAssetFile(file: File, type: AssetFileFormat): boolean {

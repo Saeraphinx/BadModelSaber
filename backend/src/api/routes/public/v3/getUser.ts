@@ -31,6 +31,24 @@ export const userRouterV3 = router({
         }
         return user.toApiV3();
     }),
+    searchUsers: loggedInProcedure().input(z.object({
+        query: z.string().min(1).max(16)
+    })).query(async ({input, ctx}) => {
+        const users = await User.findAll({
+            where: {
+                [Op.or]: {
+                    displayName: {
+                        [Op.iLike]: `%${input.query}%`
+                    },
+                    username: {
+                        [Op.iLike]: `%${input.query}%`
+                    } 
+                }
+            },
+            limit: 10
+        });
+        return users.map(u => u.toApiV3());
+    }),
     getAssetsByUserId: anyProcedure().input(z.object({
         id: z.int().positive(),
         limit: z.number().positive().optional(),

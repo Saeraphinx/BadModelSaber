@@ -522,6 +522,10 @@ export const up: Migration = async ({ context: db }) => {
             allowNull: false,
             defaultValue: [],
         },
+        baseFileName: {
+            type: DataTypes.STRING,
+            allowNull: false,
+        },
         createdAt: {
             type: DataTypes.DATE,
             allowNull: false,

@@ -329,11 +329,6 @@ export class Project extends Model<InferAttributes<Project>, InferCreationAttrib
     // #endregion
     // #region Edit
     public async updateProject(data: ProjectAllowedEdit, user: User): Promise<Project> {
-        if (data.authorIds) {
-            if (!data.authorIds.includes(user.id) && data.authorIds.length > 0) {
-                throw new Error(`You must be an author to set authorship, and you cannot remove yourself as an author if there are no other authors.`);
-            }
-        }
 
         Object.assign(this, {
             summary: data.summary ?? this.summary,

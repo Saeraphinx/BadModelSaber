@@ -4,6 +4,8 @@ import { anyProcedure, gameProcedure, router } from "../../../trpc.ts";
 import z from "zod/v4";
 import { TRPCError } from "@trpc/server";
 import { Op } from "sequelize";
+import sequelize from "sequelize/lib/sequelize";
+import { compare } from "semver";
 
 export const GetModsV3 = router({
     // #region getMods
@@ -37,10 +39,10 @@ export const GetModsV3 = router({
                 };
             }   
 
-            const availableGameVerison = await GameVersion.findOne({
+            const availableGameVerison = await GameVersion.findAll({
                 where: gvWhereOptions,
                 attributes: ['id']
-            }).then(gv => gv ? gv.id : null);
+            }).then(gv => gv.map(g => g.id));
 
             if (!availableGameVerison) {
                 throw new TRPCError({ code: 'NOT_FOUND', message: 'No game versions found for the specified game and version.' });
@@ -48,18 +50,25 @@ export const GetModsV3 = router({
 
             let versions = await Version.findAll({
                 where: {
-                    supportedGameVersionIds: {
-                        [Op.contains]: [availableGameVerison]
+                    supportedGameVersionIds: {                        
+                        [Op.overlap]: availableGameVerison
                     },
                     status: input.status
                 },
+                order: [['projectId', 'DESC']],
                 include: [{all: true}]
             });
 
-            let output = await Promise.all(versions.filter(v => v.canView(ctx.user)).map(async v => ({
-                project: await (await v.project)?.toApiV3() as ProjectApiV3,
-                version: await v.toApiV3()
-            }))).catch(err => {
+            // filter to unique projects and versions that the user can view
+            let output = await Promise.all(versions
+                .sort((a, b) => compare(b.semver, a.semver)) // sort versions in descending order
+                .filter((v, i, arr) => arr.findIndex(other => other.projectId === v.projectId) === i) // filter to unique projects
+                .filter(v => v.canView(ctx.user)) // filter to versions the user can view
+                .map(async v => ({
+                    project: await v.project as Project,
+                    version: v
+                })
+            )).catch(err => {
                 Logger.warn("Error parsing mods for GetModsV3:");
                 Logger.warn(err);
                 throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'An error occurred while parsing mods.' }); 
@@ -71,16 +80,21 @@ export const GetModsV3 = router({
             }
 
             if (input.authors) {
-                output = output.filter(o => o.project.authors.some(a => {
+                output = output.filter(o => o.project.authorIds.some(a => {
                     if (Array.isArray(input.authors)) {
-                        return input.authors.includes(a.id);
+                        return input.authors.includes(a);
                     } else {
-                        return a.id === input.authors;
+                        return a === input.authors;
                     }
                 }));
             }
 
-            return output;
+            let outputApi = await Promise.all(output.map(async o => ({
+                project: await o.project.toApiV3() as ProjectApiV3,
+                version: await o.version.toApiV3()
+            })));
+
+            return outputApi;
         }),
     // #endregion
     // #region getProjectAndVersions
@@ -88,7 +102,7 @@ export const GetModsV3 = router({
         .meta({
             openapi: {
                 method: `GET`,
-                path: `/v3/project/{projectId}`,
+                path: `/v3/mods/{projectId}`,
                 tags: ['Mods'],
             }
         })
@@ -112,7 +126,9 @@ export const GetModsV3 = router({
                     projectId: project.id
                 }
             });
-            versions = versions.filter(async v => await v.canView(ctx.user, project));
+            versions = versions
+                .sort((a, b) => compare(b.semver, a.semver)) // sort versions in descending order
+                .filter(async v => await v.canView(ctx.user, project));
             let outputVersions = await Promise.all(versions.map(async v => await v.toApiV3()));
             return {
                 project: await project.toApiV3() as ProjectApiV3,

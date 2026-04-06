@@ -14,6 +14,7 @@
   import { checkRoles } from "$lib/scripts/utils/checkRoles.js";
   import { onMount } from "svelte";
   import { parseErrorMessage } from "$lib/scripts/utils/api.js";
+  import ModCard from "../../lib/components/mods/ModCard.svelte";
 
   const { data: _internal } = $props();
   // svelte-ignore state_referenced_locally
@@ -47,7 +48,7 @@
 
   // #region Roles
   // svelte-ignore state_referenced_locally
-  let roleUserId = $state(user.id);
+    let roleUserId = $state(`${user.id}`);
   let sitewidePermissions = $state<UserPermissions[]>([]);
   let perGamePermissions = $state<Record<string, UserPermissions[]>>({});
   let hasBeenLoaded = $state(false);
@@ -59,7 +60,7 @@
   }
   function loadUserRoles() {
     trpc.v3.user.getUserById
-      .query({ id: roleUserId })
+      .query({ id: parseInt(roleUserId) })
       .then((user) => {
         sitewidePermissions = user.permissions.sitewide;
         perGamePermissions = user.permissions.perGame;
@@ -80,7 +81,7 @@
   function sendUserRoles() {
     trpc.internal.admin.setRoles
       .mutate({
-        userId: roleUserId,
+        userId: parseInt(roleUserId),
         permissions: {
           sitewide: sitewidePermissions,
           perGame: perGamePermissions,
@@ -183,6 +184,33 @@
     selectedGameName = games.find((game) => game.default)?.name ?? "";
   });
   // #endregion
+
+  // #region Bulk Mod Actions (depends on Game Management)
+  let modsEligibleForBulkAction: Awaited<ReturnType<typeof fetchModsEligibleForBulkAction>> = $state([]);
+  let baSelectedGameName = $state("");
+  let baSelectedGame = $derived.by(() => games.find((game) => game.name === baSelectedGameName));
+  let baSelectedGameVersionToId = $state(""); 
+  let baSelectedGameVersionFromId = $state("");
+  let baSelectedGameVersionTo = $derived.by(() => gameVersions[baSelectedGameName]?.find(v => v.id === parseInt(baSelectedGameVersionToId)));
+  let baSelectedGameVersionFrom = $derived.by(() => gameVersions[baSelectedGameName]?.find(v => v.id === parseInt(baSelectedGameVersionFromId)));
+  let baSelectedVersionIds = $state<number[]>([]);
+  async function fetchModsEligibleForBulkAction() {
+    return await trpc.v3.mods.getMods
+      .query({
+        gameName: baSelectedGameName,
+        gameVersion: baSelectedGameVersionFrom?.version,
+      })
+      .then((res) => {
+        modsEligibleForBulkAction = res;
+        return res;
+      })
+      .catch((err) => {
+        console.error(err);
+        toast.error("Failed to fetch mods eligible for bulk action.");
+        return [];
+      });
+  }
+  // #endregion
 </script>
 
 <div class="flex flex-col gap-4 m-auto p-4 justify-center">
@@ -200,12 +228,13 @@
       <p>Error loading admin status.</p>
     {/await}
   </div>
-  <Tabs.Root value="games">
+  <Tabs.Root value="bulkactions">
     <Tabs.List class="m-auto">
       <Tabs.Trigger value="logs">Admin Logs</Tabs.Trigger>
       <Tabs.Trigger value="manual">Manual Operations</Tabs.Trigger>
       <Tabs.Trigger value="users">User Management</Tabs.Trigger>
       <Tabs.Trigger value="games">Game Management</Tabs.Trigger>
+      <Tabs.Trigger value="bulkactions">Bulk Actions (Mods)</Tabs.Trigger>
     </Tabs.List>
     <!-- Admin Logs Panel -->
     <Tabs.Content value="logs">
@@ -443,7 +472,7 @@
         </div>
       </div>
       {#if selectedGame}
-        <Tabs.Root class="mt-2" value="versions">
+        <Tabs.Root class="mt-2" value="details">
           <Tabs.List class="m-auto">
             <Tabs.Trigger value="details">Details</Tabs.Trigger>
             {#if selectedGameCanVersion}
@@ -555,6 +584,67 @@
           </Tabs.Content>
         </Tabs.Root>
       {/if}
+    </Tabs.Content>
+    <Tabs.Content value="bulkactions">
+      <div class="flex flex-col m-auto gap-2 w-[480px] items-center p-4 bg-accent rounded-lg justify-center">
+        <!-- Game Selection -->
+        <div class="flex flex-row gap-1">
+          <Select.Root type="single" bind:value={baSelectedGameName}>
+            <Select.Trigger class="w-[180px]">{baSelectedGame?.displayName ?? `Select a game...`}</Select.Trigger>
+            <Select.Content>
+              {#each games as game}
+                <Select.Item value={game.name}>{game.displayName}</Select.Item>
+              {/each}
+            </Select.Content>
+          </Select.Root>
+          <Button variant="outline" size="icon" onclick={() => {fetchGames(); toast.success("Games fetched.");}}><RefreshCwIcon /></Button>
+        </div>
+        <!-- Version Selection -->
+        <div class="flex flex-col gap-2">
+          <div class="flex flex-row gap-1">
+            <Select.Root disabled={!baSelectedGameName} type="single" bind:value={baSelectedGameVersionFromId}>
+              <Select.Trigger class="w-[200px]">{baSelectedGameVersionFrom?.version ?? `Select source version...`}</Select.Trigger>
+              <Select.Content>
+                {#each gameVersions[baSelectedGameName] ?? [] as version}
+                  <Select.Item value={`${version.id}`}>{version.version}</Select.Item>
+                {/each}
+              </Select.Content>
+            </Select.Root>
+            <Select.Root disabled={!baSelectedGameName} type="single" bind:value={baSelectedGameVersionToId}>
+              <Select.Trigger class="w-[200px]">{baSelectedGameVersionTo?.version ?? `Select target version...`}</Select.Trigger>
+              <Select.Content>
+                {#each gameVersions[baSelectedGameName] ?? [] as version}
+                  <Select.Item value={`${version.id}`}>{version.version}</Select.Item>
+                {/each}
+              </Select.Content>
+            </Select.Root>
+          </div>
+          <Button variant="default" onclick={fetchModsEligibleForBulkAction}>Fetch Eligible Mods</Button>
+          <Button disabled={!(baSelectedGameName && baSelectedGameVersionFromId && baSelectedGameVersionToId)} variant="destructive">Mark as Supporting {baSelectedGameVersionTo?.version}</Button>
+          <div class="grid grid-cols-2 gap-2">
+            <Button disabled={baSelectedVersionIds.length === modsEligibleForBulkAction.length || modsEligibleForBulkAction.length === 0} onclick={() => {
+              baSelectedVersionIds = modsEligibleForBulkAction.map(mod => mod.version.id);
+            }}>Select All</Button>
+            <Button disabled={baSelectedVersionIds.length === 0} onclick={() => {
+              baSelectedVersionIds = [];
+            }}>Clear Selection</Button>
+          </div>
+        </div>
+      </div>
+      <div class="mt-4 gap-4 flex flex-row flex-wrap items-center-safe justify-center-safe">
+        {#each modsEligibleForBulkAction as mod}
+          <ModCard project={mod.project} version={mod.version} gameDisplayName={baSelectedGame?.displayName}
+            class={baSelectedVersionIds.includes(mod.version.id) ? "border-2 border-green-500" : "border"}
+            onclick={() => {
+              if (baSelectedVersionIds.includes(mod.version.id)) {
+                baSelectedVersionIds = baSelectedVersionIds.filter(id => id !== mod.version.id);
+              } else {
+                baSelectedVersionIds = [...baSelectedVersionIds, mod.version.id];
+              }
+            }}
+          />
+        {/each}
+      </div>
     </Tabs.Content>
   </Tabs.Root>
 </div>

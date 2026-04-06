@@ -1,7 +1,7 @@
 import { UniqueConstraintError, ValidationError } from "sequelize";
 import { fromZodError, isZodErrorLike } from "zod-validation-error";
 import * as fs from "fs";
-import { randomBytes } from "crypto";
+import { createHash, randomBytes } from "crypto";
 import { TRPCError } from "@trpc/server";
 import { Logger } from "./Logger.ts";
 
@@ -78,4 +78,60 @@ export function capitalizeWords(sentence: string): string {
 
 export function dedupeArray(arr: any[]): typeof arr {
     return Array.from(new Set(arr));
+}
+
+export function getHashFromFile(file: File | { path: string }): Promise<string> {
+    return new Promise(async (resolve, reject) => {
+        const hash = createHash('md5');
+
+        // If running with a server-side uploaded file that has a path, stream from fs
+        if ('path' in file && typeof file.path === 'string') {
+            const stream = fs.createReadStream(file.path);
+            stream.on('data', (data) => hash.update(data));
+            stream.on('end', () => resolve(hash.digest('hex')));
+            stream.on('error', (err) => reject(err));
+            return;
+        }
+
+        // Browser File / Blob: use arrayBuffer to compute hash
+        try {
+            if (typeof (file as File).arrayBuffer === 'function') {
+                const buffer = Buffer.from(await (file as File).arrayBuffer());
+                hash.update(buffer);
+                resolve(hash.digest('hex'));
+                return;
+            }
+
+            // Fallback: try to use a stream() method if available
+            const possibleStream = (file as any).stream?.();
+            if (possibleStream) {
+                // If it's a Node Readable
+                if (typeof possibleStream.on === 'function') {
+                    possibleStream.on('data', (data: Buffer) => hash.update(data));
+                    possibleStream.on('end', () => resolve(hash.digest('hex')));
+                    possibleStream.on('error', (err: any) => reject(err));
+                    return;
+                }
+
+                // If it's a web ReadableStream
+                const reader = possibleStream.getReader();
+                try {
+                    while (true) {
+                        const { done, value } = await reader.read();
+                        if (done) break;
+                        hash.update(Buffer.from(value));
+                    }
+                    resolve(hash.digest('hex'));
+                    return;
+                } catch (err) {
+                    reject(err);
+                    return;
+                }
+            }
+
+            reject(new Error('Unsupported file object for hashing'));
+        } catch (err) {
+            reject(err);
+        }
+    });
 }

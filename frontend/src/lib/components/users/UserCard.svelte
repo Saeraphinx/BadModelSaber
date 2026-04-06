@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { UserApiV3 } from '$lib/scripts/api/DBTypes';
+  import { UserPermissions, type UserApiV3 } from '$lib/scripts/api/DBTypes';
   import { getRoleData } from '$lib/scripts/utils/stylizer.js';
   import { Badge } from '$shadcn/components/ui/badge';
   import { cn } from '$shadcn/utils';
@@ -20,7 +20,11 @@
 <div class={cn("flex flex-col bg-accent p-4 rounded-lg", className)} {...restProps} >
   <div class="flex flex-row">
     <div class="flex w-16 min-h-full shrink-0 items-center">
-      <img src={user.avatarUrl} alt={user.displayName} class="w-16 h-16 rounded-full" />
+      {#if user.permissions.sitewide.includes(UserPermissions.C_System)}
+        <img src="/system_pfp.svg" alt={user.displayName} class="w-16 h-16 rounded-full" />
+      {:else}
+        <img src={user.avatarUrl} alt={user.displayName} class="w-16 h-16 rounded-full" />
+      {/if}
     </div>
     <div class="flex flex-col justify-center ml-4">
       <p class="text-xl pb-1 font-semibold">{user.displayName}</p>

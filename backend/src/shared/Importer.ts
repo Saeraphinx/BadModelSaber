@@ -413,6 +413,8 @@ export async function importFromOldModelSaber(sendMessage: (messaage: string, ty
 
 export async function importFromBadBeatMods() {
     Logger.log(`'ere Jim, have a seat and let me tell you a tale that'll make your blood run cold.`);
+    let startTime = Date.now();
+    let totalStartTime = startTime;
     const importerUser = await User.create({
         id: 3,
         username: `BeatMods Import`,
@@ -449,10 +451,12 @@ export async function importFromBadBeatMods() {
             Logger.error(`Failed to fetch mod ${modId}: ${error}`);
         }
     }
+    Logger.debug(`Finished fetching mods from BeatMods. Total time: ${Date.now() - startTime}ms`);
 
     let newProjects = new Map<number, Project>();
 
     try {
+        Logger.log(`Creating games...`);
         await Game.create({
             name: `beatsaber`,
             displayName: `Beat Saber`,
@@ -498,6 +502,7 @@ export async function importFromBadBeatMods() {
     }
 
     // while id love to keep the IDs, theres a built in 10 ids that are saved for testing/importer accounts/other uses that will just cause everything else to be offset, so we gotta just use the automatic ones
+    Logger.log(`Creating projects...`);
     const newUsers: Map<number, User> = new Map();
     let promises: Promise<void>[] = [];
     for (const { mod, versions } of mods) {
@@ -551,6 +556,7 @@ export async function importFromBadBeatMods() {
     });
 
 
+    startTime = Date.now();
     for (const { mod, versions } of mods) {
         const project = newProjects.get(mod.id);
         if (!project) {
@@ -558,6 +564,7 @@ export async function importFromBadBeatMods() {
             continue;
         }
         let versionPromises: Promise<Version>[] = [];
+        Logger.log(`Importing versions for mod ${mod.id} (${mod.name})...`);
         for (const version of versions) {
             let dependencies: { pId: number, sv: string }[] = [];
             let gameVersionIds: number[] = [];
@@ -623,7 +630,8 @@ export async function importFromBadBeatMods() {
             return versions;
         });
 
-        let decompPromises: Promise<void>[] = [];
+        Logger.log(`Starting file processing for versions of mod ${mod.id} (${mod.name})...`);
+        let zipParsingPromises: Promise<void>[] = [];
         for (const version of awaitedVersions) {
             Logger.debug(`Downloading and processing files for version ${version.id} of mod ${mod.id} (${mod.name} ${version.semver.raw})...`);
             // download files & process dlls
@@ -638,20 +646,25 @@ export async function importFromBadBeatMods() {
                     return;
                 }
                 fs.mkdirSync(version.versionFolderPath, { recursive: true });
-                fs.writeFileSync(path.join(version.versionFolderPath, await version.fileName), Buffer.from(arrayBuffer));
+                fs.writeFileSync(path.join(version.versionFolderPath, version.zipFileName), Buffer.from(arrayBuffer));
                 return Buffer.from(arrayBuffer);
             });
+
+            Logger.debug(`Finished downloading & extracting files for version ${version.id} of mod ${mod.id} (${mod.name} ${version.semver.raw}), starting async zip processing...`);
 
             if (!zipBuffer) {
                 Logger.error(`Zip buffer is null for version ${version.id} of mod ${mod.id} (${mod.name}), skipping file processing...`);
                 continue;
             }
 
-            let manifest = await getManifestFromZip(zipBuffer, null/*, Logger*/);
-            fs.writeFileSync(path.join(version.versionFolderPath, await (version.manifestName)), JSON.stringify(manifest));
-            Logger.debug(`Finished downloading & extracting files for version ${version.id} of mod ${mod.id} (${mod.name} ${version.semver.raw}), starting decompilation...`);
+            zipParsingPromises.push(getManifestFromZip(zipBuffer, null/*, Logger*/).then(m => {;
+                fs.writeFileSync(path.join(version.versionFolderPath, version.manifestName), JSON.stringify(m));
+            }).catch(err => {
+                Logger.error(`Failed to extract manifest from zip for version ${version.id} of mod ${mod.id} (${mod.name}): ${err}`);
+            }));
+            
             if (doDecompile && project.name !== `BSIPA`) {
-                decompPromises.push(version.dotnetDecompile().then(() => {
+                zipParsingPromises.push(version.dotnetDecompile().then(() => {
                     Logger.debug(`Finished decompilation for version ${version.id} of mod ${mod.id} (${mod.name} ${version.semver.raw})`);
                 }).catch(err => {
                     Logger.error(`Failed to decompile DLL for version ${version.id} of mod ${mod.id} (${mod.name} ${version.semver.raw}): ${err}`);
@@ -659,8 +672,11 @@ export async function importFromBadBeatMods() {
             }
             await new Promise(resolve => setTimeout(resolve, 400)); // wait a bit for ratelimits
         }
+        Logger.debug(`File processing started for all versions of mod ${mod.id} (${mod.name}), (time: ${Date.now() - startTime}ms)`);
     }
+    await Promise.allSettled(promises);
     Logger.log(`Finished importing ${totalBeatmodsMods} mods from BeatMods.`);
+    Logger.log(`Total time: ${Date.now() - totalStartTime}ms`);
 }
 
 async function getNewUserFromOldUser(user: UserPublicApiV2): Promise<User> {

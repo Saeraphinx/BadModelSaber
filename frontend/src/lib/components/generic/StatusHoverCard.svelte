@@ -1,17 +1,23 @@
 <script lang="ts">
   import { m } from "$lib/paraglide/messages";
   import { Status } from "$lib/scripts/api/DBTypes";
+  import { getStatusString } from "$lib/scripts/utils/stylizer";
+  import { Badge } from "$shadcn/components/ui/badge";
   import * as HoverCard from "$shadcn/components/ui/hover-card";
 
   let props: {
     status: Status;
-    children: any;
+    children?: any;
   } = $props();
 </script>
 
 <HoverCard.Root>
   <HoverCard.Trigger>
-    {@render props.children()}
+    {#if props.children}
+      {@render props.children()}
+    {:else}
+      <Badge variant={props.status ? `outline` : `default`} class="capitalize">{getStatusString(props.status)}</Badge>
+    {/if}
   </HoverCard.Trigger>
   <HoverCard.Content class="w-64">
     {#if props.status == Status.Verified}

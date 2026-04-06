@@ -1,8 +1,14 @@
 import z from "zod/v4";
-import { Asset, ThingRequest, LinkedAssetLinkType, User, dbId, Project, DependencySchema, Version } from "../../../shared/Database.ts";
-import { parseErrorMessage } from "../../../shared/Tools.ts";
+import { Asset, ThingRequest, LinkedAssetLinkType, User, dbId, Project, DependencySchema, Version, UserPermissions } from "../../../shared/Database.ts";
+import { getHashFromFile, parseErrorMessage } from "../../../shared/Tools.ts";
 import { loggedInProcedure, router } from "../../trpc.ts";
 import { TRPCError } from "@trpc/server";
+import { SemVer } from "semver";
+import { zfd } from "zod-form-data";
+import { Validator } from "../../../shared/Validator.ts";
+import path from "path";
+import fs from "fs";
+import { Logger } from "../../../shared/Logger.ts";
 
 export const UpdateAssetRouter = router({
     // #region updateAsset
@@ -108,6 +114,7 @@ export const UpdateAssetRouter = router({
             description: true,
             authorIds: true,
             collaboratorIds: true,
+            category: true,
             summary: true,
             gitUrl: true,
         }).strict().partial()
@@ -119,8 +126,46 @@ export const UpdateAssetRouter = router({
         if (!project.canEdit(ctx.user)) {
             throw new TRPCError({ code: 'FORBIDDEN', message: `You are not allowed to edit this project` });
         }
+
+        if (input.data.category) {
+            if (input.data.category === 'Core' || input.data.category === 'Essential') {
+                if (!ctx.user.checkRoles([UserPermissions.Mods_Approval], project.gameName)) {
+                    throw new TRPCError({ code: 'FORBIDDEN', message: `You do not have permission to set this category` });
+                }
+            }
+        }
+
         return project.updateProject(input.data, ctx.user).then(updatedProject => {
             return updatedProject.toApiV3();
+        });
+    }),
+    updateProjectIcon: loggedInProcedure().input(zfd.formData({
+        projectId: dbId,
+        icon: zfd.file().refine((file) => Validator.validateThumbnail(file), { message: "Invalid icon file format" })
+    })).mutation(async ({ input, ctx }) => {
+        const project = await Project.findByPk(input.projectId);
+        if (!project) {
+            throw new TRPCError({ code: 'NOT_FOUND', message: `Project not found` });
+        }
+        if (!project.canEdit(ctx.user)) {
+            throw new TRPCError({ code: 'FORBIDDEN', message: `You are not allowed to edit this project` });
+        }
+
+        let iconFile = input.icon;
+        let iconName = `${await getHashFromFile(iconFile)}${path.extname(iconFile.name)}`;
+        await iconFile.arrayBuffer().then(async (buffer) => {
+            fs.writeFileSync(path.join(project.folderPath, iconName), Buffer.from(buffer));
+        }).catch((err) => {
+            Logger.error(`Error saving project icon file: ${err.message}`)
+            throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Failed to save project icon file. Please contact a site administrator.' });
+        });
+
+        project.iconFileName = iconName;
+        return project.save().then(updatedProject => {
+            return updatedProject.toApiV3();
+        }).catch(err => {
+            Logger.error(`Error updating project with new icon path: ${err.message}`)
+            throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Failed to update project with new icon. Please contact a site administrator.' });
         });
     }),
     // #endregion
@@ -128,7 +173,10 @@ export const UpdateAssetRouter = router({
     updateVersion: loggedInProcedure().input(z.object({
         versionId: dbId,
         data: z.object({
-            semver: z.string(),
+            semver: z.string().transform(val => {
+                let sv = new SemVer(val); // this will throw if the semver is invalid
+                return sv;
+            }),
             supportedGameVersionIds: z.array(dbId),
             dependencies: z.array(DependencySchema)
         }).strict().partial()
@@ -137,7 +185,7 @@ export const UpdateAssetRouter = router({
         if (!version) {
             throw new TRPCError({ code: 'NOT_FOUND', message: `Version not found` });
         }
-        
+
         const project = await version.project;
         if (!project) {
             throw new TRPCError({ code: 'NOT_FOUND', message: `Project not found` });
@@ -146,10 +194,9 @@ export const UpdateAssetRouter = router({
         if (!version.canEdit(ctx.user, project)) {
             throw new TRPCError({ code: 'FORBIDDEN', message: `You are not allowed to edit this version` });
         }
-        Object.assign(version, input.data);
-        version.lastUpdatedById = ctx.user.id;
-        return await version.save().then(updatedVersion => {
-            return updatedVersion.toApiV3();
+
+        return await version.updateVersion(input.data, ctx.user).then(async updatedVersion => {
+            return await updatedVersion.toApiV3();
         }).catch(err => {
             throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: `Error updating version: ${parseErrorMessage(err)}` });
         });
