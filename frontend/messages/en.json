@@ -226,6 +226,11 @@
         "manifestDependencyNotFound": "Dependency {depName}@{sv} specified in manifest not found. Please ensure all dependencies listed in your manifest are marked as dependencies on ModelSaber."
       },
       "manifestGameVersionIsntLowest": "The game version specified in your manifest ({manifestGameVersion}) isn't the lowest game version specified among your supported game versions. Please ensure the 'gameVersion' field in your manifest specifies the lowest game version your mod supports, or update your supported game versions to match the game version specified in your manifest."
+    },
+    "translation": {
+      "language": "Language",
+      "viewOriginal": "View Original",
+      "viewOriginalMarkdown": "View Original (Markdown)"
     }
   },
   "requests": {
@@ -345,6 +350,7 @@
     "edit": "Edit",
     "save": "Save",
     "saveChanges": "Save Changes",
+    "saving": "Saving...",
     "discardChanges": "Discard Changes",
     "dontShowAgain": "Don't show again",
     "cancel": "Cancel",
