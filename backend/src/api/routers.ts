@@ -14,20 +14,20 @@ import { Logger } from '../shared/Logger.ts';
 import { uploadStuff } from './routes/public/v3/upload.js';
 import { parseErrorMessage } from '../shared/Tools.ts';
 import { statusRouter } from './routes/private/getstatus.ts';
-import { GetV2Router } from './routes/public/v2/getAsset.ts';
+import { GetAssetV2Router } from './routes/public/v2/getAsset.ts';
 import { GetModsV3 } from './routes/public/v3/getMods.ts';
 import { gameRouter } from './routes/public/v3/getGames.ts';
 import { editGameRouter } from './routes/private/editGames.ts';
 import { getModsInternal } from './routes/private/getProjects.ts';
+import { getModsV2Router } from './routes/public/v2/getMods.ts';
 
 const appRouter = router({
-    admin: AdminRouter,
     internal: {
         admin: AdminRouter,
         alerts: alertsRouter,
         approval: approvalRouter,
         requests: RequestRouter,
-        updateAsset: UpdateAssetRouter,
+        updateThings: UpdateAssetRouter,
         updateUser: konamiRouter,
         auth: authRouter,
         status: statusRouter,
@@ -35,7 +35,8 @@ const appRouter = router({
         mods: getModsInternal,
     },
     v2: {
-        assets: GetV2Router
+        assets: GetAssetV2Router,
+        mods: getModsV2Router,
     },
     v3: {
         user: userRouterV3,

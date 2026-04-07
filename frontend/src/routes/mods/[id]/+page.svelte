@@ -102,7 +102,7 @@
     }
 
     isSaving = true;
-    trpc.internal.updateAsset.updateProject.mutate({
+    trpc.internal.updateThings.updateProject.mutate({
       projectId: project.id,
       data: parsed.data,
     }).then(() => {
@@ -196,7 +196,7 @@
                   toast.error("Please select an icon to upload.");
                   return;
                 }
-                trpc.internal.updateAsset.updateProjectIcon.mutate({
+                trpc.internal.updateThings.updateProjectIcon.mutate({
                   projectId: project.id,
                   icon: editedIconFile[0] as File,
                 }).then(() => {

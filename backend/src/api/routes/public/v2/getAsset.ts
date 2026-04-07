@@ -4,7 +4,7 @@ import { z } from "zod/v4";
 import { Op, WhereOptions } from "sequelize";
 import { anyProcedure, router } from "../../../trpc.ts";
 
-export const GetV2Router = router({
+export const GetAssetV2Router = router({
     getAssets: anyProcedure()
         .meta({
             openapi: {

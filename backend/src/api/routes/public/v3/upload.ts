@@ -1,4 +1,3 @@
-import { Router, RequestHandler, NextFunction } from "express";
 import { Logger, LogLevel } from "../../../../shared/Logger.ts";
 import { Validator } from "../../../../shared/Validator.ts";
 import { getHashFromFile, parseErrorMessage } from "../../../../shared/Tools.ts";
@@ -14,6 +13,7 @@ import JSZip from "jszip";
 import { getManifestFromString, Manifest } from "../../../../shared/ModParser.ts";
 
 /*
+== Assets ==
 Files follow this structure:
 /storage/{uploads}/{assetId}/{files...}
 
@@ -21,8 +21,20 @@ Where
 - {uploads} is the uploads directory as per EnvConfig
 - {assetId} is the ID of the asset in the database
 - {files...} are the files associated with the asset, including:
-    - The main asset file, named as per ${asset.name}.${asset.type} (e.g., myModel.whacker)
+    - The main asset file, named as per ${asset.fileSafeName}.${asset.type} (e.g., myModel.whacker)
     - Icon files, named as 1.png, 2.jpg, etc.
+
+== Mods ==
+Files follow this structure:
+/storage/{uploads}/{projectId}/{versionId}/{files...}
+
+Where
+- {uploads} is the uploads directory as per EnvConfig
+- {projectId} is the ID of the project in the database
+  - Icon will go here
+- {versionId} is the ID of the version in the database
+- {files...} are the files associated with the version, including:
+    - The main mod zip file, named as per ${version.zipFileName} 
 */
 
 export const uploadStuff = router({

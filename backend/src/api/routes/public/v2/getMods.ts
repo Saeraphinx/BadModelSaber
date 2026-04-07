@@ -1,0 +1,166 @@
+import { GameVersion, ModApiv2Schema, ModVersionsApiv2Schema, Project, Status, User, Version } from "../../../../shared/Database.ts";
+import { z } from "zod/v4";
+import { Op, WhereOptions } from "sequelize";
+import { anyProcedure, router } from "../../../trpc.ts";
+import { compare } from "semver";
+import sequelize from "sequelize/lib/sequelize";
+
+export const getModsV2Router = router({
+    getMods: anyProcedure()
+        .meta({
+            openapi: {
+                method: 'GET',
+                path: '/mods',
+                tags: ['Mods'],
+            }
+        })
+        .input(z.object({
+            gameName: z.string().default(`beatsaber`),
+            gameVersion: z.string().optional(),
+            status: z.enum([...Object.values(Status), `all`]).default(Status.Verified),
+        }))
+        .output(z.object({
+            mods: z.object({
+                mod: ModApiv2Schema,
+                latest: ModVersionsApiv2Schema
+            }).array(),
+        }))
+        .query(async ({ input, ctx }) => {
+            let gameVersionWhereOptions: WhereOptions<GameVersion> = {
+                gameName: input.gameName,
+            };
+            if (input.gameVersion) {
+                gameVersionWhereOptions.version = input.gameVersion;
+            }
+
+            let specifiedGameVersions = await GameVersion.findAll({
+                where: gameVersionWhereOptions,
+                attributes: ['id']
+            }).then(gvs => gvs.map(gv => gv.id));
+
+            let allowedStatuses: Status[];
+            switch (input.status) {
+                case `all`:
+                    allowedStatuses = [Status.Verified, Status.Unverified, Status.Pending];
+                    break;
+                case Status.Pending:
+                    allowedStatuses = [Status.Verified, Status.Pending];
+                    break;
+                case Status.Unverified:
+                    allowedStatuses = [Status.Verified, Status.Unverified];
+                    break;
+                case Status.Verified:
+                default:
+                    allowedStatuses = [Status.Verified];
+                    break;
+            }
+
+            let versions = await Version.findAll({
+                where: {
+                    supportedGameVersionIds: {                        
+                        [Op.overlap]: specifiedGameVersions
+                    },
+                    status: allowedStatuses,
+                },
+                include: [{all: true}],
+            });
+
+            let output = await Promise.all(versions.sort((a, b) => compare(b.semver, a.semver)) // sort versions in descending order
+                .filter((v, i, arr) => arr.findIndex(other => other.projectId === v.projectId) === i) // filter to unique projects
+                .filter(v => v.canView(ctx.user)) // filter to versions the user can view
+                .map(async v => ({
+                    mod: await (await v.project as Project).toApiV2(),
+                    latest: await v.toApiV2(),
+                }))
+            ).then(results => results.filter(o => o.latest.dependencies.every(d => results.some(o2 => o2.latest.id === d)))); // filter to mods that have at least one version with an allowed status
+
+            return { mods: output };
+        }),
+    hashLookup: anyProcedure()
+        .meta({
+            openapi: {
+                method: 'GET',
+                path: '/hashlookup',
+                tags: ['Mods'],
+            }
+        })
+        .input(z.object({
+            hash: z.string().or(z.array(z.string())),
+            status: z.enum(Status).optional()
+        }))
+        .output(z.object({
+            modVersions: ModVersionsApiv2Schema.array(),
+        }))
+        .query(async ({ input }) => {
+            let hashes = Array.isArray(input.hash) ? input.hash : [input.hash];
+            let statusFilter: WhereOptions<Version> = {};
+            if (input.status) {
+                statusFilter.status = input.status;
+            }
+            // only compare against `zipHash` and the `hash` field of contentHashes
+            let modVersions = await Version.findAll({
+                where: {
+                    ...statusFilter,
+                    [Op.or] : [
+                        { zipHash: { [Op.in]: hashes } },
+                        sequelize.where(sequelize.fn('jsonb_exists', sequelize.col('contentHashes'), hashes), Op.eq, true)
+                    ]
+                },
+                include: [User]
+            });
+        
+            let retObjs = await Promise.all(modVersions.map(mv => mv.toApiV2()))
+            return {
+                modVersions: retObjs,
+            };
+        }),
+    multiHashLookup: anyProcedure()
+        .meta({
+            openapi: {
+                method: 'GET',
+                path: '/multi/hashlookup',
+                tags: ['Mods'],
+            }
+        })
+        .input(z.object({
+            hashes: z.array(z.string()),
+            status: z.enum(Status).optional()
+        }))
+        .output(z.object({
+            hashes: z.record(z.string(), ModVersionsApiv2Schema.array()),
+        }))
+        .query(async ({ input }) => {
+            let statusFilter: WhereOptions<Version> = {};
+            if (input.status) {
+                statusFilter.status = input.status;
+            }
+            // only compare against `zipHash` and the `hash` field of contentHashes
+            let modVersions = await Version.findAll({
+                where: {
+                    ...statusFilter,
+                    [Op.or] : [
+                        { zipHash: { [Op.in]: input.hashes } },
+                        sequelize.where(sequelize.fn('jsonb_exists', sequelize.col('contentHashes'), input.hashes), Op.eq, true)
+                    ]
+                },
+                include: [User]
+            });
+        
+            let retObj: Record<string, Awaited<ReturnType<Version[`toApiV2`]>>[]> = {};
+            await Promise.all(modVersions.map(async mv => {
+                let apiObj = await mv.toApiV2();
+                let allHashes = [mv.zipHash, ...(apiObj.contentHashes.map(ch => ch.hash))];
+                for (let hash of allHashes) {
+                    if (input.hashes.includes(hash)) {
+                        if (!retObj[hash]) {
+                            retObj[hash] = [];
+                        }
+                        retObj[hash].push(apiObj);
+                    }
+                }
+            }));
+            return {
+                hashes: retObj,
+            };
+        }),
+});

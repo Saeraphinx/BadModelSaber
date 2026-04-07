@@ -117,6 +117,10 @@ export class Project extends Model<InferAttributes<Project>, InferCreationAttrib
     get folderPath(): NonAttribute<string> {
         return path.join(EnvConfig.uploadsPath, this.id.toString());
     }
+
+    get iconUrl() : NonAttribute<string> {
+        return `${EnvConfig.server.backendUrl}/${EnvConfig.server.fileRoute}/${this.id}/${this.iconFileName}`;
+    }
     // #endregion
     // #region Validatiors
     /*
@@ -245,6 +249,22 @@ export class Project extends Model<InferAttributes<Project>, InferCreationAttrib
 
         return Promise.resolve(user.checkRoles([UserPermissions.Mods_UploadAll], this.gameName));
     }
+
+    public canTranslate(user: User | null | undefined): Promise<boolean> {
+        if (!user) {
+            return Promise.resolve(false);
+        }
+
+        if (this.authorIds.includes(user.id)) {
+            return Promise.resolve(true);
+        }
+
+        if (this.collaboratorIds.includes(user.id)) {
+            return Promise.resolve(true);
+        }
+
+        return Promise.resolve(user.checkRoles([UserPermissions.Mods_EditAll, UserPermissions.Mods_TranslateAll], this.gameName));
+    }
     // #endregion
     // #region Version Lookups
     public async getLatestVersion(supportedGameVersionIds?: number, semverRange?: string, statuses: Status[] = [Status.Verified]): Promise<Version | null> {
@@ -329,6 +349,31 @@ export class Project extends Model<InferAttributes<Project>, InferCreationAttrib
     // #endregion
     // #region Edit
     public async updateProject(data: ProjectAllowedEdit, user: User): Promise<Project> {
+        if (data.description && data.description !== this.description) {
+            Translation.update({
+                outOfDate: true,
+            }, {
+                where: {
+                    parentId: this.id,
+                    contentType: `description`,
+                }
+            }).catch(err => {
+                Logger.error(`Failed to mark description translations as out of date for project ID ${this.id}: ${err}`);
+            });
+        }
+
+        if (data.summary && data.summary !== this.summary) {
+            Translation.update({
+                outOfDate: true,
+            }, {
+                where: {
+                    parentId: this.id,
+                    contentType: `summary`,
+                }
+            }).catch(err => {
+                Logger.error(`Failed to mark description translations as out of date for project ID ${this.id}: ${err}`);
+            });
+        }
 
         Object.assign(this, {
             summary: data.summary ?? this.summary,

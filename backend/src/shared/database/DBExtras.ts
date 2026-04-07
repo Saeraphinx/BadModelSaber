@@ -139,6 +139,7 @@ export enum UserPermissions {
   Mods_Create = "mods_create", // User can create new mods (e.g. sabers, platforms, etc.)
   Mods_ViewAll = "mods_view_all", // User can view all mods, including private ones 
   Mods_EditAll = "mods_edit_all", // User can edit all mods, including those created by other users
+  Mods_TranslateAll = "mods_translate_all", // User can translate all mods, including those created by other users
   Mods_UploadAll = "mods_upload_all", // User can upload new versions for all mods, including those created by other users
   Mods_Approval = "mods_approval", // User can approve/reject pending mods
 
@@ -285,6 +286,9 @@ export enum WebhookLogType {
   NewlyUnverified = "newly_unverified",
   NewThing = "new_thing", // e.g. new asset, new project
   NewSubThing = "new_sub_thing", // e.g. new version of a project
+  NewReport = "new_report", // e.g. new report for a project, version, asset, or user
+
+  StatusUpdate = "status_update",
 
   Text_StatusUpdate = "text_status_update",
   Text_Edited = "text_edited",
@@ -554,7 +558,6 @@ export const assetApiV3Schema = z.object({
   sourceUrl: z.string().nullable(),
   fileHash: z.string(),
   fileSize: z.number(),
-  fileSafeName: z.string(),
   downloadUrl: z.url(),
   status: statusSchema,
   statusHistory: z.array(statusHistorySchema),

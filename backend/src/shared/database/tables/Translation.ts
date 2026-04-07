@@ -1,4 +1,4 @@
-import { InferAttributes, InferCreationAttributes } from "sequelize";
+import { CreationOptional, InferAttributes, InferCreationAttributes } from "sequelize";
 import { Column, CreatedAt, DataType, DeletedAt, Model, PrimaryKey, Table, UpdatedAt } from "sequelize-typescript";
 
 @Table({
@@ -15,7 +15,7 @@ export class Translation extends Model<InferAttributes<Translation>, InferCreati
 
     @PrimaryKey
     @Column(DataType.STRING)
-    declare contentType: string; // Type of content being translated (e.g. "name", "description", etc.)
+    declare contentType: `name` | `description` | `summary`; // Type of content being translated (e.g. "name", "description", etc.)
 
     @PrimaryKey
     @Column(DataType.STRING)
@@ -34,10 +34,10 @@ export class Translation extends Model<InferAttributes<Translation>, InferCreati
     declare translatedBy: number; // User ID of the translator
 
     @UpdatedAt
-    declare updatedAt: Date;
+    declare updatedAt: CreationOptional<Date>;
     @CreatedAt
-    declare createdAt: Date;
+    declare createdAt: CreationOptional<Date>;
     @DeletedAt
-    declare deletedAt: Date | null;
+    declare deletedAt: CreationOptional<Date | null>;
     // #endregion
 }

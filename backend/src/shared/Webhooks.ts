@@ -1,6 +1,7 @@
 import { APIMessage, ColorResolvable, Colors, EmbedBuilder, MessagePayload, WebhookClient, WebhookMessageCreateOptions } from "discord.js";
-import { Asset, Game, GameWebhookConfig, Project, Status, User, Version, WebhookLogType } from "./Database.ts";
+import { Asset, Game, GameVersion, GameWebhookConfig, Project, Status, User, Version, WebhookLogType } from "./Database.ts";
 import { EnvConfig } from "./EnvConfig.ts";
+import { capitalizeWords } from "./Tools.ts";
 
 /* 
 
@@ -71,7 +72,8 @@ export class Webhooks {
 }
 
 export class WebhookPayloadGenerator {
-    public static generateInternalStatusUpdateEmbedPayload(asset: Asset, userPreformingAction: User, oldStatus: Status, newStatus: Status): WebhookMessageCreateOptions {
+    // for status update
+    public static generateInternalStatusUpdateEmbedPayload(thing: Asset | Project, userPreformingAction: User, oldStatus: Status, newStatus: Status): WebhookMessageCreateOptions {
         let color: ColorResolvable = 0x000; // Default to black
         switch (newStatus) {
             case Status.Verified:
@@ -87,20 +89,23 @@ export class WebhookPayloadGenerator {
                 color = Colors.Grey;
         }
 
-        let payload = {
+        let type = thing instanceof Asset ? 'asset' : 'project';
+        let thingIconUrl = thing.iconUrl;
+
+        let payload: WebhookMessageCreateOptions = {
             embeds: [{
                 author: {
-                    name: `${userPreformingAction.displayName} (${userPreformingAction.id})`,
+                    name: `${userPreformingAction.displayName} (ID# ${userPreformingAction.id})`,
                     icon_url: userPreformingAction.avatarUrl,
                     url: `${EnvConfig.server.frontendUrl}/users/${userPreformingAction.id}`
                 },
-                title: `Asset Status Updated`,
-                url: `${EnvConfig.server.frontendUrl}/assets/${asset.id}`,
-                thumbnail: asset.iconNames[0] ? { url: `${EnvConfig.server.backendUrl}/files/icons/${asset.iconNames[0]}` } : undefined,
-                description: `The status of the asset **${asset.name}** (ID: ${asset.id}) has been updated from **${oldStatus}** to **${newStatus}**.`,
+                title: `${capitalizeWords(type)} Status Updated`,
+                url: `${EnvConfig.server.frontendUrl}/${thing}s/${thing.id}`,
+                thumbnail: { url: thing.iconUrl},
+                description: `The status of the ${type} **${thing.name}** (ID: ${thing.id}) has been updated from **${oldStatus}** to **${newStatus}**.`,
                 color: color,
                 footer: {
-                    text: `Asset ID: ${asset.id}`
+                    text: `${capitalizeWords(type)} ID: ${thing.id}`
                 },
             }],
         };
@@ -128,5 +133,82 @@ export class WebhookPayloadGenerator {
                 color: Colors.Green,
             }],
         }
+    }
+
+    public static async generateCreatedNewThingEmbedPayload(thing: Asset | Project): Promise<WebhookMessageCreateOptions> {
+        let type = thing instanceof Asset ? 'asset' : 'project';
+        let author = (thing instanceof Asset ? thing.uploader : thing.authorIds.length > 0 ? (await User.findByPk(thing.authorIds[0])) : null) as User | null;
+
+        let payload: WebhookMessageCreateOptions = {
+            embeds: [{
+                author: {
+                    name: `${author?.displayName} (ID# ${author?.id})`,
+                    icon_url: author?.avatarUrl,
+                    url: `${EnvConfig.server.frontendUrl}/users/${author?.id}`
+                },
+                title: `New ${capitalizeWords(type)} Created: ${thing.name}`,
+                url: `${EnvConfig.server.frontendUrl}/${type}s/${thing.id}`,
+                thumbnail: { url: thing.iconUrl },
+                description: `A new ${type} named **${thing.name}** has been created by ${author?.displayName}.`,
+                color: Colors.Blue,
+                footer: {
+                    text: `${capitalizeWords(type)} ID: ${thing.id}`
+                },
+            }],
+        };
+
+        return payload;
+    }
+
+    public static async generateNewProjectVersionEmbedPayload(version: Version): Promise<WebhookMessageCreateOptions> {
+        let project = await version.project as Project;
+        let author = await version.uploader as User;
+
+        let depNames = await Project.findAll({
+            where: {
+                id: version.dependencies.map(d => d.pId)
+            }
+        })
+
+        let gameVersions = await GameVersion.findAll({
+            where: {
+                id: version.supportedGameVersionIds
+            }
+        }).then(gvs => gvs.map(gv => gv.version)).then(vers => vers.join(", "));
+
+        let payload: WebhookMessageCreateOptions = {
+            embeds: [{
+                author: {
+                    name: `${author.displayName} (ID# ${author.id})`,
+                    icon_url: author.avatarUrl,
+                    url: `${EnvConfig.server.frontendUrl}/users/${author.id}`
+                },
+                title: `New Version Uploaded for ${project.name}: ${version.semver.raw}`,
+                url: `${EnvConfig.server.frontendUrl}/projects/${project.id}/versions/${version.id}`,
+                thumbnail: { url: project.iconUrl },
+                description: `A new version (**${version.semver.raw}**) has been uploaded for the project **${project.name}** by ${author.displayName}.`,
+                color: Colors.Purple,
+                fields: [
+                    {
+                        name: "Dependencies",
+                        value: version.dependencies.length > 0 ? version.dependencies.map(dep => `**${depNames.find(p => p.id == dep.pId)?.name}**@${dep.sv}`).join(", ") : "None",
+                    },
+                    {
+                        name: "# of Files",
+                        value: version.contentHashes.length.toString(),
+                    },
+                    {
+                        name: "Supported Game Versions",
+                        value: gameVersions,
+                    }
+                ],
+                footer: {
+                    text: `Project ID: ${project.id} | Version ID: ${version.id}`
+                },
+                timestamp: new Date(version.createdAt).toISOString(),
+            }],
+        };
+
+        return payload;
     }
 }

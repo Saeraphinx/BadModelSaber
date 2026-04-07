@@ -159,22 +159,22 @@ export class User extends Model<InferAttributes<User>, InferCreationAttributes<U
     }
     // #endregion
     // #region getAllowedStatuses
-    public static getAllowedStatuses(user?: User | null, gameName?: string): Status[] {
+    public static getAllowedStatuses(user?: User | null, type: `asset` | `mod` = `asset`, gameName?: string): Status[] {
         if (user) {
-            return user.getAllowedStatuses(`asset`, gameName);
+            return user.getAllowedStatuses(type, gameName);
         } else {
-            return [Status.Verified, Status.Unverified];
+            return [Status.Verified, Status.Unverified, Status.Pending];
         }
     }
 
     public getAllowedStatuses(type: `asset` | `mod`, gameName?: string): Status[] {
         if (type === `asset`) {
             if (!this.checkRoles([UserPermissions.Asset_ViewAll], gameName)) {
-                return User.getAllowedStatuses();
+                return User.getAllowedStatuses(null, type, gameName);
             }
         } else {
             if (!this.checkRoles([UserPermissions.Mods_ViewAll], gameName)) {
-                return User.getAllowedStatuses();
+                return User.getAllowedStatuses(null, type, gameName);
             }
         }
         return Object.values(Status);

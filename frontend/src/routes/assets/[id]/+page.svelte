@@ -104,7 +104,7 @@
       return;
     }
 
-    trpc.internal.updateAsset.updateAsset
+    trpc.internal.updateThings.updateAsset
       .mutate({
         assetId: pageData.id,
         data: {
@@ -383,7 +383,7 @@
           <Button
             variant="secondary"
             onclick={() => {
-              trpc.internal.updateAsset.submitAssetForApproval
+              trpc.internal.updateThings.submitAssetForApproval
                 .mutate({ assetId: pageData.id })
                 .then(() => {
                   toast.success("Asset submitted for approval!");

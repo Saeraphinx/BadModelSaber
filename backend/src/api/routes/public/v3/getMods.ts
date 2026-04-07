@@ -23,6 +23,7 @@ export const GetModsV3 = router({
             name: z.string().optional(),
             authors: z.array(z.int()).optional(),
             platform: z.string().optional(),
+            language: z.string().optional(),
         }))
         .output(z.array(z.object({
             project: projectApiV3Schema,
@@ -47,7 +48,7 @@ export const GetModsV3 = router({
             if (!availableGameVerison) {
                 throw new TRPCError({ code: 'NOT_FOUND', message: 'No game versions found for the specified game and version.' });
             }
-
+            
             let versions = await Version.findAll({
                 where: {
                     supportedGameVersionIds: {                        
@@ -90,7 +91,7 @@ export const GetModsV3 = router({
             }
 
             let outputApi = await Promise.all(output.map(async o => ({
-                project: await o.project.toApiV3() as ProjectApiV3,
+                project: await o.project.toApiV3(input.language) as ProjectApiV3,
                 version: await o.version.toApiV3()
             })));
 
@@ -107,7 +108,8 @@ export const GetModsV3 = router({
             }
         })
         .input(z.object({
-            projectId: z.number()
+            projectId: z.number(),
+            language: z.string().optional(),
         }))
         .output(z.object({
             project: projectApiV3Schema,
@@ -131,7 +133,7 @@ export const GetModsV3 = router({
                 .filter(async v => await v.canView(ctx.user, project));
             let outputVersions = await Promise.all(versions.map(async v => await v.toApiV3()));
             return {
-                project: await project.toApiV3() as ProjectApiV3,
+                project: await project.toApiV3(input.language) as ProjectApiV3,
                 versions: outputVersions
             };
         })

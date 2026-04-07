@@ -133,6 +133,10 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
             return this._project;
         }
     }
+
+    get downloadUrl(): NonAttribute<string> {
+        return `${EnvConfig.server.backendUrl}${EnvConfig.server.fileRoute}/${this.projectId}/${this.id}/${this.zipFileName}`;
+    }
     
     get versionFolderPath(): NonAttribute<string> {
         return path.join(EnvConfig.uploadsPath, `${this.projectId}`, `${this.id}`);
@@ -471,7 +475,7 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
             contentHashes: this.contentHashes,
             statusHistory: this.statusHistory,
             baseFileName: this.baseFileName,
-            downloadUrl: `${EnvConfig.server.backendUrl}${EnvConfig.server.fileRoute}/${this.projectId}/${this.id}/${this.zipFileName}`,
+            downloadUrl: this.downloadUrl,
             createdAt: this.createdAt,
             updatedAt: this.updatedAt
         };
@@ -576,7 +580,7 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
             category: project.category.charAt(0).toUpperCase() + project.category.slice(1),
             downloads: [{
                 type: this.platform,
-                url: ``, //tbd
+                url: this.downloadUrl, //tbd
                 hashMd5: this.contentHashes.map((hash) => {
                     return {
                         hash: hash.hash,

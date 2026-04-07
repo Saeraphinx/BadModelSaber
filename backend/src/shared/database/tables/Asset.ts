@@ -151,6 +151,18 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
     get assetFileName(): NonAttribute<string> {
         return `${this.fileSafeName}.${this.type.split('_')[1]}`; // e.g. ".saber"
     }
+
+    get downloadUrl(): NonAttribute<string> {
+        return `${EnvConfig.server.backendUrl}${EnvConfig.server.fileRoute}/${this.id}/${this.assetFileName}`;
+    }
+
+    get iconUrl(): NonAttribute<string> {
+        if (this.iconNames.length > 0) {
+            return `${EnvConfig.server.backendUrl}${EnvConfig.server.fileRoute}/${this.id}/${this.iconNames[0]}`;
+        } else {
+            return `${EnvConfig.server.backendUrl}${EnvConfig.server.fileRoute}/${this.gameName}_default`; // default icon if no icons are uploaded
+        }
+    }
     // #endregion
 
     private static readonly invalidFileNameChars = /[<>:"/\\|?*\x00-\x1F]/gi;
@@ -639,9 +651,8 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
             icons: this.iconNames,
             fileHash: this.fileHash,
             fileSize: this.fileSize,
-            fileSafeName: this.fileSafeName,
             //fileroute has the / inlcuded, so no need to add another /
-            downloadUrl: `${EnvConfig.server.backendUrl}${EnvConfig.server.fileRoute}/${this.id}/${this.assetFileName}`,
+            downloadUrl: this.downloadUrl,
             status: this.status,
             statusHistory: this.statusHistory,
             collaborators: this.collaboratorIds,
@@ -680,7 +691,7 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
             discord: author ? author.username : 'Unknown',
             discordid: author?.discordId ? author.discordId : '-1',
             install_link: `modelsaber://${type}/${this.id}/${this.assetFileName}`,
-            download: `${EnvConfig.server.backendUrl}/${EnvConfig.server.fileRoute}/asset/${this.assetFileName}`,
+            download: this.downloadUrl,
             status: this.status,
             platform: `pc`,
             variationid: null,
@@ -700,7 +711,7 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
             hash: apiV2Response.hash,
             bsaber: apiV2Response.bsaber,
             download: apiV2Response.download,
-            image: `${EnvConfig.server.backendUrl}/${EnvConfig.server.fileRoute}/thumb/${this.iconNames[0]}`,
+            image: `${EnvConfig.server.backendUrl}/${EnvConfig.server.fileRoute}/${this.id}/${this.iconNames[0]}`,
             install_link: apiV2Response.install_link,
             date: apiV2Response.date,
         }
