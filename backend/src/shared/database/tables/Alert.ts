@@ -8,6 +8,7 @@ import { Col } from "sequelize/lib/utils";
 import { Project } from "./Project.ts";
 import { Version } from "./Version.ts";
 import { ThingRequest } from "./ThingRequest.ts";
+import { capitalizeWords } from "../../Tools.ts";
 
 export type AlertInfer = InferAttributes<Alert>;
 @Table({
@@ -111,6 +112,8 @@ export class Alert extends Model<InferAttributes<Alert>, InferCreationAttributes
         id: Alert.validator.shape.id.nullish(), // id is optional when creating a new alert
         read: Alert.validator.shape.read.nullish(),
         assetId: Alert.validator.shape.assetId.nullish(),
+        projectId: Alert.validator.shape.projectId.nullish(),
+        versionId: Alert.validator.shape.versionId.nullish(),
         requestId: Alert.validator.shape.requestId.nullish(),
         discordMessageSent: Alert.validator.shape.discordMessageSent.nullish(),
         createdAt: Alert.validator.shape.createdAt.nullish(),
@@ -143,12 +146,44 @@ export class Alert extends Model<InferAttributes<Alert>, InferCreationAttributes
             id: this.id,
             type: this.type,
             assetId: this.assetId,
+            projectId: this.projectId,
+            versionId: this.versionId,
             requestId: this.requestId,
             header: this.header,
             message: this.message,
             read: this.read,
             createdAt: this.createdAt,
             updatedAt: this.updatedAt,
+        }
+    }
+}
+
+export class AlertTemplates {
+    public static statusChange(thingType: `project` | `version` | `asset`, thingName: string, status: string) {
+        return {
+            header: `${capitalizeWords(thingType)} Status Changed to ${status}`,
+            message: `The status of your ${thingType}, ${thingName}, has been changed to ${status}.`,
+        }
+    }
+
+    public static setFirstVersionApproval(thingType: `project` | `version` | `asset`, thingName: string, fullApproved: boolean) {
+        return {
+            header: fullApproved ? `${capitalizeWords(thingType)} Verified` : `${capitalizeWords(thingType)} Unverified`,
+            message: `Your ${thingType}, ${thingName}, has had its status set to ${fullApproved ? `verified` : `unverified`}!`,
+        }
+    }
+
+    public static verifiedRevoked(thingType: `project` | `version` | `asset`, thingName: string, newStatus: string) {
+        return {
+            header: `${capitalizeWords(thingType)} Verification Revoked`,
+            message: `The verification of your ${thingType}, ${thingName}, has been revoked and the status has been set to ${newStatus}.`,
+        }
+    }
+
+    public static reportAcceptedRemovalForAuthor(thingType: `project` | `version` | `asset`, thingName: string) {
+        return {
+            header: `Your ${thingType} ${thingName} has been removed.`,
+            message: `Your ${thingType} has been removed. Please do not re-upload the ${thingType}. If you have any question, please contact the approval team.`
         }
     }
 }

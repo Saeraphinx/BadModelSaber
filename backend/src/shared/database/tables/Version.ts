@@ -1,6 +1,6 @@
 import { CreationOptional, InferAttributes, InferCreationAttributes, NonAttribute, Op, WhereOptions } from "sequelize";
 import { AfterCreate, AfterValidate, AllowNull, BeforeCreate, BeforeValidate, BelongsTo, Column, CreatedAt, DataType, Default, DeletedAt, ForeignKey, Model, Sequelize, Table, UpdatedAt } from "sequelize-typescript";
-import { ContentHash, ContentHashSchema, Dependency, DependencySchema, ModApiV1, ModVersionsApiv2, Status, StatusHistory, statusHistorySchema, UserPermissions, VersionApiV3 } from "../DBExtras.ts";
+import { AlertType, ContentHash, ContentHashSchema, Dependency, DependencySchema, ModApiV1, ModVersionsApiv2, Status, StatusHistory, statusHistorySchema, UserPermissions, VersionApiV3, WebhookLogType } from "../DBExtras.ts";
 import { SemVer, parse } from "semver";
 import { Project } from "./Project.ts";
 import { User } from "./User.ts";
@@ -13,6 +13,8 @@ import path from "path";
 import JSZip from "jszip";
 import fs from "fs";
 import { decompile } from "@umbranoxio/difflux";
+import { WebhookPayloadGenerator, Webhooks } from "../../Webhooks.ts";
+import { Alert, AlertInfer, AlertTemplates } from "./Alert.ts";
 
 export type VersionInfer = InferAttributes<Version>;
 export type VersionAllowedEdit = Partial<Pick<Version, `semver` | `supportedGameVersionIds` | `dependencies`>>;
@@ -349,6 +351,25 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
         return prj.canEdit(user);
     }
     // #endregion
+    // #region Alerts
+    public async createAlert(data: {
+        type: AlertType;
+        header: string;
+        message: string;
+    }) {
+        return await this.project.then((project) => {
+            if (!project) {
+                Logger.warn(`Could not find parent project for version when creating alert.`);
+                return null;
+            }
+            return project.createAlertForAuthors({
+                type: data.type,
+                header: data.header,
+                message: data.message,
+                versionId: this.id,
+            }, true, [this.uploaderId]);
+        })
+    }
     // #region Getters
     public async getDependencies(gameVersionId: number = this.supportedGameVersionIds[0]): Promise<Version[]> {
         let deps: Version[] = [];
@@ -369,12 +390,15 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
     }
     // #endregion
     // #region Setters
-    public async setStatus(newStatus: Status, user: User, reason: string): Promise<this> {
+    public async setStatus(newStatus: Status, user: User, reason: string, shouldAlert=true, shouldSendWebhooks = true): Promise<this> {
         if (this.status === newStatus) {
             return this;
         }
 
         let previousStatus = this.status;
+        let newlyVerified = newStatus === Status.Verified && previousStatus !== Status.Verified && this.statusHistory.some(entry => entry.status === Status.Verified) === false;
+        let newlyUnverified = newStatus === Status.Unverified && previousStatus !== Status.Unverified && this.statusHistory.some(entry => entry.status === Status.Verified || entry.status === Status.Unverified) === false;
+        
 
         let historyEntry: StatusHistory = {
             status: newStatus,
@@ -391,9 +415,35 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
         }
 
         await this.save();
-
+        if (shouldSendWebhooks) {
+            Webhooks.sendWebhookLog((await this.project)?.gameName || `unknown`, WebhookLogType.Text_StatusUpdate, false, WebhookPayloadGenerator.generateStatusPayload(this, user, previousStatus, newStatus, reason));
+            Webhooks.sendWebhookLog((await this.project)?.gameName || `unknown`, WebhookLogType.StatusUpdate, false, WebhookPayloadGenerator.generateInternalStatusUpdateEmbedPayload(this, user, previousStatus, newStatus, reason));
+            if (newlyVerified) {
+                Webhooks.sendWebhookLog((await this.project)?.gameName || `unknown`, WebhookLogType.NewlyVerifiedVersion, false, WebhookPayloadGenerator.generateNewlyVerifiedThingEmbedPayload(this, user));
+            } else if (newlyUnverified) {
+                Webhooks.sendWebhookLog((await this.project)?.gameName || `unknown`, WebhookLogType.NewlyUnverifiedVersion, false, WebhookPayloadGenerator.generateNewlyVerifiedThingEmbedPayload(this, user));
+            }
+        }
+        if (shouldAlert) {
+            if (newlyVerified) {
+                this.createAlert({
+                    type: AlertType.ThingVerified,
+                    ...AlertTemplates.setFirstVersionApproval(`version`, `${(await this.project)?.name} v${this.semver.raw}`, true),
+                });
+            } else if (previousStatus === Status.Verified && newStatus !== Status.Verified) {
+                this.createAlert({
+                    type: AlertType.ThingRemoval,
+                    ...AlertTemplates.verifiedRevoked(`version`, `${(await this.project)?.name} v${this.semver.raw}`, newStatus),
+                });
+            } else if (newStatus === Status.Removed) {
+                this.createAlert({
+                    type: AlertType.ThingRejected,
+                    ...AlertTemplates.statusChange(`version`, `${(await this.project)?.name} v${this.semver.raw}`, newStatus),
+                });
+            }
+        }
         Logger.info(`Version id ${this.id} status changed from ${previousStatus} to ${newStatus} by user id ${user.id} for reason: ${reason}`);
-
+        
         return this;
     }
 
@@ -409,6 +459,7 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
         }
         this.lastUpdatedById = user.id;
         await this.save();
+        Webhooks.sendWebhookLog((await this.project)?.gameName || `unknown`, WebhookLogType.Text_Edited, false, WebhookPayloadGenerator.generateEditedThingPayload(this, user, this.projectId));
         return this;
     }
     // #endregion

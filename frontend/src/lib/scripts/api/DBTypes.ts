@@ -282,17 +282,23 @@ export const linkedAssetSchema = z.object({
 
 // # region Enums
 export enum WebhookLogType {
-  NewlyVerified = "newly_verified",
-  NewlyUnverified = "newly_unverified",
+  NewlyVerifiedAsset = "newly_verified_asset",
+  NewlyUnverifiedAsset = "newly_unverified_asset",
+  NewlyVerifiedProject = "newly_verified_project",
+  NewlyUnverifiedProject = "newly_unverified_project",
+  NewlyVerifiedVersion = "newly_verified_version",
+  NewlyUnverifiedVersion = "newly_unverified_version",
   NewThing = "new_thing", // e.g. new asset, new project
   NewSubThing = "new_sub_thing", // e.g. new version of a project
   NewReport = "new_report", // e.g. new report for a project, version, asset, or user
 
   StatusUpdate = "status_update",
 
+  Text_TranslationOutOfDate = "text_translation_out_of_date",
   Text_StatusUpdate = "text_status_update",
   Text_Edited = "text_edited",
   Text_Linked = "text_linked",
+  Text_NewReportMessage = "new_report_message", // new message in an existing report
 }
 
 // #endregion
@@ -488,6 +494,8 @@ export const alertApiV3Schema = z.object({
   id: dbId,
   type: alertTypeSchema,
   assetId: dbId.nullable(),
+  projectId: dbId.nullable(),
+  versionId: dbId.nullable(),
   requestId: dbId.nullable(),
   header: z.string(),
   message: z.string(),

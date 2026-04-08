@@ -86,6 +86,7 @@ export const RequestRouter = router({
     handleRequest: loggedInProcedure().input(z.object({
         id: dbId,
         action: z.enum([`accept`, `decline`]),
+        actuallyHandle: z.boolean().optional().default(false) 
     })).mutation(async ({ input, ctx }) => {
         const assetReq = await ThingRequest.findByPk(input.id);
         if (!assetReq) {
@@ -95,7 +96,7 @@ export const RequestRouter = router({
             throw new TRPCError({code: `FORBIDDEN`, message: `You are not allowed to handle this request`});
         }
         if (input.action === `accept`) {
-            await assetReq.accept(ctx.user).catch(handleCatch());
+            await assetReq.accept(ctx.user, input.actuallyHandle).catch(handleCatch());
             return { message: `Request accepted successfully` };
         } else if (input.action === `decline`) {
             await assetReq.decline(ctx.user).catch(handleCatch());

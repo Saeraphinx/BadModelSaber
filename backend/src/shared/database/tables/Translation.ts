@@ -1,5 +1,11 @@
 import { CreationOptional, InferAttributes, InferCreationAttributes } from "sequelize";
-import { Column, CreatedAt, DataType, DeletedAt, Model, PrimaryKey, Table, UpdatedAt } from "sequelize-typescript";
+import { AfterUpdate, Column, CreatedAt, DataType, DeletedAt, Model, PrimaryKey, Table, UpdatedAt } from "sequelize-typescript";
+import { WebhookPayloadGenerator, Webhooks } from "../../Webhooks.ts";
+import { Project } from "./Project.ts";
+import { Asset } from "./Asset.ts";
+import { WebhookMessageCreateOptions } from "discord.js";
+import { EnvConfig } from "../../EnvConfig.ts";
+import { WebhookLogType } from "../DBExtras.ts";
 
 @Table({
     tableName: `translations`,
@@ -40,4 +46,16 @@ export class Translation extends Model<InferAttributes<Translation>, InferCreati
     @DeletedAt
     declare deletedAt: CreationOptional<Date | null>;
     // #endregion
+
+    public async markOutOfDate(thing: Project | Asset) {
+        if (!this.outOfDate) {
+            this.outOfDate = true;
+            await this.save();
+            if (thing instanceof Asset) {
+                Webhooks.sendWebhookLog(thing.gameName, WebhookLogType.Text_TranslationOutOfDate, true, WebhookPayloadGenerator.generateTranslationOutOfDateWebhookPayload(this, thing));
+            } else {
+                Webhooks.sendWebhookLog(thing.gameName, WebhookLogType.Text_TranslationOutOfDate, false, WebhookPayloadGenerator.generateTranslationOutOfDateWebhookPayload(this, thing));
+            }
+        }
+    }
 }

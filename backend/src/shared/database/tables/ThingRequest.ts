@@ -1,7 +1,7 @@
 import { AfterValidate, AllowNull, BelongsTo, Column, CreatedAt, DataType, Default, DeletedAt, ForeignKey, Model, Table, UpdatedAt } from "sequelize-typescript";
 import { InferAttributes, InferCreationAttributes, CreationOptional, NonAttribute } from "sequelize";
 import { z } from "zod/v4";
-import { AlertType, ThingRequestApiV3, dbId, LinkedAsset, LinkedAssetLinkType, RequestMessage, RequestType, Status, UserPermissions } from "../DBExtras.ts";
+import { AlertType, ThingRequestApiV3, dbId, LinkedAsset, LinkedAssetLinkType, RequestMessage, RequestType, Status, UserPermissions, WebhookLogType } from "../DBExtras.ts";
 import { User } from "./User.ts";
 import { Asset } from "./Asset.ts";
 import { Alert } from "./Alert.ts";
@@ -9,7 +9,7 @@ import { Logger } from "../../Logger.ts";
 import { parseErrorMessage } from "../../Tools.ts";
 import { Project } from "./Project.ts";
 import { Version } from "./Version.ts";
-import { IPermissionsChecks } from "./common.ts";
+import { Webhooks } from "../../Webhooks.ts";
 
 export type ThingRequestInfer = InferAttributes<ThingRequest>;
 @Table({
@@ -259,7 +259,10 @@ export class ThingRequest extends Model<InferAttributes<ThingRequest>, InferCrea
                 timestamp: new Date(Date.now()).toISOString(),
             }
         ]
-        return this.save();
+        return this.save().then((tr) => {
+            Webhooks.sendWebhookLog(this.refrencedGameName || `beatsaber`, WebhookLogType.Text_NewReportMessage, false, Promise.resolve(`New message on ${tr.requestType} request #${tr.id} from user ${user.username}: ${message}`));
+            return tr;
+        });
     }
 
     public alertReporter(data: {
@@ -274,7 +277,7 @@ export class ThingRequest extends Model<InferAttributes<ThingRequest>, InferCrea
     }
 
     // #region handle reports
-    public async accept(acceptedBy: User, silent = false): Promise<this> {
+    public async accept(acceptedBy: User, shouldRemove = false, silent = false): Promise<this> {
         let refrencedThing = await this.getRefrencedAsset();
         if (!refrencedThing) {
             throw new Error(`Referenced asset not found.`);
@@ -298,25 +301,35 @@ export class ThingRequest extends Model<InferAttributes<ThingRequest>, InferCrea
                 await refrencedAsset.addLink(otherAsset, obj.linkType);
                 break;
             case RequestType.Asset_Report:
-                refrencedAsset = refrencedThing as Asset;
-                await refrencedAsset.setStatus(Status.Removed, acceptedBy, `Report ID ${this.id}`, false)
-                if (!silent) {
-                    refrencedAsset.alertUploader({
+            case RequestType.Version_Report:
+            case RequestType.Project_Report:
+                let refThing = refrencedThing as Asset | Version | Project;
+                shouldRemove ? await refThing.setStatus(Status.Removed, acceptedBy, `Report ID ${this.id}`, false) : null;
+                let thingType = this.requestType === RequestType.Asset_Report ? `asset` : this.requestType === RequestType.Version_Report ? `version` : `project`;
+                if (!silent && shouldRemove) {
+                    let thingAlert = refThing instanceof Asset ? refThing.alertUploader : refThing instanceof Version ? refThing.createAlert : refThing.createAlertForAuthors;
+                    let thingName = refThing instanceof Version ? `${(await refThing.project)?.name} v${refThing.semver.raw}` : refThing.name;
+                    thingAlert({
                         type: AlertType.ThingRemoval,
-                        header: `Your asset ${refrencedAsset.name} (${refrencedAsset.id}) has been removed.`,
-                        message: `Your asset has been removed. Please do not re-upload the asset. If you have any question, please contact the approval team.`
-                    }).catch((e) => {
-                        Logger.warn(`Unable to alert uploader: ${parseErrorMessage(e)}`)
-                    });
-                    this.alertReporter({
-                        type: AlertType.RequestAccepted,
-                        header: `Your report has been accepted`,
-                        message: `Your report has been accepted and the asset has been removed. If you have any question, please contact the approval team.`
-                    }).catch((e) => {
-                        Logger.warn(`Unable to alert requester: ${parseErrorMessage(e)}`)
-                    });
+                        header: `Your ${thingType} ${thingName} has been removed.`,
+                        message: `Your ${thingType} has been removed. Please do not re-upload the ${thingType}. If you have any question, please contact the approval team.`,
+                    })
                 }
                 break;
+            case RequestType.User_Report:
+                break; // No automatic action for user reports, maybe in the future we could add automatic banning or something like that, but for now just leave it as is and let the moderators handle it manually
+            default:
+                throw new Error(`Invalid request type.`);
+        }
+
+        if (this.requestType.endsWith("report")) {
+            this.alertReporter({
+                type: AlertType.RequestAccepted,
+                header: `Your report has been accepted`,
+                message: `Your report has been accepted & closed. If you have any question, please contact the approval team.`
+            }).catch((e) => {
+                Logger.warn(`Unable to alert requester: ${parseErrorMessage(e)}`)
+            });
         }
 
         this.accepted = true;
@@ -332,7 +345,7 @@ export class ThingRequest extends Model<InferAttributes<ThingRequest>, InferCrea
             this.alertReporter({
                 type: AlertType.RequestDeclined,
                 header: `Your request has been declined`,
-                message: `Your request has been declined. If you have any question, please contact the approval team.`
+                message: `Your request has been closed. If you have any questions, please contact the approval team.`
             }).catch((e) => {
                 Logger.warn(`Unable to alert requester: ${parseErrorMessage(e)}`)
             });

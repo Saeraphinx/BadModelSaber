@@ -305,6 +305,7 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
             }
         }
         Logger.debug(`User ${user.id} updating asset ${this.id} with data: ${JSON.stringify(data)}`);
+        Webhooks.sendWebhookLog(this.gameName, WebhookLogType.Text_Edited, true, WebhookPayloadGenerator.generateEditedThingPayload(this, user));
         return await this.save();
     }
 
@@ -503,7 +504,7 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
         return this;
     }
 
-    public async setStatus(newStatus: Status, userId: number | User, reason: string, sendAlert = true): Promise<Asset> {
+    public async setStatus(newStatus: Status, userId: number | User, reason: string, sendAlert = true, shouldSendWebhooks = true): Promise<Asset> {
         let userPreformingAction: User | null = null;
         let oldStatus = this.status;
         if (userId instanceof User) {
@@ -514,6 +515,10 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
                 throw new Error(`User not found`);
             }
         }
+
+        let newlyVerified = newStatus === Status.Verified && this.statusHistory.some(entry => entry.status === Status.Verified) === false;
+        let newlyUnverified = newStatus !== Status.Verified && this.statusHistory.some(entry => entry.status === Status.Verified || entry.status === Status.Unverified) === false;
+        
 
         this.statusHistory = [...this.statusHistory, {
             status: newStatus,
@@ -531,10 +536,9 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
         switch (newStatus) {
             case Status.Verified:
                 alertType = AlertType.ThingVerified;
-                Webhooks.sendWebhookLog(this.gameName, WebhookLogType.NewlyVerified, true, await WebhookPayloadGenerator.generatePublicNewAssetEmbedPayload(this));
                 break;
             case Status.Unverified:
-                Webhooks.sendWebhookLog(this.gameName, WebhookLogType.NewlyUnverified, true, WebhookPayloadGenerator.generateInternalStatusUpdateEmbedPayload(this, userPreformingAction, oldStatus, newStatus));
+                //Webhooks.sendWebhookLog(this.gameName, WebhookLogType.NewlyUnverified, true, WebhookPayloadGenerator.generateInternalStatusUpdateEmbedPayload(this, userPreformingAction, oldStatus, newStatus));
                 break;
             case Status.Removed:
                 if (oldStatus == Status.Verified || oldStatus == Status.Unverified) {
@@ -546,16 +550,26 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
         }
 
         if (sendAlert) {
-            Webhooks.sendWebhookLog(this.gameName, WebhookLogType.Text_StatusUpdate, true, WebhookPayloadGenerator.generateInternalStatusUpdateEmbedPayload(this, userPreformingAction, oldStatus, newStatus));
             this.alertUploader({
                 type: alertType,
                 header: `Asset Status Updated`,
                 message: `The status of your asset ${this.name} has been changed to ${newStatus}${reason ? ` for the following reason: ${reason}` : `.`}`,
             });
         }
+
         this.status = newStatus;
         Logger.log(`Asset ${this.id} status changed to ${newStatus} by user ${userPreformingAction.id} for reason: ${reason}`);
-        return this.save();
+        return this.save().then(async (updatedAsset) => {
+            if (shouldSendWebhooks) {
+                Webhooks.sendWebhookLog(this.gameName, WebhookLogType.StatusUpdate, true, WebhookPayloadGenerator.generateInternalStatusUpdateEmbedPayload(updatedAsset, userPreformingAction!, oldStatus, newStatus, reason));
+                if (newlyVerified) {
+                    Webhooks.sendWebhookLog(this.gameName, WebhookLogType.NewlyVerifiedAsset, true, WebhookPayloadGenerator.generateInternalStatusUpdateEmbedPayload(updatedAsset, userPreformingAction!, oldStatus, newStatus, reason));
+                } else if (newlyUnverified) {
+                    Webhooks.sendWebhookLog(this.gameName, WebhookLogType.NewlyUnverifiedAsset, true, WebhookPayloadGenerator.generateInternalStatusUpdateEmbedPayload(updatedAsset, userPreformingAction!, oldStatus, newStatus, reason));
+                }
+            }
+            return updatedAsset;
+        });
     }
     // #endregion
     // #region Reports
@@ -589,6 +603,9 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
                 message: reason,
                 timestamp: new Date(Date.now()).toISOString(),
             }],
+        }).then(async (request) => {
+            Webhooks.sendWebhookLog(this.gameName, WebhookLogType.NewReport, true, WebhookPayloadGenerator.generateNewReportEmbedPayload(request, this, reportedBy, reason));
+            return request;
         });
     }
     // #endregion

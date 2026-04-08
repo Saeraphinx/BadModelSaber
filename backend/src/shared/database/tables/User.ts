@@ -181,11 +181,12 @@ export class User extends Model<InferAttributes<User>, InferCreationAttributes<U
     }
 
     // #endregion
-
     // #region createAlert
     public createAlert(data: {
         type: AlertType;
         assetId?: number | null;
+        versionId?: number | null;
+        projectId?: number | null;
         requestId?: number | null;
         header: string;
         message: string;
@@ -198,6 +199,8 @@ export class User extends Model<InferAttributes<User>, InferCreationAttributes<U
     public static createAlert(userId: number, data: {
         type: AlertType;
         assetId?: number | null;
+        versionId?: number | null;
+        projectId?: number | null;
         requestId?: number | null;
         header: string;
         message: string;

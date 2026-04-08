@@ -1,5 +1,5 @@
 import { CreationOptional, InferAttributes, InferCreationAttributes, NonAttribute } from "sequelize";
-import { AllowNull, Column, CreatedAt, DataType, Default, DeletedAt, Model, PrimaryKey, Table, UpdatedAt } from "sequelize-typescript";
+import { AfterValidate, AllowNull, Column, CreatedAt, DataType, Default, DeletedAt, Model, PrimaryKey, Table, UpdatedAt } from "sequelize-typescript";
 import { WebhookLogType } from "../DBExtras.ts";
 import { createRandomString } from "../../Tools.ts";
 import { APIMessage, MessagePayload, WebhookMessageCreateOptions } from "discord.js";
@@ -61,6 +61,13 @@ export class Game extends Model<InferAttributes<Game>, InferCreationAttributes<G
     declare updatedAt: CreationOptional<Date>;
     @DeletedAt
     declare deletedAt: CreationOptional<Date | null>;
+
+    @AfterValidate
+    private static forceLowerCaseName(instance: Game) {
+        if (instance.name.includes(` `) || instance.name !== instance.name.toLowerCase()) {
+            throw new Error(`Game name must be lowercase and cannot contain spaces.`);
+        }
+    }
 
     public static get defaultGame(): NonAttribute<Promise<Game>> {
         if (!this._defaultGame) {
@@ -226,7 +233,7 @@ export class Game extends Model<InferAttributes<Game>, InferCreationAttributes<G
     }
 
     /** Send a payload to each of the available webhooks for this game */
-    public sendToWebhooks(logType: WebhookLogType, isAssetWebhook: boolean, payload: string | MessagePayload | WebhookMessageCreateOptions): Promise<APIMessage[] | undefined> {
+    public sendToWebhooks(logType: WebhookLogType, isAssetWebhook: boolean, payload: Promise<string | MessagePayload | WebhookMessageCreateOptions>): Promise<APIMessage[] | undefined> {
         return Webhooks.sendWebhookLog(this.name, logType, isAssetWebhook, payload);
     }
     // #endregion

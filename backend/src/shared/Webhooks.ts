@@ -1,7 +1,8 @@
 import { APIMessage, ColorResolvable, Colors, EmbedBuilder, MessagePayload, WebhookClient, WebhookMessageCreateOptions } from "discord.js";
-import { Asset, Game, GameVersion, GameWebhookConfig, Project, Status, User, Version, WebhookLogType } from "./Database.ts";
+import { Asset, Game, GameVersion, GameWebhookConfig, Project, Status, ThingRequest, User, Version, WebhookLogType } from "./Database.ts";
 import { EnvConfig } from "./EnvConfig.ts";
 import { capitalizeWords } from "./Tools.ts";
+import { Translation } from "./database/tables/Translation.ts";
 
 /* 
 
@@ -50,7 +51,7 @@ export class Webhooks {
         this.webhookClients.set(game.name, webhookConfigs);
     }
 
-    public static async sendWebhookLog(gameName: string, type: WebhookLogType, isAssetWebhook: boolean, payload: string | MessagePayload | WebhookMessageCreateOptions): Promise<APIMessage[] | undefined> {
+    public static async sendWebhookLog(gameName: string, type: WebhookLogType, isAssetWebhook: boolean, payload: Promise<string | MessagePayload | WebhookMessageCreateOptions>): Promise<APIMessage[] | undefined> {
         let webhookConfigs = this.webhookClients.get(gameName);
         if (!webhookConfigs) return;
 
@@ -58,7 +59,7 @@ export class Webhooks {
         for (let webhookConfig of webhookConfigs) {
             if (webhookConfig.types.includes(type) && webhookConfig.isAssetWebhook === isAssetWebhook) {
                 try {
-                    let res = await webhookConfig.client.send(payload);
+                    let res = await webhookConfig.client.send(await payload);
                     results.push(res);
                 } catch (error) {
                     console.error(`Failed to send webhook to ${webhookConfig.url}: ${error}`);
@@ -72,8 +73,9 @@ export class Webhooks {
 }
 
 export class WebhookPayloadGenerator {
-    // for status update
-    public static generateInternalStatusUpdateEmbedPayload(thing: Asset | Project, userPreformingAction: User, oldStatus: Status, newStatus: Status): WebhookMessageCreateOptions {
+    // for all status updates. WebhookLogType.StatusUpdate
+    public static async generateInternalStatusUpdateEmbedPayload(thing: Asset | Project | Version, userPreformingAction: User, oldStatus: Status, newStatus: Status, reason: string): Promise<WebhookMessageCreateOptions> {
+        let parentIfVersion = thing instanceof Version ? (await thing.project) as Project : null;
         let color: ColorResolvable = 0x000; // Default to black
         switch (newStatus) {
             case Status.Verified:
@@ -90,7 +92,7 @@ export class WebhookPayloadGenerator {
         }
 
         let type = thing instanceof Asset ? 'asset' : 'project';
-        let thingIconUrl = thing.iconUrl;
+        let thingIconUrl = thing instanceof Version ? parentIfVersion?.iconUrl : thing.iconUrl;
 
         let payload: WebhookMessageCreateOptions = {
             embeds: [{
@@ -101,8 +103,8 @@ export class WebhookPayloadGenerator {
                 },
                 title: `${capitalizeWords(type)} Status Updated`,
                 url: `${EnvConfig.server.frontendUrl}/${thing}s/${thing.id}`,
-                thumbnail: { url: thing.iconUrl},
-                description: `The status of the ${type} **${thing.name}** (ID: ${thing.id}) has been updated from **${oldStatus}** to **${newStatus}**.`,
+                thumbnail: { url: thingIconUrl as string },
+                description: `The status of the ${type} **${thing instanceof Version ? parentIfVersion?.name : thing.name}** (ID: ${thing.id}) has been updated from **${oldStatus}** to **${newStatus}**.\n\n**Reason:**\n${reason}`,
                 color: color,
                 footer: {
                     text: `${capitalizeWords(type)} ID: ${thing.id}`
@@ -113,28 +115,41 @@ export class WebhookPayloadGenerator {
         return payload;
     }
 
-    public static async generatePublicNewAssetEmbedPayload(asset: Asset): Promise<WebhookMessageCreateOptions> {
-        let uploader = await asset.uploader;
-        if (!uploader) {
-            throw new Error(`Uploader not found for ID: ${asset.id}`);
+    // for Newly Verified and Newly Unverified webhooks.
+    public static async generateNewlyVerifiedThingEmbedPayload(thing: Asset | Project | Version, verifiedBy: User): Promise<WebhookMessageCreateOptions> {
+        let thingType = thing instanceof Asset ? 'asset' : thing instanceof Project ? 'project' : 'version';
+        let thingTypeUrl = thing instanceof Version ? `projects` : `${thingType}s`;
+        let uploader = thing instanceof Project ? thing.authorIds.length > 0 ? await User.findByPk(thing.authorIds[0]) as User : new Error(`Couldn't find author`) : await thing.uploader as User;
+        let title = thing instanceof Version ? (await thing.project as Project).name + " v" + thing.semver.raw : thing.name;
+        let description = thing instanceof Version ? (await thing.project as Project).summary : thing.description ? (thing.description.length > 512 ? thing.description.substring(0, 500) + "..." : thing.description) : "No description provided.";
+        let icon = thing instanceof Version ? (await thing.project as Project).iconUrl : thing.iconUrl;
+
+        if (uploader instanceof Error) {
+            throw uploader;
         }
+
+        let color: ColorResolvable = thing.status === Status.Verified ?  Colors.Green : Colors.Yellow;
 
         return {
             embeds: [{
                 author: {
-                    name: `${uploader.displayName}`,
+                    name: `${uploader.displayName} `,
                     icon_url: uploader.avatarUrl,
-                    url: `${EnvConfig.server.frontendUrl}/users/${uploader.id}`
+                    url: `${EnvConfig.server.frontendUrl}/${thingTypeUrl}/${uploader.id}`
                 },
-                title: ` ${asset.name}`,
-                url: `${EnvConfig.server.frontendUrl}/assets/${asset.id}`,
-                thumbnail: asset.iconNames[0] ? { url: `${EnvConfig.server.backendUrl}/files/icons/${asset.iconNames[0]}` } : undefined,
-                description: asset.description ? (asset.description.length > 2048 ? asset.description.substring(0, 1000) + "..." : asset.description) : "No description provided.",
-                color: Colors.Green,
+                title: `${title} `,
+                url: `${EnvConfig.server.frontendUrl}/${thingTypeUrl}/${thing.id}`,
+                thumbnail: { url: icon },
+                description,
+                color,
+                footer: {
+                    text: `${capitalizeWords(thingType)} ID: ${thing.id} | Approved by: ${verifiedBy.displayName} | Status: ${capitalizeWords(thing.status)}`
+                },
             }],
         }
     }
 
+    // for newly created assets and projects. WebhookLogType.NewThing 
     public static async generateCreatedNewThingEmbedPayload(thing: Asset | Project): Promise<WebhookMessageCreateOptions> {
         let type = thing instanceof Asset ? 'asset' : 'project';
         let author = (thing instanceof Asset ? thing.uploader : thing.authorIds.length > 0 ? (await User.findByPk(thing.authorIds[0])) : null) as User | null;
@@ -160,6 +175,7 @@ export class WebhookPayloadGenerator {
         return payload;
     }
 
+    // for newly created versions. WebhookLogType.NewSubThing
     public static async generateNewProjectVersionEmbedPayload(version: Version): Promise<WebhookMessageCreateOptions> {
         let project = await version.project as Project;
         let author = await version.uploader as User;
@@ -210,5 +226,94 @@ export class WebhookPayloadGenerator {
         };
 
         return payload;
+    }
+
+    // for new reports. WebhookLogType.NewReport
+    public static async generateNewReportEmbedPayload(request: ThingRequest, thing: Asset | Project | User | Version, reporter: User, firstMessage: string): Promise<WebhookMessageCreateOptions> {
+        let thingType: string;
+        if (thing instanceof Asset) thingType = 'asset';
+        else if (thing instanceof Project) thingType = 'project';
+        else if (thing instanceof User) thingType = 'user';
+        else if (thing instanceof Version) thingType = 'version';
+        else thingType = 'thing';
+
+        let firstMessagePreview = firstMessage.length > 512 ? firstMessage.substring(0, 500) + "..." : firstMessage;
+
+        return {
+            embeds: [{
+                author: {
+                    name: `${reporter.displayName} (ID# ${reporter.id})`,
+                    icon_url: reporter.avatarUrl,
+                    url: `${EnvConfig.server.frontendUrl}/users/${reporter.id}`
+                },
+                title: `New Report for ${capitalizeWords(thingType)}: ${thing instanceof Version ? (await thing.project as Project).name + " v" + thing.semver.raw : thing instanceof User ? thing.displayName : thing.name}`,
+                url: `${EnvConfig.server.frontendUrl}/requests/${request.id}`,
+                thumbnail: { url: thing instanceof Version ? (await thing.project as Project).iconUrl : thing instanceof User ? thing.avatarUrl : thing.iconUrl },
+                description: `A new report has been submitted for the ${thingType} **${thing instanceof Version ? (await thing.project as Project).name + " v" + thing.semver.raw : thing instanceof User ? thing.displayName : thing.name}** (ID: ${thing instanceof Version ? thing.projectId : thing.id}).\n\n**First message:**\n${firstMessagePreview}`,
+                color: Colors.Orange,
+                footer: {
+                    text: `${capitalizeWords(thingType)} ID: ${thing instanceof Version ? thing.projectId : thing.id} | Report ID: ${request.id}`
+                },
+                timestamp: new Date(request.createdAt).toISOString(),
+            }],
+        }
+    }
+
+    // for translation out of date logs. WebhookLogType.Text_TranslationOutOfDate
+    public static generateTranslationOutOfDateWebhookPayload(translation: Translation, thing: Asset | Project): WebhookMessageCreateOptions {
+        let thingType = thing instanceof Asset ? 'asset' : 'project';
+        return {
+            content: `The ${translation.language} translation of ${thingType} **[${thing.name}](${EnvConfig.server.frontendUrl}/${thingType}s/${thing.id})'s ${translation.contentType}** (ID: ${thing.id}) has been marked as out of date and in need of review.`,
+        }
+    }
+
+    // for edited thing logs. WebhookLogType.Text_Edited
+    public static async generateEditedThingPayload(thing: Version | Translation | GameVersion, editor: User, parentId: number): Promise<WebhookMessageCreateOptions>;
+    public static async generateEditedThingPayload(thing: Asset | Project | Game, editor: User, parentId?: number): Promise<WebhookMessageCreateOptions>;
+    public static async generateEditedThingPayload(thing: Asset | Project | Version | Translation | GameVersion | Game, editor: User, parentId?: number): Promise<WebhookMessageCreateOptions> {
+        let thingType: string;
+        if (thing instanceof Asset) thingType = 'asset';
+        else if (thing instanceof Project) thingType = 'project';
+        else if (thing instanceof Version) thingType = 'version';
+        else if (thing instanceof Translation) thingType = 'translation';
+        else if (thing instanceof GameVersion) thingType = 'game version';
+        else if (thing instanceof Game) thingType = 'game';
+        else thingType = 'thing';
+
+        if (thing instanceof Translation) {
+            return {
+                content: `The ${thing.language} Translation for [${thing.parentId}](${EnvConfig.server.frontendUrl}/${thingType.replace(" ", "-")}s/${thing.parentId})'s **${thing.contentType}** (ID: ${thing.parentId}) has been edited by **[${editor.displayName}](${EnvConfig.server.frontendUrl}/users/${editor.id})** (ID# **${editor.id}**).`,
+            }
+        }
+
+        if (thing instanceof Version) {
+            return {
+                content: `Version **[${(await thing.project)?.name} ${thing.semver.raw}](${EnvConfig.server.frontendUrl}/projects/${parentId})** has been edited by **[${editor.displayName}](${EnvConfig.server.frontendUrl}/users/${editor.id})** (ID# **${editor.id}**).`,
+            }
+        }
+
+        if (thing instanceof GameVersion || thing instanceof Game) {
+            let name = thing instanceof GameVersion ? thing.gameName : thing.name;
+
+            return {
+                content: `**${capitalizeWords(thingType)} **${name}${thing instanceof GameVersion ? ` ${thing.version}` : ``}** has been edited by **[${editor.displayName}](${EnvConfig.server.frontendUrl}/users/${editor.id})** (ID# **${editor.id}**).`,
+            }
+        }
+
+        return {
+            content: `**${capitalizeWords(thingType)} [${thing.name}](${EnvConfig.server.frontendUrl}/${thingType}s/${thing.id})** has been edited by **[${editor.displayName}](${editor.displayName}](${EnvConfig.server.frontendUrl}/users/${editor.id}) (ID# ${editor.id})**.`,
+        }
+    }
+
+    public static async generateStatusPayload(thing: Asset | Project | Version, userPreformingAction: User, oldStatus: Status, newStatus: Status, reason: string): Promise<WebhookMessageCreateOptions> {
+        let thingType: string;
+        if (thing instanceof Asset) thingType = 'asset';
+        else if (thing instanceof Project) thingType = 'project';
+        else if (thing instanceof Version) thingType = 'version';
+        else thingType = 'thing';
+        
+        return {
+            content: `The status of ${capitalizeWords(thingType)} **[${thing instanceof Version ? (await thing.project)?.name + " v" + thing.semver.raw : thing.name}](${EnvConfig.server.frontendUrl}/${thing instanceof Version ? `project` : thingType}s/${thing.id})** has been updated from **${oldStatus}** to **${newStatus}** by **[${userPreformingAction.displayName}](${EnvConfig.server.frontendUrl}/users/${userPreformingAction.id})** (ID# ${userPreformingAction.id}).\n**Reason:**\n${reason}`,
+        }
     }
 }

@@ -1,6 +1,6 @@
 import { AfterValidate, AllowNull, BelongsTo, Column, CreatedAt, DataType, Default, DeletedAt, ForeignKey, Model, Table, UpdatedAt } from "sequelize-typescript";
 import { col, CreationOptional, InferAttributes, InferCreationAttributes, NonAttribute, Op, Sequelize, WhereOptions } from "sequelize";
-import { dbId, ModApiv2, ProjectApiV3, RequestType, Status, StatusHistory, statusHistorySchema, UserPermissions } from "../DBExtras.ts";
+import { AlertType, dbId, ModApiv2, ProjectApiV3, RequestType, Status, StatusHistory, statusHistorySchema, UserPermissions, WebhookLogType } from "../DBExtras.ts";
 import z from "zod/v4";
 import { Game } from "./Game.ts";
 import { Logger } from "../../Logger.ts";
@@ -13,6 +13,9 @@ import { ThingRequest } from "./ThingRequest.ts";
 import { Literal } from "sequelize/lib/utils";
 import { EnvConfig } from "../../EnvConfig.ts";
 import path from "path";
+import { Webhook } from "discord.js";
+import { WebhookPayloadGenerator, Webhooks } from "../../Webhooks.ts";
+import { Alert } from "./Alert.ts";
 
 
 export type ProjectInfer = InferAttributes<Project>;
@@ -333,8 +336,9 @@ export class Project extends Model<InferAttributes<Project>, InferCreationAttrib
                 let currentValue = (this as any)[translation.contentType];
                 if (currentValue !== translation.originalString) {
                     Logger.warn(`Translation for project ID ${this.id} content type ${translation.contentType} may be outdated and in need of review.`);
-                    translation.outOfDate = true;
-                    await translation.save();
+                    translation.markOutOfDate(this).catch(err => {
+                        Logger.error(`Failed to mark translation as out of date for project ID ${this.id}: ${err}`);
+                    });
                     translationMap[translation.contentType] = null;
                 }
             }
@@ -347,30 +351,56 @@ export class Project extends Model<InferAttributes<Project>, InferCreationAttrib
         };
     }
     // #endregion
+    // #region Alerts
+    public createAlertForAuthors(data: {
+        type: AlertType;
+        header: string;
+        message: string;
+        versionId?: number | null;
+    }, includeCollaborators = true, additionalIds?: number[]): Promise<void | Promise<Alert>[]> {
+        let userIds =  Array.from(includeCollaborators ? new Set([...(this.authorIds || []), ...(this.collaboratorIds || []), ...additionalIds || []]) : new Set([...(this.authorIds || []), ...additionalIds || []]));
+        let users = User.findAll({
+            where: {
+                id: userIds,
+            },
+        }).then(users => {
+            let promises: Promise<Alert>[] = [];
+            for (let user of users) {
+                promises.push(user.createAlert({
+                    type: data.type,
+                    projectId: this.id,
+                    versionId: data.versionId || null,
+                    header: data.header,
+                    message: data.message,
+                }));
+            };
+            return promises;
+        }).catch(err => {
+            Logger.error(`Failed to find users for creating alerts for project ID ${this.id}: ${err}`);
+        });
+        return users;
+    }
+    // #endregion
     // #region Edit
     public async updateProject(data: ProjectAllowedEdit, user: User): Promise<Project> {
         if (data.description && data.description !== this.description) {
-            Translation.update({
-                outOfDate: true,
-            }, {
+            Translation.findAll({
                 where: {
                     parentId: this.id,
                     contentType: `description`,
                 }
-            }).catch(err => {
+            }).then(t => t.forEach(ti => ti.markOutOfDate(this))).catch(err => {
                 Logger.error(`Failed to mark description translations as out of date for project ID ${this.id}: ${err}`);
             });
         }
 
         if (data.summary && data.summary !== this.summary) {
-            Translation.update({
-                outOfDate: true,
-            }, {
+            Translation.findAll({
                 where: {
                     parentId: this.id,
                     contentType: `summary`,
                 }
-            }).catch(err => {
+            }).then(t => t.forEach(ti => ti.markOutOfDate(this))).catch(err => {
                 Logger.error(`Failed to mark description translations as out of date for project ID ${this.id}: ${err}`);
             });
         }
@@ -384,16 +414,19 @@ export class Project extends Model<InferAttributes<Project>, InferCreationAttrib
             collaboratorIds: data.collaboratorIds ?? this.collaboratorIds,
         });
         this.lastUpdatedById = user.id;
+        Webhooks.sendWebhookLog(this.gameName, WebhookLogType.Text_Edited, false, WebhookPayloadGenerator.generateEditedThingPayload(this, user));
         return await this.save();
     }
 
-    public async setStatus(newStatus: Status, user: User, reason: string, shouldSendWebhook = true): Promise<this> {
+    public async setStatus(newStatus: Status, user: User, reason: string, shouldAlert = true, shouldSendWebhook = true): Promise<this> {
         let previousStatus = this.status;
         this.status = newStatus;
         // this.lastUpdatedById = user.id; // commented out to preserve last updater as the last person to edit mod details, not status
         if (newStatus === Status.Verified) {
             this.lastApprovedById = user.id;
         }
+        let newlyVerified = newStatus === Status.Verified && this.statusHistory.some(entry => entry.status === Status.Verified) === false;
+        let newlyUnverified = newStatus !== Status.Verified && this.statusHistory.some(entry => entry.status === Status.Verified || entry.status === Status.Unverified) === false;
         this.statusHistory = [...this.statusHistory, {
             status: newStatus,
             reason: reason,
@@ -407,6 +440,24 @@ export class Project extends Model<InferAttributes<Project>, InferCreationAttrib
             throw error;
         }
         Logger.log(`Project ID ${this.id} status changed from ${previousStatus} to ${newStatus} by user ID ${user.id} for reason: ${reason}`);
+        if (shouldSendWebhook) {
+            Webhooks.sendWebhookLog(this.gameName, WebhookLogType.Text_StatusUpdate, false, WebhookPayloadGenerator.generateStatusPayload(this, user, previousStatus, newStatus, reason));
+            Webhooks.sendWebhookLog(this.gameName, WebhookLogType.StatusUpdate, false, WebhookPayloadGenerator.generateInternalStatusUpdateEmbedPayload(this, user, previousStatus, newStatus, reason));
+            if (newlyVerified) {
+                Webhooks.sendWebhookLog(this.gameName, WebhookLogType.NewlyVerifiedProject, false, WebhookPayloadGenerator.generateNewlyVerifiedThingEmbedPayload(this, user));
+            } else if (newlyUnverified) {
+                Webhooks.sendWebhookLog(this.gameName, WebhookLogType.NewlyUnverifiedProject, false, WebhookPayloadGenerator.generateNewlyVerifiedThingEmbedPayload(this, user));
+            }
+        }
+
+        if (shouldAlert) {
+            let authorsAndCollaborators = Array.from(new Set([...(this.authorIds || []), ...(this.collaboratorIds || [])]));
+            User.findAll({
+                where: {
+                    id: authorsAndCollaborators,
+                },
+            })
+        }
         return this;
     }
     // #endregion
@@ -436,8 +487,15 @@ export class Project extends Model<InferAttributes<Project>, InferCreationAttrib
                 message: reason,
                 timestamp: new Date().toISOString(),
             }],
+        }).then(async (request) => {
+            Webhooks.sendWebhookLog(this.gameName, WebhookLogType.NewReport, false, WebhookPayloadGenerator.generateNewReportEmbedPayload(request, this, reportedBy, reason));
+            return request;
+        }).catch(err => {
+            Logger.error(`Failed to create report request for project ${this.id} by user ${reportedBy.id}: ${err}`);
+            throw err;
         });
     }
+    // #endregion
     // #region ToAPI
     public async toApiV3(language?: string): Promise<ProjectApiV3> {
         let authors = await User.findAll({
