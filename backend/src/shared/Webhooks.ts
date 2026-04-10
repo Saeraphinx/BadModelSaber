@@ -260,7 +260,7 @@ export class WebhookPayloadGenerator {
     }
 
     // for translation out of date logs. WebhookLogType.Text_TranslationOutOfDate
-    public static generateTranslationOutOfDateWebhookPayload(translation: Translation, thing: Asset | Project): WebhookMessageCreateOptions {
+    public static async generateTranslationOutOfDateWebhookPayload(translation: Translation, thing: Asset | Project): Promise<WebhookMessageCreateOptions> {
         let thingType = thing instanceof Asset ? 'asset' : 'project';
         return {
             content: `The ${translation.language} translation of ${thingType} **[${thing.name}](${EnvConfig.server.frontendUrl}/${thingType}s/${thing.id})'s ${translation.contentType}** (ID: ${thing.id}) has been marked as out of date and in need of review.`,

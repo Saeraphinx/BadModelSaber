@@ -1,6 +1,6 @@
 import { GameVersion, ModApiv2Schema, ModVersionsApiv2Schema, Project, Status, User, Version } from "../../../../shared/Database.ts";
 import { z } from "zod/v4";
-import { Op, WhereOptions } from "sequelize";
+import { Op, WhereOptions, where } from "sequelize";
 import { anyProcedure, router } from "../../../trpc.ts";
 import { compare } from "semver";
 import sequelize from "sequelize/lib/sequelize";

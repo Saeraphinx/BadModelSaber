@@ -122,7 +122,7 @@
                 {/each}
               {/await}
             {:else}
-              <p class="text-sm text-gray-500">No dependencies</p>
+              <p class="text-sm text-gray-500">{m[`mods.dataTable.noDependencies`]()}</p>
             {/if}
           </div>
         </Accordion.Content>
@@ -132,16 +132,16 @@
           <Accordion.Trigger class="text-sm font-normal p-0.5">
             <span class="flex flex-row items-center gap-1">
               <FileCodeIcon class="h-4 w-4" />
-              Files & Manifest
+              {m["mods.dataTable.filesAndManifest"]()}
             </span>
           </Accordion.Trigger>
           <Accordion.Content class="p-2">
             <div class="flex flex-row flex-wrap gap-2 justify-center">
               <Button variant="outline" size="sm" onclick={() => showCode("code")}>
-                View Code
+                {m[`mods.dataTable.viewCode`]()}
               </Button>
               <Button variant="outline" size="sm" onclick={() => showCode("manifest")}>
-                View Manifest
+                {m[`mods.dataTable.viewManifest`]()}
               </Button>
             </div>
           </Accordion.Content>
@@ -152,7 +152,7 @@
           <Accordion.Trigger class="text-sm font-normal p-0.5">
             <span class="flex flex-row items-center gap-1">
               <BadgeInfoIcon class="h-4 w-4" />
-              Approval
+              {m[`mods.dataTable.approvalHistory`]()}
             </span>
           </Accordion.Trigger>
           <Accordion.Content class="p-2">
@@ -177,7 +177,7 @@
         <Accordion.Trigger class="text-sm font-normal p-0.5">
           <span class="flex flex-row items-center gap-1">
             <InfoIcon class="h-4 w-4" />
-            Details
+            {m[`mods.dataTable.details`]()}
           </span>
         </Accordion.Trigger>
         <Accordion.Content class="p-2">

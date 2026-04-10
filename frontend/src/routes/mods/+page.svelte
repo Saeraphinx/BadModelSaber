@@ -96,7 +96,7 @@
 {#snippet gameFilter()}
   <div class="flex flex-col bg-card gap-4 p-4 rounded-md">
     <span>
-      <Label class="pb-2 px-1">Game</Label>
+      <Label class="pb-2 px-1">{m[`mods.game`]()}</Label>
       <Select.Root type="single" bind:value={selectedGameName} onValueChange={fetchMods}>
         <Select.Trigger class="w-full">{selectedGame?.displayName}</Select.Trigger>
         <Select.Content>
@@ -108,7 +108,7 @@
     </span>
     {#if selectedGame}
       <span>
-        <Label class="pb-2 px-1">Game Version</Label>
+        <Label class="pb-2 px-1">{m[`mods.gameVersion`]()}</Label>
         <Select.Root type="single" bind:value={selectedGameVersionId} onValueChange={fetchMods}>
           <Select.Trigger class="w-full">{selectedGameVersion?.version || `All`}</Select.Trigger>
           <Select.Content>

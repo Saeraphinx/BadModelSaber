@@ -209,13 +209,18 @@
         {/each}
       </div>
     </div>
-    {#if shouldAllowEdit}
-      <div class="grid grid-cols-1 gap-2 ml-auto">
+    <div class="grid grid-cols-1 gap-2 ml-auto">
+      {#if shouldAllowEdit}
         {#if !isEditing}
-          <Button variant="outline" class="ml-auto w-full" onclick={() => (isEditing = true)}>{"Edit"}</Button>
+          <Button variant="outline" class="ml-auto w-full" onclick={() => (isEditing = true)}>{m[`dialogs.edit`]()}</Button>
         {/if}
-      </div>
-    {/if}
+      {/if}
+      {#if shouldAllowTranslation}
+        {#if !isTranslating}
+          <Button variant="outline" class="ml-auto w-full" onclick={() => (isTranslating = true)}>{m[`dialogs.translate`]()}</Button>
+        {/if}
+      {/if}
+    </div>
   </div>
   <Separator />
   <div class="flex flex-row gap-4">
@@ -260,7 +265,7 @@
       {#if isEditing}
         <div class="flex flex-col gap-4 mx-2">
           <div class="grid grid-cols-[1fr_6fr] gap-2">
-            <Label for="icon">Icon</Label>
+            <Label for="icon">{m[`mods.dataTable.icon`]()}</Label>
             <div class="flex flex-row items-center gap-2">
               <Input id="icon" type="file" accept="image/*" bind:files={editedIconFile} />
               <Button
@@ -331,8 +336,8 @@
           <div>
             <Tabs.Root value="edit" class="w-full">
               <Tabs.List class="border-b w-full">
-                <Tabs.Trigger value="edit">Edit</Tabs.Trigger>
-                <Tabs.Trigger value="preview">Preview</Tabs.Trigger>
+                <Tabs.Trigger value="edit">{m[`dialogs.edit`]()}</Tabs.Trigger>
+                <Tabs.Trigger value="preview">{m[`dialogs.preview`]()}</Tabs.Trigger>
               </Tabs.List>
               <Tabs.Content value="edit">
                 <Textarea class="w-full h-64 mt-2" bind:value={editedDescription} />
@@ -344,7 +349,7 @@
           </div>
         </div>
         <div class="flex justify-end gap-2 mt-4">
-          <Button variant="outline" onclick={() => (isEditing = false)} disabled={isSaving}>Cancel</Button>
+          <Button variant="outline" onclick={() => (isEditing = false)} disabled={isSaving}>{m[`dialogs.cancel`]()}</Button>
           <Button
             disabled={!zProject
               .pick({
@@ -376,7 +381,7 @@
             <div class="flex flex-row items-center gap-2">
               <Input id="language" bind:value={translatingLanguage} placeholder="e.g. 'fr' for French" />
             </div>
-            <Label for="name">{m[`mods.createProject.name`]()}</Label>
+            <Label for="name">{m[`mods.dataTable.name`]()}</Label>
             <div class="flex flex-row items-center gap-2">
               <Input id="name" bind:value={translationName} />
               <Button disabled={!translatingLanguage || translatingLanguage.trim() === "" || isSaving} onclick={() => onSaveChangesTranslating(`name`)}>
@@ -400,27 +405,27 @@
             </div>
           </div>
           <div>
-              <Tabs.Root value="edit" class="w-full">
-                <Tabs.List class="border-b w-full">
-                  <Tabs.Trigger value="edit">Edit</Tabs.Trigger>
-                  <Tabs.Trigger value="preview">Preview</Tabs.Trigger>
-                  <Tabs.Trigger value="viewOriginal">View Original</Tabs.Trigger>
-                  <Tabs.Trigger value="viewOriginalPreview">View Original (Markdown)</Tabs.Trigger>
-                </Tabs.List>
-                <Tabs.Content value="edit">
-                  <Textarea class="w-full h-64 mt-2" bind:value={translationDescription} />
-                </Tabs.Content>
-                <Tabs.Content value="preview">
-                  <Markdown class="p-4 rounded-md bg-card mt-2" bind:markdown={translationDescription} />
-                </Tabs.Content>
-                <Tabs.Content value="viewOriginal">
-                  <Textarea class="w-full h-64 mt-2" readonly bind:value={project.description} />
-                </Tabs.Content>
-                <Tabs.Content value="viewOriginalPreview">
-                  <Markdown class="p-4 rounded-md bg-card mt-2" markdown={project.description} />
-                </Tabs.Content>
-              </Tabs.Root>
-            </div>
+            <Tabs.Root value="edit" class="w-full">
+              <Tabs.List class="border-b w-full">
+                <Tabs.Trigger value="edit">{m[`dialogs.edit`]()}</Tabs.Trigger>
+                <Tabs.Trigger value="preview">{m[`dialogs.preview`]()}</Tabs.Trigger>
+                <Tabs.Trigger value="viewOriginal">{m[`mods.translation.viewOriginal`]()}</Tabs.Trigger>
+                <Tabs.Trigger value="viewOriginalPreview">{m[`mods.translation.viewOriginalMarkdown`]()}</Tabs.Trigger>
+              </Tabs.List>
+              <Tabs.Content value="edit">
+                <Textarea class="w-full h-64 mt-2" bind:value={translationDescription} />
+              </Tabs.Content>
+              <Tabs.Content value="preview">
+                <Markdown class="p-4 rounded-md bg-card mt-2" bind:markdown={translationDescription} />
+              </Tabs.Content>
+              <Tabs.Content value="viewOriginal">
+                <Textarea class="w-full h-64 mt-2" readonly bind:value={project.description} />
+              </Tabs.Content>
+              <Tabs.Content value="viewOriginalPreview">
+                <Markdown class="p-4 rounded-md bg-card mt-2" markdown={project.description} />
+              </Tabs.Content>
+            </Tabs.Root>
+          </div>
         </div>
       {:else}
         <Markdown class="p-4 rounded-md bg-card" markdown={project.description} />

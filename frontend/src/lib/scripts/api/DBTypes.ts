@@ -11,6 +11,36 @@ export enum PlatformType {
   Patreon = "Patreon",
 }
 
+export const availableLocales: {
+  code: string;
+  name: string;
+  secret: boolean; // whether this is a secret translation that should not be advertised as available on the frontend
+  frontend: boolean; // whether this translation is used on the frontend
+  things: boolean; // whether this translation is used in mod/asset translations
+}[] = [
+  {
+    code: "en",
+    name: "English",
+    secret: false,
+    things: false,
+    frontend: true,
+  },
+  {
+    code: "ja",
+    name: "日本語", // Japanese
+    secret: false,
+    things: true,
+    frontend: false,
+  },
+  {
+    code: "keys",
+    name: "Translation Keys",
+    secret: true,
+    frontend: true,
+    things: false,
+  }
+]
+
 // #region Asset Enums
 // Changes to this enum should be made note of and checked for in translation documents if needed
 export enum AssetFileFormat {

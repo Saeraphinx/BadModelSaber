@@ -23,6 +23,7 @@
     SettingsIcon,
     SunMoonIcon,
     LanguagesIcon,
+    LinkIcon,
   } from "@lucide/svelte";
   import { MediaQuery } from "svelte/reactivity";
   import * as Popover from "$shadcn/components/ui/popover";
@@ -30,7 +31,7 @@
   import { Toaster } from "$shadcn/components/ui/sonner";
   import { toast, type ExternalToast } from "svelte-sonner";
   import { env } from "$env/dynamic/public";
-  import { UserPermissions, type AlertApiV3 } from "$lib/scripts/api/DBTypes";
+  import { UserPermissions, type AlertApiV3, availableLocales } from "$lib/scripts/api/DBTypes";
   import Separator from "$shadcn/components/ui/separator/separator.svelte";
   import { Badge } from "$shadcn/components/ui/badge";
   import * as Sheet from "$shadcn/components/ui/sheet";
@@ -241,7 +242,6 @@
   // #endregion Toasts
 
   let currentLocale = getLocale();
-  const availableLocales = [["en", "English"]];
 
   const links = [
     { href: "/", label: m["layout.navbar.home"](), target: undefined },
@@ -398,17 +398,20 @@
                   setLocale(val as Locale);
                 }}>
                 <DropdownMenu.Label>{m["layout.userMenu.language"]()}</DropdownMenu.Label>
-                {#each availableLocales as [code, name]}
-                  <DropdownMenu.RadioItem closeOnSelect={true} value={code}>{name}</DropdownMenu.RadioItem>
+                {#each availableLocales as locale}
+                  {#if locale.frontend}
+                    {#if !locale.secret || (locale.secret && checkRoles(user, [UserPermissions.Secret_Features]))}
+                      <DropdownMenu.RadioItem closeOnSelect={true} value={locale.code}>{locale.name}</DropdownMenu.RadioItem>
+                    {/if}
+                  {/if}
                 {/each}
               </DropdownMenu.RadioGroup>
             </DropdownMenu.SubContent>
           </DropdownMenu.Sub>
-          <DropdownMenu.Separator />
           {#if isLoggedIn}
             <button
               onclick={() => {
-                trpc.internal.auth.logout.mutate({}).then(() => {
+                trpc.internal.auth.logout.mutate().then(() => {
                   invalidateAll();
                 });
               }}>

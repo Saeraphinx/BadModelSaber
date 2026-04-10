@@ -1,11 +1,17 @@
 import { AfterValidate, AllowNull, Column, CreatedAt, DataType, DeletedAt, Model, Table, Unique, UpdatedAt } from "sequelize-typescript";
-import { CreationAttributes, CreationOptional, InferAttributes, InferCreationAttributes, Sequelize } from "sequelize";
+import { CreationAttributes, CreationOptional, InferAttributes, InferCreationAttributes, Op, Sequelize, WhereOptions } from "sequelize";
 import { AlertType, UserPlatform, UserApiV3, UserPermissions, PlatformType, UserPublicApiV2, dbId, userPermissionsSchema, userPlatformSchema, Status } from "../DBExtras.ts";
 import { Alert } from "./Alert.ts";
 import { Logger } from "../../Logger.ts";
 import z from "zod";
 import { Literal } from "sequelize/lib/utils";
 import { parseErrorMessage } from "../../Tools.ts";
+import { Asset } from "./Asset.ts";
+import { Version } from "./Version.ts";
+import { ThingRequest } from "./ThingRequest.ts";
+import { Translation } from "./Translation.ts";
+import { Project } from "./Project.ts";
+import sequelize from "sequelize/lib/sequelize";
 
 export const DefaultPermissions = [UserPermissions.Asset_Create, UserPermissions.Mods_Create, UserPermissions.Users_EditSelf];
 export const DefaultPermissionsObject = {
@@ -247,6 +253,74 @@ export class User extends Model<InferAttributes<User>, InferCreationAttributes<U
     // #endregion
     public static async checkIfExists(id: number): Promise<boolean> {
         return await User.findByPk(id, { attributes: ['id'] }) ? true : false;
+    }
+
+    public async migrateUserItems(newUser: User) {
+        Logger.info(`Migrating items from user ${this.id} to user ${newUser.id}`);
+        let migrationPromises = [];
+        
+        migrationPromises.push(
+            Alert.update({ userId: newUser.id }, { where: { userId: this.id } }),
+            Asset.update({ uploaderId: newUser.id }, { where: { uploaderId: this.id } }),
+            Asset.update({ collaboratorIds: Sequelize.literal(`array_replace("collaboratorIds", ${this.id}, ${newUser.id})`) }, { where: { collaboratorIds: { [Op.contains]: [this.id] } } }),
+            ThingRequest.update({ requesterId: newUser.id }, { where: { requesterId: this.id } }),
+            ThingRequest.update({ requestResponseBy: newUser.id }, { where: { requestResponseBy: this.id } }),
+            Translation.update({ translatedBy: newUser.id }, { where: { translatedBy: this.id } }),
+            Project.update({ authorIds: Sequelize.literal(`array_replace("authorIds", ${this.id}, ${newUser.id})`) }, { where: { authorIds: { [Op.contains]: [this.id] } } }),
+            Project.update({ collaboratorIds: Sequelize.literal(`array_replace("collaboratorIds", ${this.id}, ${newUser.id})`) }, { where: { collaboratorIds: { [Op.contains]: [this.id] } } }),
+            Project.update({ lastUpdatedById: newUser.id }, { where: { lastUpdatedById: this.id } }),
+            Project.update({ lastApprovedById: newUser.id }, { where: { lastApprovedById: this.id } }),
+            Version.update({ uploaderId: newUser.id }, { where: { uploaderId: this.id } }),
+            Version.update({ lastApprovedById: newUser.id }, { where: { lastApprovedById: this.id } }),
+            Version.update({ lastUpdatedById: newUser.id }, { where: { lastUpdatedById: this.id } }),
+            // update statusHistory userIds in Asset and Version
+            ThingRequest.findAll().then(requests => {
+                return Promise.all(requests.map(async request => {
+                    request.messages = request.messages.map(message => {
+                        if (message.userId === this.id) {
+                            message.userId = newUser.id;
+                        }
+                        return message;
+                    });
+                    return request.save();
+                }));
+            }),
+            Project.findAll().then(projects => {
+                return Promise.all(projects.map(async project => {
+                    project.statusHistory = project.statusHistory.map(entry => {
+                        if (entry.userId === this.id) {
+                            entry.userId = newUser.id;
+                        }
+                        return entry;
+                    });
+                    return project.save();
+                }));
+            }),
+            Asset.findAll().then(assets => {
+                return Promise.all(assets.map(async asset => {
+                    asset.statusHistory = asset.statusHistory.map(entry => {
+                        if (entry.userId === this.id) {
+                            entry.userId = newUser.id;
+                        }
+                        return entry;
+                    });
+                    return asset.save();
+                }));
+            }),
+            Version.findAll().then(versions => {
+                return Promise.all(versions.map(async version => {
+                    version.statusHistory = version.statusHistory.map(entry => {
+                        if (entry.userId === this.id) {
+                            entry.userId = newUser.id;
+                        }
+                        return entry;
+                    });
+                    return version.save();
+                }));
+            })
+        )
+
+        await Promise.all(migrationPromises);
     }
 
     public toApiV3(): UserApiV3 {

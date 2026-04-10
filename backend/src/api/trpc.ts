@@ -120,6 +120,32 @@ export function anyProcedure(): ReturnType<typeof dummyAnyLoggedIn> {
         }
     });
 }
+
+export function notLoggedInProcedure() {
+    return t.procedure.use(async ({ ctx, next }) => {
+        if (ctx.userId) {
+            let user = await User.findByPk(ctx.userId);
+            if (user) {
+                throw new TRPCError({ code: 'FORBIDDEN', message: 'You are already logged in.' });
+            } else {
+                return next({
+                    ctx: {
+                        ...ctx,
+                        user: null,
+                    }
+                });
+            }
+        } else {
+            return next({
+                ctx: {
+                    ...ctx,
+                    user: null,
+                }
+            });
+        }
+    });
+}
+
 export function loggedInProcedure(roles?: UserPermissions[] | { hasAllOf?: UserPermissions[], hasOneOf?: UserPermissions[], denied?: UserPermissions[] }): ReturnType<typeof dummyLoggedIn> {
     return t.procedure.use(async ({ ctx, next }) => {
         let user = await roleCheckLogic(ctx, roles);

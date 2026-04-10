@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { Validator } from "../../../../shared/Validator.ts";
-import { Asset, AssetInfer, User } from "../../../../shared/Database.ts";
+import { Asset, AssetInfer, Project, User } from "../../../../shared/Database.ts";
 import { Op, WhereOptions } from "sequelize";
 import { parseErrorMessage } from "../../../../shared/Tools.ts";
 import { AssetApiV3, userApiV3Schema } from "../../../../shared/database/DBExtras.ts";
@@ -18,9 +18,19 @@ export const userRouterV3 = router({
             }
         })
         .input(z.void())
-        .output(userApiV3Schema)
+        .output(z.intersection(
+            userApiV3Schema,
+            z.object({
+                githubId: z.string().nullable(),
+                discordId: z.string().nullable(),
+            })
+        ))
         .query(({ctx}) => {
-        return ctx.user.toApiV3();
+        return {
+            ...ctx.user.toApiV3(),
+            githubId: ctx.user.githubId,
+            discordId: ctx.user.discordId,
+        };
     }),
     getUserById: anyProcedure().input(z.object({
         id: z.int().positive()
@@ -78,6 +88,25 @@ export const userRouterV3 = router({
         });
         let response = await Promise.all(assets.map(asset => asset.toApiV3()));
         return { assets: response, total: assets.length, page: input.page ?? null};
+    }),
+    getModsByUserId: anyProcedure().input(z.object({
+        id: z.int().positive(),
+    })).query(async ({input, ctx}) => {
+        const user = await User.findByPk(input.id);
+        if (!user) {
+            throw new TRPCError({ code: 'NOT_FOUND', message: `User not found` });
+        }
+
+        let projects = await Project.findAll({
+            where: {
+                authorIds: {
+                    [Op.contains]: [user.id]
+                }
+            },
+            include: [{ all: true }]
+        });
+        
+        return await Promise.all(projects.filter(p => p.canView(ctx.user)).map(p => p.toApiV3()));
     })
 });
 
