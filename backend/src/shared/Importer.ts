@@ -488,6 +488,23 @@ export async function importFromBadBeatMods() {
             name: `chromapper`,
             displayName: `ChroMapper`,
             default: false,
+            categories: [
+                `Core`,
+                `Essential`,
+                `Lighting`,
+                `UI Enhancement`,
+                `Gameplay`,
+                `Multiplayer`,
+                `Cosmetic`,
+                `Leaderboard`,
+                `Practice & Training`,
+                `Tweaks & Tools`,
+                `Streaming Tools`,
+                `Text Replacement`,
+                `Editor`,
+                `Library`,
+                `Other`,
+            ],
             webhookConfig: []
         });
     } catch (error) {
