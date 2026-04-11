@@ -169,7 +169,7 @@ export class DatabaseManager {
     public loadTables() {
         Logger.debug(`Loading tables...`);
 
-        this.sequelize.query(`CREATE SEQUENCE IF NOT EXISTS global_id_seq INCREMENT BY 1 START WITH 10;`);
+        this.sequelize.query(`CREATE SEQUENCE IF NOT EXISTS global_id_seq INCREMENT BY 1 START WITH 1000;`);
         this.sequelize.addModels([
             User,
             Asset,

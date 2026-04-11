@@ -18,10 +18,10 @@ type modelsaberasset = {
     [key: string]: AssetPublicAPIv2;
 }
 
-const totalBeatmodsMods = 100; // set this to the total number of mods on BeatMods to get accurate progress reporting. Currently set to 0 to avoid accidentally hitting the BeatMods API during testing.
+const totalBeatmodsMods = 440; // set this to the total number of mods on BeatMods to get accurate progress reporting. Currently set to 0 to avoid accidentally hitting the BeatMods API during testing.
 //const doModDownload = false; // set to true to download mod files from BeatMods, useful for testing the import process but not recommended for full imports due to the large number of mods and potential rate limits. Currently set to false to avoid accidentally hitting the BeatMods API during testing.
-const doThumbnailDownload = false;
-const doDecompile = false; // set to true to decompile mod files during import, which can help preserve metadata for mods that don't include a manifest but will significantly increase the time it takes to import each mod. Currently set to false to speed up testing.
+const doThumbnailDownload = true;
+const doDecompile = true; // set to true to decompile mod files during import, which can help preserve metadata for mods that don't include a manifest but will significantly increase the time it takes to import each mod. Currently set to false to speed up testing.
 const hashType = `md5`;
 const conversionStorage = `./storage/converts`;
 const doAssetDownload = true; // set to false to skip downloading assets, useful for testing
@@ -36,7 +36,6 @@ export async function importFromOldModelSaber(sendMessage: (messaage: string, ty
     }
     const discordRest = new REST({ version: '10' }).setToken(EnvConfig.auth.discord.token);
     const importerUser = await User.create({
-        id: 4,
         username: `ModelSaber Importer`,
         displayName: `ModelSaber Importer`,
         avatarUrl: `https://cdn.discordapp.com/embed/avatars/6.png`,
@@ -416,7 +415,6 @@ export async function importFromBadBeatMods() {
     let startTime = Date.now();
     let totalStartTime = startTime;
     const importerUser = await User.create({
-        id: 3,
         username: `BeatMods Import`,
         displayName: `BeatMods Importer`,
         avatarUrl: `https://cdn.discordapp.com/embed/avatars/6.png`,
@@ -501,11 +499,17 @@ export async function importFromBadBeatMods() {
         return;
     }
 
-    // while id love to keep the IDs, theres a built in 10 ids that are saved for testing/importer accounts/other uses that will just cause everything else to be offset, so we gotta just use the automatic ones
     Logger.log(`Creating projects...`);
     const newUsers: Map<number, User> = new Map();
     let promises: Promise<void>[] = [];
+    let specialIdCounter = totalBeatmodsMods + 1;
     for (const { mod, versions } of mods) {
+        let idToUse = mod.id;
+        if (mod.id === 143 || mod.id === 5 || mod.id === 69 /* for pink */) {
+            let idToUse = specialIdCounter;
+            Logger.debug(`Assigning special ID ${specialIdCounter} to mod ${mod.id} (${mod.name})`);
+            specialIdCounter++;
+        }
 
         for (const author of mod.authors) {
             let user = await getNewUserFromOldUser(author);
@@ -518,10 +522,11 @@ export async function importFromBadBeatMods() {
         }
 
         if (z.url().safeParse(mod.gitUrl).success === false) {
-            mod.gitUrl = `https://beatmods.com/mod/${mod.id}`;
+            mod.gitUrl = `https://beatmods.com/mod/${idToUse}`;
         }
 
         promises.push(Project.create({
+            id: idToUse,
             name: mod.name,
             nameId: mod.name, // previously nameid was enforecd to just be the same
             authorIds: mod.authors.map(a => newUsers.get(a.id)?.id || 6),
@@ -543,7 +548,6 @@ export async function importFromBadBeatMods() {
             status: mod.status as Status,
             lastApprovedById: mod.status === Status.Verified ? importerUser.id : undefined,
         }).then(async project => {
-            ;
             newProjects.set(mod.id, project);
             fs.mkdirSync(project.folderPath, { recursive: true });
         }));
@@ -555,7 +559,34 @@ export async function importFromBadBeatMods() {
         Logger.error(`Failed to import projects: ${err}`);
     });
 
+    // download icons
+    Logger.log(`Downloading icons for projects...`);
+    startTime = Date.now();
+    for (let project of newProjects.values()) {
+        if (project.iconFileName && project.iconFileName === `default_beatsaber.png` || project.iconFileName === `default_chromapper.png`) {
+            continue;
+        }
+        await new Promise(resolve => setTimeout(resolve, 300)); // small delay to avoid ratelimit
+        await fetch(`https://beatmods.com/cdn/icon/${project.iconFileName}`).then(res => {
+            if (!res.ok) {
+                Logger.error(`Failed to download icon for project ${project.id} (${project.name}): ${res.statusText}`);
+                return null;
+            }
+            return res.arrayBuffer();
+        }).then(arrayBuffer => {
+            if (!arrayBuffer) {
+                return;
+            }
+            
+            fs.writeFileSync(path.join(project.folderPath, project.iconFileName), Buffer.from(arrayBuffer));
+        }).catch(err => {
+            Logger.error(`Failed to download icon for project ${project.id} (${project.name}): ${err}`);
+        });
+    }
+    Logger.log(`Finished downloading icons for projects. Time taken: ${Date.now() - startTime}ms`);
 
+    // import versions
+    Logger.log(`Importing versions for mods...`);
     startTime = Date.now();
     for (const { mod, versions } of mods) {
         const project = newProjects.get(mod.id);

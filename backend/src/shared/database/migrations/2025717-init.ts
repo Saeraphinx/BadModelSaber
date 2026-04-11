@@ -10,7 +10,7 @@ import { Migration, Status } from "../../Database.ts";
 export const up: Migration = async ({ context: db }) => {
     const queryInterface = db.sequelize.getQueryInterface();
 
-    await db.sequelize.query(`CREATE SEQUENCE IF NOT EXISTS global_id_seq INCREMENT BY 1 START WITH 10;`);
+    await db.sequelize.query(`CREATE SEQUENCE IF NOT EXISTS global_id_seq INCREMENT BY 1 START WITH 1000;`);
 
 
     // user goes first since theres a lot linking to this table

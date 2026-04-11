@@ -30,7 +30,8 @@ export function getOneClickUrl(asset: AssetApiV3): string {
       break;
   }
 
-  return `${baseUrl}${modelType}/${asset.id}/${asset.fileSafeName}.${asset.type.split("_")[1]}`;
+  // fix this
+  return `${baseUrl}${modelType}/${asset.id}/${asset.name}.${asset.type.split("_")[1]}`;
 }
 
 export function getProjectThumbnailUrl(project: ProjectApiV3): string {
@@ -62,11 +63,16 @@ export function createTRPC(svelteFetch: typeof fetch = fetch) {
 
   // this is to both make sure that the cookies are included in the request and that readablestream doesn't get locked
   const safeFetch = async (input: RequestInfo | URL, init?: RequestInit) => {
-    const response = await svelteFetch(input, {
-      ...init,
-      credentials: 'include',
-    });
-    return response.clone();
+    if (env.PUBLIC_API_URL.startsWith(env.PUBLIC_BASE_URL)) {
+      const request = await svelteFetch(input, init);
+      return request.clone();
+    } else {
+      const response = await svelteFetch(input, {
+        ...init,
+        credentials: 'include',
+      });
+      return response.clone();
+    }
   };
 
   return createTRPCClient<AppRouter>({
