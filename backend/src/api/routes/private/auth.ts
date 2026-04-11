@@ -54,7 +54,7 @@ export const authRouter = router({
                 client_id: EnvConfig.auth.discord.clientId,
                 redirect_uri: `${EnvConfig.server.backendUrl}/api/auth/discord/callback`,
                 response_type: 'code',
-                scope: 'identify+guilds.members.read',
+                scope: 'identify guilds.members.read',
                 state: state,
                 prompt: 'none',
             })
@@ -378,7 +378,7 @@ export const authRouter = router({
                 client_id: EnvConfig.auth.discord.clientId,
                 redirect_uri: `${EnvConfig.server.backendUrl}/api/auth/discord/link/callback`,
                 response_type: 'code',
-                scope: 'identify+guilds.members.read',
+                scope: 'identify guilds.members.read',
                 state: state,
                 prompt: 'none',
             })
