@@ -503,7 +503,7 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
         // decompile dll with difflux
         Logger.debug(`Decompiling dll for version id ${this.id} at path ${dllFilePath} (prep ${startTime - Date.now()}ms)...`);
         await decompile({ assemblyPath: dllFilePath }, path.join(this.versionFolderPath, `decompiled`));
-        Logger.info(`Decompilation completed for version id ${this.id}. Decompiled files saved to ${path.join(this.versionFolderPath, `decompiled`)}. Total Time: ${startTime - Date.now()}ms`);
+        Logger.info(`Decompilation completed for version id ${this.id}. Decompiled files saved to ${path.join(this.versionFolderPath, `decompiled`)}. Total Time: ${(Date.now() - startTime) / 1000}s`);
     }
     // #endregion
     // #region ToAPI
