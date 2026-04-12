@@ -477,7 +477,7 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
         }
         // get dll out of zip
         Logger.debug(`Starting decomp for version id ${this.id}. Extracting dll from zip...`);
-        let zipFile = fs.readFileSync((await this.zipFilePath));
+        let zipFile = fs.readFileSync(this.zipFilePath);
         let zip = await JSZip.loadAsync(zipFile);
         let zipDllFile: JSZip.JSZipObject | null = null;
         try {
@@ -498,6 +498,8 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
         // write dll to file for decompilation & future diffing
         let dllFilePath = this.dllFilePath;
         let dllFile = fs.writeFileSync(dllFilePath, dllData);
+        // @ts-expect-error
+        dllData = null; // free up memory
         // decompile dll with difflux
         Logger.debug(`Decompiling dll for version id ${this.id} at path ${dllFilePath} (prep ${startTime - Date.now()}ms)...`);
         await decompile({ assemblyPath: dllFilePath }, path.join(this.versionFolderPath, `decompiled`));

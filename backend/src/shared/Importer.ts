@@ -23,6 +23,7 @@ const totalBeatmodsMods = 440; // set this to the total number of mods on BeatMo
 //const doModDownload = false; // set to true to download mod files from BeatMods, useful for testing the import process but not recommended for full imports due to the large number of mods and potential rate limits. Currently set to false to avoid accidentally hitting the BeatMods API during testing.
 const doThumbnailDownload = true;
 const doDecompile = true; // set to true to decompile mod files during import, which can help preserve metadata for mods that don't include a manifest but will significantly increase the time it takes to import each mod. Currently set to false to speed up testing.
+const doParallelModProcessing = true; // set to true to process multiple mods in parallel, which can significantly decrease the time it takes to import all mods but may cause issues with resource usage. Currently set to true to speed up testing.
 const hashType = `md5`;
 const conversionStorage = `./storage/converts`;
 const doAssetDownload = true; // set to false to skip downloading assets, useful for testing
@@ -578,30 +579,33 @@ export async function importFromBadBeatMods() {
     });
 
     // download icons
-    Logger.log(`Downloading icons for projects...`);
-    startTime = Date.now();
-    for (let project of newProjects.values()) {
-        if (project.iconFileName && project.iconFileName === `default_beatsaber.png` || project.iconFileName === `default_chromapper.png`) {
-            continue;
+    if (doThumbnailDownload) {
+        Logger.log(`Downloading icons for projects...`);
+        startTime = Date.now();
+        for (let project of newProjects.values()) {
+            if (project.iconFileName && project.iconFileName === `default_beatsaber.png` || project.iconFileName === `default_chromapper.png`) {
+                continue;
+            }
+            await new Promise(resolve => setTimeout(resolve, 300)); // small delay to avoid ratelimit
+            Logger.debug(`Downloading icon for project ${project.id} (${project.name})...`);
+            await fetch(`https://beatmods.com/cdn/icon/${project.iconFileName}`).then(res => {
+                if (!res.ok) {
+                    Logger.error(`Failed to download icon for project ${project.id} (${project.name}): ${res.statusText}`);
+                    return null;
+                }
+                return res.arrayBuffer();
+            }).then(arrayBuffer => {
+                if (!arrayBuffer) {
+                    return;
+                }
+
+                fs.writeFileSync(path.join(project.folderPath, project.iconFileName), Buffer.from(arrayBuffer));
+            }).catch(err => {
+                Logger.error(`Failed to download icon for project ${project.id} (${project.name}): ${err}`);
+            });
         }
-        await new Promise(resolve => setTimeout(resolve, 300)); // small delay to avoid ratelimit
-        await fetch(`https://beatmods.com/cdn/icon/${project.iconFileName}`).then(res => {
-            if (!res.ok) {
-                Logger.error(`Failed to download icon for project ${project.id} (${project.name}): ${res.statusText}`);
-                return null;
-            }
-            return res.arrayBuffer();
-        }).then(arrayBuffer => {
-            if (!arrayBuffer) {
-                return;
-            }
-            
-            fs.writeFileSync(path.join(project.folderPath, project.iconFileName), Buffer.from(arrayBuffer));
-        }).catch(err => {
-            Logger.error(`Failed to download icon for project ${project.id} (${project.name}): ${err}`);
-        });
+        Logger.log(`Finished downloading icons for projects. Time taken: ${Date.now() - startTime}ms`);
     }
-    Logger.log(`Finished downloading icons for projects. Time taken: ${Date.now() - startTime}ms`);
 
     // import versions
     Logger.log(`Importing versions for mods...`);
@@ -706,12 +710,14 @@ export async function importFromBadBeatMods() {
                 continue;
             }
 
-            zipParsingPromises.push(getManifestFromZip(zipBuffer, null/*, Logger*/).then(m => {;
+            zipParsingPromises.push(getManifestFromZip(zipBuffer, null/*, Logger*/).then(m => {
                 fs.writeFileSync(path.join(version.versionFolderPath, version.manifestName), JSON.stringify(m));
+                // @ts-expect-error
+                zipBuffer = null; // free up memory
             }).catch(err => {
                 Logger.error(`Failed to extract manifest from zip for version ${version.id} of mod ${mod.id} (${mod.name}): ${err}`);
             }));
-            
+
             if (doDecompile && project.name !== `BSIPA`) {
                 zipParsingPromises.push(version.dotnetDecompile().then(() => {
                     Logger.debug(`Finished decompilation for version ${version.id} of mod ${mod.id} (${mod.name} ${version.semver.raw})`);
@@ -719,11 +725,17 @@ export async function importFromBadBeatMods() {
                     Logger.error(`Failed to decompile DLL for version ${version.id} of mod ${mod.id} (${mod.name} ${version.semver.raw}): ${err}`);
                 }));
             }
+            if (!doParallelModProcessing) {
+                await Promise.all(zipParsingPromises).catch(err => {
+                    Logger.error(`Failed to process zip for version ${version.id} of mod ${mod.id} (${mod.name}): ${err}`);
+                });
+                zipParsingPromises = [];
+            }
             await new Promise(resolve => setTimeout(resolve, 400)); // wait a bit for ratelimits
         }
         Logger.debug(`File processing started for all versions of mod ${mod.id} (${mod.name}), (time: ${Date.now() - startTime}ms)`);
         await limitConcurrency(zipParsingPromises, availableParallelism()).then(() => {
-            Logger.log(`Finished processing files for all versions of all mods. Total time: ${Date.now() - startTime}ms`);
+            Logger.log(`Finished processing files for all versions of mod ${mod.id} (${mod.name}). Total time: ${Date.now() - startTime}ms`);
         }).catch(err => {
             Logger.error(`Failed to process files for versions of mods: ${err}`);
         });
@@ -777,20 +789,20 @@ function translateBeatModsCategory(modName: string, category: string): string {
 }
 
 async function limitConcurrency(tasks: Promise<any>[], concurrency: number): Promise<any[]> {
-  const results: any[] = [];
-  const queue = [...tasks];
+    const results: any[] = [];
+    const queue = [...tasks];
 
-  async function worker() {
-    while (queue.length > 0) {
-      const task = queue.shift();
-      if (!task) {
-        continue; // skip if task is undefined
-      }
-      results.push(await task);
+    async function worker() {
+        while (queue.length > 0) {
+            const task = queue.pop();
+            if (!task) {
+                continue; // skip if task is undefined
+            }
+            results.push(await task);
+        }
     }
-  }
 
-  // Start the specified number of parallel workers
-  await Promise.all(Array.from({ length: concurrency }, worker));
-  return results;
+    // Start the specified number of parallel workers
+    await Promise.all(Array.from({ length: concurrency }, worker));
+    return results;
 }
