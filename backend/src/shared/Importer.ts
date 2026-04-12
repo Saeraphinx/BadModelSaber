@@ -13,6 +13,7 @@ import { APIUser, REST, Routes } from "discord.js";
 import { SemVer } from "semver";
 import { getManifestFromZip } from "./ModParser.ts";
 import z from "zod";
+import { availableParallelism } from "os";
 
 type modelsaberasset = {
     [key: string]: AssetPublicAPIv2;
@@ -721,8 +722,12 @@ export async function importFromBadBeatMods() {
             await new Promise(resolve => setTimeout(resolve, 400)); // wait a bit for ratelimits
         }
         Logger.debug(`File processing started for all versions of mod ${mod.id} (${mod.name}), (time: ${Date.now() - startTime}ms)`);
+        limitConcurrency(zipParsingPromises, availableParallelism()).then(() => {
+            Logger.log(`Finished processing files for all versions of all mods. Total time: ${Date.now() - startTime}ms`);
+        }).catch(err => {
+            Logger.error(`Failed to process files for versions of mods: ${err}`);
+        });
     }
-    await Promise.allSettled(promises);
     Logger.log(`Finished importing ${totalBeatmodsMods} mods from BeatMods.`);
     Logger.log(`Total time: ${Date.now() - totalStartTime}ms`);
 }
@@ -769,4 +774,23 @@ function translateBeatModsCategory(modName: string, category: string): string {
             // capitalize first letter
             return capitalizeWords(category);
     }
+}
+
+async function limitConcurrency(tasks: Promise<any>[], concurrency: number): Promise<any[]> {
+  const results: any[] = [];
+  const queue = [...tasks];
+
+  async function worker() {
+    while (queue.length > 0) {
+      const task = queue.shift();
+      if (!task) {
+        continue; // skip if task is undefined
+      }
+      results.push(await task);
+    }
+  }
+
+  // Start the specified number of parallel workers
+  await Promise.all(Array.from({ length: concurrency }, worker));
+  return results;
 }
