@@ -218,7 +218,7 @@ export async function importFromOldModelSaber(sendMessage: (messaage: string, ty
             // #endregion
 
             // #region user
-            let user = await User.findByPk(asset.discordid).then(async u => {
+            let user = await User.findOne({ where: { discordId : asset.discordid }}).then(async u => {
                 if (!u && asset.discordid) {
                     // create user
                     if (asset.discordid === `-1`) {
