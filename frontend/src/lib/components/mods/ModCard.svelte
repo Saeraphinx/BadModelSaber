@@ -1,7 +1,7 @@
 <script lang="ts">
   import { m } from "$lib/paraglide/messages";
   import type { ProjectApiV3, VersionApiV3 } from "$lib/scripts/api/DBTypes";
-  import { getVersionDownloadUrl } from "$lib/scripts/utils/api";
+  import { getProjectThumbnailUrl, getVersionDownloadUrl } from "$lib/scripts/utils/api";
   import Button from "$shadcn/components/ui/button/button.svelte";
   import type { HTMLAttributes } from "svelte/elements";
   import DownloadButton from "../generic/DownloadButton.svelte";
@@ -23,7 +23,7 @@
 
 <div class={cn("flex flex-col w-xs h-56 gap-2 bg-card rounded-lg p-4", className)} {...restProps}>
   <div class="flex flex-row gap-2 items-center">
-    <img class="h-16 w-16" alt="icon for {project.name}" src={project.iconFileName} />
+    <img class="h-16 w-16" alt="icon for {project.name}" src={getProjectThumbnailUrl(project)} />
     <div class="flex flex-col gap-1">
       <span class="flex flex-row items-end gap-1">
         <a href="/mods/{project.id}" class="text-lg" aria-hidden="true">{project.name}</a>
