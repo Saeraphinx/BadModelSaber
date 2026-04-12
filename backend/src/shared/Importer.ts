@@ -684,7 +684,7 @@ export async function importFromBadBeatMods() {
         });
 
         Logger.log(`Starting file processing for versions of mod ${mod.id} (${mod.name})...`);
-        let zipParsingPromises: Promise<void>[] = [];
+        let zipParsingPromises: (() => Promise<void>)[] = [];
         for (const version of awaitedVersions) {
             Logger.debug(`Downloading and processing files for version ${version.id} of mod ${mod.id} (${mod.name} ${version.semver.raw})...`);
             // download files & process dlls
@@ -710,20 +710,24 @@ export async function importFromBadBeatMods() {
                 continue;
             }
 
-            zipParsingPromises.push(getManifestFromZip(zipBuffer, null/*, Logger*/).then(m => {
-                fs.writeFileSync(path.join(version.versionFolderPath, version.manifestName), JSON.stringify(m));
-                // @ts-expect-error
-                zipBuffer = null; // free up memory
-            }).catch(err => {
-                Logger.error(`Failed to extract manifest from zip for version ${version.id} of mod ${mod.id} (${mod.name}): ${err}`);
-            }));
+            zipParsingPromises.push(async () => {
+                await getManifestFromZip(zipBuffer!, null/*, Logger*/).then(m => {
+                    fs.writeFileSync(path.join(version.versionFolderPath, version.manifestName), JSON.stringify(m));
+                    // @ts-expect-error
+                    zipBuffer = null; // free up memory
+                }).catch(err => {
+                    Logger.error(`Failed to extract manifest from zip for version ${version.id} of mod ${mod.id} (${mod.name}): ${err}`);
+                })
+            });
 
             if (doDecompile && project.name !== `BSIPA`) {
-                zipParsingPromises.push(version.dotnetDecompile().then(() => {
-                    Logger.debug(`Finished decompilation for version ${version.id} of mod ${mod.id} (${mod.name} ${version.semver.raw})`);
-                }).catch(err => {
-                    Logger.error(`Failed to decompile DLL for version ${version.id} of mod ${mod.id} (${mod.name} ${version.semver.raw}): ${err}`);
-                }));
+                zipParsingPromises.push(async () => {
+                    await version.dotnetDecompile().then(() => {
+                        Logger.debug(`Finished decompilation for version ${version.id} of mod ${mod.id} (${mod.name} ${version.semver.raw})`);
+                    }).catch(err => {
+                        Logger.error(`Failed to decompile DLL for version ${version.id} of mod ${mod.id} (${mod.name} ${version.semver.raw}): ${err}`);
+                    })
+                });
             }
             if (!doParallelModProcessing) {
                 await Promise.all(zipParsingPromises).catch(err => {
@@ -758,7 +762,17 @@ async function getNewUserFromOldUser(user: UserPublicApiV2): Promise<User> {
             bio: user.bio,
             createdAt: user.createdAt
         }
-    }).then(result => result[0]);
+    }).then(result => {
+        if (result[1]) {
+            Logger.debug(`Created new user ${user.username} from old user data.`);
+            result[0].createAlert({
+                type: AlertType.Generic,
+                header: `BeatMods Account Imported`,
+                message: `Hi ${result[0].displayName}! Your account has been imported from the old BeatMods. If you notice any of your mods missing, please contact us and we will add them back to your profile.`,
+            });
+        }
+        return result[0]
+    });
 }
 
 function translateBeatModsCategory(modName: string, category: string): string {
@@ -788,7 +802,7 @@ function translateBeatModsCategory(modName: string, category: string): string {
     }
 }
 
-async function limitConcurrency(tasks: Promise<any>[], concurrency: number): Promise<any[]> {
+async function limitConcurrency(tasks: (() => Promise<any>)[], concurrency: number): Promise<any[]> {
     const results: any[] = [];
     const queue = [...tasks];
 
@@ -798,7 +812,7 @@ async function limitConcurrency(tasks: Promise<any>[], concurrency: number): Pro
             if (!task) {
                 continue; // skip if task is undefined
             }
-            results.push(await task);
+            results.push(await task());
         }
     }
 
