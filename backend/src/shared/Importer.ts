@@ -722,7 +722,7 @@ export async function importFromBadBeatMods() {
             await new Promise(resolve => setTimeout(resolve, 400)); // wait a bit for ratelimits
         }
         Logger.debug(`File processing started for all versions of mod ${mod.id} (${mod.name}), (time: ${Date.now() - startTime}ms)`);
-        limitConcurrency(zipParsingPromises, availableParallelism()).then(() => {
+        await limitConcurrency(zipParsingPromises, availableParallelism()).then(() => {
             Logger.log(`Finished processing files for all versions of all mods. Total time: ${Date.now() - startTime}ms`);
         }).catch(err => {
             Logger.error(`Failed to process files for versions of mods: ${err}`);
