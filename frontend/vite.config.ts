@@ -11,8 +11,9 @@ export default defineConfig({
       strategy: [`localStorage`, `preferredLanguage`, `url`, `baseLocale`]
     }),
     tailwindcss(), 
-    sveltekit()],
+    sveltekit()
+  ],
   preview: {
-    allowedHosts: [`bms.saera.gay`]
+    allowedHosts: [`bms.saera.gay`],
   }
 });

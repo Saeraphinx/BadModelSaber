@@ -1,6 +1,6 @@
 import { error } from "@sveltejs/kit";
 import type { PageLoad } from "./$types";
-import { handleTrpcError } from "../../../lib/scripts/utils/api";
+import { handleTrpcError } from "$lib/scripts/utils/api";
 
 //export const ssr = false;
 export const load: PageLoad = async ({ parent, params }) => {

@@ -11,11 +11,14 @@
   import Label from "$shadcn/components/ui/label/label.svelte";
   import * as Select from "$shadcn/components/ui/select";
   import Skeleton from "$shadcn/components/ui/skeleton/skeleton.svelte";
-  import { ChevronRightIcon } from "@lucide/svelte";
+  import { ChevronRightIcon, FunnelIcon } from "@lucide/svelte";
   import { onMount } from "svelte";
+  import { MediaQuery } from "svelte/reactivity";
+  import { Button } from "../../lib/shadcn/components/ui/button";
 
   const { data: _internal } = $props();
   const { pageData, trpc } = $derived(_internal);
+  let tooSmall = new MediaQuery("max-width: 768px");
 
   let isLoading = $state(true);
   const games = $derived(pageData.games);
@@ -26,10 +29,11 @@
   let selectedGameVersion = $derived.by(() => gameVerisions.find((v) => v.id === parseInt(selectedGameVersionId)));
 
   let isFilterStatusVisible = $state(true);
+  let isFilterCategoryVisible = $state(true);
   let searchEngine = $state<ReturnType<typeof generateProjectSearchEngine>>();
   let searchQuery = $state("");
   let currentPage = $state(1);
-  let pageSize = $state(10);
+  let pageSize = $state(20);
   // svelte-ignore non_reactive_update
   let totalUnfilteredSize = $derived(searchEngine?.mods.size || -1);
   let selectedStatuses = $state<Status[]>([Status.Verified]);
@@ -85,7 +89,15 @@
 
 {#snippet searchFilter()}
   <div class="flex flex-col bg-card gap-2 p-4 rounded-md">
-    <Input bind:value={searchQuery} placeholder="Search..." />
+    <div class="flex flex-row w-full gap-2">
+      <Input bind:value={searchQuery} placeholder="Search..." />
+      {#if tooSmall.current}
+        <Button variant="outline">
+          <FunnelIcon class="h-4 w-4" />
+          <span class="sr-only">{m["search.showFilters"]()}</span>
+        </Button>
+      {/if}
+    </div>
     <div class="flex flex-col justify-center items-center">
       <MiniPagination bind:totalCount={totalSize} bind:selectedPageSize={pageSize} bind:currentPage={currentPage} />
       <p class="text-sm text-muted-foreground">{totalUnfilteredSize} total mods</p>
@@ -126,7 +138,7 @@
   <Collapsible.Root bind:open={isFilterStatusVisible}>
     <div class="flex flex-col bg-card rounded-md min-w-60 w-full py-2 px-4">
       <Collapsible.Trigger class="flex items-center justify-between w-full">
-        <span class="text-lg font-semibold">{m["assets.dataTable.status"]()}</span>
+        <span class="text-lg font-semibold">{m["mods.dataTable.status"]()}</span>
         <ChevronRightIcon class="h-4 w-4 transition-transform {isFilterStatusVisible ? `rotate-90` : ``}" />
       </Collapsible.Trigger>
       <Collapsible.Content class="my-2">
@@ -153,10 +165,10 @@
 {/snippet}
 
 {#snippet categoryFilter()}
-  <Collapsible.Root bind:open={isFilterStatusVisible}>
+  <Collapsible.Root bind:open={isFilterCategoryVisible}>
     <div class="flex flex-col bg-card rounded-md min-w-60 w-full py-2 px-4">
       <Collapsible.Trigger class="flex items-center justify-between w-full">
-        <span class="text-lg font-semibold">{m["assets.dataTable.status"]()}</span>
+        <span class="text-lg font-semibold">{m["mods.dataTable.category"]()}</span>
         <ChevronRightIcon class="h-4 w-4 transition-transform {isFilterStatusVisible ? `rotate-90` : ``}" />
       </Collapsible.Trigger>
       <Collapsible.Content class="my-2">
@@ -182,14 +194,21 @@
   </Collapsible.Root>
 {/snippet}
 
-<div class="flex flex-row not-sm:flex-col gap-4 m-auto max-w-[95%]">
+<div class="flex flex-row not-sm:flex-col gap-4 m-auto max-w-[95%] not-sm:mb-4">
   <!-- left filter/search bar -->
-  <div class="flex flex-col w-64 gap-2">
-    {@render gameFilter()}
-    {@render searchFilter()}
-    {@render statusFilter()}
-    {@render categoryFilter()}
-  </div>
+  {#if !tooSmall.current}
+    <div class="flex flex-col w-64 gap-2">
+      {@render gameFilter()}
+      {@render searchFilter()}
+      {@render statusFilter()}
+      {@render categoryFilter()}
+    </div>
+  {:else}
+    <div class="flex flex-col w-full gap-2">
+      {@render gameFilter()}
+      {@render searchFilter()}
+    </div>
+  {/if}
   <!-- right content area -->
   <div class="flex-1 gap-4 flex flex-row flex-wrap items-center-safe justify-center-safe">
     {#if !isLoading}
@@ -201,6 +220,10 @@
         <Skeleton class="w-sm h-48 rounded-md" />
       {/each}
     {/if}
-
   </div>
+  {#if tooSmall.current}
+    <div class="flex flex-col w-full gap-2">
+      {@render searchFilter()}
+    </div>
+  {/if}
 </div>

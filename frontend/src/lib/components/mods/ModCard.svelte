@@ -7,6 +7,8 @@
   import DownloadButton from "../generic/DownloadButton.svelte";
   import { cn } from "$shadcn/utils";
   import UserBadge from "../users/UserBadge.svelte";
+  import StatusHoverCard from "../generic/StatusHoverCard.svelte";
+  import { Badge } from "../../shadcn/components/ui/badge";
 
   const {
     project,
@@ -21,14 +23,21 @@
   } & HTMLAttributes<HTMLDivElement> = $props();
 </script>
 
-<div class={cn("flex flex-col w-xs h-56 gap-2 bg-card rounded-lg p-4", className)} {...restProps}>
+<div class={cn("flex flex-col w-xs h-64 gap-2 bg-card rounded-lg p-4", className)} {...restProps}>
   <div class="flex flex-row gap-2 items-center">
-    <img class="h-16 w-16" alt="icon for {project.name}" src={getProjectThumbnailUrl(project)} />
+    <div class="flex flex-col gap-1">
+      <img class="h-16 w-16" alt="icon for {project.name}" src={getProjectThumbnailUrl(project)} />
+      <StatusHoverCard status={version?.status || project.status}>
+        <Badge variant={version?.status ? `outline` : `default`} class="capitalize text-xs">{version ? version.status : project.status}</Badge>
+      </StatusHoverCard>
+    </div>
     <div class="flex flex-col gap-1">
       <span class="flex flex-row items-end gap-1">
-        <a href="/mods/{project.id}" class="text-lg" aria-hidden="true">{project.name}</a>
+        <a href="/mods/{project.id}" class="text-lg" aria-hidden="true">
+          {project.name}
+          <p class="text-xs text-muted-foreground pb-1">v{version?.semver}</p>
+        </a>
         <p class="text-lg sr-only">{project.name}</p>
-        <p class="text-xs text-muted-foreground pb-1">v{version?.semver}</p>
       </span>
       <span class="flex flex-row gap-1">
         {#each project.authors as author}

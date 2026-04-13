@@ -27,7 +27,7 @@ export class Validator {
             case AssetFileFormat.HealthBar_Energy:
                 return file.type === `application/octet-stream` && file.name.endsWith(`.${typeFileExtension}`);
             // Quest/PC assets
-            case AssetFileFormat.Saber_Wacker:
+            case AssetFileFormat.Saber_Whacker:
             case AssetFileFormat.Note_Cyoob:
             case AssetFileFormat.Wall_Box:
                 return (file.type === `application/zip` || file.type === `application/x-zip-compressed`) && file.name.endsWith(`.${typeFileExtension}`);
@@ -66,7 +66,7 @@ export class Validator {
                     return { valid: false, reason: "Invalid Unity asset bundle file." };
                 }
             // Zip files
-            case AssetFileFormat.Saber_Wacker:
+            case AssetFileFormat.Saber_Whacker:
             case AssetFileFormat.Note_Cyoob:
             case AssetFileFormat.Wall_Box:
                 // open the file as a zip and check the manifest file exists

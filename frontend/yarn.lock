@@ -1345,6 +1345,13 @@ rollup@^4.34.9:
     "@rollup/rollup-win32-x64-msvc" "4.59.0"
     fsevents "~2.3.2"
 
+runed@^0.23.2:
+  version "0.23.4"
+  resolved "https://registry.yarnpkg.com/runed/-/runed-0.23.4.tgz#0b68fd24434e65dd8cbd9f7072521d6f5f409eba"
+  integrity sha512-9q8oUiBYeXIDLWNK5DfCWlkL0EW3oGbk845VdKlPeia28l751VpfesaB/+7pI6rnbx1I6rqoZ2fZxptOJLxILA==
+  dependencies:
+    esm-env "^1.0.0"
+
 runed@^0.28.0:
   version "0.28.0"
   resolved "https://registry.yarnpkg.com/runed/-/runed-0.28.0.tgz#68e2ec076ae921f5e7ca0ebaa37e9f6598775c3c"
@@ -1462,6 +1469,15 @@ svelte-toolbelt@^0.10.6:
   dependencies:
     clsx "^2.1.1"
     runed "^0.35.1"
+    style-to-object "^1.0.8"
+
+svelte-toolbelt@^0.7.1:
+  version "0.7.1"
+  resolved "https://registry.yarnpkg.com/svelte-toolbelt/-/svelte-toolbelt-0.7.1.tgz#63e9c6629456a1a0dd57812f85426e4631fd754e"
+  integrity sha512-HcBOcR17Vx9bjaOceUvxkY3nGmbBmCBBbuWLLEWO6jtmWH8f/QoWmbyUfQZrpDINH39en1b8mptfPQT9VKQ1xQ==
+  dependencies:
+    clsx "^2.1.1"
+    runed "^0.23.2"
     style-to-object "^1.0.8"
 
 svelte@^5.9.0:
@@ -1599,6 +1615,14 @@ uuid@^10.0.0:
   version "10.0.0"
   resolved "https://registry.yarnpkg.com/uuid/-/uuid-10.0.0.tgz#5a95aa454e6e002725c79055fd42aaba30ca6294"
   integrity sha512-8XkAphELsDnEGrDxUOHB3RGvXz6TeuYSGEZBOjtTtPm2lwhGBjLgOzLHB63IUWfBpNucQjND6d3AOudO+H3RWQ==
+
+vaul-svelte@^1.0.0-next.7:
+  version "1.0.0-next.7"
+  resolved "https://registry.yarnpkg.com/vaul-svelte/-/vaul-svelte-1.0.0-next.7.tgz#cb498c8143fd419a0c3fd5e3c2a6ba2ecff21884"
+  integrity sha512-7zN7Bi3dFQixvvbUJY9uGDe7Ws/dGZeBQR2pXdXmzQiakjrxBvWo0QrmsX3HK+VH+SZOltz378cmgmCS9f9rSg==
+  dependencies:
+    runed "^0.23.2"
+    svelte-toolbelt "^0.7.1"
 
 vite@^6.2.6:
   version "6.4.1"

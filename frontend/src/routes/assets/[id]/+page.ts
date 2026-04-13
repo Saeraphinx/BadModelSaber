@@ -1,6 +1,6 @@
 import { error } from '@sveltejs/kit';
 import type { PageLoad } from './$types';
-import { handleTrpcError, parseTRPCError } from '../../../lib/scripts/utils/api';
+import { handleTrpcError, parseTRPCError } from '$lib/scripts/utils/api';
 
 export const load = (async ({ fetch, params, parent }) => {
   let id = parseInt(params.id, 10);

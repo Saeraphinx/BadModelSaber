@@ -1,6 +1,6 @@
 import { Logger } from "../../../../shared/Logger.ts";
 import { GameVersion, GameVersionWhereOptions, Project, ProjectApiV3, projectApiV3Schema, Status, User, Version, versionApiV3Schema } from "../../../../shared/Database.ts";
-import { anyProcedure, gameProcedure, router } from "../../../trpc.ts";
+import { anyGameProcedure, anyProcedure, gameProcedure, router } from "../../../trpc.ts";
 import z from "zod/v4";
 import { TRPCError } from "@trpc/server";
 import { Op } from "sequelize";
@@ -9,7 +9,7 @@ import { compare } from "semver";
 
 export const GetModsV3 = router({
     // #region getMods
-    getMods: gameProcedure()
+    getMods: anyGameProcedure()
         .meta({
             openapi: {
                 method: `GET`,

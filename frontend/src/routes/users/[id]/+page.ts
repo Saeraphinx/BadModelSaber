@@ -1,7 +1,7 @@
 import { type UserApiV3 } from '$lib/scripts/api/DBTypes';
 import { error, redirect } from '@sveltejs/kit';
 import type { PageLoad } from './$types';
-import { handleTrpcError } from '../../../lib/scripts/utils/api';
+import { handleTrpcError } from '$lib/scripts/utils/api';
 
 //export const ssr = false;
 export const load = (async ({ fetch, params, parent }) => {

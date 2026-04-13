@@ -1,8 +1,8 @@
 import { error } from '@sveltejs/kit';
 import type { PageLoad } from './$types';
 import { handleTrpcError, parseTRPCError } from '$lib/scripts/utils/api';
-import { UserPermissions } from '../../../../lib/scripts/api/DBTypes';
-import { checkRoles } from '../../../../lib/scripts/utils/checkRoles';
+import { UserPermissions } from '$lib/scripts/api/DBTypes';
+import { checkRoles } from '$lib/scripts/utils/checkRoles';
 
 export const load = (async ({ fetch, params, parent }) => {
   let id = parseInt(params.id, 10);

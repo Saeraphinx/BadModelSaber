@@ -24,6 +24,7 @@
   import MiniPagination from "$lib/components/generic/MiniPagination.svelte";
   import BigPagination from "$lib/components/generic/BigPagination.svelte";
   import { checkRoles } from "$lib/scripts/utils/checkRoles.js";
+  import * as Drawer from "$shadcn/components/ui/drawer";
 
   const { data: _internal } = $props();
   // svelte-ignore state_referenced_locally
@@ -46,6 +47,7 @@
   // Filter Data
   let filterFileFormatVisible = $state<boolean>(true);
   let filterStatusVisible = $state<boolean>(true);
+  let filterMobileDrawerVisible = $state<boolean>(false);
   let selectedFileFormats = $state<AssetFileFormat[]>([]);
   let selectedStatuses = $state<Status[]>([Status.Verified]);
   let searchQuery = $state<string>("");
@@ -175,7 +177,7 @@
   {/if}
 {/snippet}
 
-<div class="flex flex-col items-center w-[90%] not-lg:w-full m-auto p-4 rounded-2xl">
+<div class="flex flex-col items-center w-[90%] not-lg:w-full m-auto p-4 not-md:p-0 rounded-2xl">
   <div class="flex flex-row w-full">
     <!-- Filter Area -->
     {#if !tooSmall.current}
@@ -186,10 +188,18 @@
     <!-- Content -->
     <div class="flex flex-col items-center w-full">
       <!-- Top Bar -->
-      <div class="flex flex-col bg-card rounded-2xl w-full p-4 pt-2 mb-4">
-        <Label for="asset-search" class="sr-only">{m["search.search"]()}</Label>
-        <Input type="text" placeholder={m["search.searchAssets"]()} class="w-full mt-2" id="asset-search" bind:value={searchQuery} />
-        <div class="flex flex-row mt-2 flex-wrap gap-2">
+      <div class="flex flex-col bg-card rounded-2xl w-full p-4 mb-4 gap-2">
+        <div class="flex flex-row w-full gap-2">
+          <Label for="asset-search" class="sr-only">{m["search.search"]()}</Label>
+          <Input type="text" placeholder={m["search.searchAssets"]()} id="asset-search" bind:value={searchQuery} />
+          {#if tooSmall.current}
+            <Button variant="outline" onclick={() => filterMobileDrawerVisible = true}>
+              <FunnelIcon class="h-4 w-4" />
+              <span class="sr-only">{m["search.showFilters"]()}</span>
+            </Button>
+          {/if}
+        </div>
+        <div class="flex flex-row flex-wrap gap-2">
           <div class="flex items-center gap-2">
             <Select.Root allowDeselect={false} bind:value={selectedPageSizeString} type="single" onValueChange={(value) => (currentPage = 1)}>
               <Select.Trigger class="">{m["search.perPage"]({ count: selectedPageSizeString})}</Select.Trigger>
@@ -202,19 +212,13 @@
               </Select.Content>
             </Select.Root>
           </div>
-          {#if tooSmall.current}
-            <Button variant="outline">
-              <FunnelIcon class="h-4 w-4" />
-              <span class="sr-only">{m["search.showFilters"]()}</span>
-            </Button>
-          {/if}
           <div class="flex-1 flex justify-end">
             <MiniPagination {selectedPageSize} bind:currentPage={currentPage} totalCount={filteredAssets.length} />
           </div>
         </div>
       </div>
       <!-- Cards -->
-      <div class="flex flex-row flex-wrap justify-evenly gap-4 px-4">
+      <div class="flex flex-row flex-wrap justify-evenly gap-4">
         {#if assetsLoading}
           {#each { length: selectedPageSize }}
             <Skeleton class="bg-gray-400/20 {smallerIcons.current ? `w-48 h-48` : `w-64 h-64`} rounded-2xl" />
@@ -239,3 +243,11 @@
 </div>
 
 <ApprovalPopup bind:this={dialog} />
+<Drawer.Root bind:open={filterMobileDrawerVisible}>
+  <Drawer.Header>Filters</Drawer.Header>
+  <Drawer.Content>
+    <div class="overflow-y-auto h-full pr-4">
+      {@render filters()}
+    </div>
+  </Drawer.Content>
+</Drawer.Root>

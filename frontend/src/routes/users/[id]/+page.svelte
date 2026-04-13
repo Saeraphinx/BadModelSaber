@@ -10,8 +10,8 @@
   import { navigating } from "$app/state";
   import { UserPermissions } from "$lib/scripts/api/DBTypes.js";
   import { checkRoles } from "$lib/scripts/utils/checkRoles.js";
-  import { Button } from "../../../lib/shadcn/components/ui/button/index.js";
-  import ModCard from "../../../lib/components/mods/ModCard.svelte";
+  import { Button } from "$lib/shadcn/components/ui/button/index.js";
+  import ModCard from "$lib/components/mods/ModCard.svelte";
   import * as Tabs from "$lib/shadcn/components/ui/tabs/index.js";
 
   const { data: _internal } = $props();

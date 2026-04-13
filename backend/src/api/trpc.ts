@@ -157,6 +157,19 @@ export function loggedInProcedure(roles?: UserPermissions[] | { hasAllOf?: UserP
         });
     });
 }
+export function anyGameProcedure(roles?: UserPermissions[] | { hasAllOf?: UserPermissions[], hasOneOf?: UserPermissions[], denied?: UserPermissions[] }) {
+    return t.procedure.input(z.object({
+        gameName: z.string()
+    })).use(async ({ ctx, next, input }) => {
+        let user = await User.findByPk(ctx.userId || undefined);
+        return next({
+            ctx: {
+                ...ctx,
+                user: user,
+            }
+        });
+    });
+}
 export function gameProcedure(roles?: UserPermissions[] | { hasAllOf?: UserPermissions[], hasOneOf?: UserPermissions[], denied?: UserPermissions[] }) {
     return t.procedure.input(z.object({
         gameName: z.string()

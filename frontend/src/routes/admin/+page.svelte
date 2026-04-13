@@ -14,7 +14,7 @@
   import { checkRoles } from "$lib/scripts/utils/checkRoles.js";
   import { onMount } from "svelte";
   import { parseErrorMessage } from "$lib/scripts/utils/api.js";
-  import ModCard from "../../lib/components/mods/ModCard.svelte";
+  import ModCard from "$lib/components/mods/ModCard.svelte";
 
   const { data: _internal } = $props();
   // svelte-ignore state_referenced_locally

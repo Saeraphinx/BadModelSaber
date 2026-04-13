@@ -291,16 +291,11 @@
       <!-- Hamburger menu for Small Screens -->
       {#if !showFullBar.current}
         <Popover.Root>
-          <Popover.Trigger>
-            {#snippet child()}
-              <Button variant="ghost" size="icon" class="text-base">
-                <Menu />
-              </Button>
-            {/snippet}
+          <Popover.Trigger class={buttonVariants({ variant: "ghost" })}>
+            <Menu />
           </Popover.Trigger>
           <Popover.Content class="flex flex-col items-center justify-center w-auto">
             {@render navbar_main("vertical")}
-            <Separator class="my-2 w-full" />
           </Popover.Content>
         </Popover.Root>
       {/if}

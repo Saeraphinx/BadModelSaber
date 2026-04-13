@@ -387,7 +387,7 @@
       "linkTypes": {
         "altFormat": {
           "title": "Alternative Format",
-          "description": "Same asset in a different file format (e.g. a saber in the .saber and .wacker formats)"
+          "description": "Same asset in a different file format (e.g. a saber in the .saber and .whacker formats)"
         },
         "altDesign": {
           "title": "Alternative Design",

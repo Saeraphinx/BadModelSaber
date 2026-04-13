@@ -45,7 +45,7 @@ export const availableLocales: {
 // Changes to this enum should be made note of and checked for in translation documents if needed
 export enum AssetFileFormat {
   // sabers
-  Saber_Wacker = 'saber_wacker',
+  Saber_Whacker = 'saber_whacker',
   Saber_Saber = 'saber_saber',
 
   Avatar_Avatar = 'avatar_avatar',
@@ -100,7 +100,7 @@ export enum License {
 export enum LinkedAssetLinkType {
   Older = 'older', // e.g. a newer version of the asset
   Newer = 'newer', // e.g. an older version of the asset
-  AltFormat = 'altFormat', // e.g. a different format of the same asset (e.g. .saber and .wacker)
+  AltFormat = 'altFormat', // e.g. a different format of the same asset (e.g. .saber and .whacker)
   Alternate = 'alternate', // e.g. an alternate version of the asset (e.g. a different color scheme)
 }
 

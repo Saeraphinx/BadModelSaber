@@ -40,7 +40,7 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
         allowNull: false,
         defaultValue: [],
     })
-    declare linkedIds: CreationOptional<LinkedAsset[]>; // models that are linked to this asset, e.g. a pc .saber may have a linked .wacker, or a model may have a newer version that is linked to it
+    declare linkedIds: CreationOptional<LinkedAsset[]>; // models that are linked to this asset, e.g. a pc .saber may have a linked .whacker, or a model may have a newer version that is linked to it
 
     @AllowNull(false)
     @Column(DataType.STRING)
