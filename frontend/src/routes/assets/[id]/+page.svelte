@@ -36,7 +36,7 @@
   import TagBadge from "$lib/components/assets/TagBadge.svelte";
   import Input from "$shadcn/components/ui/input/input.svelte";
   import Textarea from "$shadcn/components/ui/textarea/textarea.svelte";
-  import TagPickerDialog from "$lib/components/forms/TagPickerDialog.svelte";
+  import TagPickerDialog from "$lib/components/dialogs/TagPickerDialog.svelte";
   import { zAsset } from "$lib/scripts/api/validators";
   import { cn } from "$shadcn/utils";
   import LinkAssetDialog from "$lib/components/dialogs/LinkAssetDialog.svelte";
