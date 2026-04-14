@@ -24,7 +24,8 @@ export const handleFetch: HandleFetch = async ({ request, fetch: svelteFetch, ev
     console.log(`Modifying request to ${request.url} to use native fetch`);
     modifiedRequest = new Request(request, {
       headers: {
-        ...Object.fromEntries(request.headers),
+        ...request.headers,
+        origin: event.url.origin,
       },
     });
     fetchToUse = fetch;
