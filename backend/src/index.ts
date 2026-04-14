@@ -73,12 +73,16 @@ export async function init(overrideDbName?: string) {
 
     apiRouter.use((req, res, next) => {
         Logger.log(`${req.method} ${req.originalUrl} - ${req.ip} - Session: ${req.sessionID} - Auth: ${req.session['userId'] ? req.session['userId'] : `No`}`, LogLevel.Http);
+        Logger.log(`Received Headers: ${JSON.stringify(req.headers)}`, LogLevel.HttpDebug);
         if (!EnvConfig.isProduction && EnvConfig.server.authBypass && !req.session['userId']) {
             if (EnvConfig.server.authBypass !== -1) {
                 req.session.userId = EnvConfig.server.authBypass;
                 Logger.warn(`Auth bypass enabled - automatically logged in as user ID ${req.session.userId}`);
             }
         }
+        req.on('finish', () => {
+            Logger.log(`Sent Headers: ${JSON.stringify(res.getHeaders())}`, LogLevel.HttpDebug);
+        });
         next();
     });
 

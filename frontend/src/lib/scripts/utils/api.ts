@@ -61,8 +61,14 @@ export const trpc = createTRPC();
 export function createTRPC(svelteFetch: typeof fetch = fetch) {
   //let svelteFetch = svelteFetcht;
 
-  // this is to both make sure that the cookies are included in the request and that readablestream doesn't get locked
+  // this is to both make sure that the cookies are included in the request if required and that readablestream doesn't get locked
   const safeFetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+    if (!env.PUBLIC_API_URL.startsWith(env.PUBLIC_BASE_URL)) {
+      init = {
+        ...init,
+        credentials: 'include' 
+      }
+    }
     const response = await svelteFetch(input, init);
     return response.clone();
   };

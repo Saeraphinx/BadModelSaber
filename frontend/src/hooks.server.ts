@@ -21,7 +21,7 @@ export const handleFetch: HandleFetch = async ({ request, fetch: svelteFetch, ev
   let fetchToUse = svelteFetch;
   if (!browser && request.url.startsWith(env.PUBLIC_API_URL)) {
     // https://github.com/sveltejs/kit/issues/8314
-    console.log(`Modifying request to ${request.url} to use native fetch`);
+    console.log(`Modifying request to ${request.url}`);
     modifiedRequest = new Request(request, {
       headers: {
         ...request.headers,
