@@ -72,7 +72,8 @@ export async function init(overrideDbName?: string) {
     const fileRouter = express.Router();
 
     apiRouter.use((req, res, next) => {
-        Logger.log(`${req.method} ${req.originalUrl} - ${req.ip} - Session: ${req.sessionID} - Auth: ${req.session['userId'] ? req.session['userId'] : `No`}`, LogLevel.Http);
+        let url = EnvConfig.server.hideFullQueryInLogs ? req.originalUrl.split("?")[0] : req.originalUrl;
+        Logger.log(`${req.method} ${url} - ${req.ip} - Session: ${req.sessionID} - Auth: ${req.session['userId'] ? req.session['userId'] : `No`}`, LogLevel.Http);
         Logger.log(`Received Headers: ${JSON.stringify(req.headers)}`, LogLevel.HttpDebug);
         if (!EnvConfig.isProduction && EnvConfig.server.authBypass && !req.session['userId']) {
             if (EnvConfig.server.authBypass !== -1) {
