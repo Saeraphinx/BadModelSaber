@@ -18,16 +18,18 @@ export const handle: Handle = paraglideHandle;
 
 export const handleFetch: HandleFetch = async ({ request, fetch, event }) => {
   let modifiedRequest = request;
+  let fetchToUse = fetch;
   if (!browser && request.url.startsWith(env.PUBLIC_API_URL)) {
-    console.log(`Modifying request to ${request.url} to include origin header for SSR.`);
+    // https://github.com/sveltejs/kit/issues/8314
+    console.log(`Modifying request to ${request.url} to use native fetch`);
     modifiedRequest = new Request(request, {
       headers: {
         ...Object.fromEntries(request.headers),
-        origin: env.PUBLIC_BASE_URL,
       },
     });
+    fetchToUse = window.fetch;
   }
-	return fetch(modifiedRequest).then((response) => {
+	return fetchToUse(modifiedRequest).then((response) => {
     console.log(`Fetch request to ${request.url} returned with status ${response.status}`);
     console.log(modifiedRequest);
     console.log(response);
