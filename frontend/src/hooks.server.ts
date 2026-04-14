@@ -19,6 +19,7 @@ export const handle: Handle = paraglideHandle;
 export const handleFetch: HandleFetch = async ({ request, fetch, event }) => {
   let modifiedRequest = request;
   if (!browser && request.url.startsWith(env.PUBLIC_API_URL)) {
+    console.log(`Modifying request to ${request.url} to include origin header for SSR.`);
     modifiedRequest = new Request(request, {
       headers: {
         ...Object.fromEntries(request.headers),
@@ -28,6 +29,7 @@ export const handleFetch: HandleFetch = async ({ request, fetch, event }) => {
   }
 	return fetch(modifiedRequest).then((response) => {
     console.log(`Fetch request to ${request.url} returned with status ${response.status}`);
+    console.log(modifiedRequest);
     console.log(response);
     return response;
   }).catch((err) => {
