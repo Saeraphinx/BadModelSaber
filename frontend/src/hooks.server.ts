@@ -16,9 +16,9 @@ const paraglideHandle: Handle = ({ event, resolve }) =>
 
 export const handle: Handle = paraglideHandle;
 
-export const handleFetch: HandleFetch = async ({ request, fetch, event }) => {
+export const handleFetch: HandleFetch = async ({ request, fetch: svelteFetch, event }) => {
   let modifiedRequest = request;
-  let fetchToUse = fetch;
+  let fetchToUse = svelteFetch;
   if (!browser && request.url.startsWith(env.PUBLIC_API_URL)) {
     // https://github.com/sveltejs/kit/issues/8314
     console.log(`Modifying request to ${request.url} to use native fetch`);
@@ -27,7 +27,7 @@ export const handleFetch: HandleFetch = async ({ request, fetch, event }) => {
         ...Object.fromEntries(request.headers),
       },
     });
-    fetchToUse = window.fetch;
+    fetchToUse = fetch;
   }
 	return fetchToUse(modifiedRequest).then((response) => {
     console.log(`Fetch request to ${request.url} returned with status ${response.status}`);
