@@ -17,7 +17,16 @@ const paraglideHandle: Handle = ({ event, resolve }) =>
 export const handle: Handle = paraglideHandle;
 
 export const handleFetch: HandleFetch = async ({ request, fetch, event }) => {
-	return fetch(request).then((response) => {
+  let modifiedRequest = request;
+  if (!browser && request.url.startsWith(env.PUBLIC_API_URL)) {
+    modifiedRequest = new Request(request, {
+      headers: {
+        ...Object.fromEntries(request.headers),
+        origin: env.PUBLIC_BASE_URL,
+      },
+    });
+  }
+	return fetch(modifiedRequest).then((response) => {
     console.log(`Fetch request to ${request.url} returned with status ${response.status}`);
     console.log(response);
     return response;
