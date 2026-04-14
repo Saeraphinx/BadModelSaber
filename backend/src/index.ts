@@ -80,7 +80,7 @@ export async function init(overrideDbName?: string) {
                 Logger.warn(`Auth bypass enabled - automatically logged in as user ID ${req.session.userId}`);
             }
         }
-        req.on('finish', () => {
+        res.on('finish', () => {
             Logger.log(`Sent Headers: ${JSON.stringify(res.getHeaders())}`, LogLevel.HttpDebug);
         });
         next();
