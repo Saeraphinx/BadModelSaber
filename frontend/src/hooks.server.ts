@@ -23,6 +23,7 @@ export const handleFetch: HandleFetch = async ({ request, fetch: svelteFetch, ev
   if (!browser && request.url.startsWith(env.PUBLIC_API_URL)) {
     // https://github.com/sveltejs/kit/issues/8314
     console.log(`Modifying request to ${request.url}`);
+    
     // replace url with local version if the request is going to the API, no need to hit the proxy
     let url = penv.LOCAL_API_URL ? request.url.replace(env.PUBLIC_API_URL, penv.LOCAL_API_URL || env.PUBLIC_API_URL) : request.url;
     modifiedRequest = new Request(url, {
@@ -36,6 +37,7 @@ export const handleFetch: HandleFetch = async ({ request, fetch: svelteFetch, ev
   }
 	return fetchToUse(modifiedRequest).then((response) => {
     console.log(`Fetch request to ${request.url} returned with status ${response.status}`);
+    console.log(event);
     console.log(modifiedRequest);
     console.log(response);
     return response;
