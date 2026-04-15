@@ -50,7 +50,7 @@
     return searchResults;
   });
   let totalSize = $derived(filteredMods.length);
-  let availableStatuses: Status[] = $derived.by(() => Array.from(new Set(Array.from(searchEngine?.mods.values() || []).map((result) => result.project.status))));
+  let availableStatuses: Status[] = $derived.by(() => Array.from(new Set(Array.from(searchEngine?.mods.values() || []).map((result) => result.version.status))));
   let filterModsPageView = $derived.by(() => {
     let startIndex = (currentPage - 1) * pageSize;
     let endIndex = startIndex + pageSize;

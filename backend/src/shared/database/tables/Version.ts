@@ -1,5 +1,5 @@
 import { CreationOptional, InferAttributes, InferCreationAttributes, NonAttribute, Op, WhereOptions } from "sequelize";
-import { AfterCreate, AfterValidate, AllowNull, BeforeCreate, BeforeValidate, BelongsTo, Column, CreatedAt, DataType, Default, DeletedAt, ForeignKey, Model, Sequelize, Table, UpdatedAt } from "sequelize-typescript";
+import { AfterCreate, AfterUpdate, AfterValidate, AllowNull, BeforeCreate, BeforeValidate, BelongsTo, Column, CreatedAt, DataType, Default, DeletedAt, ForeignKey, Model, Sequelize, Table, UpdatedAt } from "sequelize-typescript";
 import { AlertType, ContentHash, ContentHashSchema, Dependency, DependencySchema, ModApiV1, ModVersionsApiv2, Status, StatusHistory, statusHistorySchema, UserPermissions, VersionApiV3, WebhookLogType } from "../DBExtras.ts";
 import { SemVer, parse } from "semver";
 import { Project } from "./Project.ts";
@@ -160,7 +160,7 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
         return `${this.baseFileName}_manifest.json`;
     }
     // #endregion
-    // #region Validators
+    // #region Validators & Hooks
     /*
     private static validatorTypeTest1: z.infer<typeof Version.validator> = ({} as Version); // validator has property asset doesn't
     private static validatorTypeTest2: VersionInfer = ({} as z.infer<typeof Version.validator>); // asset has property validator doesn't
@@ -275,7 +275,20 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
 
         await version.save();
     }
+
+    @AfterUpdate
+    private static async sortGameVersions(version: Version) {
+        let gameVersions = await GameVersion.findAll({
+            where: {
+                id: version.supportedGameVersionIds,
+            }
+        }).then((gvs) => gvs.sort(GameVersion.compareDecending).map((gv => gv.id)));
+        await version.update({
+            supportedGameVersionIds: gameVersions,
+        })
+    }
     // #endregion
+
     public static async checkIfExists(id: number): Promise<boolean> {
         return (await Version.findByPk(id, { attributes: ['id'] })) ? true : false;
     }
@@ -512,7 +525,7 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
             where: {
                 id: this.supportedGameVersionIds,
             }
-        }).then((gvs) => gvs.map((gv) => gv.toApiV3()));
+        }).then((gvs) => gvs/*.sort(GameVersion.compareDecending)*/.map((gv) => gv.toApiV3()));
 
         return {
             id: this.id,

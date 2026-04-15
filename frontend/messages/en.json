@@ -231,6 +231,20 @@
       "language": "Language",
       "viewOriginal": "View Original",
       "viewOriginalMarkdown": "View Original (Markdown)"
+    },
+    "statusHover": {
+      "verified": {
+        "title": "This mod has been verified by the approval team and <span class=\"text-green-600\">is safe to use!</span>",
+        "description": "Verified mods have been checked for malware and are safe to use. Look for the green badge!"
+      },
+      "unverified": {
+        "title": "This mod has <b>not</b> been verified by the approval team. <span class=\"text-orange-400\">Use at your own risk!</span>",
+        "description": "Unverified mods have not been fully checked for malware and compatibility. While they should be fine, be cautious when downloading and using these mods. <b>You will not receive support for pending mods.</b>"
+      },
+      "pending": {
+        "title": "This mod is currently pending approval. <span class=\"text-red-600\">Use with caution!</span>",
+        "description": "Pending mods have not been reviewed by the approval team. They may contain malware or be incompatible with the game. Be cautious when downloading and using these mods. <b>You will not receive support for pending mods.</b>"
+      }
     }
   },
   "requests": {
@@ -363,8 +377,8 @@
     "preview": "Preview",
     "approvalDialog": {
       "title": "Update Status for {name}",
-      "description": "Select the new status for the asset \"{name}\". Click save to apply the changes.",
-      "reasonWillBeVisible": "This reason will be visible to the author of {name}.",
+      "description": "Select the new status for \"{name}\". Click save to apply the changes.",
+      "reasonWillBeVisible": "This reason will be visible to the author(s) of {name}.",
       "reasonPlaceholder": "Enter reason for status change (optional)"
     },
     "downloadDialog": {

@@ -1,5 +1,5 @@
 import { Logger } from "../../../../shared/Logger.ts";
-import { GameVersion, GameVersionWhereOptions, Project, ProjectApiV3, projectApiV3Schema, Status, User, Version, versionApiV3Schema } from "../../../../shared/Database.ts";
+import { GameVersion, GameVersionWhereOptions, Project, ProjectApiV3, projectApiV3Schema, Status, User, UserPermissions, Version, versionApiV3Schema } from "../../../../shared/Database.ts";
 import { anyGameProcedure, anyProcedure, gameProcedure, router } from "../../../trpc.ts";
 import z from "zod/v4";
 import { TRPCError } from "@trpc/server";
@@ -30,6 +30,8 @@ export const GetModsV3 = router({
             version: versionApiV3Schema
         })))
         .query(async ({ ctx, input }) => {
+            let timingString = ``;
+            let startTime = Date.now();
             let gvWhereOptions: GameVersionWhereOptions = {
                 gameName: input.gameName
             }
@@ -58,6 +60,10 @@ export const GetModsV3 = router({
                 },
                 order: [['projectId', 'DESC']],
                 include: [{all: true}]
+            }).then(v => {
+                timingString += `db;dur=${Date.now() - startTime}`;
+                startTime = Date.now();
+                return v;
             });
 
             // filter to unique projects and versions that the user can view
@@ -73,6 +79,10 @@ export const GetModsV3 = router({
                 Logger.warn("Error parsing mods for GetModsV3:");
                 Logger.warn(err);
                 throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'An error occurred while parsing mods.' }); 
+            }).then(v => {;
+                timingString += `, filterp1;dur=${Date.now() - startTime}`;
+                startTime = Date.now();
+                return v;
             });
 
             // these filters are applied after the db query because only the version table is pulled from the db
@@ -89,11 +99,18 @@ export const GetModsV3 = router({
                     }
                 }));
             }
+            timingString += `filterp2;dur=${Date.now() - startTime}`;
+            startTime = Date.now();
 
             let outputApi = await Promise.all(output.map(async o => ({
                 project: await o.project.toApiV3(input.language) as ProjectApiV3,
                 version: await o.version.toApiV3()
             })));
+            timingString += `, map;dur=${Date.now() - startTime}`;
+
+            if (ctx.user && ctx.user.checkRoles({ hasOneOf: [UserPermissions.Administrative_Tasks]})) {
+                ctx.res.setHeader('Server-Timing', timingString);
+            }
 
             return outputApi;
         }),

@@ -82,22 +82,20 @@
         <Tabs.Trigger value="edit">Edit</Tabs.Trigger>
       {/if}
     </Tabs.List>
-    <div class="mt-4 flex flex-row flex-wrap justify-evenly gap-8 m-auto">
-      <Tabs.Content value="mods" class="w-full">
+      <Tabs.Content value="mods" class="w-full mt-4 flex flex-row flex-wrap justify-center gap-8 m-auto">
         {#each mods as mod}
           <ModCard project={mod} />
         {:else}
           <p class="text-base text-muted-foreground">No mods found for this user.</p>
         {/each}
       </Tabs.Content>
-      <Tabs.Content value="assets" class="w-full">
+      <Tabs.Content value="assets" class="w-full mt-4 flex flex-row flex-wrap justify-evenly gap-8 m-auto">
         {#each assets as asset}
           <AssetCard {asset} size="large" approvalDialog={dialog} />
         {:else}
           <p class="text-base text-muted-foreground">No assets found for this user.</p>
         {/each}
       </Tabs.Content>
-    </div>
   </Tabs.Root>
 </div>
 

@@ -70,7 +70,7 @@
     <!-- Buttons -->
     <div class="absolute flex bottom-2 right-2 backdrop-blur-sm bg-white/40 dark:bg-gray-800/20 rounded-md text-black dark:text-white transition-all duration-300">
       {#if props.approvalDialog}
-        <Button variant="ghost" size="icon" title={m["common.hover.openApprovalDialog"]()} onclick={() => props.approvalDialog?.showDialog(props.asset.id, props.asset.name)}>
+        <Button variant="ghost" size="icon" title={m["common.hover.openApprovalDialog"]()} onclick={() => props.approvalDialog?.showDialog(props.asset.id, props.asset.name, `asset`)}>
           <BadgeAlert />
         </Button>
       {/if}
@@ -89,13 +89,13 @@
   <!-- Status -->
   <div class="absolute top-0 right-0 p-3">
     {#if props.asset.status === Status.Verified}
-      <StatusHoverCard status={props.asset.status}>
+      <StatusHoverCard status={props.asset.status} type="asset">
         <BadgeCheck class="text-green-400" />
       </StatusHoverCard>
     {:else if props.asset.status === Status.Pending}
       <BadgeAlert class="text-yellow-400" />
     {:else if props.asset.status === Status.Unverified}
-      <StatusHoverCard status={props.asset.status}>
+      <StatusHoverCard status={props.asset.status} type="asset">
         <CircleHelp class="text-white/80" />
       </StatusHoverCard>
     {:else}

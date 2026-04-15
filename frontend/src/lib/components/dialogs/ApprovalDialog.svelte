@@ -11,7 +11,7 @@
   import * as RadioGroup from "$shadcn/components/ui/radio-group";
   import { toast } from "svelte-sonner";
 
- let statuses = Object.values(Status).map((status) => ({
+  let statuses = Object.values(Status).map((status) => ({
     value: status,
     label: getStatusString(status),
   }));
@@ -22,25 +22,44 @@
   let name = $state<string>("");
   let id = $state<number>(0);
   let visible = $state<boolean>(false);
+  let type = $state<`asset` | `project` | `version`>("asset");
 
-  export function showDialog(p_id: number, p_name: string) {
+  export function showDialog(p_id: number, p_name: string, thingType: `asset` | `project` | `version`) {
     reason = "";
     selectedStatus = statuses[0].value;
     id = p_id;
     name = p_name;
+    type = thingType;
     visible = true;
   }
 
   function handleSubmit() {
-    console.log(`Updating asset ${id} (${name}) to status ${selectedStatus} with reason: ${reason}`);
-    let res = trpc.internal.approval.setStatusAsset.mutate({
+    console.log(`Updating thing ${id} (${name}) to status ${selectedStatus} with reason: ${reason}`);
+    let res;
+    if (type === `asset`) {
+      res = trpc.internal.approval.setStatusAsset.mutate({
         id: id,
         status: selectedStatus,
         reason: reason,
-      }).then((res) => {
-        console.log(`Successfully updated asset ${id} (${name}) to status ${selectedStatus}`);
-        toast.success(`Successfully updated asset ${name} to ${selectedStatus}`, {
-          description: "The asset status has been updated successfully. Reload the page to see changes.",
+      });
+    } else if (type === `project`) {
+      res = trpc.internal.approval.setStatusProject.mutate({
+        id: id,
+        status: selectedStatus,
+        reason: reason,
+      });
+    } else {
+      res = trpc.internal.approval.setStatusVersion.mutate({
+        id: id,
+        status: selectedStatus,
+        reason: reason,
+      });
+    }
+    res
+      .then((res) => {
+        console.log(`Successfully updated thing ${id} (${name}) to status ${selectedStatus}`);
+        toast.success(`Successfully updated thing ${name} to ${selectedStatus}`, {
+          description: "The thing status has been updated successfully. Reload the page to see changes.",
           dismissable: false,
           action: {
             label: "Reload",
@@ -48,22 +67,25 @@
           },
         });
         visible = false;
-      }).catch((err) => {
-      console.error(`Error updating asset ${id} (${name}):`, err);
-      toast.error(`Error updating asset ${name}`, {
-        description: "An unexpected error occurred while updating the asset status.",
-        dismissable: true,
-        duration: 30000
+      })
+      .catch((err) => {
+        console.error(`Error updating thing ${id} (${name}):`, err);
+        toast.error(`Error updating thing ${name}`, {
+          description: "An unexpected error occurred while updating the thing status.",
+          dismissable: true,
+          duration: 30000,
+        });
       });
-    });
   }
+
+  let statusText = $derived.by(() => {});
 </script>
 
-<Dialog.Root bind:open={visible} >
+<Dialog.Root bind:open={visible}>
   <Dialog.Content class="sm:max-w-[550px]">
     <Dialog.Header>
-      <Dialog.Title>{ m["dialogs.approvalDialog.title"]({ name }) }</Dialog.Title>
-      <Dialog.Description>{ m["dialogs.approvalDialog.description"]({ name })}</Dialog.Description>
+      <Dialog.Title>{m["dialogs.approvalDialog.title"]({ name })}</Dialog.Title>
+      <Dialog.Description>{m["dialogs.approvalDialog.description"]({ name })}</Dialog.Description>
     </Dialog.Header>
     <div class="flex flex-row">
       <RadioGroup.Root>
@@ -75,18 +97,13 @@
         {/each}
       </RadioGroup.Root>
       <div class="flex flex-col w-full ml-4">
-        <Input
-          type="text"
-          placeholder={ m["dialogs.approvalDialog.reasonPlaceholder"]() }
-          class="w-full"
-          bind:value={reason}
-        />
-        <p class="text-sm text-muted-foreground mt-1">{ m["dialogs.approvalDialog.reasonWillBeVisible"]({ name }) }</p>
+        <Input type="text" placeholder={m["dialogs.approvalDialog.reasonPlaceholder"]()} class="w-full" bind:value={reason} />
+        <p class="text-sm text-muted-foreground mt-1">{m["dialogs.approvalDialog.reasonWillBeVisible"]({ name })}</p>
       </div>
     </div>
     <Dialog.Footer>
-      <Button variant="ghost" onclick={() => (visible = false)}>{ m["dialogs.cancel"]() }</Button>
-      <Button type="submit" onclick={handleSubmit}>{ m["dialogs.submit"]() }</Button>
+      <Button variant="ghost" onclick={() => (visible = false)}>{m["dialogs.cancel"]()}</Button>
+      <Button type="submit" onclick={handleSubmit}>{m["dialogs.submit"]()}</Button>
     </Dialog.Footer>
   </Dialog.Content>
 </Dialog.Root>

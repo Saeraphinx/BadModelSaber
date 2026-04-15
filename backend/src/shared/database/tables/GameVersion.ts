@@ -3,6 +3,7 @@ import { AllowNull, Column, CreatedAt, DataType, Default, DeletedAt, Model, Sequ
 import { GameVersionApiV2, GameVersionApiV3, GameVersionApiV3_full } from "../DBExtras.ts";
 import { Version } from "./Version.ts";
 import { parseErrorMessage } from "../../Tools.ts";
+import { coerce } from "semver";
 
 export type GameVersionInfer = InferAttributes<GameVersion>;
 export type GameVersionWhereOptions = WhereOptions<GameVersion>;
@@ -109,6 +110,35 @@ export class GameVersion extends Model<InferAttributes<GameVersion>, InferCreati
             this.defaultVersion = true;
             return await this.save();
         });
+    }
+
+
+    public static compare(a: GameVersion, b: GameVersion): number {
+        if (a.gameName < b.gameName) {
+            return -1;
+        } else if (a.gameName > b.gameName) {
+            return 1;
+        } else {
+            // if game names are the same, sort by version using semver
+            const aSV = coerce(a.version, { loose: true });
+            const bSV = coerce(b.version, { loose: true });
+            if (!aSV || !bSV) {
+                // if either version can't be coerced, sort by version string
+                if (a.version < b.version) {
+                    return -1;
+                } else if (a.version > b.version) {
+                    return 1;
+                } else {
+                    return 0;
+                }
+            } else {
+                return aSV.compare(bSV);
+            }
+        }
+    }
+
+    public static compareDecending(a: GameVersion, b: GameVersion): number {
+        return GameVersion.compare(b, a);
     }
 
     public toApiV3(): GameVersionApiV3 {

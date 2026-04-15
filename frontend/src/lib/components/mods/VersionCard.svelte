@@ -6,12 +6,13 @@
   import ApprovalDialog from "../dialogs/ApprovalDialog.svelte";
   import CodeDialog from "../dialogs/CodeDialog.svelte";
   import StatusHoverCard from "../generic/StatusHoverCard.svelte";
-  import { getVersionDecompUrl, getVersionDownloadUrl, getVersionManifestUrl, trpc } from "$lib/scripts/utils/api";
+  import { getVersionDecompUrl, getVersionDownloadUrl, getVersionManifestUrl, parseErrorMessage, trpc } from "$lib/scripts/utils/api";
   import Spinner from "$shadcn/components/ui/spinner/spinner.svelte";
   import Button from "$shadcn/components/ui/button/button.svelte";
   import { m } from "$lib/paraglide/messages";
   import DownloadButton from "../generic/DownloadButton.svelte";
   import * as Select from "$shadcn/components/ui/select";
+  import { toast } from "svelte-sonner";
 
   const {
     version,
@@ -54,6 +55,25 @@
   let editedGameVersionIds = $state(version.supportedGameVersions.map(gv => gv.id.toString()));
   // svelte-ignore state_referenced_locally
   let editedDependencies = $state(version.dependencies);
+
+  function saveChanges() {
+    trpc.internal.updateThings.updateVersion.mutate({
+      versionId: version.id,
+      data: {
+        supportedGameVersionIds: editedGameVersionIds.map(id => parseInt(id)),
+      }
+    }).then(() => {
+      toast.success(`Version updated successfully!`);
+      isEditing = false;
+      version.supportedGameVersions = gameVersions.filter(gv => editedGameVersionIds.includes(gv.id.toString()));
+    }).catch(err => {
+      // handle error, maybe show a toast or something
+      console.error(err);
+      toast.error(`Failed to update version`, {
+        description: parseErrorMessage(err),
+      });
+    });
+  }
   
 </script>
 
@@ -62,7 +82,7 @@
     <p class="text-lg font-medium">{version.semver}</p>
     <span class="flex flex-row items-center gap-1">
       <p title={new Date(version.createdAt).toISOString()} class="text-sm text-gray-500">{getRelativeTimeString(new Date(version.createdAt))}</p>
-      <StatusHoverCard status={version.status} />
+      <StatusHoverCard status={version.status} type="mod" />
     </span>
   </div>
   <div class="flex flex-col items-center">
@@ -166,7 +186,7 @@
               </div>
             {/if}
             {#if approvalDialog}
-              <Button variant="outline" size="sm" onclick={() => approvalDialog?.showDialog(version.id, version.semver)}>
+              <Button variant="outline" size="sm" onclick={() => approvalDialog?.showDialog(version.id, version.semver, `version`)}>
                 {m["common.buttons.approvalDialog"]()}
               </Button>
             {/if}
@@ -193,7 +213,7 @@
           <Button variant="outline" size="sm" onclick={() => isEditing = !isEditing}>
             {m[`dialogs.cancel`]()}
           </Button>
-           <Button variant="outline" size="sm">
+           <Button variant="outline" size="sm" onclick={saveChanges}>
             {m[`dialogs.save`]()}
            </Button>
         {:else}

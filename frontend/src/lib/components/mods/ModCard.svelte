@@ -26,18 +26,15 @@
 <div class={cn("flex flex-col w-xs h-64 gap-2 bg-card rounded-lg p-4", className)} {...restProps}>
   <div class="flex flex-row gap-2 items-center">
     <div class="flex flex-col gap-1">
-      <img class="h-16 w-16" alt="icon for {project.name}" src={getProjectThumbnailUrl(project)} />
-      <StatusHoverCard status={version?.status || project.status}>
-        <Badge variant={version?.status ? `outline` : `default`} class="capitalize text-xs">{version ? version.status : project.status}</Badge>
-      </StatusHoverCard>
+      <img class="h-16 w-16 rounded-md" alt="icon for {project.name}" src={getProjectThumbnailUrl(project)} />
+      <StatusHoverCard status={version?.status || project.status} type="mod" />
     </div>
     <div class="flex flex-col gap-1">
-      <span class="flex flex-row items-end gap-1">
-        <a href="/mods/{project.id}" class="text-lg" aria-hidden="true">
+      <span class="flex flex-row items-end gap-1 ">
+        <a href="/mods/{project.id}" class="text-lg flex flex-row flex-wrap items-end gap-1 max-w-56 overflow-hidden text-ellipsis whitespace-nowrap" title={project.name} aria-hidden="true">
           {project.name}
           <p class="text-xs text-muted-foreground pb-1">v{version?.semver}</p>
         </a>
-        <p class="text-lg sr-only">{project.name}</p>
       </span>
       <span class="flex flex-row gap-1">
         {#each project.authors as author}
@@ -47,13 +44,13 @@
       </span>
       {#if version}
         <span class="flex flex-row items-center gap-1">
-          <p class="text-xs text-muted-foreground pb-1">{project.category} | {gameDisplayName} {version.supportedGameVersions[version.supportedGameVersions.length - 1].version}</p>
+          <p class="text-xs text-muted-foreground pb-1">{project.category} | {gameDisplayName} {version.supportedGameVersions[0].version}</p>
         </span>
       {/if}
     </div>
   </div>
   <div class="flex-1 flex flex-col justify-between">
-    <p class="text-base">{project.summary}</p>
+    <p class="text-base line-clamp-3">{project.summary}</p>
     <div class="grid grid-cols-2 gap-2 mt-2">
       <Button variant="secondary" href="/mods/{project.id}" class="">View Details</Button>
       {#if version}
