@@ -13,6 +13,8 @@
   import { Button } from "$lib/shadcn/components/ui/button/index.js";
   import ModCard from "$lib/components/mods/ModCard.svelte";
   import * as Tabs from "$lib/shadcn/components/ui/tabs/index.js";
+  import { Input } from "../../../lib/shadcn/components/ui/input";
+  import { Textarea } from "../../../lib/shadcn/components/ui/textarea";
 
   const { data: _internal } = $props();
   const { pageData, trpc, user } = $derived(_internal);
@@ -64,7 +66,10 @@
               <SponsorButton class="w-full" type={sponsorUrl.platform} url={sponsorUrl.url} />
             {/each}
             {#if allowEditing}
-              <Button variant="outline" class="w-full" onclick={() => isEditing = true}>
+              <Button variant="outline" class="w-full" onclick={() => {
+                isEditing = true
+                tabsValue = "edit";
+              }}>
                 Edit Profile
               </Button>
             {/if}
@@ -95,6 +100,11 @@
         {:else}
           <p class="text-base text-muted-foreground">No assets found for this user.</p>
         {/each}
+      </Tabs.Content>
+      <Tabs.Content value="edit" class="w-full mt-4 flex flex-col items-center gap-4 m-auto">
+        <Input placeholder="Display Name" bind:value={editDisplayName} class="w-full max-w-md" />
+        <Textarea placeholder="Bio" bind:value={editBio} class="w-full max-w-md" />
+        <Button onclick={onEditSubmit} disabled>Save Changes</Button>
       </Tabs.Content>
   </Tabs.Root>
 </div>

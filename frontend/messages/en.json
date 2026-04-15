@@ -239,11 +239,11 @@
       },
       "unverified": {
         "title": "This mod has <b>not</b> been verified by the approval team. <span class=\"text-orange-400\">Use at your own risk!</span>",
-        "description": "Unverified mods have not been fully checked for malware and compatibility. While they should be fine, be cautious when downloading and using these mods. <b>You will not receive support for pending mods.</b>"
+        "description": "Unverified mods have not been fully checked for malware and compatibility. While they may be fine, be cautious when downloading and using these mods. <b>You will not receive support for unverified mods.</b>"
       },
       "pending": {
         "title": "This mod is currently pending approval. <span class=\"text-red-600\">Use with caution!</span>",
-        "description": "Pending mods have not been reviewed by the approval team. They may contain malware or be incompatible with the game. Be cautious when downloading and using these mods. <b>You will not receive support for pending mods.</b>"
+        "description": "Pending mods have not been reviewed by the approval team. They may contain malware or be incompatible with the game. Be cautious when downloading and using these mods. <b>You will not receive support for unverified mods.</b>"
       }
     }
   },

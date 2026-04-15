@@ -67,6 +67,7 @@ export const GetModsV3 = router({
             });
 
             // filter to unique projects and versions that the user can view
+            let filter1Start = Date.now();
             let output = await Promise.all(versions
                 .sort((a, b) => compare(b.semver, a.semver)) // sort versions in descending order
                 .filter((v, i, arr) => arr.findIndex(other => other.projectId === v.projectId) === i) // filter to unique projects
@@ -80,10 +81,10 @@ export const GetModsV3 = router({
                 Logger.warn(err);
                 throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'An error occurred while parsing mods.' }); 
             }).then(v => {;
-                timingString += `, filterp1;dur=${Date.now() - startTime}`;
-                startTime = Date.now();
+                timingString += `, filterp1;dur=${Date.now() - filter1Start}`;
                 return v;
             });
+            startTime = Date.now();
 
             // these filters are applied after the db query because only the version table is pulled from the db
             if (input.name) {
@@ -99,9 +100,8 @@ export const GetModsV3 = router({
                     }
                 }));
             }
-            timingString += `filterp2;dur=${Date.now() - startTime}`;
-            startTime = Date.now();
 
+            startTime = Date.now();
             let outputApi = await Promise.all(output.map(async o => ({
                 project: await o.project.toApiV3(input.language) as ProjectApiV3,
                 version: await o.version.toApiV3()

@@ -9,6 +9,9 @@ export const load: PageLoad = async ({ fetch }) => {
   const trpc = createTRPC(fetch);
 
   let games = await trpc.v3.games.getGames.query().catch(handleTrpcError());
+  let gameVersions = await trpc.v3.games.getGameVersions.query({
+    gameName: games.find(g => g.default)?.name || games[0]?.name
+  })
 
   return {
     pageMetadata: {
@@ -16,6 +19,7 @@ export const load: PageLoad = async ({ fetch }) => {
     },
     pageData: {
       games: games || [],
+      defaultGame: gameVersions || [],
     }
   };
 }

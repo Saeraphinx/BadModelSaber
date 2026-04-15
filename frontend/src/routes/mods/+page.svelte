@@ -22,9 +22,12 @@
 
   let isLoading = $state(true);
   const games = $derived(pageData.games);
-  let selectedGameName = $state<string>(``);
+  // svelte-ignore state_referenced_locally
+  let selectedGameName = $state<string>(pageData.defaultGame.game.name || ``);
+  // svelte-ignore state_referenced_locally
   let selectedGame = $derived.by(() => games?.find((g) => g.name === selectedGameName));
-  let gameVerisions: GameVersionApiV3[] = $state([]);
+  // svelte-ignore state_referenced_locally
+  let gameVerisions: GameVersionApiV3[] = $state(pageData.defaultGame.gameVersions || []);
   let selectedGameVersionId = $state<string>(``);
   let selectedGameVersion = $derived.by(() => gameVerisions.find((v) => v.id === parseInt(selectedGameVersionId)));
 
@@ -71,18 +74,6 @@
 
   onMount(async () => {
     isLoading = true;
-    let defaultGame = games?.find((g) => g.default);
-    if (defaultGame) {
-      await trpc.v3.games.getGameVersions
-        .query({ gameName: defaultGame.name })
-        .then((gameInfo) => {
-          gameVerisions = gameInfo.gameVersions;
-          selectedGameName = gameInfo.game.name;
-        })
-        .catch((err) => {
-          console.error("Failed to fetch game versions:", err);
-        });
-    }
     fetchMods();
   });
 </script>

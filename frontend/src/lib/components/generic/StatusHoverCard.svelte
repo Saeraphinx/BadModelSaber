@@ -48,10 +48,10 @@
         <p class="text-xs text-gray-500 mt-2">{m["mods.statusHover.verified.description"]()}</p>
       {:else if props.status == Status.Unverified}
         <p class="text-md">{@html m["mods.statusHover.unverified.title"]()}</p>
-        <p class="text-xs text-gray-500 mt-2">{m["mods.statusHover.unverified.description"]()}</p>
+        <p class="text-xs text-gray-500 mt-2">{@html m["mods.statusHover.unverified.description"]()}</p>
       {:else if props.status == Status.Pending} <!-- Pending or other statuses -->
         <p class="text-md">{@html m["mods.statusHover.pending.title"]()}</p>
-        <p class="text-xs text-gray-500 mt-2">{m["mods.statusHover.pending.description"]()}</p>
+        <p class="text-xs text-gray-500 mt-2">{@html m["mods.statusHover.pending.description"]()}</p>
       {/if}
     {/if}
   </HoverCard.Content>
