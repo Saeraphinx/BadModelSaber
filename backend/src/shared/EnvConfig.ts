@@ -27,6 +27,7 @@ export const DEFAULT_CONFIG = {
         sessionCookieSameSite: `strict` as `strict`, // the SameSite attribute for the session cookie
         sessionCookieSecret: `supersecretkey`, // the secret for the session cookie
         authBypass: -1, // whether to bypass authentication for the API (useful for development. always false in production)
+        hideFullQueryInLogs: true, // whether to hide the full query in http logs
     },
     storage: {
         uploads: `./storage/uploads`, // the directory where uploads are stored
@@ -62,6 +63,7 @@ export class EnvConfig {
             sessionCookieSameSite: `strict` | `lax` | `none` | boolean;
             sessionCookieSecret: string;
             authBypass: number;
+            hideFullQueryInLogs: boolean;
         } = DEFAULT_CONFIG.server;
     public static storage: typeof DEFAULT_CONFIG.storage = DEFAULT_CONFIG.storage;
     public static database: typeof DEFAULT_CONFIG.database = DEFAULT_CONFIG.database;
@@ -138,6 +140,7 @@ export class EnvConfig {
             sessionCookieSameSite: DEFAULT_CONFIG.server.sessionCookieSameSite,
             sessionCookieSecret: process.env.SESSION_SECRET || DEFAULT_CONFIG.server.sessionCookieSecret,
             authBypass: EnvConfig.isDevMode ? parseInt(process.env.AUTH_BYPASS || `-1`) : -1,
+            hideFullQueryInLogs: process.env.HIDE_FULL_QUERY_IN_LOGS === `true` || DEFAULT_CONFIG.server.hideFullQueryInLogs,
         };
 
         console.log(`Using CORS Origin: ${EnvConfig.server.corsOrigin}`);

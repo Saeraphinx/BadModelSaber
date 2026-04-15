@@ -11,8 +11,13 @@ export class Logger {
         let consoleLevel = `consoleInfo`;
         if (EnvConfig.isTestMode) {
            consoleLevel = `warn`;
-        } else if (process.env.LOG_LEVEL === `debug`) {
-           consoleLevel = `http`;
+        } else if (process.env.LOG_LEVEL) {
+            if (!Object.values(LogLevel).includes(process.env.LOG_LEVEL as LogLevel)) {
+                console.warn(`Invalid LOG_LEVEL: ${process.env.LOG_LEVEL}. Defaulting to consoleInfo`);
+                consoleLevel = `consoleInfo`;
+            } else {
+                consoleLevel = process.env.LOG_LEVEL as LogLevel;
+            }
         }
 
         transports.push(new Winston.transports.Console({
@@ -51,6 +56,7 @@ export class Logger {
                 debugWarn: 5,
                 debug: 6,
                 http: 7,
+                httpDebug: 8,
             },
             transports: transports,
         });
@@ -116,4 +122,5 @@ export enum LogLevel {
     DebugWarn = "debugWarn",
     Debug = "debug",
     Http = "http",
+    HttpDebug = "httpDebug",
 }

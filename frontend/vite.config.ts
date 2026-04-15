@@ -13,6 +13,17 @@ export default defineConfig({
     tailwindcss(), 
     sveltekit()
   ],
+  server: {
+    warmup: {
+      clientFiles: [
+        './src/lib/scripts/utils/api.ts',
+        './src/lib/scripts/utils/checkRoles.ts',
+        './src/lib/scripts/api/DBTypes.ts',
+        './src/lib/shadcn/utils.ts',
+        './src/lib/shadcn/components/ui/button/*'
+      ]
+    }
+  },
   preview: {
     allowedHosts: [`bms.saera.gay`],
   }
