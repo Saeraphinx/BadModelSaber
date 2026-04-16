@@ -86,10 +86,11 @@ export async function generateFakeData(connectionString?: string): Promise<boole
         console.log(`Creating entries for user ${++userCount}/${users.length}`);
         let assetIds: number[] = [];
         let usersExcludingCurrent = users.filter(u => u.id !== user.id);
+        let awaitingPromises: Promise<any>[] = [];
         for (let count of [1]) {
             for (let type of Object.values(AssetFileFormat)) {
-                await Asset.create({
-                    oldId: count % 2 == 1 ? faker.number.int({min: 1000000, max: 99999999}) : null, // Only set oldId for odd types
+                awaitingPromises.push(Asset.create({
+                    oldId: count % 2 == 1 ? faker.number.int({ min: 1000000, max: 99999999 }) : null, // Only set oldId for odd types
                     linkedIds: [],
                     type: type,
                     uploaderId: user.id,
@@ -106,14 +107,16 @@ export async function generateFakeData(connectionString?: string): Promise<boole
                     status: faker.helpers.arrayElement(Object.values(Status)),
                     gameName: `beatsaber`,
                     tags: faker.helpers.arrayElements(Object.values(Tags), { min: 0, max: 5 }),
-                }). then((asset) => {
+                }).then((asset) => {
                     assetIds.push(asset.id);
-                });
+                    return asset;
+                }));
             }
 
             for (let status of Object.values(Status)) {
-                let proj = await Project.create({
+                awaitingPromises.push(Project.create({
                     name: `${faker.lorem.words(1)} ${status}`,
+                    nameId: faker.helpers.slugify(faker.lorem.words(2)).toLowerCase(),
                     description: faker.lorem.paragraph(),
                     authorIds: [user.id],
                     collaboratorIds: faker.helpers.arrayElements(usersExcludingCurrent, { min: 0, max: 3 }).map(u => u.id),
@@ -124,42 +127,46 @@ export async function generateFakeData(connectionString?: string): Promise<boole
                     iconFileName: faker.helpers.arrayElement(testIcons),
                     gitUrl: faker.internet.url(),
                     lastUpdatedById: user.id,
-                });
-
-                await Version.create({
-                    projectId: proj.id,
-                    semver: new SemVer(`${faker.number.int({ min: 0, max: 3 })}.${faker.number.int({ min: 0, max: 10 })}.${faker.number.int({ min: 0, max: 20 })}`),
-                    contentHashes: [{
-                        path: `content/${faker.lorem.word()}.zip`,
-                        hash: faker.git.commitSha(),
-                    }],
-                    fileSize: faker.number.int({ min: 1000, max: 1000000 }),
-                    dependencies: [],
-                    lastUpdatedById: user.id,
-                    platform: `universal`,
-                    status: status,
-                    uploaderId: user.id,
-                    zipHash: faker.git.commitSha(),
-                    supportedGameVersionIds: faker.helpers.arrayElements(gameVersionIds, { min: 1, max: gameVersionIds.length }),
-                });
+                }).then(async (project) => {
+                    return await Version.create({
+                        projectId: project.id,
+                        semver: new SemVer(`${faker.number.int({ min: 0, max: 3 })}.${faker.number.int({ min: 0, max: 10 })}.${faker.number.int({ min: 0, max: 20 })}`),
+                        contentHashes: [{
+                            path: `content/${faker.lorem.word()}.zip`,
+                            hash: faker.git.commitSha(),
+                        }],
+                        fileSize: faker.number.int({ min: 1000, max: 1000000 }),
+                        dependencies: [],
+                        lastUpdatedById: user.id,
+                        platform: `universal`,
+                        status: status,
+                        uploaderId: user.id,
+                        zipHash: faker.git.commitSha(),
+                    }).then((version) => {
+                        version.$set(`supportedGameVersions`, faker.helpers.arrayElements(gameVersionIds, { min: 1, max: gameVersionIds.length }));
+                        return version;
+                    });
+                }));
             }
         }
+        await Promise.all(awaitingPromises);
     }
 
     for (let user of users) {
-        let userAsset = await Asset.findOne({ where: { uploaderId: user.id }});
+        let userAsset = await Asset.findOne({ where: { uploaderId: user.id } });
         if (!userAsset) throw new Error(`No asset found for user ${user.id}`);
-        await Asset.findAll({ 
-            where: { 
-                uploaderId: { 
-                    [Op.ne]: user.id 
+        await Asset.findAll({
+            where: {
+                uploaderId: {
+                    [Op.ne]: user.id
                 },
                 [Op.not]: {
                     collaboratorIds: {
                         [Op.contains]: [user.id]
                     }
                 }
-            }, include: {all: true}, offset: faker.number.int({ min: 0, max: 10 }), limit: 6 }).then(async assets => {
+            }, include: { all: true }, offset: faker.number.int({ min: 0, max: 10 }), limit: 6
+        }).then(async assets => {
             let i = 0;
             for (let asset of assets) {
                 let author = await asset.uploader;
@@ -175,7 +182,7 @@ export async function generateFakeData(connectionString?: string): Promise<boole
                         asset.report(user, `This is a test report for asset ${asset.id}.`);
                         break;
                 }
-                    
+
             }
         })
     }

@@ -30,9 +30,15 @@ export const load: LayoutLoad = async ({ fetch }) => {
     return defaultObj;
   }
 
-  let alertRes = await trpc.internal.alerts.getAlertCount.query().catch(handleTrpcError());
-
-  let requestRes = await trpc.internal.requests.requestCounts.query().catch(handleTrpcError());
+  let {alertRes, requestRes} = await Promise.allSettled([
+    trpc.internal.alerts.getAlertCount.query().catch(handleTrpcError()), 
+    trpc.internal.requests.requestCounts.query().catch(handleTrpcError())
+  ]).then(([alertRes, requestRes]) => {
+    return {
+      alertRes: alertRes.status === 'fulfilled' ? alertRes.value : undefined,
+      requestRes: requestRes.status === 'fulfilled' ? requestRes.value : undefined,
+    }
+  })
 
   return {
     pendingToasts: pendingToasts,

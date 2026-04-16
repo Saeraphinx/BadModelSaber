@@ -9,8 +9,9 @@ import { loggedInProcedure, router } from "../../../trpc.ts";
 import { zfd } from "zod-form-data";
 import { createHash } from "node:crypto";
 import { TRPCError } from "@trpc/server";
-import JSZip from "jszip";
+import JSZip, { support } from "jszip";
 import { getManifestFromString, Manifest } from "../../../../shared/ModParser.ts";
+import z from "zod";
 
 /*
 == Assets ==
@@ -162,11 +163,11 @@ export const uploadStuff = router({
             gitUrl: input.data.gitUrl,
             summary: input.data.summary,
             iconFileName: iconName,
-            authorIds: [ctx.user.id],
             collaboratorIds: [],
             lastUpdatedById: ctx.user.id,
             status: Status.Private,
         }).then(async (project) => {
+            project.$add(`authors`, ctx.user);
             Logger.log(`Project database entry created for user ${ctx.user?.id} with project ID ${project.id}`);
             fs.mkdirSync(project.folderPath, { recursive: true });
             await iconFile.arrayBuffer().then(async (buffer) => {
@@ -189,7 +190,8 @@ export const uploadStuff = router({
             platform: true,
             semver: true,
             dependencies: true,
-            supportedGameVersionIds: true,
+        }).extend({
+            supportedGameVersionIds: z.array(z.number()).nonempty(),
         })),
         modZip: zfd.file(), // main asset file, will be validated later based on type,
         immidateSubmit: zfd.checkbox().optional(), // if true, will immidately submit the version for review after upload instead of saving as private
@@ -256,7 +258,6 @@ export const uploadStuff = router({
             platform: input.data.platform,
             semver: input.data.semver,
             dependencies: input.data.dependencies,
-            supportedGameVersionIds: input.data.supportedGameVersionIds,
             zipHash: fileHash,
             fileSize: input.modZip.size,
             uploaderId: ctx.user.id,
@@ -264,6 +265,7 @@ export const uploadStuff = router({
             status: Status.Private,
             contentHashes: [], // will be filled in later by a background job after the file is saved and processed
         }).then(async (version) => {
+            version.$set(`supportedGameVersions`, input.data.supportedGameVersionIds);
             Logger.log(`Version database entry created for user ${ctx.user?.id} with version ID ${version.id} for project ID ${project.id}`);
             let versionFolder = path.join(project.folderPath, version.id.toString());
             fs.mkdirSync(versionFolder, { recursive: true });

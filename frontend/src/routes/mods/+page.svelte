@@ -27,9 +27,10 @@
   // svelte-ignore state_referenced_locally
   let selectedGame = $derived.by(() => games?.find((g) => g.name === selectedGameName));
   // svelte-ignore state_referenced_locally
-  let gameVerisions: GameVersionApiV3[] = $state(pageData.defaultGame.gameVersions || []);
-  let selectedGameVersionId = $state<string>(``);
-  let selectedGameVersion = $derived.by(() => gameVerisions.find((v) => v.id === parseInt(selectedGameVersionId)));
+  let gameVersions: GameVersionApiV3[] = $state(pageData.defaultGame.gameVersions || []);
+  // svelte-ignore state_referenced_locally
+  let selectedGameVersionId = $state<string>(pageData.defaultGame.gameVersions.find((v: any) => v.defaultVersion)?.id.toString() || ``);
+  let selectedGameVersion = $derived.by(() => gameVersions.find((v) => v.id === parseInt(selectedGameVersionId)));
 
   let isFilterStatusVisible = $state(true);
   let isFilterCategoryVisible = $state(true);
@@ -115,7 +116,8 @@
         <Select.Root type="single" bind:value={selectedGameVersionId} onValueChange={fetchMods}>
           <Select.Trigger class="w-full">{selectedGameVersion?.version || `All`}</Select.Trigger>
           <Select.Content>
-            {#each gameVerisions as version}
+            <Select.Item value={``}>All</Select.Item>
+            {#each gameVersions as version}
               <Select.Item value={version.id.toString()}>{version.version}</Select.Item>
             {/each}
           </Select.Content>

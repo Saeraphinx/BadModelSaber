@@ -112,11 +112,12 @@ export const UpdateAssetRouter = router({
         projectId: dbId,
         data: Project.validator.pick({
             description: true,
-            authorIds: true,
             collaboratorIds: true,
             category: true,
             summary: true,
             gitUrl: true,
+        }).extend({
+            authorIds: z.array(dbId).min(1),
         }).strict().partial()
     })).mutation(async ({ input, ctx }) => {
         const project = await Project.findByPk(input.projectId);

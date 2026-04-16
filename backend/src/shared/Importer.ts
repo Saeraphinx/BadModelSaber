@@ -548,7 +548,6 @@ export async function importFromBadBeatMods() {
             id: idToUse,
             name: mod.name,
             nameId: mod.name, // previously nameid was enforecd to just be the same
-            authorIds: mod.authors.map(a => newUsers.get(a.id)?.id || 6),
             gameName: newGameName,
             description: mod.description,
             category: translateBeatModsCategory(mod.name, mod.category),
@@ -567,6 +566,9 @@ export async function importFromBadBeatMods() {
             status: mod.status as Status,
             lastApprovedById: mod.status === Status.Verified ? importerUser.id : undefined,
         }).then(async project => {
+            project.$set(`authors`, mod.authors.map(a => newUsers.get(a.id)?.id || importerUser.id)).catch(err => {
+                Logger.error(`Failed to set authors for project ${project.id} (${project.name}): ${err}`);
+            });
             newProjects.set(mod.id, project);
             fs.mkdirSync(project.folderPath, { recursive: true });
         }));
@@ -651,7 +653,7 @@ export async function importFromBadBeatMods() {
                     return record[0];
                 }))
             }
-            let newGameIds = (await Promise.all(gameVerPromises)).map(gv => gv.id);
+            let newGameVers = await Promise.all(gameVerPromises);
 
             versionPromises.push(Version.create({
                 projectId: project.id,
@@ -664,7 +666,6 @@ export async function importFromBadBeatMods() {
                 uploaderId: newUsers.get(version.author.id)?.id || importerUser.id,
                 dependencies: dependencies,
                 lastUpdatedById: importerUser.id,
-                supportedGameVersionIds: newGameIds,
                 createdAt: new Date(version.createdAt),
                 updatedAt: new Date(version.updatedAt),
                 status: version.status as Status,
@@ -675,6 +676,11 @@ export async function importFromBadBeatMods() {
                     userId: newUsers.get(sh.userId)?.id || importerUser.id,
                 })),
                 lastApprovedById: version.status === Status.Verified ? importerUser.id : undefined,
+            }).then(async v => {
+                await v.$set(`supportedGameVersions`, newGameVers).catch(err => {
+                    Logger.error(`Failed to set game versions for version ${v.id} of mod ${mod.id} (${mod.name}): ${err}`);
+                });
+                return v;
             }));
         }
 

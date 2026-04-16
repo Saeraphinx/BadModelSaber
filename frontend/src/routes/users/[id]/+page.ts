@@ -23,15 +23,21 @@ export const load = (async ({ fetch, params, parent }) => {
     }).catch(handleTrpcError());
   }
 
-  let assets = trpc.v3.user.getAssetsByUserId.query({ id: userData.id }).catch(handleTrpcError());
-  let mods = trpc.v3.user.getModsByUserId.query({ id: userData.id }).catch(handleTrpcError());
-  await Promise.all([assets, mods]);
+  let {assets, mods} = await Promise.allSettled([
+    trpc.v3.user.getAssetsByUserId.query({ id: userData.id }).catch(handleTrpcError()),
+    trpc.v3.user.getModsByUserId.query({ id: userData.id }).catch(handleTrpcError())
+  ]).then(([assets, mods]) => {
+    return { 
+      assets: assets.status === 'fulfilled' ? assets.value : {assets: []}, 
+      mods: mods.status === 'fulfilled' ? mods.value : []
+    };
+  });
 
   return {
     pageMetadata: {
       title: `${userData.displayName || `Error`}`,
       description: userData.bio,
     },
-    pageData: {user: userData, assets: (await assets).assets || [], mods: await mods || []},
+    pageData: {user: userData, assets: assets.assets || [], mods: mods || []},
   };
 }) satisfies PageLoad;

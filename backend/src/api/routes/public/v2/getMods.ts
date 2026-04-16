@@ -33,11 +33,6 @@ export const getModsV2Router = router({
                 gameVersionWhereOptions.version = input.gameVersion;
             }
 
-            let specifiedGameVersions = await GameVersion.findAll({
-                where: gameVersionWhereOptions,
-                attributes: ['id']
-            }).then(gvs => gvs.map(gv => gv.id));
-
             let allowedStatuses: Status[];
             switch (input.status) {
                 case `all`:
@@ -57,12 +52,14 @@ export const getModsV2Router = router({
 
             let versions = await Version.findAll({
                 where: {
-                    supportedGameVersionIds: {                        
-                        [Op.overlap]: specifiedGameVersions
-                    },
                     status: allowedStatuses,
                 },
-                include: [{all: true}],
+                include: [User, Project, {
+                    model: GameVersion,
+                    where: gameVersionWhereOptions,
+                    through: { attributes: [] },
+                    required: true, // inner join
+                }],
             });
 
             let output = await Promise.all(versions.sort((a, b) => compare(b.semver, a.semver)) // sort versions in descending order
@@ -101,14 +98,14 @@ export const getModsV2Router = router({
             let modVersions = await Version.findAll({
                 where: {
                     ...statusFilter,
-                    [Op.or] : [
+                    [Op.or]: [
                         { zipHash: { [Op.in]: hashes } },
                         sequelize.where(sequelize.fn('jsonb_exists', sequelize.col('contentHashes'), hashes), Op.eq, true)
                     ]
                 },
                 include: [User]
             });
-        
+
             let retObjs = await Promise.all(modVersions.map(mv => mv.toApiV2()))
             return {
                 modVersions: retObjs,
@@ -138,14 +135,14 @@ export const getModsV2Router = router({
             let modVersions = await Version.findAll({
                 where: {
                     ...statusFilter,
-                    [Op.or] : [
+                    [Op.or]: [
                         { zipHash: { [Op.in]: input.hashes } },
                         sequelize.where(sequelize.fn('jsonb_exists', sequelize.col('contentHashes'), input.hashes), Op.eq, true)
                     ]
                 },
                 include: [User]
             });
-        
+
             let retObj: Record<string, Awaited<ReturnType<Version[`toApiV2`]>>[]> = {};
             await Promise.all(modVersions.map(async mv => {
                 let apiObj = await mv.toApiV2();

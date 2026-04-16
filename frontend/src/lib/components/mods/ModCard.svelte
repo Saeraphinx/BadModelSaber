@@ -33,7 +33,9 @@
       <span class="flex flex-row items-end gap-1 ">
         <a href="/mods/{project.id}" class="text-lg flex flex-row flex-wrap items-end gap-1 max-w-56 overflow-hidden text-ellipsis whitespace-nowrap" title={project.name} aria-hidden="true">
           {project.name}
-          <p class="text-xs text-muted-foreground pb-1">v{version?.semver}</p>
+          {#if version}
+            <p class="text-xs text-muted-foreground pb-1">v{version.semver}</p>
+          {/if}
         </a>
       </span>
       <span class="flex flex-row gap-1">

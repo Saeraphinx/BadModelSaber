@@ -1,10 +1,11 @@
-import { AfterValidate, AllowNull, BelongsTo, Column, CreatedAt, DataType, Default, DeletedAt, ForeignKey, Model, Table, UpdatedAt } from "sequelize-typescript";
+import { AfterCreate, AfterValidate, AllowNull, BelongsTo, BelongsToMany, Column, CreatedAt, DataType, Default, DeletedAt, ForeignKey, Model, Table, UpdatedAt } from "sequelize-typescript";
 import { col, CreationOptional, InferAttributes, InferCreationAttributes, NonAttribute, Op, Sequelize, WhereOptions } from "sequelize";
-import { AlertType, dbId, ModApiv2, ProjectApiV3, RequestType, Status, StatusHistory, statusHistorySchema, UserPermissions, WebhookLogType } from "../DBExtras.ts";
+import { AlertType, dbId, ModApiv2, ProjectApiV3, RequestType, Status, StatusHistory, statusHistorySchema, UserApiV3, UserPermissions, WebhookLogType } from "../DBExtras.ts";
 import z from "zod/v4";
 import { Game } from "./Game.ts";
 import { Logger } from "../../Logger.ts";
 import { User } from "./User.ts";
+import { ProjectAuthor } from "./ProjectAuthor.ts";
 import { Version } from "./Version.ts";
 import { satisfies } from "semver";
 import { Translation } from "./Translation.ts";
@@ -16,10 +17,11 @@ import path from "path";
 import { Webhook } from "discord.js";
 import { WebhookPayloadGenerator, Webhooks } from "../../Webhooks.ts";
 import { Alert } from "./Alert.ts";
+import { GameVersion } from "./GameVersion.ts";
 
 
 export type ProjectInfer = InferAttributes<Project>;
-export type ProjectAllowedEdit = Partial<Pick<Project, `summary` | `description` | `category` | `gitUrl` | `authorIds` | `collaboratorIds`>>;
+export type ProjectAllowedEdit = Partial<Pick<Project, `summary` | `description` | `category` | `gitUrl`  | `collaboratorIds`> & { authorIds: number[] }>;
 export type ProjectWhereOptions = WhereOptions<Project>;
 
 @Table({
@@ -65,9 +67,8 @@ export class Project extends Model<InferAttributes<Project>, InferCreationAttrib
     @Column(DataType.STRING)
     declare category: string; // what to categorize this project as
 
-    @AllowNull(false)
-    @Column(DataType.ARRAY(DataType.INTEGER))
-    declare authorIds: number[]; // the ids of the users who are authors of this project
+    @BelongsToMany(() => User, () => ProjectAuthor)
+    declare authors: NonAttribute<User[]>;
 
     @AllowNull(false)
     @Default([])
@@ -117,6 +118,15 @@ export class Project extends Model<InferAttributes<Project>, InferCreationAttrib
         }
     }
 
+    get authorIds(): NonAttribute<Promise<number[]>> {
+        if (this.authors) {
+            return Promise.resolve(this.authors.map(a => a.id));
+        } else {
+            Logger.debug(`Authors not loaded, fetching from DB for project ID: ${this.id}`);
+            return this.$get(`authors`, { attributes: ['id'] }).then(authors => authors?.map(a => a.id) as number[]) || Promise.resolve([]);
+        }
+    }
+
     get folderPath(): NonAttribute<string> {
         return path.join(EnvConfig.uploadsPath, this.id.toString());
     }
@@ -139,7 +149,6 @@ export class Project extends Model<InferAttributes<Project>, InferCreationAttrib
         description: z.string().max(4096),
         gameName: z.string(),
         category: z.string(),
-        authorIds: z.array(dbId).min(1),
         status: z.enum(Status),
         iconFileName: z.string(),
         gitUrl: z.url(),
@@ -164,17 +173,6 @@ export class Project extends Model<InferAttributes<Project>, InferCreationAttrib
 
     public static async validateExtended(obj: Project | ProjectInfer): Promise<boolean> {
         if (!obj) {
-            return false;
-        }
-
-        let authorCount = await User.count({
-            where: {
-                id: obj.authorIds,
-            },
-        });
-
-        if (authorCount != obj.authorIds.length) {
-            Logger.warn(`Not all authors found for project validation.`);
             return false;
         }
 
@@ -209,64 +207,64 @@ export class Project extends Model<InferAttributes<Project>, InferCreationAttrib
         return (await Project.findByPk(id, { attributes: ['id'] })) ? true : false;
     }
     // #region Permissions 
-    public canView(user: User | null | undefined): Promise<boolean> {
+    public async canView(user: User | null | undefined): Promise<boolean> {
         if (this.status === Status.Verified) {
-            return Promise.resolve(true);
+            return true;
         }
 
         if (!user) {
-            return Promise.resolve(false);
+            return false;
         }
 
-        if (this.authorIds.includes(user.id)) {
-            return Promise.resolve(true);
+        if ((await this.authorIds).includes(user.id)) {
+            return true;
         }
 
-        return Promise.resolve(user.checkRoles([UserPermissions.Mods_ViewAll], this.gameName));
+        return user.checkRoles([UserPermissions.Mods_ViewAll], this.gameName);
     }
 
-    public canEdit(user: User | null | undefined): Promise<boolean> {
+    public async canEdit(user: User | null | undefined): Promise<boolean> {
         if (!user) {
-            return Promise.resolve(false);
+            return false;
         }
 
-        if (this.authorIds.includes(user.id)) {
-            return Promise.resolve(true);
+        if ((await this.authorIds).includes(user.id)) {
+            return true;
         }
 
-        return Promise.resolve(user.checkRoles([UserPermissions.Mods_EditAll], this.gameName));
+        return user.checkRoles([UserPermissions.Mods_EditAll], this.gameName);
     }
 
-    public canUploadVersion(user: User | null | undefined): Promise<boolean> {
+    public async canUploadVersion(user: User | null | undefined): Promise<boolean> {
         if (!user) {
-            return Promise.resolve(false);
+            return false;
         }
 
-        if (this.authorIds.includes(user.id)) {
-            return Promise.resolve(true);
+        if ((await this.authorIds).includes(user.id)) {
+            return true;
         }
 
         if (this.collaboratorIds.includes(user.id)) {
-            return Promise.resolve(true);
+            return true;
         }
 
-        return Promise.resolve(user.checkRoles([UserPermissions.Mods_UploadAll], this.gameName));
+        return user.checkRoles([UserPermissions.Mods_UploadAll], this.gameName);
     }
 
-    public canTranslate(user: User | null | undefined): Promise<boolean> {
+    public async canTranslate(user: User | null | undefined): Promise<boolean> {
         if (!user) {
-            return Promise.resolve(false);
+            return false;
         }
 
-        if (this.authorIds.includes(user.id)) {
-            return Promise.resolve(true);
+        if ((await this.authorIds).includes(user.id)) {
+            return true;
         }
 
         if (this.collaboratorIds.includes(user.id)) {
-            return Promise.resolve(true);
+            return true;
         }
 
-        return Promise.resolve(user.checkRoles([UserPermissions.Mods_EditAll, UserPermissions.Mods_TranslateAll], this.gameName));
+        return user.checkRoles([UserPermissions.Mods_EditAll, UserPermissions.Mods_TranslateAll], this.gameName);
     }
     // #endregion
     // #region Version Lookups
@@ -274,11 +272,7 @@ export class Project extends Model<InferAttributes<Project>, InferCreationAttrib
         let whereOptions: WhereOptions<Version> = {
             projectId: this.id,
         }
-        if (supportedGameVersionIds) {
-            whereOptions.supportedGameVersionIds = {
-                [Op.contains]: [supportedGameVersionIds],
-            };
-        }
+
         if (statuses && statuses.length > 0) {
             whereOptions.status = {
                 [Op.in]: statuses,
@@ -286,7 +280,15 @@ export class Project extends Model<InferAttributes<Project>, InferCreationAttrib
         }
         let sermverOnly = await Version.findAll({
             where: whereOptions,
-            attributes: [`id`, `semver`]
+            attributes: [`id`, `semver`],
+            include: supportedGameVersionIds ? [{
+                model: GameVersion,
+                where: {
+                    id: supportedGameVersionIds,
+                },
+                through: { attributes: [] },
+                required: true,
+            }] : [],
         }).then(versions => versions.sort((a, b) => {
             if (a.semver && b.semver) {
                 return b.semver.compare(a.semver);
@@ -358,7 +360,7 @@ export class Project extends Model<InferAttributes<Project>, InferCreationAttrib
         message: string;
         versionId?: number | null;
     }, includeCollaborators = true, additionalIds?: number[]): Promise<void | Promise<Alert>[]> {
-        let userIds =  Array.from(includeCollaborators ? new Set([...(this.authorIds || []), ...(this.collaboratorIds || []), ...additionalIds || []]) : new Set([...(this.authorIds || []), ...additionalIds || []]));
+        let userIds =  Array.from(includeCollaborators ? new Set([...(this.authors.map((a) => a.id) || []), ...(this.collaboratorIds || []), ...additionalIds || []]) : new Set([...(this.authors.map((a) => a.id) || []), ...additionalIds || []]));
         let users = User.findAll({
             where: {
                 id: userIds,
@@ -410,9 +412,11 @@ export class Project extends Model<InferAttributes<Project>, InferCreationAttrib
             description: data.description ?? this.description,
             category: data.category ?? this.category,
             gitUrl: data.gitUrl ?? this.gitUrl,
-            authorIds: data.authorIds ?? this.authorIds,
             collaboratorIds: data.collaboratorIds ?? this.collaboratorIds,
         });
+        if (data.authorIds) {
+            await this.$set(`authors`, data.authorIds);
+        }
         this.lastUpdatedById = user.id;
         Webhooks.sendWebhookLog(this.gameName, WebhookLogType.Text_Edited, false, WebhookPayloadGenerator.generateEditedThingPayload(this, user));
         return await this.save();
@@ -451,7 +455,7 @@ export class Project extends Model<InferAttributes<Project>, InferCreationAttrib
         }
 
         if (shouldAlert) {
-            let authorsAndCollaborators = Array.from(new Set([...(this.authorIds || []), ...(this.collaboratorIds || [])]));
+            let authorsAndCollaborators = Array.from(new Set([...(this.authors.map((a) => a.id) || []), ...(this.collaboratorIds || [])]));
             User.findAll({
                 where: {
                     id: authorsAndCollaborators,
@@ -498,12 +502,7 @@ export class Project extends Model<InferAttributes<Project>, InferCreationAttrib
     // #endregion
     // #region ToAPI
     public async toApiV3(language?: string): Promise<ProjectApiV3> {
-        let authors = await User.findAll({
-            where: {
-                id: this.authorIds,
-            },
-        }).then((users) => users.map((user) => user.toApiV3()));
-
+        let authors: UserApiV3[] = this.authors ? await Promise.all(this.authors.map(a => a.toApiV3())) : [];
         let translation = null;
         if (language && !language.startsWith(`en`)) {
             translation = await this.getTranslation(language);
@@ -531,11 +530,7 @@ export class Project extends Model<InferAttributes<Project>, InferCreationAttrib
     }
 
     public async toApiV2(): Promise<ModApiv2> {
-        let authors = await User.findAll({
-            where: {
-                id: this.authorIds,
-            },
-        }).then((users) => users.map((user) => user.toApiV2()));
+        let authors = this.authors ? await Promise.all(this.authors.map(a => a.toApiV2())) : [];
 
         return {
             id: this.id,

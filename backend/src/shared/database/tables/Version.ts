@@ -1,5 +1,5 @@
 import { CreationOptional, InferAttributes, InferCreationAttributes, NonAttribute, Op, WhereOptions } from "sequelize";
-import { AfterCreate, AfterUpdate, AfterValidate, AllowNull, BeforeCreate, BeforeValidate, BelongsTo, Column, CreatedAt, DataType, Default, DeletedAt, ForeignKey, Model, Sequelize, Table, UpdatedAt } from "sequelize-typescript";
+import { AfterCreate, AfterUpdate, AfterValidate, AllowNull, BeforeCreate, BeforeValidate, BelongsTo, BelongsToMany, Column, CreatedAt, DataType, Default, DeletedAt, ForeignKey, Model, Sequelize, Table, UpdatedAt } from "sequelize-typescript";
 import { AlertType, ContentHash, ContentHashSchema, Dependency, DependencySchema, ModApiV1, ModVersionsApiv2, Status, StatusHistory, statusHistorySchema, UserPermissions, VersionApiV3, WebhookLogType } from "../DBExtras.ts";
 import { SemVer, parse } from "semver";
 import { Project } from "./Project.ts";
@@ -7,6 +7,7 @@ import { User } from "./User.ts";
 import z from "zod/v4";
 import { Logger } from "../../Logger.ts";
 import { GameVersion } from "./GameVersion.ts";
+import { VersionGameVersion } from "./VersionGameVersion.ts";
 import { Literal } from "sequelize/lib/utils";
 import { EnvConfig } from "../../EnvConfig.ts";
 import path from "path";
@@ -17,7 +18,9 @@ import { WebhookPayloadGenerator, Webhooks } from "../../Webhooks.ts";
 import { Alert, AlertInfer, AlertTemplates } from "./Alert.ts";
 
 export type VersionInfer = InferAttributes<Version>;
-export type VersionAllowedEdit = Partial<Pick<Version, `semver` | `supportedGameVersionIds` | `dependencies`>>;
+export type VersionAllowedEdit = Partial<Pick<Version, `semver` | `dependencies`>> & {
+    supportedGameVersionIds?: number[];
+};
 export type VersionWhereOptions = WhereOptions<Version>;
 @Table({
     tableName: `versions`,
@@ -62,9 +65,14 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
     })
     declare semver: SemVer;
 
-    @AllowNull(false)
-    @Column(DataType.ARRAY(DataType.INTEGER))
-    declare supportedGameVersionIds: number[]; // ids of GameVersion entries
+    /**
+     * Uses `$set`, `$get`, `$add` functions fpr editing, see https://github.com/sequelize/sequelize-typescript?tab=readme-ov-file#type-safe-usage-of-auto-generated-functions
+     *
+     * @type {NonAttribute<GameVersion[]>}
+     * @memberof Version
+     */
+    @BelongsToMany(() => GameVersion, () => VersionGameVersion)
+    declare supportedGameVersions: NonAttribute<GameVersion[]>;
 
     @AllowNull(false)
     @Column(DataType.STRING)
@@ -171,7 +179,6 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
         projectId: z.number(),
         uploaderId: z.number(),
         semver: z.instanceof(SemVer),
-        supportedGameVersionIds: z.array(z.number()),
         status: z.enum(Status),
         dependencies: z.array(DependencySchema),
         platform: z.string(),
@@ -218,17 +225,7 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
             return false;
         }
 
-        let supportedGameVersions = await GameVersion.count({
-            where: {
-                id: obj.supportedGameVersionIds,
-                gameName: parentGame.name,
-            }
-        });
 
-        if (supportedGameVersions != obj.supportedGameVersionIds.length) {
-            Logger.warn(`Not all supported game versions found for version validation.`);
-            return false;
-        }
 
         if (z.enum(parentGame.platforms).safeParse(obj.platform).success === false) {
             Logger.warn(`Version platform '${obj.platform}' is not valid for game '${parentGame.name}'.`);
@@ -257,35 +254,23 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
         }
         version.baseFileName = `${(await version.project)?.name}_${version.platform}_v${version.semver.raw}`;
     }
-
+      
     @AfterCreate
-    private static async runCreate(version: Version) {
-        for (let gameVersionId of version.supportedGameVersionIds) {
-            let gv = await GameVersion.findByPk(gameVersionId);
-            if (!gv) {
-                Logger.warn(`Could not find GameVersion with id ${gameVersionId} for Version id ${version.id} after creation.`);
-                continue;
-            }
+    private static async runLinkedVersionsMerge(version: Version) {
+        for (let gv of version.supportedGameVersions) {
             for (let linkedId of gv.linkedVersionIds) {
-                if (!version.supportedGameVersionIds.includes(linkedId)) {
-                    version.supportedGameVersionIds = [...version.supportedGameVersionIds, linkedId];
+                if (!version.supportedGameVersions.some((gvs) => gvs.id === linkedId)) {
+                    let linkedVersion = await GameVersion.findByPk(linkedId);
+                    if (linkedVersion) {
+                        await version.$add(`supportedGameVersions`, linkedVersion);
+                    } else {
+                        Logger.warn(`Could not find linked GameVersion with id ${linkedId} for merging into version id ${version.id}`);
+                    }
                 }
             }
         }
 
         await version.save();
-    }
-
-    @AfterUpdate
-    private static async sortGameVersions(version: Version) {
-        let gameVersions = await GameVersion.findAll({
-            where: {
-                id: version.supportedGameVersionIds,
-            }
-        }).then((gvs) => gvs.sort(GameVersion.compareDecending).map((gv => gv.id)));
-        await version.update({
-            supportedGameVersionIds: gameVersions,
-        })
     }
     // #endregion
 
@@ -384,7 +369,13 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
         })
     }
     // #region Getters
-    public async getDependencies(gameVersionId: number = this.supportedGameVersionIds[0]): Promise<Version[]> {
+    public async getDependencies(gameVersionId?: number): Promise<Version[]> {
+        const resolvedGameVersionId = gameVersionId ?? this.supportedGameVersions[0].id;
+        if (!resolvedGameVersionId) {
+            Logger.warn(`No supported game versions found for dependency resolution in version id ${this.id}`);
+            return [];
+        }
+
         let deps: Version[] = [];
         for (let dep of this.dependencies) {
             let project = await Project.findByPk(dep.pId);
@@ -392,7 +383,7 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
                 Logger.warn(`Could not find project for dependency with id ${dep.pId} in version id ${this.id}`);
                 continue;
             }
-            let version = await project.getLatestVersion(gameVersionId, dep.sv);
+            let version = await project.getLatestVersion(resolvedGameVersionId, dep.sv);
             if (!version) {
                 Logger.warn(`Could not find version for dependency with project id ${dep.pId} and semver range ${dep.sv} in version id ${this.id}`);
                 continue;
@@ -465,7 +456,15 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
             this.semver = data.semver;
         }
         if (data.supportedGameVersionIds) {
-            this.supportedGameVersionIds = data.supportedGameVersionIds;
+            let desiredGameVersions = await GameVersion.findAll({
+                where: {
+                    id: data.supportedGameVersionIds,
+                }
+            });
+            if (desiredGameVersions.length !== data.supportedGameVersionIds.length) {
+                throw new Error(`Invalid supportedGameVersion Ids provied. Some GameVersions not found.`);
+            }
+            await this.$set(`supportedGameVersions`, desiredGameVersions);
         }
         if (data.dependencies) {
             this.dependencies = data.dependencies;
@@ -521,11 +520,7 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
     // #endregion
     // #region ToAPI
     public async toApiV3(): Promise<VersionApiV3> {
-        let versions = await GameVersion.findAll({
-            where: {
-                id: this.supportedGameVersionIds,
-            }
-        }).then((gvs) => gvs/*.sort(GameVersion.compareDecending)*/.map((gv) => gv.toApiV3()));
+        let versions = this.supportedGameVersions.map((gv) => gv.toApiV3());
 
         return {
             id: this.id,
@@ -548,11 +543,7 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
     }
 
     public async toApiV2(): Promise<ModVersionsApiv2> {
-        let supportedGameVersions = await GameVersion.findAll({
-            where: {
-                id: this.supportedGameVersionIds,
-            }
-        });
+        let supportedGameVersions = this.supportedGameVersions
 
         let uploader = await this.uploader;
         if (!uploader) {

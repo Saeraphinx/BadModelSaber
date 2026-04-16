@@ -10,7 +10,8 @@ export const load: PageLoad = async ({ fetch }) => {
 
   let games = await trpc.v3.games.getGames.query().catch(handleTrpcError());
   let gameVersions = await trpc.v3.games.getGameVersions.query({
-    gameName: games.find(g => g.default)?.name || games[0]?.name
+    gameName: games.find(g => g.default)?.name || games[0]?.name,
+    includeExtras: true,
   })
 
   return {

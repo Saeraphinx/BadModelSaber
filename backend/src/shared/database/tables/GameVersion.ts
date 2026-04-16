@@ -1,7 +1,8 @@
-import { InferAttributes, InferCreationAttributes, CreationOptional, WhereOptions, Op } from "sequelize";
-import { AllowNull, Column, CreatedAt, DataType, Default, DeletedAt, Model, Sequelize, Table, UpdatedAt } from "sequelize-typescript";
+import { InferAttributes, InferCreationAttributes, CreationOptional, NonAttribute, WhereOptions, Op } from "sequelize";
+import { AllowNull, BelongsToMany, Column, CreatedAt, DataType, Default, DeletedAt, Model, Sequelize, Table, UpdatedAt } from "sequelize-typescript";
 import { GameVersionApiV2, GameVersionApiV3, GameVersionApiV3_full } from "../DBExtras.ts";
 import { Version } from "./Version.ts";
+import { VersionGameVersion } from "./VersionGameVersion.ts";
 import { parseErrorMessage } from "../../Tools.ts";
 import { coerce } from "semver";
 
@@ -40,6 +41,9 @@ export class GameVersion extends Model<InferAttributes<GameVersion>, InferCreati
     @Column(DataType.ARRAY(DataType.INTEGER))
     declare linkedVersionIds: CreationOptional<number[]>;
 
+    @BelongsToMany(() => Version, () => VersionGameVersion)
+    declare versions: NonAttribute<Version[]>;
+
     @CreatedAt
     declare readonly createdAt: CreationOptional<Date>;
     @UpdatedAt
@@ -53,7 +57,7 @@ export class GameVersion extends Model<InferAttributes<GameVersion>, InferCreati
         if (!gv1 || !gv2) {
             throw new Error('One or both GameVersions not found');
         }
-    
+
         // make sure that the ids are actually linked
         if (!gv1.linkedVersionIds?.includes(gv2.id)) {
             gv1.linkedVersionIds = [...(gv1.linkedVersionIds || []), gv2.id];
@@ -66,32 +70,34 @@ export class GameVersion extends Model<InferAttributes<GameVersion>, InferCreati
 
         // find all versions that have gv1 id or gv2 id in their supportedGameVersionIds
         let gv1Versions = await Version.findAll({
-            where: {
-                supportedGameVersionIds: {
-                    [Op.contains]: [gv1.id]
-                }
-            }
+            include: [{
+                model: GameVersion,
+                where: { id: gv1.id },
+                through: { attributes: [] },
+                required: true, // inner join
+            }],
         });
 
         let gv2Versions = await Version.findAll({
-            where: {
-                supportedGameVersionIds: {
-                    [Op.contains]: [gv2.id]
-                }
-            }
+            include: [{
+                model: GameVersion,
+                where: { id: gv2.id },
+                through: { attributes: [] },
+                required: true, // inner join
+            }],
         });
 
         // add gv2 id to all versions that have gv1 id, and vice versa
         for (let version of gv1Versions) {
-            if (!version.supportedGameVersionIds.includes(gv2.id)) {
-                version.supportedGameVersionIds = [...version.supportedGameVersionIds, gv2.id];
+            if (!version.$has(`supportedGameVersions`, gv2)) {
+                version.$add(`supportedGameVersions`, gv2);
                 await version.save();
             }
         }
 
         for (let version of gv2Versions) {
-            if (!version.supportedGameVersionIds.includes(gv1.id)) {
-                version.supportedGameVersionIds = [...version.supportedGameVersionIds, gv1.id];
+            if (!version.$has(`supportedGameVersions`, gv1)) {
+                version.$add(`supportedGameVersions`, gv1);
                 await version.save();
             }
         }

@@ -1,5 +1,5 @@
-import { AfterValidate, AllowNull, Column, CreatedAt, DataType, DeletedAt, Model, Table, Unique, UpdatedAt } from "sequelize-typescript";
-import { CreationAttributes, CreationOptional, InferAttributes, InferCreationAttributes, Op, Sequelize, WhereOptions } from "sequelize";
+import { AfterValidate, AllowNull, BelongsToMany, Column, CreatedAt, DataType, DeletedAt, Model, Table, Unique, UpdatedAt } from "sequelize-typescript";
+import { CreationAttributes, CreationOptional, InferAttributes, InferCreationAttributes, NonAttribute, Op, Sequelize, WhereOptions } from "sequelize";
 import { AlertType, UserPlatform, UserApiV3, UserPermissions, PlatformType, UserPublicApiV2, dbId, userPermissionsSchema, userPlatformSchema, Status } from "../DBExtras.ts";
 import { Alert } from "./Alert.ts";
 import { Logger } from "../../Logger.ts";
@@ -11,6 +11,7 @@ import { Version } from "./Version.ts";
 import { ThingRequest } from "./ThingRequest.ts";
 import { Translation } from "./Translation.ts";
 import { Project } from "./Project.ts";
+import { ProjectAuthor } from "./ProjectAuthor.ts";
 import sequelize from "sequelize/lib/sequelize";
 
 export const DefaultPermissions = [UserPermissions.Asset_Create, UserPermissions.Mods_Create, UserPermissions.Users_EditSelf];
@@ -85,6 +86,9 @@ export class User extends Model<InferAttributes<User>, InferCreationAttributes<U
         perGame: Record<string, UserPermissions[]>,
         sitewide: UserPermissions[]
     }>;
+
+    @BelongsToMany(() => Project, () => ProjectAuthor)
+    declare authoredProjects: NonAttribute<Project[]>;
 
     @CreatedAt
     declare readonly createdAt: CreationOptional<Date>;
@@ -266,7 +270,36 @@ export class User extends Model<InferAttributes<User>, InferCreationAttributes<U
             ThingRequest.update({ requesterId: newUser.id }, { where: { requesterId: this.id } }),
             ThingRequest.update({ requestResponseBy: newUser.id }, { where: { requestResponseBy: this.id } }),
             Translation.update({ translatedBy: newUser.id }, { where: { translatedBy: this.id } }),
-            Project.update({ authorIds: Sequelize.literal(`array_replace("authorIds", ${this.id}, ${newUser.id})`) }, { where: { authorIds: { [Op.contains]: [this.id] } } }),
+            (async () => {
+                const authoredProjectRows = await ProjectAuthor.findAll({
+                    where: { userId: this.id },
+                });
+
+                if (authoredProjectRows.length === 0) {
+                    return;
+                }
+
+                const projectIds = [...new Set(authoredProjectRows.map((row) => row.projectId))];
+                const existingNewUserRows = await ProjectAuthor.findAll({
+                    where: {
+                        userId: newUser.id,
+                        projectId: { [Op.in]: projectIds },
+                    },
+                });
+                const existingProjectIds = new Set(existingNewUserRows.map((row) => row.projectId));
+                const rowsToCreate = projectIds
+                    .filter((projectId) => !existingProjectIds.has(projectId))
+                    .map((projectId) => ({
+                        projectId,
+                        userId: newUser.id,
+                    }));
+
+                if (rowsToCreate.length > 0) {
+                    await ProjectAuthor.bulkCreate(rowsToCreate as any);
+                }
+
+                await ProjectAuthor.destroy({ where: { userId: this.id } });
+            })(),
             Project.update({ collaboratorIds: Sequelize.literal(`array_replace("collaboratorIds", ${this.id}, ${newUser.id})`) }, { where: { collaboratorIds: { [Op.contains]: [this.id] } } }),
             Project.update({ lastUpdatedById: newUser.id }, { where: { lastUpdatedById: this.id } }),
             Project.update({ lastApprovedById: newUser.id }, { where: { lastApprovedById: this.id } }),

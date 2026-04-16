@@ -53,13 +53,17 @@ export const GetModsV3 = router({
             
             let versions = await Version.findAll({
                 where: {
-                    supportedGameVersionIds: {                        
-                        [Op.overlap]: availableGameVerison
-                    },
                     status: input.status
                 },
                 order: [['projectId', 'DESC']],
-                include: [{all: true}]
+                include: [User, Project, {
+                    model: GameVersion,
+                    where: {
+                        id: availableGameVerison
+                    },
+                    through: { attributes: [] },
+                    required: true, // inner join
+                }],
             }).then(v => {
                 timingString += `db;dur=${Date.now() - startTime}`;
                 startTime = Date.now();
@@ -92,9 +96,9 @@ export const GetModsV3 = router({
             }
 
             if (input.authors) {
-                output = output.filter(o => o.project.authorIds.some(a => {
+                output = output.filter(o => o.project.authors.some(a => {
                     if (Array.isArray(input.authors)) {
-                        return input.authors.includes(a);
+                        return input.authors.includes(a.id);
                     } else {
                         return a === input.authors;
                     }
@@ -143,7 +147,8 @@ export const GetModsV3 = router({
             let versions = await Version.findAll({
                 where: {
                     projectId: project.id
-                }
+                },
+                include: [GameVersion],
             });
             versions = versions
                 .sort((a, b) => compare(b.semver, a.semver)) // sort versions in descending order

@@ -12,6 +12,8 @@ import { parseErrorMessage } from "./Tools.ts";
 import { Version } from "./database/tables/Version.ts";
 import { Project } from "./database/tables/Project.ts";
 import { GameVersion } from "./database/tables/GameVersion.ts";
+import { ProjectAuthor } from "./database/tables/ProjectAuthor.ts";
+import { VersionGameVersion } from "./database/tables/VersionGameVersion.ts";
 import { Translation } from "./database/tables/Translation.ts";
 import { Game } from "./database/tables/Game.ts";
 
@@ -22,6 +24,8 @@ export * from "./database/tables/ThingRequest.ts";
 export * from "./database/DBExtras.ts";
 export * from "./database/tables/Game.ts"
 export * from "./database/tables/GameVersion.ts"
+export * from "./database/tables/ProjectAuthor.ts"
+export * from "./database/tables/VersionGameVersion.ts"
 export * from "./database/tables/Project.ts"
 export * from "./database/tables/Version.ts"
 
@@ -177,9 +181,11 @@ export class DatabaseManager {
             ThingRequest,
             Game,
             GameVersion,
+            ProjectAuthor,
             Project,
             Version,
-            Translation
+            Translation,
+            VersionGameVersion,
         ]);
 
     }

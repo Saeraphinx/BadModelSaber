@@ -80,6 +80,7 @@ export function createDummyProject(gameName:string, author: number | undefined =
     }
     return new Project({
         name: `Project ${id}`,
+        nameId: `project-${id}`,
         description: "This is a test project",
         gameName: gameName,
         authorIds: [author ? author : 5],
@@ -101,7 +102,6 @@ export function createDummyVersion(projectId: number, gameVersionId: number, aut
     }
     return new Version({
         projectId: projectId,
-        supportedGameVersionIds: [gameVersionId],
         uploaderId: author ? author : 5,
         contentHashes: [],
         fileSize: 0,

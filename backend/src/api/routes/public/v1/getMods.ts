@@ -33,7 +33,7 @@ export const getModsV2Router = router({
                     return b.localeCompare(a);
                 }
             });
-                
+
             return versions;
         }),
     getAliases: anyProcedure()
@@ -79,22 +79,21 @@ export const getModsV2Router = router({
             let gameVersionWhereOptions: WhereOptions<GameVersion> = {
                 gameName: 'beatsaber',
             };
+
             if (input.gameVersion) {
                 gameVersionWhereOptions.version = input.gameVersion;
             }
 
-            let specifiedGameVersions = await GameVersion.findAll({
-                where: gameVersionWhereOptions,
-            });
-
             let versions = await Version.findAll({
                 where: {
-                    supportedGameVersionIds: {                        
-                        [Op.overlap]: specifiedGameVersions.map(gv => gv.id)
-                    },
                     status: showUnverified ? [Status.Verified, Status.Unverified, Status.Pending] : [Status.Verified],
                 },
-                include: {all: true}
+                include: [Project, User, {
+                    model: GameVersion,
+                    where: gameVersionWhereOptions,
+                    through: { attributes: [] },
+                    required: true,
+                }],
             });
 
             let output = await Promise.all(versions.sort((a, b) => compare(b.semver, a.semver)) // sort versions in descending order
@@ -105,7 +104,7 @@ export const getModsV2Router = router({
             let apiOutput: Promise<ModApiV1>[] = [];
             for (let ver of output) {
                 let project = await ver.project as Project;
-                apiOutput.push(ver.toApiV1(project, specifiedGameVersions[0], true));
+                apiOutput.push(ver.toApiV1(project, ver.supportedGameVersions[0], true));
             }
             return await Promise.allSettled(apiOutput).then(results => {
                 let fulfilledResults = results.filter(r => r.status === 'fulfilled') as PromiseFulfilledResult<ModApiV1>[];

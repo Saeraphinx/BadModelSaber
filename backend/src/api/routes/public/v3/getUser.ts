@@ -98,12 +98,10 @@ export const userRouterV3 = router({
         }
 
         let projects = await Project.findAll({
-            where: {
-                authorIds: {
-                    [Op.contains]: [user.id]
-                }
-            },
-            include: [{ all: true }]
+            include: [{
+                model: User,
+                where: { id: user.id }
+            }]
         });
         
         return await Promise.all(projects.filter(p => p.canView(ctx.user)).map(p => p.toApiV3()));
