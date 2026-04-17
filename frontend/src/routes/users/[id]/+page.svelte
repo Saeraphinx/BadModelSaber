@@ -15,6 +15,8 @@
   import * as Tabs from "$lib/shadcn/components/ui/tabs/index.js";
   import { Input } from "../../../lib/shadcn/components/ui/input";
   import { Textarea } from "../../../lib/shadcn/components/ui/textarea";
+  import { Label } from "../../../lib/shadcn/components/ui/label";
+  import { invalidate } from "$app/navigation";
 
   const { data: _internal } = $props();
   const { pageData, trpc, user } = $derived(_internal);
@@ -26,8 +28,8 @@
 
   // #region Edit User
   let isEditing = $state(false);
-  let editDisplayName = $state("");
-  let editBio = $state("");
+  let editDisplayName = $state(``);
+  let editBio = $state(``);
   let allowEditing = $derived.by(() => {
     if (!user) return false;
     return checkRoles(user, {
@@ -40,6 +42,9 @@
       bio: editBio,
     }).then(() => {
       isEditing = false;
+      tabsValue = "mods";
+      toast.success(`User updated successfully`);
+      invalidate((url) => url.pathname.includes(`v3.user.getUserById`));
     }).catch((err) => {
       toast.error(`Failed to update user`, { description: parseErrorMessage(err) });
     });
@@ -56,7 +61,7 @@
 <div class="flex flex-col items-center mx-4">
   <div class="flex flex-col md:flex-row gap-4 w-full">
     <UserCard user={pdUser} class="md:min-w-92" />
-    <div class="flex flex-row bg-accent p-4 rounded-lg w-full">
+    <div class="flex flex-row bg-card p-4 rounded-lg w-full">
       <Markdown bind:markdown={pdUser.bio} class="text-base w-full" />
       {#if allowEditing || (pdUser.userPlatforms?.length ?? 0 > 0)}
         <Separator orientation="vertical" class="mx-4" />
@@ -65,12 +70,20 @@
             {#each pdUser.userPlatforms as sponsorUrl}
               <SponsorButton class="w-full" type={sponsorUrl.platform} url={sponsorUrl.url} />
             {/each}
-            {#if allowEditing}
+            {#if allowEditing && !isEditing}
               <Button variant="outline" class="w-full" onclick={() => {
                 isEditing = true
                 tabsValue = "edit";
               }}>
                 Edit Profile
+              </Button>
+            {/if}
+            {#if isEditing}
+              <Button variant="outline" class="w-full" onclick={() => {
+                isEditing = false;
+                tabsValue = "mods";
+              }}>
+                Cancel
               </Button>
             {/if}
           </div>
@@ -81,8 +94,10 @@
   <Separator class="my-4 w-full" />
   <Tabs.Root bind:value={tabsValue} class="w-full">
     <Tabs.List variant="line" class="justify-center items-center m-auto">
-      <Tabs.Trigger value="mods">Mods</Tabs.Trigger>
-      <Tabs.Trigger value="assets">Assets</Tabs.Trigger>
+      {#if !isEditing}
+        <Tabs.Trigger value="mods">Mods</Tabs.Trigger>
+        <Tabs.Trigger value="assets">Assets</Tabs.Trigger>
+      {/if}
       {#if isEditing}
         <Tabs.Trigger value="edit">Edit</Tabs.Trigger>
       {/if}
@@ -102,9 +117,37 @@
         {/each}
       </Tabs.Content>
       <Tabs.Content value="edit" class="w-full mt-4 flex flex-col items-center gap-4 m-auto">
-        <Input placeholder="Display Name" bind:value={editDisplayName} class="w-full max-w-md" />
-        <Textarea placeholder="Bio" bind:value={editBio} class="w-full max-w-md" />
-        <Button onclick={onEditSubmit} disabled>Save Changes</Button>
+        <div class="flex flex-col justify-center w-full max-w-md p-4 gap-2 bg-card rounded-lg">
+          <span class="w-full max-w-lg">
+            <Label class="p-1 pb-2" for="displayName">Display Name</Label>
+            <Input placeholder="Display Name" bind:value={editDisplayName} class="w-full" />
+          </span>
+          <span class="w-full max-w-lg">
+            <Label class="p-1 pb-2" for="bio">Bio</Label>
+            <Textarea placeholder="Bio" bind:value={editBio} class="w-full" />
+          </span>
+          <Button onclick={onEditSubmit}>Save Changes</Button>
+        </div>
+        {#if pdUser.id == user?.id}
+          <div class="flex flex-col justify-center w-full max-w-md p-4 gap-2 bg-card rounded-lg">
+            <div class="grid grid-cols-2 gap-4">
+              <Button variant="outline" disabled={user?.githubId !== null} onclick={() => {
+                trpc.internal.auth.linkGitHubToaccount.query({}).then(({ url }) => {
+                  window.open(url, "_blank");
+                }).catch((err) => {
+                  toast.error(`Failed to link GitHub account`, { description: parseErrorMessage(err) });
+                })
+              }}>Link GitHub</Button>
+              <Button variant="outline" disabled={user?.discordId !== null} onclick={() => {
+                trpc.internal.auth.linkDiscordToAccount.query({}).then(({ url }) => {
+                  window.open(url, "_blank");
+                }).catch((err) => {
+                  toast.error(`Failed to link GitHub account`, { description: parseErrorMessage(err) });
+                })
+              }}>Link Discord</Button>
+            </div>
+          </div>
+        {/if}
       </Tabs.Content>
   </Tabs.Root>
 </div>

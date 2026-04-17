@@ -57,10 +57,10 @@
   <div
     class={cn("absolute top-0 left-0 w-full h-full focus:opacity-100 hover:opacity-100 transition-opacity duration-300", props.alwaysShowHover ? `opacity-100` : `opacity-0`)}>
     <!-- Title Banner -->
-    <div class="absolute top-0 left-0 bg-white/80 dark:bg-gray-800/80 backdrop-blur-xs w-full rounded-t-2xl">
+    <div class="absolute top-0 left-0 bg-gray-800/80 backdrop-blur-xs w-full rounded-t-2xl">
       <div class="p-2 pl-4 flex flex-col">
-        <a href="/assets/{props.asset.id}" class="{sizeClasses.headerSize} dark:hover:text-blue-300 hover:text-blue-700 transition-colors duration-300" onclick={() => invalidate(page.url)}>{props.asset.name}</a>
-        <a href="/users/{props.asset.uploaderId}" class="text-sm text-gray-500 dark:text-gray-400">{props.asset.uploader?.displayName}</a>
+        <a href="/assets/{props.asset.id}" class="{sizeClasses.headerSize} hover:text-blue-300  transition-colors duration-300" onclick={() => invalidate(page.url)}>{props.asset.name}</a>
+        <a href="/users/{props.asset.uploaderId}" class="text-sm text-gray-400">{props.asset.uploader?.displayName}</a>
       </div>
       <!-- <div class="flex flex-row flex-wrap pb-2 pl-4 gap-1">
         
@@ -68,7 +68,7 @@
     </div>
 
     <!-- Buttons -->
-    <div class="absolute flex bottom-2 right-2 backdrop-blur-sm bg-white/40 dark:bg-gray-800/20 rounded-md text-black dark:text-white transition-all duration-300">
+    <div class="absolute flex bottom-2 right-2 backdrop-blur-sm bg-gray-800/20 rounded-md text-white transition-all duration-300">
       {#if props.approvalDialog}
         <Button variant="ghost" size="icon" title={m["common.hover.openApprovalDialog"]()} onclick={() => props.approvalDialog?.showDialog(props.asset.id, props.asset.name, `asset`)}>
           <BadgeAlert />

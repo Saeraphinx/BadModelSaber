@@ -58,11 +58,11 @@
     <!-- left side -->
     <div class="flex flex-col justify-center w-full max-w-md p-4 gap-2 bg-card rounded-lg shadow-md">
       <span>
-        <Label class="p-1 pb-2" for="name">{m["mods.createProject.name"]()}</Label>
+        <Label class="p-1 pb-2" for="name">{m["mods.dataTable.name"]()}</Label>
         <Input bind:value={projectName} aria-invalid={!zProject.shape.name.safeParse(projectName).success} id="name" />
       </span>
       <span>
-        <Label class="p-1 pb-2" for="game">{m["mods.createProject.game"]()}</Label>
+        <Label class="p-1 pb-2" for="game">{m["mods.dataTable.game"]()}</Label>
         <Select.Root type="single" bind:value={projectGameName}>
           <Select.Trigger class="w-full">
             {selectedGame ? selectedGame.displayName : ""}
@@ -75,7 +75,7 @@
         </Select.Root>
       </span>
       <span>
-        <Label class="p-1 pb-2" for="category">{m["mods.createProject.category"]()}</Label>
+        <Label class="p-1 pb-2" for="category">{m["mods.dataTable.category"]()}</Label>
         <Select.Root type="single" bind:value={projectCategory}>
           <Select.Trigger class="w-full">
             {projectCategory}
@@ -99,7 +99,7 @@
     </div>
     <div class="flex flex-col justify-center w-full max-w-md p-4 bg-card rounded-lg shadow-md mt-4">
       <!-- value is the first file in the files array -->
-      <Label class="p-1 pb-2" for="thumbnail">{m["mods.createProject.thumbnail"]()}</Label>
+      <Label class="p-1 pb-2" for="thumbnail">{m["mods.dataTable.icon"]()}</Label>
       <Input id="thumbnail" type="file" bind:files={projectThumbnail} accept=".png,.jpeg,.webp,.gif" multiple />
       <p class="text-sm text-muted-foreground mt-2 pl-1">{m["mods.createProject.thumbnailFooter"]()}</p>
     </div>
@@ -108,11 +108,11 @@
     <!-- right side -->
     <div class="flex flex-col justify-center w-full max-w-md p-4 gap-2 bg-card rounded-lg shadow-md">
       <span>
-        <Label class="p-1 pb-2" for="summary">{m["mods.createProject.summary"]()}</Label>
+        <Label class="p-1 pb-2" for="summary">{m["mods.dataTable.summary"]()}</Label>
         <Textarea class="min-h-16" bind:value={projectSummary} aria-invalid={!zProject.shape.summary.safeParse(projectSummary).success} id="summary" />
       </span>
       <span>
-        <Label class="p-1 pb-2" for="description">{m["mods.createProject.description"]()}</Label>
+        <Label class="p-1 pb-2" for="description">{m["mods.dataTable.description"]()}</Label>
         <Textarea class="min-h-64" bind:value={projectDescription} aria-invalid={!zProject.shape.description.safeParse(projectDescription).success} id="description" />
       </span>
     </div>

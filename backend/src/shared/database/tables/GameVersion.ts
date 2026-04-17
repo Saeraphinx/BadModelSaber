@@ -2,7 +2,7 @@ import { InferAttributes, InferCreationAttributes, CreationOptional, NonAttribut
 import { AllowNull, BelongsToMany, Column, CreatedAt, DataType, Default, DeletedAt, Model, Sequelize, Table, UpdatedAt } from "sequelize-typescript";
 import { GameVersionApiV2, GameVersionApiV3, GameVersionApiV3_full } from "../DBExtras.ts";
 import { Version } from "./Version.ts";
-import { VersionGameVersion } from "./VersionGameVersion.ts";
+import { VersionGameVersion } from "./Junctions.ts";
 import { parseErrorMessage } from "../../Tools.ts";
 import { coerce } from "semver";
 

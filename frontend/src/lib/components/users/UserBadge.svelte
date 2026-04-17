@@ -23,7 +23,7 @@
     let roleStyles = user.permissions.sitewide.map((role) => getRoleData(role)).filter((role) => !role.hidden);
     if (roleStyles.length === 0)
       return {
-        badgeBorder: `bg-accent`,
+        badgeBorder: `bg-card`,
         textColor: `text-white`,
       };
     return roleStyles[0];

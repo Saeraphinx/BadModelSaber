@@ -5,7 +5,7 @@ import z from "zod/v4";
 import { Game } from "./Game.ts";
 import { Logger } from "../../Logger.ts";
 import { User } from "./User.ts";
-import { ProjectAuthor } from "./ProjectAuthor.ts";
+import { ProjectAuthor } from "./Junctions.ts";
 import { Version } from "./Version.ts";
 import { satisfies } from "semver";
 import { Translation } from "./Translation.ts";
@@ -68,7 +68,7 @@ export class Project extends Model<InferAttributes<Project>, InferCreationAttrib
     declare category: string; // what to categorize this project as
 
     @BelongsToMany(() => User, () => ProjectAuthor)
-    declare authors: NonAttribute<User[]>;
+    declare authors: NonAttribute<User[] | undefined>;
 
     @AllowNull(false)
     @Default([])
@@ -118,7 +118,7 @@ export class Project extends Model<InferAttributes<Project>, InferCreationAttrib
         }
     }
 
-    get authorIds(): NonAttribute<Promise<number[]>> {
+    private get authorIds(): NonAttribute<Promise<number[]>> {
         if (this.authors) {
             return Promise.resolve(this.authors.map(a => a.id));
         } else {
@@ -146,7 +146,7 @@ export class Project extends Model<InferAttributes<Project>, InferCreationAttrib
         nameId: z.string().regex(new RegExp("^(.*)$")).describe("project name for dependency resolution"),
         name: z.string().max(128),
         summary: z.string().max(256),
-        description: z.string().max(4096),
+        description: z.string().max(8192),
         gameName: z.string(),
         category: z.string(),
         status: z.enum(Status),
@@ -204,7 +204,7 @@ export class Project extends Model<InferAttributes<Project>, InferCreationAttrib
     }
     // #endregion
     public static async checkIfExists(id: number): Promise<boolean> {
-        return (await Project.findByPk(id, { attributes: ['id'] })) ? true : false;
+        return (await Project.unscoped().findByPk(id, { attributes: ['id'] })) ? true : false;
     }
     // #region Permissions 
     public async canView(user: User | null | undefined): Promise<boolean> {
@@ -354,13 +354,13 @@ export class Project extends Model<InferAttributes<Project>, InferCreationAttrib
     }
     // #endregion
     // #region Alerts
-    public createAlertForAuthors(data: {
+    public async createAlertForAuthors(data: {
         type: AlertType;
         header: string;
         message: string;
         versionId?: number | null;
     }, includeCollaborators = true, additionalIds?: number[]): Promise<void | Promise<Alert>[]> {
-        let userIds =  Array.from(includeCollaborators ? new Set([...(this.authors.map((a) => a.id) || []), ...(this.collaboratorIds || []), ...additionalIds || []]) : new Set([...(this.authors.map((a) => a.id) || []), ...additionalIds || []]));
+        let userIds =  Array.from(includeCollaborators ? new Set([...(await this.authorIds), ...(this.collaboratorIds || []), ...additionalIds || []]) : new Set([...(await this.authorIds), ...additionalIds || []]));
         let users = User.findAll({
             where: {
                 id: userIds,
@@ -455,12 +455,27 @@ export class Project extends Model<InferAttributes<Project>, InferCreationAttrib
         }
 
         if (shouldAlert) {
-            let authorsAndCollaborators = Array.from(new Set([...(this.authors.map((a) => a.id) || []), ...(this.collaboratorIds || [])]));
+            let authorsAndCollaborators = Array.from(new Set([...(await this.authorIds || []), ...(this.collaboratorIds || [])]));
             User.findAll({
                 where: {
                     id: authorsAndCollaborators,
                 },
-            })
+            }).then(users => {
+                for (let u of users) {
+                    if (newlyVerified) {
+                        u.createAlert({
+                            type: AlertType.ThingVerified,
+                            projectId: this.id,
+                            header: `Your project "${this.name}" has been verified!`,
+                            message: `Congratulations! Your project "${this.name}" has been verified by ${user.username}. It is now publicly visible.`,
+                        }).catch(err => {
+                            Logger.error(`Failed to create verified alert for user ID ${u.id} on project ID ${this.id}: ${err}`);
+                        });
+                    }
+                }
+            }).catch(err => {
+                Logger.error(`Failed to find users for project ID ${this.id} when creating status change alerts: ${err}`);
+            });
         }
         return this;
     }
@@ -506,6 +521,10 @@ export class Project extends Model<InferAttributes<Project>, InferCreationAttrib
         let translation = null;
         if (language && !language.startsWith(`en`)) {
             translation = await this.getTranslation(language);
+        }
+
+        if (authors.length === 0) {
+            Logger.warn(`Project ID ${this.id} has no authors loaded when running toApiV3.`);
         }
 
         return {

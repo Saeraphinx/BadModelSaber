@@ -21,7 +21,7 @@ export const approvalRouter = router({
             throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: `Error updating asset status: ${parseErrorMessage(err)}` });
         });
     }),
-    setStatusProject: loggedInProcedure([UserPermissions.Mods_Approval]).input(z.object({
+    setStatusProject: loggedInProcedure().input(z.object({
         id: z.number().int().positive(),
         status: z.enum(Status),
         reason: z.string().max(1000).optional()
@@ -29,6 +29,10 @@ export const approvalRouter = router({
         const mod = await Project.findByPk(input.id);
         if (!mod) {
             throw new TRPCError({ code: 'NOT_FOUND', message: 'Project not found' });
+        }
+
+        if (!ctx.user.checkRoles([UserPermissions.Mods_Approval], mod.gameName)) {
+            throw new TRPCError({ code: 'FORBIDDEN', message: 'You do not have permission to approve this mod.' });
         }
 
         await mod.setStatus(input.status, ctx.user, input.reason ?? `No reason given.`).then(() => {

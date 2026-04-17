@@ -11,7 +11,7 @@ import { Version } from "./Version.ts";
 import { ThingRequest } from "./ThingRequest.ts";
 import { Translation } from "./Translation.ts";
 import { Project } from "./Project.ts";
-import { ProjectAuthor } from "./ProjectAuthor.ts";
+import { ProjectAuthor } from "./Junctions.ts";
 import sequelize from "sequelize/lib/sequelize";
 
 export const DefaultPermissions = [UserPermissions.Asset_Create, UserPermissions.Mods_Create, UserPermissions.Users_EditSelf];

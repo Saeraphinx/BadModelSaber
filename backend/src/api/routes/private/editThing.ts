@@ -124,7 +124,7 @@ export const UpdateAssetRouter = router({
         if (!project) {
             throw new TRPCError({ code: 'NOT_FOUND', message: `Project not found` });
         }
-        if (!project.canEdit(ctx.user)) {
+        if (!(await project.canEdit(ctx.user))) {
             throw new TRPCError({ code: 'FORBIDDEN', message: `You are not allowed to edit this project` });
         }
 
@@ -141,14 +141,14 @@ export const UpdateAssetRouter = router({
         });
     }),
     updateProjectIcon: loggedInProcedure().input(zfd.formData({
-        projectId: dbId,
+        projectId: zfd.numeric(),
         icon: zfd.file().refine((file) => Validator.validateThumbnail(file), { message: "Invalid icon file format" })
     })).mutation(async ({ input, ctx }) => {
         const project = await Project.findByPk(input.projectId);
         if (!project) {
             throw new TRPCError({ code: 'NOT_FOUND', message: `Project not found` });
         }
-        if (!project.canEdit(ctx.user)) {
+        if (!(await project.canEdit(ctx.user))) {
             throw new TRPCError({ code: 'FORBIDDEN', message: `You are not allowed to edit this project` });
         }
 
@@ -163,6 +163,7 @@ export const UpdateAssetRouter = router({
 
         project.iconFileName = iconName;
         return project.save().then(updatedProject => {
+            Logger.info(`Project icon updated successfully to ${updatedProject.iconFileName} for project ${project.id} by user ${ctx.user.id}`);
             return updatedProject.toApiV3();
         }).catch(err => {
             Logger.error(`Error updating project with new icon path: ${err.message}`)
@@ -192,7 +193,7 @@ export const UpdateAssetRouter = router({
             throw new TRPCError({ code: 'NOT_FOUND', message: `Project not found` });
         }
 
-        if (!version.canEdit(ctx.user, project)) {
+        if (!(await version.canEdit(ctx.user, project))) {
             throw new TRPCError({ code: 'FORBIDDEN', message: `You are not allowed to edit this version` });
         }
 

@@ -1,9 +1,9 @@
 import { Logger } from "../../../../shared/Logger.ts";
-import { GameVersion, GameVersionWhereOptions, Project, ProjectApiV3, projectApiV3Schema, Status, User, UserPermissions, Version, versionApiV3Schema } from "../../../../shared/Database.ts";
+import { GameVersion, GameVersionWhereOptions, Project, ProjectApiV3, projectApiV3Schema, ProjectWhereOptions, Status, User, UserPermissions, Version, versionApiV3Schema } from "../../../../shared/Database.ts";
 import { anyGameProcedure, anyProcedure, gameProcedure, router } from "../../../trpc.ts";
 import z from "zod/v4";
 import { TRPCError } from "@trpc/server";
-import { Op } from "sequelize";
+import { Op, WhereOptions } from "sequelize";
 import sequelize from "sequelize/lib/sequelize";
 import { compare } from "semver";
 
@@ -50,19 +50,35 @@ export const GetModsV3 = router({
             if (!availableGameVerison) {
                 throw new TRPCError({ code: 'NOT_FOUND', message: 'No game versions found for the specified game and version.' });
             }
+
+            let projectFilters: WhereOptions<Project> = {};
+            let userFilters: WhereOptions<User> = {};
+            let versionFilters: WhereOptions<Version> = {
+                status: input.status
+            };
+            if (input.authors) {
+                projectFilters = {
+                    name: {
+                        [Op.iLike]: `%${input.name}%`
+                    }
+                }
+            }
             
             let versions = await Version.findAll({
-                where: {
-                    status: input.status
-                },
+                where: versionFilters,
                 order: [['projectId', 'DESC']],
-                include: [User, Project, {
+                include: [{
+                    model: Project,
+                    include: [{
+                        model: User,
+                        where: userFilters,
+                    }],
+                    where: projectFilters,
+                }, {
                     model: GameVersion,
                     where: {
                         id: availableGameVerison
                     },
-                    through: { attributes: [] },
-                    required: true, // inner join
                 }],
             }).then(v => {
                 timingString += `db;dur=${Date.now() - startTime}`;
@@ -75,7 +91,7 @@ export const GetModsV3 = router({
             let output = await Promise.all(versions
                 .sort((a, b) => compare(b.semver, a.semver)) // sort versions in descending order
                 .filter((v, i, arr) => arr.findIndex(other => other.projectId === v.projectId) === i) // filter to unique projects
-                .filter(v => v.canView(ctx.user)) // filter to versions the user can view
+                .filter(async v => await v.canView(ctx.user)) // filter to versions the user can view
                 .map(async v => ({
                     project: await v.project as Project,
                     version: v
@@ -96,7 +112,7 @@ export const GetModsV3 = router({
             }
 
             if (input.authors) {
-                output = output.filter(o => o.project.authors.some(a => {
+                output = output.filter(o => o.project.authors?.some(a => {
                     if (Array.isArray(input.authors)) {
                         return input.authors.includes(a.id);
                     } else {
@@ -141,7 +157,7 @@ export const GetModsV3 = router({
             if (!project) {
                 throw new TRPCError({ code: 'NOT_FOUND', message: 'Project not found.' });
             }
-            if (!project.canView(ctx.user)) {
+            if (!(await project.canView(ctx.user))) {
                 throw new TRPCError({ code: 'FORBIDDEN', message: 'You do not have permission to view this project.' });
             }
             let versions = await Version.findAll({

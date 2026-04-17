@@ -7,7 +7,7 @@ import { User } from "./User.ts";
 import z from "zod/v4";
 import { Logger } from "../../Logger.ts";
 import { GameVersion } from "./GameVersion.ts";
-import { VersionGameVersion } from "./VersionGameVersion.ts";
+import { VersionGameVersion } from "./Junctions.ts";
 import { Literal } from "sequelize/lib/utils";
 import { EnvConfig } from "../../EnvConfig.ts";
 import path from "path";
@@ -346,7 +346,7 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
             return false;
         }
 
-        return prj.canEdit(user);
+        return await prj.canEdit(user);
     }
     // #endregion
     // #region Alerts

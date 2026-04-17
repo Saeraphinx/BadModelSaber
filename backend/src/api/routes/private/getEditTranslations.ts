@@ -15,7 +15,7 @@ export const getEditTranslationsRouter = router({
                 throw new TRPCError({ code: 'NOT_FOUND', message: 'Project not found.' });
             }
 
-            if (!project.canView) {
+            if (!(await project.canView(ctx.user))) {
                 throw new TRPCError({ code: 'FORBIDDEN', message: 'You do not have permission to view this project.' });
             }
 
@@ -40,7 +40,7 @@ export const getEditTranslationsRouter = router({
                 throw new TRPCError({ code: 'NOT_FOUND', message: 'Project not found.' });
             }
 
-            if (!project.canTranslate(ctx.user)) {
+            if (!(await project.canTranslate(ctx.user))) {
                 throw new TRPCError({ code: 'FORBIDDEN', message: 'You do not have permission to translate this project.' });
             }
 

@@ -21,6 +21,8 @@
       "requests": "Requests",
       "adminPanel": "Admin Panel",
       "disableSecretFeatures": "Disable Secret Features",
+      "create": "Create",
+      "createProject": "Create Project",
       "createAsset": "Create Asset",
       "options": "Options",
       "theme": "Theme",
@@ -29,7 +31,8 @@
       "dark": "Dark",
       "language": "Language",
       "logout": "Logout",
-      "login": "Login",
+      "loginDiscord": "Login with Discord",
+      "loginGitHub": "Login with GitHub",
       "modelsaberOpenSource": "ModelSaber is Open Source!"
     },
     "alertSidebar": {
@@ -173,6 +176,7 @@
       "game": "Game",
       "category": "Category",
       "status": "Status",
+      "moreInfo": "More Info",
       "sourceUrl": "Source Code",
       "websiteUrl": "Website",
       "created": "Created",
@@ -194,12 +198,13 @@
     "createProject": {
       "title": "Create Project",
       "subtitle": "Please fill out the form below to create a new project.",
-      "thumbnailRileListHeader": "Thumbnail Rules:",
+      "thumbnailRileListHeader": "Icon Rules:",
       "thumbnailRuleList1": "Must be a square image (1:1 aspect ratio).",
       "thumbnailRuleList2": "Should be at least 128x128 pixels.",
       "thumbnailRuleList3": "Must be in .png, .jpeg, .webp, or .gif.",
       "thumbnailRuleList4": "Should be tasteful and appropriate",
-      "thumbnailFooter": "Please ensure your thumbnail follows the rules listed above."
+      "thumbnailFooter": "Please ensure your icon follows the rules listed above.",
+      "fetchReadme": "Fetch Readme from GitHub"
     },
     "createVersion": {
       "title": "Create Version for {projectName}",

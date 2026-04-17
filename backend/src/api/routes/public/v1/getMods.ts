@@ -98,7 +98,7 @@ export const getModsV2Router = router({
 
             let output = await Promise.all(versions.sort((a, b) => compare(b.semver, a.semver)) // sort versions in descending order
                 .filter((v, i, arr) => arr.findIndex(other => other.projectId === v.projectId) === i) // filter to unique projects
-                .filter(v => v.canView(ctx.user)) // filter to versions the user can view
+                .filter(async v => await v.canView(ctx.user)) // filter to versions the user can view
             );
 
             let apiOutput: Promise<ModApiV1>[] = [];

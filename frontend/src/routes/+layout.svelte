@@ -24,6 +24,8 @@
     SunMoonIcon,
     LanguagesIcon,
     LinkIcon,
+    FolderGit2Icon,
+    FileAxis3DIcon,
   } from "@lucide/svelte";
   import { MediaQuery } from "svelte/reactivity";
   import * as Popover from "$shadcn/components/ui/popover";
@@ -357,12 +359,26 @@
               </button>
             {/if}
             {#if checkRoles(user, [UserPermissions.Asset_Create], `any`)}
-              <a href="/create">
-                <DropdownMenu.Item>
-                  <PlusIcon />
-                  {m["layout.userMenu.createAsset"]()}
-                </DropdownMenu.Item>
-              </a>
+            <DropdownMenu.Sub>
+              <DropdownMenu.SubTrigger>
+                <PlusIcon />
+                {m["layout.userMenu.create"]()}
+              </DropdownMenu.SubTrigger>
+              <DropdownMenu.SubContent class="">
+                <a href="/create/project">
+                  <DropdownMenu.Item>
+                    <FolderGit2Icon />
+                    {m["layout.userMenu.createProject"]()}
+                  </DropdownMenu.Item>
+                </a>
+                <a href="/create/asset">
+                  <DropdownMenu.Item>
+                    <FileAxis3DIcon />
+                    {m["layout.userMenu.createAsset"]()}
+                  </DropdownMenu.Item>
+                </a>
+              </DropdownMenu.SubContent>
+            </DropdownMenu.Sub>
             {/if}
             <DropdownMenu.Separator />
           {/if}
@@ -425,7 +441,19 @@
               }}>
               <DropdownMenu.Item>
                 <LogInIcon />
-                {m["layout.userMenu.login"]()}
+                {m["layout.userMenu.loginDiscord"]()}
+              </DropdownMenu.Item>
+            </button>
+            <button
+              onclick={async () => {
+                let url = await trpc.internal.auth.githubAuthInit.query({
+                  redirect: `${env.PUBLIC_BASE_URL}${page.url.pathname}`,
+                });
+                window.location.href = url.url;
+              }}>
+              <DropdownMenu.Item>
+                <LogInIcon />
+                {m["layout.userMenu.loginGitHub"]()}
               </DropdownMenu.Item>
             </button>
           {/if}
@@ -522,7 +550,9 @@
 
 <Toaster
   richColors={true}
-  {theme}
+  theme="dark"
+  closeButton={true}
+  duration={5000}
   position="top-right"
   toastOptions={{
     closeButton: true,

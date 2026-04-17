@@ -1,7 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { Op } from "sequelize";
 import z from "zod";
-import { Project, ProjectApiV3, versionApiV3Schema, Version } from "../../../shared/Database.ts";
+import { Project, ProjectApiV3, versionApiV3Schema, Version, User } from "../../../shared/Database.ts";
 import { anyProcedure, router } from "../../trpc.ts";
 
 export const getModsInternal = router({
@@ -15,7 +15,7 @@ export const getModsInternal = router({
             if (!project) {
                 throw new TRPCError({ code: 'NOT_FOUND', message: 'Project not found.' });
             }
-            if (!project.canView(ctx.user)) {
+            if (!(await project.canView(ctx.user))) {
                 throw new TRPCError({ code: 'FORBIDDEN', message: 'You do not have permission to view this project.' });
             }
             return await project.toApiV3() as ProjectApiV3;
@@ -30,9 +30,10 @@ export const getModsInternal = router({
                     id: {
                         [Op.in]: input.projectIds
                     }
-                }
+                }, 
+                include: [{all: true}]
             });
-            projects = projects.filter(p => p.canView(ctx.user));
+            projects = projects.filter(async p => await p.canView(ctx.user));
             return await Promise.all(projects.map(async p => await p.toApiV3() as ProjectApiV3));
         }),
     // #endregion
@@ -47,7 +48,7 @@ export const getModsInternal = router({
             if (!project) {
                 throw new TRPCError({ code: 'NOT_FOUND', message: 'Project not found.' });
             }
-            if (!project.canView(ctx.user)) {
+            if (!(await project.canView(ctx.user))) {
                 throw new TRPCError({ code: 'FORBIDDEN', message: 'You do not have permission to view this project.' });
             }
             let versions = await Version.findAll({
@@ -74,10 +75,14 @@ export const getModsInternal = router({
                     },
                     gameName: input.gameName
                 },
-                attributes: [`id`, `name`, `authorIds`, `gameName`, `status`]
+                attributes: [`id`, `name`, `gameName`, `status`],
+                include: [{
+                    model: User,
+                    attributes: [`id`, 'permissions']
+                }]
             });
 
-            projects = projects.filter(p => p.canView(ctx.user));
+            projects = projects.filter(async p => await p.canView(ctx.user));
             return projects.map(p => {
                 return {
                     id: p.id as number,

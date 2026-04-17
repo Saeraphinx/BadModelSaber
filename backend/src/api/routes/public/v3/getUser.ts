@@ -104,7 +104,7 @@ export const userRouterV3 = router({
             }]
         });
         
-        return await Promise.all(projects.filter(p => p.canView(ctx.user)).map(p => p.toApiV3()));
+        return await Promise.all(projects.filter(async p => await p.canView(ctx.user)).map(p => p.toApiV3()));
     })
 });
 

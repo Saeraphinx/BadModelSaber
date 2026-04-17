@@ -22,8 +22,9 @@
   import UserSelectionDialog from "$lib/components/dialogs/UserSelectionDialog.svelte";
   import { zAsset, zProject } from "$lib/scripts/api/validators";
   import { toast } from "svelte-sonner";
-  import { handleTrpcError, trpc } from "$lib/scripts/utils/api.js";
+  import { getProjectThumbnailUrl, handleTrpcError, trpc } from "$lib/scripts/utils/api.js";
   import { invalidateAll } from "$app/navigation";
+  import { form } from "$app/server";
 
   const { data: _internal } = $props();
   const {
@@ -41,6 +42,7 @@
   // svelte-ignore non_reactive_update
   let userSelectionDialog = $state<UserSelectionDialog>();
 
+  // #region Permissions
   let shouldAllowApproval = $derived.by(() => {
     if (!user) return false;
     return checkRoles(
@@ -82,7 +84,8 @@
     if (!user) return false;
     return checkRoles(user, { hasOneOf: [UserPermissions.Mods_EditAll, UserPermissions.Mods_TranslateAll] }, project.gameName);
   });
-
+  // #endregion
+  // #region Edit & Translate
   let isEditing = $state(false);
   let editedSummary = $state(``);
   let editedDescription = $state(``);
@@ -193,13 +196,54 @@
         isSaving = false;
       });
   }
+
+  function fetchGithubReadme() {
+    if (!project.gitUrl) {
+      toast.error("No Git URL provided for this project.");
+      return;
+    }
+
+    let regex = project.gitUrl.match(/https:\/\/github.com[\/:]([^\/:]+)\/(.+)/i);
+    if (!regex || regex.length === 0) {
+      toast.error("Invalid GitHub URL format.");
+      return;
+    }
+
+    fetch(`https://raw.githubusercontent.com/${regex[1]}/${regex[2]}/refs/heads/main/README.md`)
+      .then((res) => {
+        if (!res.ok) {
+          // Try fetching from master branch if main branch doesn't exist
+          return fetch(`https://raw.githubusercontent.com/${regex[1]}/${regex[2]}/refs/heads/master/README.md`)
+            .then((res) => {
+              if (!res.ok) {
+                toast.error("Failed to fetch README from GitHub. Make sure the repository is public and has a README.md file in the main branch.");
+                return;
+              }
+              return res.text().then((text) => {
+                editedDescription = text || "";
+                toast.success("Fetched README from GitHub successfully. You can now save it as the description translation.");
+              });
+            })
+        }
+        return res.text().then((text) => {
+          editedDescription = text || "";
+          toast.success("Fetched README from GitHub successfully. You can now save it as the description translation.");
+        });
+      })
+      .catch((e) => {
+        toast.error("An error occurred while fetching the README from GitHub.", {
+          description: e instanceof Error ? e.message : String(e),
+        });
+      });
+  }
+  // #endregion
 </script>
 
 <div class="flex flex-col gap-4 m-auto w-[90%] max-w-[95%]">
   <!-- Top Bar -->
   <div class="flex flex-row grow items-center">
-    <!-- <img src={pageData.project.iconFileName} alt="Project Thumbnail" class="w-32 h-32 object-cover rounded-lg mb-4" /> -->
-    <Skeleton class="w-32 h-32 rounded-lg" />
+    <img src={getProjectThumbnailUrl(project)} alt="Project Thumbnail" class="w-32 h-32 object-cover rounded-lg" />
+    <!-- <Skeleton class="w-32 h-32 rounded-lg" /> -->
     <div class="flex flex-col ml-4">
       <h1 class="text-3xl font-bold mb-1">{project.name}</h1>
       <p class="text-gray-600 mb-2">{project.summary}</p>
@@ -211,12 +255,12 @@
     </div>
     <div class="grid grid-cols-1 gap-2 ml-auto">
       {#if shouldAllowEdit}
-        {#if !isEditing}
+        {#if !isEditing && !isTranslating}
           <Button variant="outline" class="ml-auto w-full" onclick={() => (isEditing = true)}>{m[`dialogs.edit`]()}</Button>
         {/if}
       {/if}
       {#if shouldAllowTranslation}
-        {#if !isTranslating}
+        {#if !isTranslating && !isEditing}
           <Button variant="outline" class="ml-auto w-full" onclick={() => (isTranslating = true)}>{m[`dialogs.translate`]()}</Button>
         {/if}
       {/if}
@@ -234,7 +278,7 @@
         </div>
       {/if}
     </div>
-    <div class="w-full">
+    <div class="w-full overflow-scroll">
       <!-- Databar -->
       <div class="flex justify-evenly bg-card rounded-md p-4 mb-4">
         <div class="flex flex-col items-center justify-center">
@@ -250,7 +294,11 @@
           <p class="text-base font-bold">{project.category}</p>
         </div>
         <div class="flex flex-col items-center justify-center">
-          <p class="text-sm text-gray-500">{m["mods.dataTable.createdAt"]()}</p>
+          <p class="text-sm text-gray-500">{m["mods.dataTable.moreInfo"]()}</p>
+          <a class="text-base font-bold hover:text-blue-400 transition-colors" href={project.gitUrl}>{m["mods.dataTable.sourceUrl"]()}</a>
+        </div>
+        <div class="flex flex-col items-center justify-center">
+          <p class="text-sm text-gray-500">{m["mods.dataTable.created"]()}</p>
           <Tooltip.Root>
             <Tooltip.Trigger class="text-base font-bold">
               {getRelativeTimeString(new Date(project.createdAt))}
@@ -276,11 +324,11 @@
                     toast.error("Please select an icon to upload.");
                     return;
                   }
+                  let formData = new FormData();
+                  formData.append("projectId", project.id.toString());
+                  formData.append("icon", editedIconFile[0]);
                   trpc.internal.updateThings.updateProjectIcon
-                    .mutate({
-                      projectId: project.id,
-                      icon: editedIconFile[0] as File,
-                    })
+                    .mutate(formData)
                     .then(() => {
                       toast.success("Icon updated successfully.");
                       invalidateAll();
@@ -338,6 +386,7 @@
               <Tabs.List class="border-b w-full">
                 <Tabs.Trigger value="edit">{m[`dialogs.edit`]()}</Tabs.Trigger>
                 <Tabs.Trigger value="preview">{m[`dialogs.preview`]()}</Tabs.Trigger>
+                <Button variant="outline" size="sm" class="ml-auto" onclick={fetchGithubReadme}>{m["mods.createProject.fetchReadme"]()}</Button>
               </Tabs.List>
               <Tabs.Content value="edit">
                 <Textarea class="w-full h-64 mt-2" bind:value={editedDescription} />

@@ -43,6 +43,10 @@ export const authRouter = router({
             url: z.url(),
         }))
         .query(async ({ input, ctx, path }) => {
+            if (!EnvConfig.auth.discord) {
+                throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: `Discord authentication is not configured on this server.` });
+            }
+
             let state = prepAuth(ctx.req.ip || ``, input.redirect ?? EnvConfig.server.frontendUrl);
             if (!state) {
                 throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: `Could not prepare authentication.` });
@@ -183,6 +187,10 @@ export const authRouter = router({
         }))
         .output(z.void())
         .query(async ({ input, ctx }) => {
+            if (!EnvConfig.auth.github) {
+                throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: `GitHub authentication is not configured on this server.` });
+            }
+
             let stateObj = validStates.find((s) => s.stateId === input.state && s.ip === ctx.req.ip);
             if (!stateObj) {
                 throw new TRPCError({ code: 'BAD_REQUEST', message: `Invalid state.` });
@@ -267,6 +275,10 @@ export const authRouter = router({
             url: z.url(),
         }))
         .query(async ({ input, ctx }) => {
+            if (!EnvConfig.auth.github) {
+                throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: `GitHub authentication is not configured on this server.` });
+            }
+
             let state = prepAuth(ctx.req.ip || ``, input.redirect ?? EnvConfig.server.frontendUrl, ctx.userId);
             if (!state) {
                 throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: `Could not prepare authentication.` });
@@ -367,6 +379,10 @@ export const authRouter = router({
             url: z.url(),
         }))
         .query(async ({ input, ctx }) => {
+            if (!EnvConfig.auth.discord) {
+                throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: `Discord authentication is not configured on this server.` });
+            }
+
             let state = prepAuth(ctx.req.ip || ``, input.redirect ?? EnvConfig.server.frontendUrl, ctx.userId);
             if (!state) {
                 throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: `Could not prepare authentication.` });

@@ -47,7 +47,7 @@
     //debugger;
     let searchResults = searchQuery.trim() !== "" ? searchEngine.search(searchQuery) : Array.from(searchEngine.mods.values());
     searchResults = searchResults.filter((result) => {
-      if (selectedStatuses && selectedStatuses.length !== 0 && !selectedStatuses.includes(result.project.status)) return false;
+      if (selectedStatuses && selectedStatuses.length !== 0 && !selectedStatuses.includes(result.version.status)) return false;
       if (selectedCategories && selectedCategories.length !== 0 && !selectedCategories.some((category) => category == result.project.category)) return false;
       return true;
     });

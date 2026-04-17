@@ -119,7 +119,7 @@ export class WebhookPayloadGenerator {
     public static async generateNewlyVerifiedThingEmbedPayload(thing: Asset | Project | Version, verifiedBy: User): Promise<WebhookMessageCreateOptions> {
         let thingType = thing instanceof Asset ? 'asset' : thing instanceof Project ? 'project' : 'version';
         let thingTypeUrl = thing instanceof Version ? `projects` : `${thingType}s`;
-        let uploader = thing instanceof Project ? thing.authors.length > 0 ? thing.authors[0] : new Error(`Couldn't find author`) : await thing.uploader as User;
+        let uploader = thing instanceof Project ? thing.authors && thing.authors.length > 0 ? thing.authors[0] : new Error(`Couldn't find author`) : await thing.uploader as User;
         let title = thing instanceof Version ? (await thing.project as Project).name + " v" + thing.semver.raw : thing.name;
         let description = thing instanceof Version ? (await thing.project as Project).summary : thing.description ? (thing.description.length > 512 ? thing.description.substring(0, 500) + "..." : thing.description) : "No description provided.";
         let icon = thing instanceof Version ? (await thing.project as Project).iconUrl : thing.iconUrl;
@@ -152,7 +152,7 @@ export class WebhookPayloadGenerator {
     // for newly created assets and projects. WebhookLogType.NewThing 
     public static async generateCreatedNewThingEmbedPayload(thing: Asset | Project): Promise<WebhookMessageCreateOptions> {
         let type = thing instanceof Asset ? 'asset' : 'project';
-        let author = (thing instanceof Asset ? thing.uploader : thing.authors.length > 0 ? thing.authors[0] : null) as User | null;
+        let author = (thing instanceof Asset ? thing.uploader : (thing.authors && thing.authors.length > 0 ? thing.authors[0] : null)) as User | null;
 
         let payload: WebhookMessageCreateOptions = {
             embeds: [{

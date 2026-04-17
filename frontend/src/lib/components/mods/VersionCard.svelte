@@ -13,6 +13,7 @@
   import DownloadButton from "../generic/DownloadButton.svelte";
   import * as Select from "$shadcn/components/ui/select";
   import { toast } from "svelte-sonner";
+  import { gvCompareDecending } from "../../scripts/api/sortGV";
 
   const {
     version,
@@ -110,7 +111,7 @@
            </div>
          {:else}
           <div class="flex flex-row flex-wrap gap-1">
-            {#each version.supportedGameVersions as gv}
+            {#each version.supportedGameVersions.sort(gvCompareDecending) as gv}
               <span class="text-sm bg-accent p-0.5 px-1 rounded-md">{gv.version}</span>
             {/each}
           </div>
