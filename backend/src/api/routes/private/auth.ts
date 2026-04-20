@@ -449,7 +449,7 @@ export const authRouter = router({
             let existingUserWithDiscord = await User.findOne({ where: { 
                 id: { [Op.ne]: dbUser.id },
                 discordId: userInfo.id, 
-                githubId: { [Op.ne]: null }
+                githubId: null
             } });
 
             if (existingUserWithDiscord) {
@@ -462,6 +462,7 @@ export const authRouter = router({
                     await existingUserWithDiscord.destroy();
                 }).catch((err) => {
                     Logger.error(`Error merging user ${existingUserWithDiscord.username} (${existingUserWithDiscord.id}) into ${dbUser.username} (${dbUser.id}): ${parseErrorMessage(err)}`);
+                    throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: `An error occurred while linking your account.` });
                 });
             }
 
