@@ -17,7 +17,7 @@
   import * as Tabs from "$shadcn/components/ui/tabs/index.js";
   import Textarea from "$shadcn/components/ui/textarea/textarea.svelte";
   import * as Select from "$shadcn/components/ui/select";
-  import { CrossIcon, PlusIcon, XIcon } from "@lucide/svelte";
+  import { CrossIcon, PlusIcon, UploadIcon, XIcon } from "@lucide/svelte";
   import UserBadge from "$lib/components/users/UserBadge.svelte";
   import UserSelectionDialog from "$lib/components/dialogs/UserSelectionDialog.svelte";
   import { zAsset, zProject } from "$lib/scripts/api/validators";
@@ -270,6 +270,12 @@
   <div class="flex flex-row gap-4">
     <!-- Version List -->
     <div class="w-md max-w-sm">
+      {#if checkRoles(user, [UserPermissions.Mods_UploadAll], project.gameName) || project.authors.some((a) => a.id === user?.id)}
+        <div class="flex flex-row items-center justify-between mb-4 mx-1">
+          <h2 class="text-xl font-bold">{m["mods.uploadNewVersion"]()}</h2>
+          <Button variant="outline" href="/create/project/{project.id}"><UploadIcon />{m["mods.upload"]()}</Button>
+        </div>
+      {/if}
       {#if versions.length > 0}
         <div class="flex flex-col gap-2">
           {#each versions as version}
@@ -390,6 +396,7 @@
               </Tabs.List>
               <Tabs.Content value="edit">
                 <Textarea class="w-full h-64 mt-2" bind:value={editedDescription} />
+                
               </Tabs.Content>
               <Tabs.Content value="preview">
                 <Markdown class="p-4 rounded-md bg-card mt-2" bind:markdown={editedDescription} />
@@ -463,6 +470,7 @@
               </Tabs.List>
               <Tabs.Content value="edit">
                 <Textarea class="w-full h-64 mt-2" bind:value={translationDescription} />
+                <p class="text-sm text-muted-foreground mt-2 text-right">{translationDescription.length} / 8192</p>
               </Tabs.Content>
               <Tabs.Content value="preview">
                 <Markdown class="p-4 rounded-md bg-card mt-2" bind:markdown={translationDescription} />

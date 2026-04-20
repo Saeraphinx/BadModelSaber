@@ -12,6 +12,7 @@
   import * as Select from "$shadcn/components/ui/select";
   import { Spinner } from "$shadcn/components/ui/spinner";
   import type { LocalizedString } from "@inlang/paraglide-js";
+  import { CheckCheckIcon, CheckIcon } from "@lucide/svelte";
   import JSZip from "jszip";
   import { parse, validRange } from "semver";
   import { onMount } from "svelte";
@@ -134,16 +135,16 @@
         <p>{m["loading"]()}</p>
       {:else}
         <span>
-          <Label class="p-1 pb-2" for="semver">{m["mods.createVersion.semver"]()}</Label>
+          <Label class="p-1 pb-2" for="semver">{m["mods.dataTable.semver"]()}</Label>
           <Input bind:value={semverString} aria-invalid={!parse(semverString)} id="semver" />
           <p class="text-sm text-muted-foreground mt-2 pl-1">{m["mods.createVersion.semverShouldMatchManifest"]()}</p>
         </span>
         <span>
-          <Label class="p-1 pb-2" for="platform">{m["mods.createVersion.platform"]()}</Label>
+          <Label class="p-1 pb-2" for="platform">{m["mods.dataTable.platform"]()}</Label>
           <Select.Root type="single" bind:value={platform}>
             <Select.Trigger class="w-full capitalize">
               {#if platform === ""}
-                {m["mods.createVersion.platform"]()}
+                {m["mods.dataTable.platform"]()}
               {:else}
                 {platform}
               {/if}
@@ -158,16 +159,16 @@
           </Select.Root>
         </span>
         <span>
-          <Label class="p-1 pb-2" for="supportedGameVersions">{m["mods.createVersion.supportedGameVersions"]()}</Label>
+          <Label class="p-1 pb-2" for="supportedGameVersions">{m["mods.dataTable.supportedGameVersions"]()}</Label>
           <Select.Root type="multiple" bind:value={supportedGameVersionIds}>
-            <Select.Trigger class="w-full" aria-invalid={supportedGameVersionIds.length === 0}>
+            <Select.Trigger class="w-full text-wrap" aria-invalid={supportedGameVersionIds.length === 0}>
               {#if supportedGameVersionIds.length === 0}
-                {m["mods.createVersion.supportedGameVersions"]()}
+                {m["mods.dataTable.supportedGameVersions"]()}
               {:else}
                 {supportedGameVersionIds.map((id) => validGameInfo?.gameVersions.find((gv) => gv.id === parseInt(id))?.version).join(", ")}
               {/if}
             </Select.Trigger>
-            <Select.Content class="w-full">
+            <Select.Content class="w-full max-h-64">
               {#each validGameInfo.gameVersions as gv}
                 <Select.Item value={gv.id.toString()}>
                   {validGameInfo.gameDisplayName}
@@ -180,12 +181,12 @@
       {/if}
     </div>
     <div class="flex flex-col justify-center w-full max-w-md p-4 bg-card rounded-lg shadow-md gap-2 mt-4">
-      <Label class="p-1 pb-2" for="dependencies">{m["mods.createVersion.dependencies"]()}</Label>
+      <Label class="p-1 pb-2" for="dependencies">{m["mods.dataTable.dependencies"]()}</Label>
       <div id="dependencies">
         {#each webDependencies as dep, i}
           <div class="flex flex-row gap-2">
             <DependencySelector gameName={pageData.gameName} bind:selectedProjectId={webDependencies[i].pId} bind:selectedProjectName={webDependencies[i].pName} />
-            <Input bind:value={webDependencies[i].sv} placeholder={m["mods.createVersion.semver"]()} aria-invalid={validRange(dep.sv, false) ? false : true} />
+            <Input bind:value={webDependencies[i].sv} placeholder={m["mods.dataTable.semver"]()} aria-invalid={validRange(dep.sv, false) ? false : true} />
             <Button variant="destructive" onclick={() => (webDependencies = webDependencies.filter((_, _i) => _i !== i))}>
               {m["dialogs.remove"]()}
             </Button>
@@ -279,6 +280,9 @@
                         versionIdToCloneFrom = version.id;
                       }}>
                       {version.semver}
+                      {#if versionIdToCloneFrom == version.id}
+                        <CheckIcon />
+                      {/if}
                     </Command.Item>
                   {/each}
                 </Command.Group>

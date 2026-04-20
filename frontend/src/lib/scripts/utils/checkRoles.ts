@@ -16,9 +16,9 @@ export function checkRoles(userPermObj: UserPermObj | undefined, roles: UserPerm
     if (gameName === `any`) {
       return roles.some(role => userPermObj.permissions.sitewide.includes(role) || Object.values(userPermObj.permissions.perGame).some(gameRoles => gameRoles.includes(role)));
     } else if (gameName) { 
-      return roles.every(role => (userPermObj.permissions.sitewide.includes(role) || (userPermObj.permissions.perGame[gameName] && userPermObj.permissions.perGame[gameName].includes(role))));
+      return roles.some(role => (userPermObj.permissions.sitewide.includes(role) || (userPermObj.permissions.perGame[gameName] && userPermObj.permissions.perGame[gameName].includes(role))));
     } else {
-      return roles.every(role => userPermObj.permissions.sitewide.includes(role));
+      return roles.some(role => userPermObj.permissions.sitewide.includes(role));
     }
   } else {
     const sitewideCheck = (roles.hasAllOf ? roles.hasAllOf.every(role => userPermObj.permissions.sitewide.includes(role)) : true) &&

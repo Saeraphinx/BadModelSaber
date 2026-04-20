@@ -223,7 +223,7 @@ export const authRouter = router({
                 throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: `Failed to fetch user info from GitHub.` });
             });
 
-            let dbUser = await User.findOne({ where: { githubId: githubUser.id } });
+            let dbUser = await User.findOne({ where: { githubId: githubUser.id.toString() } });
             if (!dbUser) {
                 let roles = {
                     sitewide: [UserPermissions.Asset_Create, UserPermissions.Mods_Create, UserPermissions.Users_EditSelf],
@@ -297,7 +297,7 @@ export const authRouter = router({
 
             return { url };
         }),
-    linkGitHubToAccountCallback: loggedInProcedure()
+    linkGitHubToAccountCallback: notLoggedInProcedure()
         .meta({ openapi: { method: 'GET', path: '/auth/github/link/callback', tags: ['Authentication'] } })
         .input(z.object({
             code: z.string(),
@@ -305,7 +305,7 @@ export const authRouter = router({
         }))
         .output(z.void())
         .query(async ({ input, ctx }) => {
-            let stateObj = validStates.find((s) => s.stateId === input.state && s.ip === ctx.req.ip && s.userId === ctx.userId);
+            let stateObj = validStates.find((s) => s.stateId === input.state && s.ip === ctx.req.ip);
             if (!stateObj) {
                 throw new TRPCError({ code: 'BAD_REQUEST', message: `Invalid state.` });
             }
@@ -337,7 +337,10 @@ export const authRouter = router({
                 throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: `Failed to fetch user info from GitHub.` });
             });
 
-            const dbUser = ctx.user;
+            const dbUser = await User.findByPk(stateObj.userId!)
+            if (!dbUser) {
+                throw new TRPCError({ code: 'NOT_FOUND', message: `User not found.` });
+            }
 
             if (dbUser.githubId && dbUser.githubId !== githubUser.id.toString()) {
                 throw new TRPCError({ code: 'CONFLICT', message: `Your account is already linked to a different GitHub account.` });
@@ -346,16 +349,20 @@ export const authRouter = router({
             let existingUserWithGitHub = await User.findOne({ where: { 
                 id: { [Op.ne]: dbUser.id },
                 githubId: githubUser.id.toString(), 
-                discordId: {[Op.ne]: null }
+                discordId: null
             } });
 
             if (existingUserWithGitHub) {
                 Logger.info(`Merging user ${existingUserWithGitHub.username} (${existingUserWithGitHub.id}) into ${dbUser.username} (${dbUser.id}) due to GitHub account linking.`);
 
-                await existingUserWithGitHub.migrateUserItems(dbUser).then(() => {
-                    existingUserWithGitHub.destroy();
+                await existingUserWithGitHub.migrateUserItems(dbUser).then(async () => {
+                    await existingUserWithGitHub.update({
+                        githubId: null,
+                    });
+                    await existingUserWithGitHub.destroy();
                 }).catch((err) => {
                     Logger.error(`Error merging user ${existingUserWithGitHub.username} (${existingUserWithGitHub.id}) into ${dbUser.username} (${dbUser.id}): ${parseErrorMessage(err)}`);
+                    throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: `An error occurred while linking your account.` });
                 });
             }
 
@@ -401,7 +408,7 @@ export const authRouter = router({
 
             return { url };
         }),
-    linkDiscordToAccountCallback: loggedInProcedure()
+    linkDiscordToAccountCallback: notLoggedInProcedure()
         .meta({ openapi: { method: 'GET', path: '/auth/discord/link/callback', tags: ['Authentication'] } })
         .input(z.object({
             code: z.string(),
@@ -409,7 +416,7 @@ export const authRouter = router({
         }))
         .output(z.void())
         .query(async ({ input, ctx }) => {
-            let stateObj = validStates.find((s) => s.stateId === input.state && s.ip === ctx.req.ip && s.userId === ctx.userId);
+            let stateObj = validStates.find((s) => s.stateId === input.state && s.ip === ctx.req.ip);
             if (!stateObj) {
                 throw new TRPCError({ code: 'BAD_REQUEST', message: `Invalid state.` });
             }
@@ -430,7 +437,11 @@ export const authRouter = router({
                 throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: `Failed to fetch user info from Discord.` });
             });
 
-            const dbUser = ctx.user;
+            const dbUser = await User.findByPk(stateObj.userId!);
+            if (!dbUser) {
+                throw new TRPCError({ code: 'NOT_FOUND', message: `User not found.` });
+            }
+
             if (dbUser.discordId && dbUser.discordId !== userInfo.id) {
                 throw new TRPCError({ code: 'CONFLICT', message: `Your account is already linked to a different Discord account.` });
             }
@@ -444,8 +455,11 @@ export const authRouter = router({
             if (existingUserWithDiscord) {
                 Logger.warn(`Merging user ${existingUserWithDiscord.username} (${existingUserWithDiscord.id}) into ${dbUser.username} (${dbUser.id}) due to Discord account linking.`);
 
-                await existingUserWithDiscord.migrateUserItems(dbUser).then(() => {
-                    existingUserWithDiscord.destroy();
+                await existingUserWithDiscord.migrateUserItems(dbUser).then(async () => {
+                    await existingUserWithDiscord.update({
+                        discordId: null,
+                    });
+                    await existingUserWithDiscord.destroy();
                 }).catch((err) => {
                     Logger.error(`Error merging user ${existingUserWithDiscord.username} (${existingUserWithDiscord.id}) into ${dbUser.username} (${dbUser.id}): ${parseErrorMessage(err)}`);
                 });

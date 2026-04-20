@@ -1,9 +1,9 @@
 import z from "zod/v4";
 import { Asset, ThingRequest, LinkedAssetLinkType, RequestType, User, UserPermissions } from "../../../shared/Database.ts";
-import { Validator } from "../../../shared/Validator.ts";
 import { loggedInProcedure, router } from "../../trpc.ts";
 import { dedupeArray } from "../../../shared/Tools.ts";
 import { TRPCError } from "@trpc/server";
+import { Logger } from "../../../shared/Logger.ts";
 
 export const konamiRouter = router({
     updateUser: loggedInProcedure([UserPermissions.Users_EditSelf]).input(z.object({
@@ -53,14 +53,19 @@ export const konamiRouter = router({
         }),
     toggleSecretFeatures: loggedInProcedure({denied: [UserPermissions.C_Banned]}).input(z.object({
         enabled: z.boolean(),
-    })).mutation(async ({ ctx }) => {
-        if (ctx.user.checkRoles([UserPermissions.Secret_Features])) {
-            ctx.user.permissions.sitewide = ctx.user.permissions.sitewide.filter(r => r !== UserPermissions.Secret_Features);
+    })).mutation(async ({ ctx, input }) => {
+        if (!input.enabled) {
+            ctx.user.permissions = {
+                sitewide: ctx.user.permissions.sitewide.filter(r => r !== UserPermissions.Secret_Features),
+                perGame: ctx.user.permissions.perGame
+            };
+            Logger.info(`User ${ctx.user.id} (${ctx.user.username}) has disabled secret features.`);
         } else {
             ctx.user.permissions = {
                 sitewide: dedupeArray([...ctx.user.permissions.sitewide, UserPermissions.Secret_Features]),
                 perGame: ctx.user.permissions.perGame
             };
+            Logger.info(`User ${ctx.user.id} (${ctx.user.username}) has enabled secret features.`);
         }
         await ctx.user.save();
     })

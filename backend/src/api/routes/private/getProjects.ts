@@ -1,7 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { Op } from "sequelize";
 import z from "zod";
-import { Project, ProjectApiV3, versionApiV3Schema, Version, User } from "../../../shared/Database.ts";
+import { Project, ProjectApiV3, versionApiV3Schema, Version, User, GameVersion } from "../../../shared/Database.ts";
 import { anyProcedure, router } from "../../trpc.ts";
 
 export const getModsInternal = router({
@@ -54,7 +54,8 @@ export const getModsInternal = router({
             let versions = await Version.findAll({
                 where: {
                     projectId: project.id
-                }
+                },
+                include: [GameVersion],
             });
             versions = versions.filter(async v => await v.canView(ctx.user, project));
             let output = await Promise.all(versions.map(async v => await v.toApiV3()));

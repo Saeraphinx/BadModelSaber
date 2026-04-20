@@ -385,20 +385,6 @@
           <p class="p-1 text-sm">{m["layout.userMenu.options"]()}</p>
           <DropdownMenu.Sub>
             <DropdownMenu.SubTrigger>
-              <SunMoonIcon />
-              {m["layout.userMenu.theme"]()}
-            </DropdownMenu.SubTrigger>
-            <DropdownMenu.SubContent class="">
-              <DropdownMenu.RadioGroup bind:value={theme} onValueChange={handleThemeChange}>
-                <DropdownMenu.Label>{m["layout.userMenu.theme"]()}</DropdownMenu.Label>
-                <DropdownMenu.RadioItem closeOnSelect={false} value="system">{m["layout.userMenu.system"]()}</DropdownMenu.RadioItem>
-                <DropdownMenu.RadioItem closeOnSelect={false} value="dark">{m["layout.userMenu.dark"]()}</DropdownMenu.RadioItem>
-                <DropdownMenu.RadioItem closeOnSelect={false} value="light">{m["layout.userMenu.light"]()}</DropdownMenu.RadioItem>
-              </DropdownMenu.RadioGroup>
-            </DropdownMenu.SubContent>
-          </DropdownMenu.Sub>
-          <DropdownMenu.Sub>
-            <DropdownMenu.SubTrigger>
               <LanguagesIcon />
               {m["layout.userMenu.language"]()}
             </DropdownMenu.SubTrigger>
@@ -459,6 +445,11 @@
           {/if}
           <DropdownMenu.Separator />
           <p class="text-xs text-muted-foreground text-center p-1"><a href="https://github.com/Saeraphinx/BadModelSaber" target="_blank">{m["layout.userMenu.modelsaberOpenSource"]()}</a></p>
+          {#if isLoggedIn}
+            <a class="text-xs text-muted-foreground text-center p-1" href="{env.PUBLIC_API_URL}/docs">
+              API Docs
+            </a>
+          {/if}
           {#if user && checkRoles(user, { hasOneOf: [UserPermissions.Administrative_Tasks, UserPermissions.Secret_Features] }) }
             <DropdownMenu.Separator />
             <span class="text-xs text-muted-foreground text-center p-1">

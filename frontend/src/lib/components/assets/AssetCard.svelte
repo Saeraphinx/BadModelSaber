@@ -77,10 +77,10 @@
       <Button variant="ghost" data-sveltekit-reload href="/assets/{props.asset.id}" size="icon" title={m["common.hover.goToAsset"]()}>
         <InfoIcon />
       </Button>
-      <DownloadButton variant="ghost" href={downloadUrl} size="icon" downloadType="asset" title={m["common.buttons.download"]()}>
+      <DownloadButton variant="ghost" href={downloadUrl} status={props.asset.status} size="icon" downloadType="asset" title={m["common.buttons.download"]()}>
         <Download />
       </DownloadButton>
-      <DownloadButton variant="ghost" href={oneClickUrl} size="icon" downloadType="asset" title={m["common.buttons.oneClickInstall"]()}>
+      <DownloadButton variant="ghost" href={oneClickUrl} status={props.asset.status} size="icon" downloadType="asset" title={m["common.buttons.oneClickInstall"]()}>
         <DownloadCloud />
       </DownloadButton>
     </div>

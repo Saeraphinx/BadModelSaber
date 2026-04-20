@@ -10,7 +10,7 @@ export const getModsV2Router = router({
         .meta({
             openapi: {
                 method: 'GET',
-                path: '/mods',
+                path: '/v2/mods',
                 tags: ['Mods'],
             }
         })
@@ -54,7 +54,10 @@ export const getModsV2Router = router({
                 where: {
                     status: allowedStatuses,
                 },
-                include: [User, Project, {
+                include: [User, {
+                    model: Project,
+                    include: [User],
+                }, {
                     model: GameVersion,
                     where: gameVersionWhereOptions,
                     through: { attributes: [] },
@@ -77,7 +80,7 @@ export const getModsV2Router = router({
         .meta({
             openapi: {
                 method: 'GET',
-                path: '/hashlookup',
+                path: '/v2/hashlookup',
                 tags: ['Mods'],
             }
         })
@@ -115,7 +118,7 @@ export const getModsV2Router = router({
         .meta({
             openapi: {
                 method: 'GET',
-                path: '/multi/hashlookup',
+                path: '/v2/multi/hashlookup',
                 tags: ['Mods'],
             }
         })

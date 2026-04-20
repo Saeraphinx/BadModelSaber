@@ -109,6 +109,19 @@ export async function init(overrideDbName?: string) {
         next();
     });
     apiRouter.use(`/trpc`, loadExpressMiddleware);
+    // Legacy route handling - redirect old v2 routes to new v2 routes because past me was a fucking idiot
+    apiRouter.use((req, res, next) => {
+        if (req.url.startsWith(`/mods`)) {
+            req.url = req.url.replace(`/mods`, `/v2/mods`);
+        }
+        if (req.url.startsWith(`/hashlookup`)) {
+            req.url = req.url.replace(`/hashlookup`, `/v2/hashlookup`);
+        }
+        if (req.url.startsWith(`/multi/hashlookup`)) {
+            req.url = req.url.replace(`/multi/hashlookup`, `/v2/multi/hashlookup`);
+        }
+        next();
+    });
     apiRouter.use(loadOpenApiMiddleware); // load all openapi routes
 
     FileRoutes.loadRoutes(fileRouter);

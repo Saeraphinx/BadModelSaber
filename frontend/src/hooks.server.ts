@@ -16,7 +16,7 @@ const paraglideHandle: Handle = ({ event, resolve }) =>
   });
 
 export const handle: Handle = paraglideHandle;
-
+let hasWarnedAboutCORS = false;
 export const handleFetch: HandleFetch = async ({ request, fetch: svelteFetch, event }) => {
   let modifiedRequest = request;
   let fetchToUse = svelteFetch;
@@ -24,7 +24,10 @@ export const handleFetch: HandleFetch = async ({ request, fetch: svelteFetch, ev
       
     // replace url with local version if the request is going to the API, no need to hit the proxy
     let url = new URL(penv.LOCAL_API_URL ? request.url.replace(env.PUBLIC_API_URL, penv.LOCAL_API_URL || env.PUBLIC_API_URL) : request.url);
-    if (event.url.origin !== url.origin && dev) console.warn(`Request to ${url.origin} is going to a different origin than the server (${event.url.origin} vs ${url.origin}). This request will require CORS.`);  
+    if (event.url.origin !== url.origin && dev && !hasWarnedAboutCORS) {
+      console.warn(`Request to ${url.origin} is going to a different origin than the server (${event.url.origin} vs ${url.origin}). This request will require CORS.`);  
+      hasWarnedAboutCORS = true;
+    }
     modifiedRequest = new Request(url, {
       headers: {
         ...request.headers,

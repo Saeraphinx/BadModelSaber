@@ -2,7 +2,7 @@
   import MiniPagination from "$lib/components/generic/MiniPagination.svelte";
   import ModCard from "$lib/components/mods/ModCard.svelte";
   import { m } from "$lib/paraglide/messages.js";
-  import { Status, type ElementType, type GameVersionApiV3 } from "$lib/scripts/api/DBTypes";
+  import { Status, UserPermissions, type ElementType, type GameVersionApiV3 } from "$lib/scripts/api/DBTypes";
   import { generateProjectSearchEngine } from "$lib/scripts/utils/search.js";
   import { getStatusString } from "$lib/scripts/utils/stylizer";
   import Checkbox from "$shadcn/components/ui/checkbox/checkbox.svelte";
@@ -15,9 +15,10 @@
   import { onMount } from "svelte";
   import { MediaQuery } from "svelte/reactivity";
   import { Button } from "../../lib/shadcn/components/ui/button";
+  import { checkRoles } from "../../lib/scripts/utils/checkRoles";
 
   const { data: _internal } = $props();
-  const { pageData, trpc } = $derived(_internal);
+  const { pageData, trpc, user } = $derived(_internal);
   let tooSmall = new MediaQuery("max-width: 768px");
 
   let isLoading = $state(true);
@@ -64,9 +65,16 @@
   async function fetchMods() {
     if (!selectedGame) return;
     isLoading = true;
+    let statusLookup = [Status.Verified, Status.Unverified];
+    if (checkRoles(user, { hasOneOf: [UserPermissions.Secret_Features]})) {
+      statusLookup.push(Status.Pending);
+    } else if (checkRoles(user, { hasOneOf: [UserPermissions.Mods_ViewAll]})) {
+      statusLookup.push(Status.Pending, Status.Removed, Status.Private);
+    }
     let mods = await trpc.v3.mods.getMods.query({
       gameName: selectedGame.name,
       gameVersion: selectedGameVersion ? selectedGameVersion.version : undefined,
+      status: statusLookup
     });
     searchEngine = generateProjectSearchEngine(mods);
     isLoading = false;

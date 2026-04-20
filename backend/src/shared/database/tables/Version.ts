@@ -318,19 +318,11 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
             return false;
         }
 
-        if (this.status === Status.Verified || this.status === Status.Unverified) {
+        if (prj.authors?.some((author) => author.id === user.id)) {
             return true;
         }
 
-        if (this.status === Status.Pending) {
-            return user.checkRoles({
-                hasOneOf: [UserPermissions.Mods_ViewAll]
-            }, prj.gameName);
-        } else {
-            return user.checkRoles({
-                hasOneOf: [UserPermissions.Mods_ViewAll]
-            }, prj.gameName);
-        }
+        return user.getAllowedStatuses(`mod`, prj.gameName).includes(this.status)
     }
     public async canEdit(user: User | null | undefined, project?: Project): Promise<boolean> {
         let prj: Project | null | undefined = project;
@@ -520,6 +512,9 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
     // #endregion
     // #region ToAPI
     public async toApiV3(): Promise<VersionApiV3> {
+        if (!this.supportedGameVersions) {
+            throw new Error(`Supported game versions not loaded for version id ${this.id}`);
+        }
         let versions = this.supportedGameVersions.map((gv) => gv.toApiV3());
 
         return {
@@ -543,7 +538,9 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
     }
 
     public async toApiV2(): Promise<ModVersionsApiv2> {
-        let supportedGameVersions = this.supportedGameVersions
+        if (!this.supportedGameVersions) {
+            throw new Error(`Supported game versions not loaded for version id ${this.id}`);
+        }
 
         let uploader = await this.uploader;
         if (!uploader) {
@@ -561,7 +558,7 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
             status: this.status,
             // fix this later
             dependencies: this.dependencies.map((dep) => dep.pId),
-            supportedGameVersions: supportedGameVersions.map((gv) => gv.toApiV2()),
+            supportedGameVersions: this.supportedGameVersions.map((gv) => gv.toApiV2()),
             downloadCount: 0, // to be implemented later
             statusHistory: this.statusHistory.map((entry) => ({
                 status: entry.status,

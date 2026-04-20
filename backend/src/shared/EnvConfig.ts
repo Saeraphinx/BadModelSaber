@@ -10,6 +10,12 @@ export const DEFAULT_CONFIG = {
             clientSecret: ``,
             token: null
         },
+        github: {
+            autoAdminIds: [],
+            clientId: ``,
+            clientSecret: ``,
+            token: null
+        }
     },
     server: {
         port: 6001,
@@ -123,6 +129,12 @@ export class EnvConfig {
                 clientSecret: process.env.DISCORD_CLIENT_SECRET || DEFAULT_CONFIG.auth.discord.clientSecret,
                 token: process.env.DISCORD_TOKEN || DEFAULT_CONFIG.auth.discord.token,
             },
+            github: {
+                autoAdminIds: process.env.GITHUB_AUTO_ADMIN_IDS ? process.env.GITHUB_AUTO_ADMIN_IDS.split(`,`) : DEFAULT_CONFIG.auth.github.autoAdminIds,
+                clientId: process.env.GITHUB_CLIENT_ID || DEFAULT_CONFIG.auth.github.clientId,
+                clientSecret: process.env.GITHUB_CLIENT_SECRET || DEFAULT_CONFIG.auth.github.clientSecret,
+                token: null
+            }
         };
 
         EnvConfig.server = {

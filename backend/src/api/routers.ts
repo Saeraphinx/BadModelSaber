@@ -21,6 +21,7 @@ import { editGameRouter } from './routes/private/editGames.ts';
 import { getModsInternal } from './routes/private/getProjects.ts';
 import { getModsV2Router } from './routes/public/v2/getMods.ts';
 import { getEditTranslationsRouter } from './routes/private/getEditTranslations.ts';
+import { getModsV1Router } from './routes/public/v1/getMods.ts';
 
 const appRouter = router({
     internal: {
@@ -35,6 +36,9 @@ const appRouter = router({
         games: editGameRouter,
         mods: getModsInternal,
         translation: getEditTranslationsRouter,
+    },
+    v1: {
+        mods: getModsV1Router,
     },
     v2: {
         assets: GetAssetV2Router,

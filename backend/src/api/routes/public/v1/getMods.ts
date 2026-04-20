@@ -4,7 +4,7 @@ import { anyProcedure, router } from "../../../trpc.ts";
 import { coerce, compare } from "semver";
 import { Op, WhereOptions } from "sequelize";
 
-export const getModsV2Router = router({
+export const getModsV1Router = router({
     getVersions: anyProcedure()
         .meta({
             openapi: {

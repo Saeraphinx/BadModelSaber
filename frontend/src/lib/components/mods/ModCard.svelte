@@ -8,7 +8,6 @@
   import { cn } from "$shadcn/utils";
   import UserBadge from "../users/UserBadge.svelte";
   import StatusHoverCard from "../generic/StatusHoverCard.svelte";
-  import { Badge } from "../../shadcn/components/ui/badge";
 
   const {
     project,
@@ -25,16 +24,16 @@
 
 <div class={cn("flex flex-col w-xs h-64 gap-2 bg-card rounded-lg p-4", className)} {...restProps}>
   <div class="flex flex-row gap-2 items-center">
-    <div class="flex flex-col gap-1">
+    <div class="flex flex-col gap-1 items-center">
       <img class="h-16 w-16 rounded-md" alt="icon for {project.name}" src={getProjectThumbnailUrl(project)} />
       <StatusHoverCard status={version?.status || project.status} type="mod" />
     </div>
     <div class="flex flex-col gap-1">
       <span class="flex flex-row items-end gap-1 ">
-        <a href="/mods/{project.id}" class="text-lg flex flex-row flex-wrap items-end gap-1 max-w-56 overflow-hidden text-ellipsis whitespace-nowrap" title={project.name} aria-hidden="true">
+        <a href="/mods/{project.id}" class="text-lg/tight flex flex-row flex-wrap items-end gap-1 max-w-56 overflow-hidden text-ellipsis whitespace-nowrap" title={project.name} aria-hidden="true">
           {project.name}
           {#if version}
-            <p class="text-xs text-muted-foreground pb-1">v{version.semver}</p>
+            <p class="text-xs/normal text-muted-foreground">v{version.semver}</p>
           {/if}
         </a>
       </span>
@@ -56,7 +55,7 @@
     <div class="grid grid-cols-2 gap-2 mt-2">
       <Button variant="secondary" href="/mods/{project.id}" class="">View Details</Button>
       {#if version}
-        <DownloadButton variant="outline" downloadType="mod" href={getVersionDownloadUrl(version)} class="">{m["common.buttons.download"]()}</DownloadButton>
+        <DownloadButton variant="outline" downloadType="mod" status={version.status} href={getVersionDownloadUrl(version)} class="">{m["common.buttons.download"]()}</DownloadButton>
       {:else}
         <Button variant="outline" disabled class="">{m["common.buttons.download"]()}</Button>
       {/if}

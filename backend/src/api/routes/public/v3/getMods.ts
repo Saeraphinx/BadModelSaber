@@ -19,7 +19,7 @@ export const GetModsV3 = router({
         })
         .input(z.object({
             gameVersion: z.string().optional(),
-            status: z.array(z.enum(Status)).optional().default([Status.Verified, Status.Pending]),
+            status: z.array(z.enum(Status)).optional().default([Status.Verified, Status.Unverified]),
             name: z.string().optional(),
             authors: z.array(z.int()).optional(),
             platform: z.string().optional(),
