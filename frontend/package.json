@@ -50,6 +50,7 @@
     "isomorphic-dompurify": "^3.7.1",
     "jszip": "^3.10.1",
     "marked": "^17.0.5",
+    "marked-alert": "^2.1.2",
     "marked-highlight": "^2.2.3",
     "semver": "^7.7.4",
     "superjson": "^2.2.2",

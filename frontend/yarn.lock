@@ -1300,6 +1300,11 @@ magic-string@^0.30.11, magic-string@^0.30.17, magic-string@^0.30.21, magic-strin
   dependencies:
     "@jridgewell/sourcemap-codec" "^1.5.5"
 
+marked-alert@^2.1.2:
+  version "2.1.2"
+  resolved "https://registry.npmjs.org/marked-alert/-/marked-alert-2.1.2.tgz#57a3ab3af28b93a70a80cf4682377219a66f1c7d"
+  integrity sha512-EFNRZ08d8L/iEIPLTlQMDjvwIsj03gxWCczYTht6DCiHJIZhMk4NK5gtPY9UqAYb09eV5VGT+jD4lp396E0I+w==
+
 marked-highlight@^2.2.3:
   version "2.2.3"
   resolved "https://registry.yarnpkg.com/marked-highlight/-/marked-highlight-2.2.3.tgz#e7e5e7ccfb1699356c3a45d851db8fe983689172"

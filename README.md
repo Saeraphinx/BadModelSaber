@@ -2,7 +2,7 @@
 A asset & mod hosting platform for Beat Saber.
 
 ## Preparing the server
-To run the server, you must have a instance of PostgreSQL & a database ready for the server to use. If you do not provide Discord OAuth2 credentials, the server will disable authentication and will not allow sign-ins. The importer also requires a Discord bot token in order to make API requests to get users when running the ModelSaber importer. This bot token will also be used to attempt to notify users when they receive an alert, so it is recommended to provide a bot token even if you do not plan on using the importer.
+To run the server, you must have a instance of PostgreSQL & a database ready for the server to use. If you do not provide Discord OAuth2 credentials, the server will disable authentication and will not allow sign-ins. The importer also requires a Discord bot token in order to make API requests to get users when running the ModelSaber importer. This bot token will also be used to attempt to notify users when they receive an alert, so it is recommended to provide a bot token even if you do not plan on using the importer. GitHub OAuth2 credentials are not required, but the frontend will still show the option to sign in with GitHub, and if you do not provide credentials, users who attempt to sign in with GitHub will receive an error.
 ### Running with Docker
 1. Pull the frontend and backend images.
 2. Look at the `docker-compose.example.yml` file for an example of how to set up the server with Docker Compose.
