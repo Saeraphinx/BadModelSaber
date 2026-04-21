@@ -71,6 +71,12 @@
     } else if (checkRoles(user, { hasOneOf: [UserPermissions.Mods_ViewAll]})) {
       statusLookup.push(Status.Pending, Status.Removed, Status.Private);
     }
+    if (gameVersions.some((v) => v.gameName !== selectedGame.name)) {
+      await trpc.v3.games.getGameVersions.query({ gameName: selectedGame.name }).then((versions) => {
+        gameVersions = versions.gameVersions;
+        selectedGameVersionId = gameVersions.find((v: any) => v.defaultVersion)?.id.toString() || ``;
+      });
+    }
     let mods = await trpc.v3.mods.getMods.query({
       gameName: selectedGame.name,
       gameVersion: selectedGameVersion ? selectedGameVersion.version : undefined,

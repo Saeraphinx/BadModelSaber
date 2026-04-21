@@ -1,6 +1,6 @@
 <div align="center">
 <h1>BeatMods Verification Guidelines</h1>
-<h2>Last Updated: April 21 2026</h2>
+<h3>Last Updated: April 21 2026</h3>
 </div>
 
 ## Definitions
