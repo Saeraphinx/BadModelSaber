@@ -24,7 +24,8 @@
   const assets = $derived(pageData.assets);
   const mods = $derived(pageData.mods);
   let dialog = $state<ApprovalDialog>();
-  let tabsValue = $state("mods");
+  // svelte-ignore state_referenced_locally
+  let tabsValue = $state(mods.length > 0 ? "mods" : "assets");
 
   // #region Edit User
   let isEditing = $state(false);

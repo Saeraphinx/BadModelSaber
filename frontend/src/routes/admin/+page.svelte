@@ -19,6 +19,7 @@
   const { data: _internal } = $props();
   // svelte-ignore state_referenced_locally
   const { user, trpc } = $derived(_internal);
+  let currentTab = $state("manual");
   // #region Alert
   let alertType = $state(AlertType.Generic);
   let alertUserId = $state("5");
@@ -46,17 +47,26 @@
   }
   // #endregion
 
-  // #region Roles
+  // #region Roles (depends on Game Management)
   // svelte-ignore state_referenced_locally
-    let roleUserId = $state(`${user.id}`);
+  let roleUserId = $state(`${user.id}`);
   let sitewidePermissions = $state<UserPermissions[]>([]);
   let perGamePermissions = $state<Record<string, UserPermissions[]>>({});
   let hasBeenLoaded = $state(false);
+  let roleAddGameDialogOpen = $state(false);
   function clearRoleSelections() {
     const checkboxes = document.querySelectorAll("input[type=checkbox]");
     checkboxes.forEach((checkbox) => {
       (checkbox as HTMLInputElement).checked = false;
     });
+  }
+  function addGameToPerGamePermissions(gameName: string) {
+    if (!perGamePermissions[gameName]) {
+      perGamePermissions = {
+        ...perGamePermissions,
+        [gameName]: [],
+      };
+    }
   }
   function loadUserRoles() {
     trpc.v3.user.getUserById
@@ -210,7 +220,44 @@
         return [];
       });
   }
+
+  async function baEditSelectedMods() {
+    if (!baSelectedGameVersionTo) {
+      toast.error("Please select a target game version.");
+      return;
+    }
+    let promises = [];
+    for (const modId of baSelectedVersionIds) {
+      let version = modsEligibleForBulkAction.find((mod) => mod.version.id === modId)?.version;
+      let gameVersionIds = version?.supportedGameVersions.map(gv => gv.id) ?? [];
+      if (gameVersionIds.length === 0) {
+        toast.error(`Mod with ID ${modId} does not have any supported game versions. Skipping.`);
+        continue;
+      }
+      promises.push(
+        trpc.internal.updateThings.updateVersion
+          .mutate({
+            versionId: modId,
+            data: {
+              supportedGameVersionIds: [...gameVersionIds, baSelectedGameVersionTo.id],
+            },
+          }).catch((err) => {
+            console.error(`Failed to update mod ${modId}:`, err);
+            toast.error(`Failed to update mod with ID ${modId}.`, { description: parseErrorMessage(err) });
+          })
+      );
+    }
+    toast.promise(Promise.all(promises), {
+      loading: "Updating mods...",
+      success: (data) => {
+        return `Successfully updated ${data.length} mods.`
+      },
+      error: "Failed to update some or all selected mods.",
+    });
+      
+  }
   // #endregion
+
 </script>
 
 <div class="flex flex-col gap-4 m-auto p-4 justify-center">
@@ -228,12 +275,14 @@
       <p>Error loading admin status.</p>
     {/await}
   </div>
-  <Tabs.Root value="bulkactions">
-    <Tabs.List class="m-auto">
+  <Tabs.Root bind:value={currentTab}>
+    <Tabs.List class="m-auto" variant="line">
       <Tabs.Trigger value="logs">Admin Logs</Tabs.Trigger>
       <Tabs.Trigger value="manual">Manual Operations</Tabs.Trigger>
       <Tabs.Trigger value="users">User Management</Tabs.Trigger>
-      <Tabs.Trigger value="games">Game Management</Tabs.Trigger>
+      {#if checkRoles(user, [UserPermissions.Game_Create, UserPermissions.Game_Edit, UserPermissions.Game_EditVersions, UserPermissions.Game_ViewExtras])}
+        <Tabs.Trigger value="games">Game Management</Tabs.Trigger>
+      {/if}
       <Tabs.Trigger value="bulkactions">Bulk Actions (Mods)</Tabs.Trigger>
     </Tabs.List>
     <!-- Admin Logs Panel -->
@@ -326,7 +375,9 @@
                   }} />
                 <Button onclick={loadUserRoles} class="w-1/4">Fetch</Button>
               </div>
-              <Label class="mt-4 mb-2">Permissions</Label>
+              <div class="flex flex-row justify-end items-center mt-2">
+                <Button size="sm" variant="ghost" onclick={() => roleAddGameDialogOpen = true}>Add Game</Button>
+              </div>
               <Accordion.Root type="single" class="w-full">
                 <Accordion.Item value="sitewide" class="border rounded-md mb-2">
                   <Accordion.Trigger class="bg-secondary p-2 rounded-t-md w-full text-left">Sitewide Permissions</Accordion.Trigger>
@@ -359,7 +410,7 @@
                     <Accordion.Trigger class="bg-secondary p-2 rounded-t-md w-full text-left">{game} Permissions</Accordion.Trigger>
                     <Accordion.Content class="p-2">
                       <div class="flex flex-row flex-wrap gap-2 m-2">
-                        {#each Object.values(UserPermissions) as item}
+                        {#each Object.values(UserPermissions).filter((i) => !i.startsWith(`cos_`) && !i.startsWith(`secret`)) as item}
                           <div class="flex flex-row items-center gap-1">
                             <Checkbox
                               bind:checked={
@@ -531,7 +582,11 @@
                     </td>
                     <td>
                       {version.linkedVersionIds.length > 0 ? `Linked to: ${version.linkedVersionIds.join(", ")}` : "No linked versions"}
-                      <Button variant="outline" size="icon" class="ml-2">
+                      <Button variant="outline" size="icon" class="ml-2" onclick={() => {
+                         linkVersionSourceId = version.id.toString();
+                         linkVersionTargetId = "";
+                         linkVersionDialogOpen = true;
+                      }}>
                         <PencilLine />
                       </Button>
                     </td>
@@ -620,7 +675,7 @@
             </Select.Root>
           </div>
           <Button variant="default" onclick={fetchModsEligibleForBulkAction}>Fetch Eligible Mods</Button>
-          <Button disabled={!(baSelectedGameName && baSelectedGameVersionFromId && baSelectedGameVersionToId)} variant="destructive">Mark as Supporting {baSelectedGameVersionTo?.version}</Button>
+          <Button disabled={!(baSelectedGameName && baSelectedGameVersionFromId && baSelectedGameVersionToId)} variant="destructive" onclick={baEditSelectedMods}>Mark as Supporting {baSelectedGameVersionTo?.version}</Button>
           <div class="grid grid-cols-2 gap-2">
             <Button disabled={baSelectedVersionIds.length === modsEligibleForBulkAction.length || modsEligibleForBulkAction.length === 0} onclick={() => {
               baSelectedVersionIds = modsEligibleForBulkAction.map(mod => mod.version.id);
@@ -783,6 +838,21 @@
   </DialogContent>
 </Dialog>
 
+<Dialog bind:open={roleAddGameDialogOpen}>
+  <DialogContent>
+    <div class="flex flex-col items-center rounded-lg justify-center flex-wrap">
+      <p class="p-2 text-2xl">Add Game to pergame</p>
+      {#each games as g}
+        {#if !Object.keys(perGamePermissions).includes(g.name)}
+          <Button class=" mb-2" onclick={() => {
+            addGameToPerGamePermissions(g.name);
+            roleAddGameDialogOpen = false;
+          }}>{g.displayName}</Button>
+        {/if}
+      {/each}
+    </div>
+  </DialogContent>
+</Dialog>
 <style>
   table {
     width: 80%;
