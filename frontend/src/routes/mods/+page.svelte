@@ -143,7 +143,7 @@
 
 {#snippet statusFilter()}
   <Collapsible.Root bind:open={isFilterStatusVisible}>
-    <div class="flex flex-col bg-card rounded-md min-w-60 w-full py-2 px-4">
+    <div class="flex flex-col bg-card rounded-md min-w-62 w-full py-2 px-4">
       <Collapsible.Trigger class="flex items-center justify-between w-full">
         <span class="text-lg font-semibold">{m["mods.dataTable.status"]()}</span>
         <ChevronRightIcon class="h-4 w-4 transition-transform {isFilterStatusVisible ? `rotate-90` : ``}" />
@@ -173,7 +173,7 @@
 
 {#snippet categoryFilter()}
   <Collapsible.Root bind:open={isFilterCategoryVisible}>
-    <div class="flex flex-col bg-card rounded-md min-w-60 w-full py-2 px-4">
+    <div class="flex flex-col bg-card rounded-md min-w-62 w-full py-2 px-4">
       <Collapsible.Trigger class="flex items-center justify-between w-full">
         <span class="text-lg font-semibold">{m["mods.dataTable.category"]()}</span>
         <ChevronRightIcon class="h-4 w-4 transition-transform {isFilterStatusVisible ? `rotate-90` : ``}" />
@@ -201,7 +201,7 @@
   </Collapsible.Root>
 {/snippet}
 
-<div class="flex flex-row not-sm:flex-col gap-4 m-auto max-w-[95%] not-sm:mb-4">
+<div class="flex flex-row not-md:flex-col gap-4 m-auto max-w-[95%] not-sm:mb-4">
   <!-- left filter/search bar -->
   {#if !tooSmall.current}
     <div class="flex flex-col w-64 gap-2">
@@ -211,7 +211,7 @@
       {@render categoryFilter()}
     </div>
   {:else}
-    <div class="flex flex-col w-full gap-2">
+    <div class="flex flex-col w-full max-w-84 m-auto gap-2">
       {@render gameFilter()}
       {@render searchFilter()}
     </div>
@@ -224,7 +224,7 @@
       {/each}
     {:else}
       {#each { length: pageSize }}
-        <Skeleton class="w-sm h-48 rounded-md" />
+        <Skeleton class="w-84 h-64 rounded-md" />
       {/each}
     {/if}
   </div>

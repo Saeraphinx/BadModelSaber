@@ -77,6 +77,8 @@
     "searchAssets": "Search Assets...",
     "searchMods": "Search Mods...",
     "perPage": "{count} per page",
+    "cardsPerPage": "# per page",
+    "size": "Size",
     "showFilters": "Show Filters",
     "xToYOfZResults": "{start}-{end} of {total} results"
   },
@@ -341,7 +343,7 @@
       "wall": "Wall",
       "health-bar": "Health Bar",
       "banner": "Banner",
-      "Sound": "Sound",
+      "sound": "Sound",
       "chroma-environment": "Chroma Environment",
       "camera2-config": "Camera2 Config",
       "counters-plus-config": "Counters+ Config",

@@ -144,7 +144,7 @@
     let pa = Promise.resolve()
     if (pageData.linkedIds.length > 0) {
       pa = trpc.v3.assets.getMultipleAssetsById
-        .query({ id: pageData.linkedIds.map((li) => li.id).splice(0, 20) })
+        .query({ id: pageData.linkedIds.map((li) => li.id).splice(0, 15) })
         .then((res) => {
           relatedAssets = res ? Object.values(res) : [];
           isRelatedLoading = false;
@@ -157,7 +157,7 @@
       isRelatedLoading = false;
     }
     let pb=trpc.v3.user.getAssetsByUserId
-      .query({ id: pageData.uploaderId, limit: 20 })
+      .query({ id: pageData.uploaderId, limit: 15 })
       .then((res) => {
         authorAssets = res.assets.filter((i) => i.id !== pageData.id) || [];
         isAuthorLoading = false;
@@ -234,7 +234,7 @@
       {/if}
       <div class="flex justify-between items-center">
         <span class="text-muted-foreground pr-2">{m["assets.dataTable.status"]()}</span>
-        <StatusHoverCard status={pageData.status}>
+        <StatusHoverCard status={pageData.status} type="asset">
           <Badge variant={pageData.status ? `outline` : `default`} class="capitalize">{getStatusString(pageData.status)}</Badge>
         </StatusHoverCard>
       </div>
@@ -289,7 +289,7 @@
     <Carousel.Content>
       {#each pageData.icons as icon}
         <Carousel.Item>
-          <div class="overflow-hidden rounded-2xl relative">
+          <div class="overflow-hidden rounded-2xl mx-8 relative">
             <img src={`${getThumbnailUrl(pageData.id, icon)}`} alt="Icon for {pageData.name}" class="w-full h-full rounded-2xl transition-all duration-300 {isBlurred ? `blur-2xl` : ``}" />
             {#if isBlurred}
               <div class="flex flex-col absolute top-0 left-0 w-full h-full justify-center items-center">
@@ -401,7 +401,7 @@
         <Button
           variant="secondary"
           onclick={() => {
-            approvalDialog?.showDialog(pageData.id, pageData.name);
+            approvalDialog?.showDialog(pageData.id, pageData.name, `asset`);
           }}>
           <BadgeAlert />
           {m["common.buttons.approvalDialog"]()}
@@ -490,7 +490,7 @@
 {/snippet}
 <!-- #endregion -->
 
-<div class="flex flex-col items-center m-auto max-w-6xl p-4 bg-background rounded-2xl">
+<div class="flex flex-col items-center m-auto max-w-6xl nod-md:p-4 bg-background rounded-2xl">
   <div class="flex flex-col md:flex-row w-full">
     <div class="flex flex-col items-center w-auto min-w-[40%] md:max-w-[50%]">
       {#if mobileView.current}

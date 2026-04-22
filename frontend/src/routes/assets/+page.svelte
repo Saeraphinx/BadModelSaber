@@ -39,10 +39,11 @@
   let searchEngine = $state<ReturnType<typeof generateAssetSearchEngine>>();
   let dialog = $state<ApprovalPopup>();
 
-  // Pagenation
+  // Pagenation & View Data
   let currentPage = $state(1);
   let selectedPageSizeString = $state(`24`);
   let selectedPageSize = $derived(Number(selectedPageSizeString));
+  let selectedCardSize = $state<"linked" | "normal" | "large" | "small">(tooSmall.current ? `normal` : `large`);
 
   // Filter Data
   let filterFileFormatVisible = $state<boolean>(true);
@@ -58,7 +59,7 @@
     }
     return [Status.Verified, Status.Unverified];
   });
-  
+
   // Filters Themselves
   let filteredAssets: AssetApiV3[] = $derived.by(() => {
     // Filter Only
@@ -110,7 +111,7 @@
 {#snippet filters()}
   <!-- File Type Filter -->
   <Collapsible.Root bind:open={filterFileFormatVisible}>
-    <div class="flex flex-col bg-card rounded-2xl min-w-60 w-full py-2 px-4">
+    <div class="flex flex-col bg-card rounded-2xl min-w-62 w-full py-2 px-4">
       <Collapsible.Trigger class="flex items-center justify-between w-full">
         <span class="text-lg font-semibold">{m["assets.dataTable.type"]()}</span>
         <ChevronRight class="h-4 w-4 transition-transform {filterFileFormatVisible ? `rotate-90` : ``}" />
@@ -148,7 +149,7 @@
   {#if assetStatuses.length > 1}
     <!-- Only show status filter if there are multiple statuses available for filtering -->
     <Collapsible.Root bind:open={filterStatusVisible} class="mt-4">
-      <div class="flex flex-col bg-card rounded-2xl min-w-60 w-full py-2 px-4">
+      <div class="flex flex-col bg-card rounded-2xl min-w-62 w-full py-2 px-4">
         <Collapsible.Trigger class="flex items-center justify-between w-full">
           <span class="text-lg font-semibold">{m["assets.dataTable.status"]()}</span>
           <ChevronRight class="h-4 w-4 transition-transform {filterStatusVisible ? `rotate-90` : ``}" />
@@ -177,46 +178,64 @@
   {/if}
 {/snippet}
 
-<div class="flex flex-col items-center w-[90%] not-lg:w-full m-auto p-4 not-md:p-0 rounded-2xl">
+{#snippet search(full = false)}
+  <div class="flex flex-col bg-card rounded-2xl {full ? `max-w-md w-full` : `w-62`} p-4 mb-4 gap-2">
+    <div class="flex flex-row w-full gap-2">
+      <Label for="asset-search" class="sr-only">{m["search.search"]()}</Label>
+      <Input type="text" placeholder={m["search.searchAssets"]()} id="asset-search" bind:value={searchQuery} />
+      {#if full}
+        <Button variant="outline" onclick={() => (filterMobileDrawerVisible = true)}>
+          <FunnelIcon class="h-4 w-4" />
+          <span class="sr-only">{m["search.showFilters"]()}</span>
+        </Button>
+      {/if}
+    </div>
+    <div class="flex flex-row flex-wrap gap-2">
+      <div class="grid grid-cols-[1fr_1.75fr] w-full items-center gap-2">
+        <Label for="per-page-select" class="text-sm">{m["search.cardsPerPage"]()}</Label>
+        <Select.Root allowDeselect={false} bind:value={selectedPageSizeString} type="single" onValueChange={(value) => (currentPage = 1)}>
+          <Select.Trigger id="per-page-select" class="w-full">{m["search.perPage"]({ count: selectedPageSizeString })}</Select.Trigger>
+          <Select.Content>
+            {#each [24, 48, 72] as amount}
+              <Select.Item value={amount.toString()}>
+                {m["search.perPage"]({ count: amount })}
+              </Select.Item>
+            {/each}
+          </Select.Content>
+        </Select.Root>
+        <Label for="size-select" class="text-sm">{m["search.size"]()}</Label>
+        <Select.Root allowDeselect={false} bind:value={selectedCardSize} type="single" onValueChange={(value) => (currentPage = 1)}>
+          <Select.Trigger id="size-select" class="w-full capitalize">{selectedCardSize}</Select.Trigger>
+          <Select.Content>
+            {#each [`linked`, `small`, `normal`, `large`] as size}
+              <Select.Item class="capitalize" value={size.toString()}>
+                {size}
+              </Select.Item>
+            {/each}
+          </Select.Content>
+        </Select.Root>
+      </div>
+      <div class="flex-1 flex {full ? `justify-end` : `justify-center`}">
+        <MiniPagination {selectedPageSize} bind:currentPage totalCount={filteredAssets.length} />
+      </div>
+    </div>
+  </div>
+{/snippet}
+
+<div class="flex flex-col items-center w-[90%] not-lg:w-full m-auto px-4 not-md:p-0 rounded-2xl">
   <div class="flex flex-row w-full">
     <!-- Filter Area -->
     {#if !tooSmall.current}
       <div class="flex flex-col items-start mb-4 mr-4 whitespace-nowrap">
+        {@render search(false)}
         {@render filters()}
-      </div>
+      </div>      
     {/if}
     <!-- Content -->
     <div class="flex flex-col items-center w-full">
-      <!-- Top Bar -->
-      <div class="flex flex-col bg-card rounded-2xl w-full p-4 mb-4 gap-2">
-        <div class="flex flex-row w-full gap-2">
-          <Label for="asset-search" class="sr-only">{m["search.search"]()}</Label>
-          <Input type="text" placeholder={m["search.searchAssets"]()} id="asset-search" bind:value={searchQuery} />
-          {#if tooSmall.current}
-            <Button variant="outline" onclick={() => filterMobileDrawerVisible = true}>
-              <FunnelIcon class="h-4 w-4" />
-              <span class="sr-only">{m["search.showFilters"]()}</span>
-            </Button>
-          {/if}
-        </div>
-        <div class="flex flex-row flex-wrap gap-2">
-          <div class="flex items-center gap-2">
-            <Select.Root allowDeselect={false} bind:value={selectedPageSizeString} type="single" onValueChange={(value) => (currentPage = 1)}>
-              <Select.Trigger class="">{m["search.perPage"]({ count: selectedPageSizeString})}</Select.Trigger>
-              <Select.Content>
-                {#each [24, 48, 72] as amount}
-                  <Select.Item value={amount.toString()}>
-                    {m["search.perPage"]({ count: amount })}
-                  </Select.Item>
-                {/each}
-              </Select.Content>
-            </Select.Root>
-          </div>
-          <div class="flex-1 flex justify-end">
-            <MiniPagination {selectedPageSize} bind:currentPage={currentPage} totalCount={filteredAssets.length} />
-          </div>
-        </div>
-      </div>
+      {#if tooSmall.current}
+        {@render search(true)}
+       {/if}
       <!-- Cards -->
       <div class="flex flex-row flex-wrap justify-evenly gap-4">
         {#if assetsLoading}
@@ -228,15 +247,15 @@
             <span class="text-gray-500 dark:text-gray-400 w-full py-8 text-center">{m["assets.noAssetsFound"]()}</span>
           {/if}
           {#each currentAssetArray as asset (asset.id)}
-            <AssetCard {asset} approvalDialog={checkRoles(user, [UserPermissions.Asset_Approval], asset.gameName) ? dialog : undefined} size={smallerIcons.current ? `normal` : `large`} />
+            <AssetCard {asset} approvalDialog={checkRoles(user, [UserPermissions.Asset_Approval], asset.gameName) ? dialog : undefined} size={selectedCardSize} />
           {/each}
         {/if}
       </div>
       <Separator class="my-4 w-full" />
       {#if !smallerIcons.current}
-        <BigPagination {selectedPageSize} bind:currentPage={currentPage} totalItems={filteredAssets.length} />
+        <BigPagination {selectedPageSize} bind:currentPage totalItems={filteredAssets.length} />
       {:else}
-        <MiniPagination {selectedPageSize} bind:currentPage={currentPage} totalCount={filteredAssets.length} />
+        <MiniPagination {selectedPageSize} bind:currentPage totalCount={filteredAssets.length} />
       {/if}
     </div>
   </div>

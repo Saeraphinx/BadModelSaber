@@ -22,7 +22,7 @@
   } & HTMLAttributes<HTMLDivElement> = $props();
 </script>
 
-<div class={cn("flex flex-col w-xs h-64 gap-2 bg-card rounded-lg p-4", className)} {...restProps}>
+<div class={cn("flex flex-col w-84 h-64 gap-2 bg-card rounded-lg p-4", className)} {...restProps}>
   <div class="flex flex-row gap-2 items-center">
     <div class="flex flex-col gap-1 items-center">
       <img class="h-16 w-16 rounded-md" alt="icon for {project.name}" src={getProjectThumbnailUrl(project)} />
