@@ -47,7 +47,8 @@
         data = await fetch(getVersionDecompUrl(version)).then(res => res.ok ? res.text() : `Failed to fetch code: ${res.statusText}`);
       else if (type === "manifest")
         data = await fetch(getVersionManifestUrl(version)).then(res => res.ok ? res.text() : `Failed to fetch manifest: ${res.statusText}`);
-      codeDialog.showDialog(data, type === "code" ? `cs` : `json`);
+      if (data === "null" || data.trim() === "") data = `No data available.`;
+      codeDialog.showDialog(data, type === "code" ? `cs` : `json`, Boolean(approvalDialog),  type === "code" ? getVersionDecompUrl(version) : getVersionManifestUrl(version));
     }
   }
 
@@ -126,19 +127,19 @@
           </span>
         </Accordion.Trigger>
         <Accordion.Content class="p-2">
-          <div class="flex flex-row flex-wrap gap-0.5">
+          <div class="flex flex-row flex-wrap gap-1">
             {#if version.dependencies.length > 0}
               {#await getDependencyProjects()}
-                <div class="flex flex-row items-center justify-center p-4 gap-2">
+                <div class="flex flex-row items-center justify-center p-2 gap-2">
                   <Spinner class="h-6 w-6" />
                   <p class="text-sm text-gray-500 ml-2">Loading dependencies...</p>
                 </div>
               {:then projects} 
                 {#each version.dependencies.sort((a,b) => a.pId - b.pId) as dep}
                   {#if projects.find(p => p.id === dep.pId)}
-                    <Button variant="ghost" href={`/mods/${dep.pId}`} class="text-sm py-0 p-0.5">{projects.find(p => p.id === dep.pId)?.name} ({dep.sv})</Button>
+                    <a href={`/mods/${dep.pId}`} class="text-sm bg-accent p-0.5 px-1 rounded-md">{projects.find(p => p.id === dep.pId)?.name} <span class="text-xs text-muted-foreground">{dep.sv}</span></a>
                   {:else}
-                    <p class="text-sm text-gray-500">ID #{dep.pId} {dep.sv}</p>
+                    <p class="text-sm bg-accent">ID #{dep.pId} {dep.sv}</p>
                   {/if}
                 {/each}
               {/await}

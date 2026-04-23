@@ -10,10 +10,12 @@
 
   const {
     markdown = $bindable(""),
+    enableCodeBg = true,
     class: className,
     ...restProps
   }: {
     markdown: string | null;
+    enableCodeBg?: boolean;
   } & HTMLAttributes<HTMLDivElement> = $props();
 
   let renderedHtml: string = $state("");
@@ -66,7 +68,7 @@
 <div
   class={cn(
     `wrap-break-words min-w-0 max-w-full`,
-    `prose prose-invert prose-neutral `,
+    `prose prose-invert prose-neutral`,
     `prose-h1:mb-2 prose-h1:pb-1 prose-h1:border-b-2 `,
     `prose-h2:pb-1 prose-h2:border-b-2 prose-h2:mb-2`,
     `prose-code:before:content-[""]! prose-code:after:content-[""]! prose-code:mx-1.5`,
@@ -77,6 +79,7 @@
     `[&_.markdown-alert-important]:bg-purple-800/50 [&_.markdown-alert-important]:border-purple-500/50 [&_.markdown-alert-important]:text-purple-100`,
     `[&_.markdown-alert-warning]:bg-orange-800 [&_.markdown-alert-warning]:border-yellow-500 [&_.markdown-alert-warning]:text-yellow-100`,
     `[&_.markdown-alert-caution]:bg-red-800 [&_.markdown-alert-caution]:border-red-500 [&_.markdown-alert-caution]:text-red-100`,
+    enableCodeBg ? `` : `[&_.hljs]:bg-transparent!`,
     className,
   )}
   {...restProps}>

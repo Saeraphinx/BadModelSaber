@@ -1,7 +1,7 @@
 import { Logger, LogLevel } from "../../../../shared/Logger.ts";
 import { Validator } from "../../../../shared/Validator.ts";
 import { getHashFromFile, parseErrorMessage } from "../../../../shared/Tools.ts";
-import { Asset, assetApiV3Schema, ContentHash, Game, Project, projectApiV3Schema, Status, UserPermissions, Version, versionApiV3Schema } from "../../../../shared/Database.ts";
+import { Asset, assetApiV3Schema, ContentHash, Game, GameVersion, Project, projectApiV3Schema, Status, UserPermissions, Version, versionApiV3Schema } from "../../../../shared/Database.ts";
 import path from "node:path";
 import fs from "node:fs";
 import { EnvConfig } from "../../../../shared/EnvConfig.ts";
@@ -12,6 +12,7 @@ import { TRPCError } from "@trpc/server";
 import JSZip, { support } from "jszip";
 import { getManifestFromString, Manifest } from "../../../../shared/ModParser.ts";
 import z from "zod";
+import { Op } from "sequelize";
 
 /*
 == Assets ==
@@ -210,6 +211,23 @@ export const uploadStuff = router({
             throw new TRPCError({ code: 'FORBIDDEN', message: 'You do not have permission to upload versions for this project.' });
         }
 
+        let newGameVersions = GameVersion.findAll({
+            where: {
+                [Op.or]: [
+                    { id: input.data.supportedGameVersionIds },
+                    { linkedVersionIds: { [Op.overlap]: input.data.supportedGameVersionIds } } // also include game versions that have linkedVersionIds that overlap with the provided supportedGameVersionIds,
+                ]
+            }
+        }).then((gameVersions) => {
+            if (gameVersions.length >= input.data.supportedGameVersionIds.length) {
+                throw new TRPCError({ code: 'BAD_REQUEST', message: 'One or more supported game versions not found' });
+            }
+            return gameVersions;
+        }).catch((err) => {
+            Logger.error(`Error validating supported game versions: ${parseErrorMessage(err)}`);
+            throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Failed to validate supported game versions. Please contact a site administrator.' });
+        });
+
         let fileHash = await getHashFromFile(input.modZip);
         if ((input.modZip.type !== "application/zip" && input.modZip.type !== "application/x-zip-compressed") || path.extname(input.modZip.name) !== ".zip") {
             throw new TRPCError({ code: 'BAD_REQUEST', message: 'Uploaded file is not a valid zip archive.' });
@@ -253,6 +271,8 @@ export const uploadStuff = router({
             }
         }
 
+        await newGameVersions; // trigger errors before we create the version entry or save the file ideally
+
         return await Version.create({
             projectId: project.id,
             platform: input.data.platform,
@@ -265,7 +285,7 @@ export const uploadStuff = router({
             status: Status.Private,
             contentHashes: [], // will be filled in later by a background job after the file is saved and processed
         }).then(async (version) => {
-            version.$set(`supportedGameVersions`, input.data.supportedGameVersionIds);
+            version.$set(`supportedGameVersions`, await newGameVersions);
             Logger.log(`Version database entry created for user ${ctx.user?.id} with version ID ${version.id} for project ID ${project.id}`);
             let versionFolder = path.join(project.folderPath, version.id.toString());
             fs.mkdirSync(versionFolder, { recursive: true });

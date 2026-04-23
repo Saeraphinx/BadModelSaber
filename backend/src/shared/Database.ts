@@ -42,6 +42,9 @@ export class DatabaseManager {
         }
         this.schemaName = useAltSchema || `public`;
         this.schemaName = this.schemaName.toLowerCase();
+        if (!/^[a-z_][a-z0-9_]*$/.test(this.schemaName)) {
+            throw new Error(`Invalid schema name: ${this.schemaName}`);
+        }
         Logger.log(`Using schema: ${this.schemaName}`);
 
         this.sequelize = new Sequelize(connectionString, {
@@ -51,12 +54,19 @@ export class DatabaseManager {
             schema: this.schemaName,
         });
 
+        if (this.schemaName !== `public`) {
+            // Keep all queries (including Umzug migrations) on the selected schema.
+            this.sequelize.addHook(`afterConnect`, async (connection: any) => {
+                await connection.query(`SET search_path TO "${this.schemaName}", public;`);
+            });
+        }
+
         let globPath = `./build/shared/database/migrations/*.js`;
         this.umzug = new Umzug({
             migrations: {
                 glob: globPath,
             },
-            storage: new SequelizeStorage({ sequelize: this.sequelize }),
+            storage: new SequelizeStorage({ sequelize: this.sequelize, schema: this.schemaName }),
             context: this,
             logger: Logger
         });
@@ -97,12 +107,12 @@ export class DatabaseManager {
 
         // initialize everything for usage. should resolve once the database is ready.
         await this.connect();
-        await this.sequelize.query(`CREATE SCHEMA IF NOT EXISTS ${this.schemaName}`);
+        await this.sequelize.query(`CREATE SCHEMA IF NOT EXISTS "${this.schemaName}"`);
         await this.migrate();
         this.loadTables();
         try {
-            await this.sequelize.sync();
-            Logger.log(`Database synced successfully.`);
+            //await this.sequelize.sync();
+            Logger.log(`Database loaded successfully.`);
             await this.createAdminUserIfNotExists()
             return this;
         } catch (error: any) {
@@ -147,7 +157,7 @@ export class DatabaseManager {
 
     public async createSchema(schemaName: string = this.schemaName) {
         Logger.log(`Creating schema ${schemaName}...`);
-        await this.sequelize.query(`CREATE SCHEMA IF NOT EXISTS ${this.schemaName}`);
+        await this.sequelize.query(`CREATE SCHEMA IF NOT EXISTS "${schemaName}"`);
     }
 
     public async dropSchema() {
@@ -228,7 +238,15 @@ export class DatabaseManager {
             totalRows += data[model].length;
         }
         // set global_id_seq to the # of rows added
-        await this.sequelize.query(`SELECT setval('global_id_seq', ${totalRows != 0 ? totalRows : 1}, true);`);
+        let currentId = await this.sequelize.query(`SELECT last_value FROM global_id_seq;`).then(([results]) => {
+            // @ts-ignore
+            return results[0].last_value;
+        }).catch((error) => {
+            Logger.error(`Failed to get current value of global_id_seq: ${error.message}`);
+            return 1000; // default starting value
+        });
+
+        await this.sequelize.query(`SELECT setval('global_id_seq', ${totalRows != 0 ? totalRows+currentId : 1000}, true);`);
         Logger.log(`Database import complete. Imported a total of ${totalRows} rows.`);
     }
 

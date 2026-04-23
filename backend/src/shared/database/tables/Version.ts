@@ -254,24 +254,6 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
         }
         version.baseFileName = `${(await version.project)?.name}_${version.platform}_v${version.semver.raw}`;
     }
-      
-    @AfterCreate
-    private static async runLinkedVersionsMerge(version: Version) {
-        for (let gv of version.supportedGameVersions) {
-            for (let linkedId of gv.linkedVersionIds) {
-                if (!version.supportedGameVersions.some((gvs) => gvs.id === linkedId)) {
-                    let linkedVersion = await GameVersion.findByPk(linkedId);
-                    if (linkedVersion) {
-                        await version.$add(`supportedGameVersions`, linkedVersion);
-                    } else {
-                        Logger.warn(`Could not find linked GameVersion with id ${linkedId} for merging into version id ${version.id}`);
-                    }
-                }
-            }
-        }
-
-        await version.save();
-    }
     // #endregion
 
     public static async checkIfExists(id: number): Promise<boolean> {
@@ -448,6 +430,10 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
             this.semver = data.semver;
         }
         if (data.supportedGameVersionIds) {
+            let currentVersionGameVersions = await this.$get(`supportedGameVersions`);
+            if (!currentVersionGameVersions) {
+                throw new Error(`Current supported game versions not found for version id ${this.id} when trying to update supported game versions.`);
+            }
             let desiredGameVersions = await GameVersion.findAll({
                 where: {
                     id: data.supportedGameVersionIds,
@@ -457,6 +443,19 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
                 throw new Error(`Invalid supportedGameVersion Ids provied. Some GameVersions not found.`);
             }
             await this.$set(`supportedGameVersions`, desiredGameVersions);
+
+            // find all of the new game versions that aren't in the old game versions, and add any of their linked versions
+            let newGameVersions = desiredGameVersions.filter(id => currentVersionGameVersions.every(current => current.id !== id));
+            for (let newGameVersion of newGameVersions) {
+                if (newGameVersion.linkedVersionIds && newGameVersion.linkedVersionIds.length > 0) {
+                    for (let linkedVersionId of newGameVersion.linkedVersionIds) {
+                        // if the linked version isn't already supported by this version and the new game version wasn't already supported, add the linked version to the supported versions
+                        if (currentVersionGameVersions.every(current => current.id !== linkedVersionId) && desiredGameVersions.every(desired => desired.id !== linkedVersionId)) {
+                            this.$add(`supportedGameVersions`, linkedVersionId);
+                        }
+                    }
+                }
+            }
         }
         if (data.dependencies) {
             this.dependencies = data.dependencies;

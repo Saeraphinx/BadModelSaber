@@ -284,7 +284,7 @@
         </div>
       {/if}
     </div>
-    <div class="w-full overflow-scroll">
+    <div class="w-full overflow-hidden">
       <!-- Databar -->
       <div class="flex justify-evenly bg-card rounded-md p-4 mb-4">
         <div class="flex flex-col items-center justify-center">
@@ -396,7 +396,7 @@
               </Tabs.List>
               <Tabs.Content value="edit">
                 <Textarea class="w-full h-64 mt-2" bind:value={editedDescription} />
-                
+                <p class="text-base text-right text-muted-foreground py-2">{editedDescription.length} / 8192</p>
               </Tabs.Content>
               <Tabs.Content value="preview">
                 <Markdown class="p-4 rounded-md bg-card mt-2" bind:markdown={editedDescription} />
@@ -404,7 +404,7 @@
             </Tabs.Root>
           </div>
         </div>
-        <div class="flex justify-end gap-2 mt-4">
+        <div class="flex justify-end gap-2">
           <Button variant="outline" onclick={() => (isEditing = false)} disabled={isSaving}>{m[`dialogs.cancel`]()}</Button>
           <Button
             disabled={!zProject
@@ -460,7 +460,7 @@
               </Button>
             </div>
           </div>
-          <div>
+          <div class="flex flex-col gap-2">
             <Tabs.Root value="edit" class="w-full">
               <Tabs.List class="border-b w-full">
                 <Tabs.Trigger value="edit">{m[`dialogs.edit`]()}</Tabs.Trigger>
@@ -482,6 +482,18 @@
                 <Markdown class="p-4 rounded-md bg-card mt-2" markdown={project.description} />
               </Tabs.Content>
             </Tabs.Root>
+            <div class="flex flex-row justify-end gap-2">
+              <Button variant="outline" onclick={() => (isTranslating = false)} disabled={isSaving}>{m[`dialogs.cancel`]()}</Button>
+               <Button
+                disabled={!translatingLanguage || translatingLanguage.trim() === "" || isSaving}
+                onclick={() => onSaveChangesTranslating(`description`)}>
+                {#if isSaving}
+                  {m["dialogs.saving"]()}
+                {:else}
+                  {m["dialogs.save"]()} ({m["mods.dataTable.description"]()})
+                {/if}
+              </Button>
+            </div>
           </div>
         </div>
       {:else}

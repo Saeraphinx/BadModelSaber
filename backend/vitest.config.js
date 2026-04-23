@@ -9,6 +9,8 @@ export default defineConfig({
         mockReset: true,
         testTimeout: 15000,
         hookTimeout: 30000,
+        fileParallelism: true,
+        isolate: true,
         pool: `forks`,
         provide: {
             postgresUrl: ""

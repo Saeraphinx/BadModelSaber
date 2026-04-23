@@ -71,7 +71,7 @@ export function createDummyAsset(uploader: number | undefined = 5, id?: number, 
     });
 }
 
-export function createDummyProject(gameName:string, author: number | undefined = 5, id?: number, overrides: Partial<CreationAttributes<Project>> = {}): Project {
+export function createDummyProject(gameName:string, id?: number, overrides: Partial<CreationAttributes<Project>> = {}): Project {
     if (id) {
         overrides = {
             ...overrides,
@@ -83,17 +83,16 @@ export function createDummyProject(gameName:string, author: number | undefined =
         nameId: `project-${id}`,
         description: "This is a test project",
         gameName: gameName,
-        authorIds: [author ? author : 5],
         category: "Other",
         gitUrl: "https://example.com",
         iconFileName: "icon.png",
-        lastUpdatedById: author ? author : 5,
+        lastUpdatedById: 5,
         summary: "This is a test project",
         ...overrides,
     });
 }
 
-export function createDummyVersion(projectId: number, gameVersionId: number, author: number | undefined = 5, id?: number, overrides: Partial<CreationAttributes<Project>> = {}): Version {
+export function createDummyVersion(projectId: number, author: number | undefined = 5, id?: number, overrides: Partial<CreationAttributes<Project>> = {}): Version {
     if (id) {
         overrides = {
             ...overrides,
@@ -110,6 +109,7 @@ export function createDummyVersion(projectId: number, gameVersionId: number, aut
         platform: "universal",
         zipHash: getRandomString(16),
         lastUpdatedById: author ? author : 5,
+        status: Status.Private,
         ...overrides,
     });
 }

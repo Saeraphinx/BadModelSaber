@@ -118,7 +118,6 @@ export async function generateFakeData(connectionString?: string): Promise<boole
                     name: `${faker.lorem.words(1)} ${status}`,
                     nameId: faker.helpers.slugify(faker.lorem.words(2)).toLowerCase(),
                     description: faker.lorem.paragraph(),
-                    authorIds: [user.id],
                     collaboratorIds: faker.helpers.arrayElements(usersExcludingCurrent, { min: 0, max: 3 }).map(u => u.id),
                     status: status,
                     gameName: `beatsaber`,
@@ -128,6 +127,7 @@ export async function generateFakeData(connectionString?: string): Promise<boole
                     gitUrl: faker.internet.url(),
                     lastUpdatedById: user.id,
                 }).then(async (project) => {
+                    await project.$add(`authors`, user);
                     return await Version.create({
                         projectId: project.id,
                         semver: new SemVer(`${faker.number.int({ min: 0, max: 3 })}.${faker.number.int({ min: 0, max: 10 })}.${faker.number.int({ min: 0, max: 20 })}`),
@@ -142,8 +142,8 @@ export async function generateFakeData(connectionString?: string): Promise<boole
                         status: status,
                         uploaderId: user.id,
                         zipHash: faker.git.commitSha(),
-                    }).then((version) => {
-                        version.$set(`supportedGameVersions`, faker.helpers.arrayElements(gameVersionIds, { min: 1, max: gameVersionIds.length }));
+                    }).then(async (version) => {
+                        await version.$set(`supportedGameVersions`, faker.helpers.arrayElements(gameVersionIds, { min: 1, max: gameVersionIds.length }));
                         return version;
                     });
                 }));

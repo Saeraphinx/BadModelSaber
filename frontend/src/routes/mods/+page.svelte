@@ -91,6 +91,16 @@
     isLoading = true;
     fetchMods();
   });
+
+  $effect(() => {
+    if (availableStatuses.length === 0) return;
+    if (availableStatuses.length === 1 && availableStatuses.includes(Status.Verified)) {
+      selectedStatuses = [Status.Verified];
+      isFilterStatusVisible = false;
+    } else {
+      isFilterStatusVisible = true;
+    }
+  });
 </script>
 
 {#snippet searchFilter()}
@@ -149,7 +159,7 @@
         <ChevronRightIcon class="h-4 w-4 transition-transform {isFilterStatusVisible ? `rotate-90` : ``}" />
       </Collapsible.Trigger>
       <Collapsible.Content class="my-2">
-        {#each availableStatuses as status}
+        {#each availableStatuses.sort((a,b) => b.localeCompare(a)) as status}
           <div class="flex items-center space-x-2 py-1">
             <Checkbox
               onCheckedChange={(e) => {
@@ -176,7 +186,7 @@
     <div class="flex flex-col bg-card rounded-md min-w-62 w-full py-2 px-4">
       <Collapsible.Trigger class="flex items-center justify-between w-full">
         <span class="text-lg font-semibold">{m["mods.dataTable.category"]()}</span>
-        <ChevronRightIcon class="h-4 w-4 transition-transform {isFilterStatusVisible ? `rotate-90` : ``}" />
+        <ChevronRightIcon class="h-4 w-4 transition-transform {isFilterCategoryVisible ? `rotate-90` : ``}" />
       </Collapsible.Trigger>
       <Collapsible.Content class="my-2">
         {#each selectedGame?.categories as category}
@@ -207,8 +217,8 @@
     <div class="flex flex-col w-64 gap-2">
       {@render gameFilter()}
       {@render searchFilter()}
-      {@render statusFilter()}
       {@render categoryFilter()}
+      {@render statusFilter()}
     </div>
   {:else}
     <div class="flex flex-col w-full max-w-84 m-auto gap-2">

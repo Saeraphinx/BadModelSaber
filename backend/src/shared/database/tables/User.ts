@@ -142,9 +142,9 @@ export class User extends Model<InferAttributes<User>, InferCreationAttributes<U
             }
         }
 
-        if (data.permissions.sitewide.includes(UserPermissions.C_Banned)){
-           let hasOtherRoles = Object.values(data.permissions.perGame).some(perms => perms.length > 0) || data.permissions.sitewide.some(perm => perm !== UserPermissions.C_Banned);
-           if (hasOtherRoles) return `User with C_Banned role cannot have any other roles`
+        if (data.permissions.sitewide.includes(UserPermissions.C_Banned)) {
+            let hasOtherRoles = Object.values(data.permissions.perGame).some(perms => perms.length > 0) || data.permissions.sitewide.some(perm => perm !== UserPermissions.C_Banned);
+            if (hasOtherRoles) return `User with C_Banned role cannot have any other roles`
         };
         return null;
     }
@@ -173,21 +173,26 @@ export class User extends Model<InferAttributes<User>, InferCreationAttributes<U
         if (user) {
             return user.getAllowedStatuses(type, gameName);
         } else {
-            return [Status.Verified, Status.Unverified, Status.Pending];
+            return [Status.Verified];
         }
     }
 
     public getAllowedStatuses(type: `asset` | `mod`, gameName?: string): Status[] {
         if (type === `asset`) {
-            if (!this.checkRoles([UserPermissions.Asset_ViewAll], gameName)) {
-                return User.getAllowedStatuses(null, type, gameName);
+            if (this.checkRoles([UserPermissions.Asset_ViewAll], gameName)) {
+                return Object.values(Status);
             }
         } else {
-            if (!this.checkRoles([UserPermissions.Mods_ViewAll], gameName)) {
-                return User.getAllowedStatuses(null, type, gameName);
+            if (this.checkRoles([UserPermissions.Mods_ViewAll], gameName)) {
+                return Object.values(Status);
             }
         }
-        return Object.values(Status);
+
+        if (this.checkRoles([UserPermissions.Secret_Features])) {
+            return [Status.Verified, Status.Unverified, Status.Pending];
+        } else {
+            return [Status.Verified, Status.Unverified];
+        }
     }
 
     // #endregion
@@ -262,14 +267,14 @@ export class User extends Model<InferAttributes<User>, InferCreationAttributes<U
     public async migrateUserItems(newUser: User) {
         Logger.info(`Migrating items from user ${this.id} to user ${newUser.id}`);
         let migrationPromises = [];
-        
+
         migrationPromises.push(
             Alert.update({ userId: newUser.id }, { where: { userId: this.id }, hooks: false }),
-            Asset.update({ uploaderId: newUser.id }, { where: { uploaderId: this.id }, hooks: false  }),
-            Asset.update({ collaboratorIds: Sequelize.literal(`array_replace("collaboratorIds", ${this.id}, ${newUser.id})`) }, { where: { collaboratorIds: { [Op.contains]: [this.id] } }, hooks: false  }),
-            ThingRequest.update({ requesterId: newUser.id }, { where: { requesterId: this.id }, hooks: false  }),
-            ThingRequest.update({ requestResponseBy: newUser.id }, { where: { requestResponseBy: this.id }, hooks: false  }),
-            Translation.update({ translatedBy: newUser.id }, { where: { translatedBy: this.id }, hooks: false  }),
+            Asset.update({ uploaderId: newUser.id }, { where: { uploaderId: this.id }, hooks: false }),
+            Asset.update({ collaboratorIds: Sequelize.literal(`array_replace("collaboratorIds", ${this.id}, ${newUser.id})`) }, { where: { collaboratorIds: { [Op.contains]: [this.id] } }, hooks: false }),
+            ThingRequest.update({ requesterId: newUser.id }, { where: { requesterId: this.id }, hooks: false }),
+            ThingRequest.update({ requestResponseBy: newUser.id }, { where: { requestResponseBy: this.id }, hooks: false }),
+            Translation.update({ translatedBy: newUser.id }, { where: { translatedBy: this.id }, hooks: false }),
             (async () => {
                 const authoredProjectRows = await ProjectAuthor.findAll({
                     where: { userId: this.id },
@@ -300,12 +305,12 @@ export class User extends Model<InferAttributes<User>, InferCreationAttributes<U
 
                 await ProjectAuthor.destroy({ where: { userId: this.id } });
             })(),
-            Project.update({ collaboratorIds: Sequelize.literal(`array_replace("collaboratorIds", ${this.id}, ${newUser.id})`) }, { where: { collaboratorIds: { [Op.contains]: [this.id] } }, hooks: false  }),
-            Project.update({ lastUpdatedById: newUser.id }, { where: { lastUpdatedById: this.id }, hooks: false  }),
-            Project.update({ lastApprovedById: newUser.id }, { where: { lastApprovedById: this.id }, hooks: false  }),
-            Version.update({ uploaderId: newUser.id }, { where: { uploaderId: this.id }, hooks: false  }),
-            Version.update({ lastApprovedById: newUser.id }, { where: { lastApprovedById: this.id }, hooks: false  }),
-            Version.update({ lastUpdatedById: newUser.id }, { where: { lastUpdatedById: this.id }, hooks: false  }),
+            Project.update({ collaboratorIds: Sequelize.literal(`array_replace("collaboratorIds", ${this.id}, ${newUser.id})`) }, { where: { collaboratorIds: { [Op.contains]: [this.id] } }, hooks: false }),
+            Project.update({ lastUpdatedById: newUser.id }, { where: { lastUpdatedById: this.id }, hooks: false }),
+            Project.update({ lastApprovedById: newUser.id }, { where: { lastApprovedById: this.id }, hooks: false }),
+            Version.update({ uploaderId: newUser.id }, { where: { uploaderId: this.id }, hooks: false }),
+            Version.update({ lastApprovedById: newUser.id }, { where: { lastApprovedById: this.id }, hooks: false }),
+            Version.update({ lastUpdatedById: newUser.id }, { where: { lastUpdatedById: this.id }, hooks: false }),
             // update statusHistory userIds in Asset and Version
             ThingRequest.findAll().then(requests => {
                 return Promise.all(requests.map(async request => {
@@ -315,7 +320,7 @@ export class User extends Model<InferAttributes<User>, InferCreationAttributes<U
                         }
                         return message;
                     });
-                    return request.save({hooks: false});
+                    return request.save({ hooks: false });
                 }));
             }),
             Project.findAll().then(projects => {
@@ -326,7 +331,7 @@ export class User extends Model<InferAttributes<User>, InferCreationAttributes<U
                         }
                         return entry;
                     });
-                    return project.save({hooks: false});
+                    return project.save({ hooks: false });
                 }));
             }),
             Asset.findAll().then(assets => {
@@ -337,7 +342,7 @@ export class User extends Model<InferAttributes<User>, InferCreationAttributes<U
                         }
                         return entry;
                     });
-                    return asset.save({hooks: false});
+                    return asset.save({ hooks: false });
                 }));
             }),
             Version.findAll().then(versions => {
@@ -348,7 +353,7 @@ export class User extends Model<InferAttributes<User>, InferCreationAttributes<U
                         }
                         return entry;
                     });
-                    return version.save({hooks: false});
+                    return version.save({ hooks: false });
                 }));
             })
         )

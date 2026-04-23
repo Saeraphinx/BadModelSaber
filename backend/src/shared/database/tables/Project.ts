@@ -208,7 +208,7 @@ export class Project extends Model<InferAttributes<Project>, InferCreationAttrib
     }
     // #region Permissions 
     public async canView(user: User | null | undefined): Promise<boolean> {
-        if (this.status === Status.Verified) {
+        if (User.getAllowedStatuses(user, `mod`, this.gameName).includes(this.status)) {
             return true;
         }
 
@@ -220,7 +220,7 @@ export class Project extends Model<InferAttributes<Project>, InferCreationAttrib
             return true;
         }
 
-        return user.checkRoles([UserPermissions.Mods_ViewAll], this.gameName);
+        return false;
     }
 
     public async canEdit(user: User | null | undefined): Promise<boolean> {
