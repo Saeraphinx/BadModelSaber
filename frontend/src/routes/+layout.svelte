@@ -218,6 +218,10 @@
   });
   // #endregion Toasts
 
+  onMount(() => {
+    document.documentElement.classList.remove("unrendered");
+  });
+
   let currentLocale = getLocale();
 
   const links = [
@@ -279,9 +283,11 @@
 <svelte:head>
   <title>{page.data.pageMetadata?.title ? `${page.data.pageMetadata.title} - ${m.name()}` : `${m.name()}`}</title>
   <link rel="icon" href="/favicon.png" />
+  <!-- OpenGraph -->
   <meta property="og:title" content={page.data.pageMetadata?.title ? `${page.data.pageMetadata.title} - ${m.name()}` : `${m.name()}`} />
   <meta property="og:description" content={page.data.pageMetadata?.description! ?? m["homepage.subtitle"]()} />
   <meta property="og:image" content={`${env.PUBLIC_BASE_URL}/modelsaber-logo-web.svg`} />
+  <meta name="theme-color" content="#972DE2" />
 </svelte:head>
 
 <div>
