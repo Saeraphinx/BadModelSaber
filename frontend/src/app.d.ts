@@ -30,6 +30,8 @@ declare global {
       }[];
       pageMetadata?: {
         title?: string;
+        description?: string;
+        imageUrl?: string;
       };
       pageData?: any; // This can be used to pass any additional data to the page
     }

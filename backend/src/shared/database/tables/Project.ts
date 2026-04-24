@@ -119,7 +119,7 @@ export class Project extends Model<InferAttributes<Project>, InferCreationAttrib
     }
 
     private get authorIds(): NonAttribute<Promise<number[]>> {
-        if (this.authors) {
+        if (this.authors && this.authors.length > 0) {
             return Promise.resolve(this.authors.map(a => a.id));
         } else {
             Logger.debug(`Authors not loaded, fetching from DB for project ID: ${this.id}`);
@@ -380,7 +380,7 @@ export class Project extends Model<InferAttributes<Project>, InferCreationAttrib
         }).catch(err => {
             Logger.error(`Failed to find users for creating alerts for project ID ${this.id}: ${err}`);
         });
-        return users;
+        return await users;
     }
     // #endregion
     // #region Edit

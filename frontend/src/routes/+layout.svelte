@@ -144,31 +144,6 @@
   }
   // #endregion KonamiListener
 
-  // #region Theme
-  onMount(() => {
-    theme = (localStorage.getItem("theme") as typeof theme) || "system";
-    handleThemeChange();
-    document.documentElement.classList.remove("unrendered");
-  });
-
-  function handleThemeChange() {
-    if (theme === "system") {
-      if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
-        document.documentElement.classList.add("dark");
-      } else {
-        document.documentElement.classList.remove("dark");
-      }
-    } else {
-      if (theme === "dark") {
-        document.documentElement.classList.add("dark");
-      } else {
-        document.documentElement.classList.remove("dark");
-      }
-    }
-    localStorage.setItem("theme", theme);
-  }
-  // #endregion Theme
-
   // #region Alerts
   let allAlerts = $state<AlertApiV3[]>([]);
   let unreadAlerts = $derived(allAlerts.filter((alert) => !alert.read));
@@ -179,7 +154,7 @@
     } else {
       return alertCount ?? 0;
     }
-  })
+  });
   let isPendingAlerts = $derived(unreadAlertCount > 0);
   let openAlerts = $state(false);
   let showRead = $state(false);
@@ -247,20 +222,53 @@
 
   const links = [
     { href: "/", label: m["layout.navbar.home"](), target: undefined },
-    { href: "/mods", label: m["layout.navbar.mods"](), target: undefined },
-    { href: "/assets", label: m["layout.navbar.assets"](), target: undefined },
-    { href: "https://bsmg.wiki/models", label: m["layout.navbar.modelWiki"](), target: "_blank" },
+    {
+      href: "",
+      label: m["layout.navbar.mods.mods"](),
+      target: undefined,
+      children: [
+        { href: "/mods", label: m["layout.navbar.mods.browseMods"]() },
+        { href: "https://bsmg.wiki/mods/getting-started", label: m["layout.navbar.mods.beatsaberBeginngersGuide"](), target: "_blank" },
+        { href: "https://bsmg.wiki/mods/creating-mods", label: m["layout.navbar.mods.moddersGuide"](), target: "_blank" },
+        { href: "", label: m["layout.navbar.mods.pcApprovalGuide"](), target: "_blank" },
+      ],
+    },
+    {
+      href: "",
+      label: m["layout.navbar.assets.assets"](),
+      target: undefined,
+      children: [
+        { href: "/assets", label: m["layout.navbar.assets.browseAssets"]() },
+        { href: "https://bsmg.wiki/assets/getting-started", label: m["layout.navbar.assets.3dModelGuide"](), target: "_blank" },
+      ],
+    },
+    { href: "https://bsmg.wiki", label: m["layout.navbar.wiki"](), target: "_blank" },
   ];
 </script>
 
 {#snippet navbar_main(orientation = "vertical")}
-  <NavigationMenu.Root>
-    <NavigationMenu.List class="flex {orientation === 'vertical' ? 'flex-col' : 'flex-row'}">
+  <NavigationMenu.Root viewport={orientation === "horizontal"}>
+    <NavigationMenu.List class="flex justify-center-safe items-center-safe {orientation === 'vertical' ? 'flex-col' : 'flex-row'}">
       {#each links as link}
         <NavigationMenu.Item>
-          <NavigationMenu.Link href={link.href} target={link.target} class="text-base text-nowrap">
-            {link.label}
-          </NavigationMenu.Link>
+          {#if link.children}
+            <NavigationMenu.Trigger class="text-base font-normal p-2 bg-transparent {orientation === `vertical` ? `w-full` : ``}">{link.label}</NavigationMenu.Trigger>
+            <NavigationMenu.Content>
+              <ul class="grid gap-4 p-2">
+                <li>
+                  {#each link.children as child}
+                    <NavigationMenu.Link href={child.href} target={child.target} class="text-base text-nowrap">
+                      {child.label}
+                    </NavigationMenu.Link>
+                  {/each}
+                </li>
+              </ul>
+            </NavigationMenu.Content>
+          {:else}
+            <NavigationMenu.Link href={link.href} target={link.target} class="text-base text-nowrap">
+              {link.label}
+            </NavigationMenu.Link>
+          {/if}
         </NavigationMenu.Item>
       {/each}
     </NavigationMenu.List>
@@ -271,6 +279,9 @@
 <svelte:head>
   <title>{page.data.pageMetadata?.title ? `${page.data.pageMetadata.title} - ${m.name()}` : `${m.name()}`}</title>
   <link rel="icon" href="/favicon.png" />
+  <meta property="og:title" content={page.data.pageMetadata?.title ? `${page.data.pageMetadata.title} - ${m.name()}` : `${m.name()}`} />
+  <meta property="og:description" content={page.data.pageMetadata?.description! ?? m["homepage.subtitle"]()} />
+  <meta property="og:image" content={`${env.PUBLIC_BASE_URL}/modelsaber-logo-web.svg`} />
 </svelte:head>
 
 <div>
@@ -312,7 +323,6 @@
               <Avatar.Image src={user?.avatarUrl} alt={user?.displayName} />
               <Avatar.Fallback>{user?.displayName}</Avatar.Fallback>
             </Avatar.Root>
-            
           {:else}
             <SettingsIcon />
           {/if}
@@ -359,26 +369,26 @@
               </button>
             {/if}
             {#if checkRoles(user, [UserPermissions.Asset_Create], `any`)}
-            <DropdownMenu.Sub>
-              <DropdownMenu.SubTrigger>
-                <PlusIcon />
-                {m["layout.userMenu.create"]()}
-              </DropdownMenu.SubTrigger>
-              <DropdownMenu.SubContent class="">
-                <a href="/create/project">
-                  <DropdownMenu.Item>
-                    <FolderGit2Icon />
-                    {m["layout.userMenu.createProject"]()}
-                  </DropdownMenu.Item>
-                </a>
-                <a href="/create/asset">
-                  <DropdownMenu.Item>
-                    <FileAxis3DIcon />
-                    {m["layout.userMenu.createAsset"]()}
-                  </DropdownMenu.Item>
-                </a>
-              </DropdownMenu.SubContent>
-            </DropdownMenu.Sub>
+              <DropdownMenu.Sub>
+                <DropdownMenu.SubTrigger>
+                  <PlusIcon />
+                  {m["layout.userMenu.create"]()}
+                </DropdownMenu.SubTrigger>
+                <DropdownMenu.SubContent class="">
+                  <a href="/create/project">
+                    <DropdownMenu.Item>
+                      <FolderGit2Icon />
+                      {m["layout.userMenu.createProject"]()}
+                    </DropdownMenu.Item>
+                  </a>
+                  <a href="/create/asset">
+                    <DropdownMenu.Item>
+                      <FileAxis3DIcon />
+                      {m["layout.userMenu.createAsset"]()}
+                    </DropdownMenu.Item>
+                  </a>
+                </DropdownMenu.SubContent>
+              </DropdownMenu.Sub>
             {/if}
             <DropdownMenu.Separator />
           {/if}
@@ -446,11 +456,9 @@
           <DropdownMenu.Separator />
           <p class="text-xs text-muted-foreground text-center p-1"><a href="https://github.com/Saeraphinx/BadModelSaber" target="_blank">{m["layout.userMenu.modelsaberOpenSource"]()}</a></p>
           {#if isLoggedIn}
-            <a class="text-xs text-muted-foreground text-center p-1" href="{env.PUBLIC_API_URL}/docs">
-              API Docs
-            </a>
+            <a class="text-xs text-muted-foreground text-center p-1" href="{env.PUBLIC_API_URL}/docs"> API Docs </a>
           {/if}
-          {#if user && checkRoles(user, { hasOneOf: [UserPermissions.Administrative_Tasks, UserPermissions.Secret_Features] }) }
+          {#if user && checkRoles(user, { hasOneOf: [UserPermissions.Administrative_Tasks, UserPermissions.Secret_Features] })}
             <DropdownMenu.Separator />
             <span class="text-xs text-muted-foreground text-center p-1">
               Administrative Information<br />
@@ -482,7 +490,7 @@
             {/if}
           {:else}
             <div class="flex flex-row items-center justify-center gap-2">
-              <Spinner class="text-gray-500"/>
+              <Spinner class="text-gray-500" />
               <p class="text-gray-500">Loading...</p>
             </div>
           {/if}

@@ -139,7 +139,9 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
             return Promise.resolve(this._project) || null;
         } else {
             Logger.debug(`Project not loaded, fetching from DB for projectId: ${this.projectId}`);
-            this._project = Project.findByPk(this.projectId) || null;
+            this._project = Project.findByPk(this.projectId, {
+                include: [{ all: true }],
+            }) || null;
             return this._project;
         }
     }
@@ -291,20 +293,24 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
             return false;
         }
 
-        let parentViewable = await prj.canView(user);
-        if (parentViewable === false) {
-            return false;
+        let prjView = await prj.canView(user);
+        if (prjView && user) { // this has to be done because a project can be viewable but the version can still be private
+            if (user.getAllowedStatuses(`mod`, prj.gameName).includes(this.status)) {
+                return true;
+            } else {
+                if (prj.authors === undefined || prj.authors.length === 0) {
+                    return await prj.$get(`authors`).then(authors => {
+                        return (authors ?? []).some(author => author.id === user.id);
+                    });
+                } else {
+                    return (prj.authors ?? []).some(author => author.id === user.id);
+                }
+            }
+        } else if (prjView) {
+            return User.getAllowedStatuses(user, `mod`, prj.gameName).includes(this.status);
+        } else {
+            return false
         }
-
-        if (!user) {
-            return false;
-        }
-
-        if (prj.authors?.some((author) => author.id === user.id)) {
-            return true;
-        }
-
-        return user.getAllowedStatuses(`mod`, prj.gameName).includes(this.status)
     }
     public async canEdit(user: User | null | undefined, project?: Project): Promise<boolean> {
         let prj: Project | null | undefined = project;
@@ -313,10 +319,6 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
         }
         if (!prj) {
             Logger.warn(`Could not find parent project for version canEdit check.`);
-            return false;
-        }
-
-        if (!user) {
             return false;
         }
 
@@ -329,12 +331,12 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
         header: string;
         message: string;
     }) {
-        return await this.project.then((project) => {
+        return await this.project.then(async (project) => {
             if (!project) {
                 Logger.warn(`Could not find parent project for version when creating alert.`);
                 return null;
             }
-            return project.createAlertForAuthors({
+            return await project.createAlertForAuthors({
                 type: data.type,
                 header: data.header,
                 message: data.message,
@@ -404,17 +406,17 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
         }
         if (shouldAlert) {
             if (newlyVerified) {
-                this.createAlert({
+                await this.createAlert({
                     type: AlertType.ThingVerified,
                     ...AlertTemplates.setFirstVersionApproval(`version`, `${(await this.project)?.name} v${this.semver.raw}`, true),
                 });
             } else if (previousStatus === Status.Verified && newStatus !== Status.Verified) {
-                this.createAlert({
+                await this.createAlert({
                     type: AlertType.ThingRemoval,
                     ...AlertTemplates.verifiedRevoked(`version`, `${(await this.project)?.name} v${this.semver.raw}`, newStatus),
                 });
             } else if (newStatus === Status.Removed) {
-                this.createAlert({
+                await this.createAlert({
                     type: AlertType.ThingRejected,
                     ...AlertTemplates.statusChange(`version`, `${(await this.project)?.name} v${this.semver.raw}`, newStatus),
                 });

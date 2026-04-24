@@ -11,9 +11,19 @@
   "layout": {
     "navbar": {
       "home": "Home",
-      "mods": "Mods",
-      "assets": "Assets",
-      "modelWiki": "Model Wiki"
+      "mods": {
+        "mods": "Mods", 
+        "browseMods": "Browse Mods",
+        "beatsaberBeginngersGuide": "Beat Saber Beginner's Guide",
+        "moddersGuide": "Modder's Guide",
+        "pcApprovalGuide": "Approval Guidelines"
+      },
+      "assets": {
+        "assets": "Assets",
+        "browseAssets": "Browse Assets",
+        "3dModelGuide": "3D Models Guide"
+      },
+      "wiki": "Wiki"
     },
     "userMenu": {
       "profile": "Profile",

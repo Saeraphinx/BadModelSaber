@@ -19,7 +19,7 @@ export const GetModsV3 = router({
         })
         .input(z.object({
             gameVersion: z.string().optional(),
-            status: z.array(z.enum(Status)).optional().default([Status.Verified, Status.Unverified]),
+            status: z.array(z.enum(Status)).max(Object.values(Status).length).optional().default([Status.Verified, Status.Unverified]),
             name: z.string().optional(),
             authors: z.array(z.int()).optional(),
             platform: z.string().optional(),
@@ -47,20 +47,38 @@ export const GetModsV3 = router({
                 attributes: ['id']
             }).then(gv => gv.map(g => g.id));
 
-            if (!availableGameVerison) {
+            if (availableGameVerison.length === 0) {
                 throw new TRPCError({ code: 'NOT_FOUND', message: 'No game versions found for the specified game and version.' });
             }
 
             let projectFilters: WhereOptions<Project> = {};
             let userFilters: WhereOptions<User> = {};
-            let versionFilters: WhereOptions<Version> = {
-                status: input.status
-            };
-            if (input.authors) {
+            let versionFilters: WhereOptions<Version> = {};
+            if (input.name) {
                 projectFilters = {
                     name: {
                         [Op.iLike]: `%${input.name}%`
                     }
+                }
+            }
+
+            if (input.authors && input.authors.length > 0) {
+                userFilters = {
+                    id: {
+                        [Op.in]: input.authors,
+                    },
+                };
+            }
+
+            if (input.status && input.status.length > 0) {
+                if (input.status.every(s => User.getAllowedStatuses(ctx.user, 'mod').includes(s))) {
+                    versionFilters = {
+                        status: {
+                            [Op.in]: input.status,
+                        },
+                    };
+                } else {
+                    throw new TRPCError({ code: 'FORBIDDEN', message: 'You do not have permission to view mods with the specified status.' });
                 }
             }
             
@@ -73,7 +91,12 @@ export const GetModsV3 = router({
                         model: User,
                         where: userFilters,
                     }],
-                    where: projectFilters,
+                    where: {
+                        ...projectFilters,
+                        status: {
+                            [Op.in]: User.getAllowedStatuses(ctx.user, 'mod'),
+                        }
+                    },
                 }, {
                     model: GameVersion,
                     where: {
@@ -162,13 +185,17 @@ export const GetModsV3 = router({
             }
             let versions = await Version.findAll({
                 where: {
-                    projectId: project.id
+                    projectId: project.id,
+                    status: {
+                        [Op.in]: User.getAllowedStatuses(ctx.user, 'mod'),
+                    }
                 },
+                order: [['semver', 'DESC']],
                 include: [GameVersion],
             });
             versions = versions
                 .sort((a, b) => compare(b.semver, a.semver)) // sort versions in descending order
-                .filter(async v => await v.canView(ctx.user, project));
+                //.filter(async v => await v.canView(ctx.user, project)); //i dont think i need this due to the status filter, but leaving it here just in case in the query
             let outputVersions = await Promise.all(versions.map(async v => await v.toApiV3()));
             return {
                 project: await project.toApiV3(input.language) as ProjectApiV3,

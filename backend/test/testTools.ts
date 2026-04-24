@@ -92,7 +92,7 @@ export function createDummyProject(gameName:string, id?: number, overrides: Part
     });
 }
 
-export function createDummyVersion(projectId: number, author: number | undefined = 5, id?: number, overrides: Partial<CreationAttributes<Project>> = {}): Version {
+export function createDummyVersion(projectId: number, author: number | undefined = 5, id?: number, overrides: Partial<CreationAttributes<Version>> = {}): Version {
     if (id) {
         overrides = {
             ...overrides,
