@@ -439,5 +439,27 @@
         }
       }
     }
+  },
+  "toasts": {
+    "assetLinkSuccess": "Asset linked successfully!",
+    "assetReportSuccess": "Asset reported successfully!",
+    "assetSubmittedForApproval": "Asset submitted for approval!",
+    "projectUpdateSuccess": "Project updated successfully!",
+    "translationUpdateSuccess": "Translation updated successfully!",
+    "versionUpdateSuccess": "Version updated successfully!",
+    "iconUploadSuccess": "Icon updated successfully!",
+    "secretFeaturesUnlocked": "Secret features unlocked!",
+    "secretFeaturesUnlockedDescription": "If you enable these features, you will be able to access hidden content and features on ModelSaber. ModelSaber is not responsible for any damage caused by this content. You will not receive support for any issues caused by this content.",
+    "secretFeaturesEnabled": "Secret features enabled!",
+    "secretFeaturesEnabledDescription": "You can now access hidden content and features on ModelSaber. Use responsibly!",
+    "secretFeaturesMustBeLoggedIn": "You must be logged in to activate this feature.",
+    "secretFeaturesAlreadyEnabled": "You have already activated the secret features.",
+    "secretFeaturesAlreadyEnabledDescription": "If you want to disable them, disable them in your user settings.",
+
+    "failedToLoadAsset": "Failed to load assets. Please try again later.",
+    "failedToLoadMods": "Failed to load mods. Please try again later.",
+    "failedToLoadAlerts": "Failed to load alerts. Please try again later.",
+    "failedToLoadRequests": "Failed to load requests. Please try again later.",
+    "failedToSubmit": "Failed to submit. Please try again later.",
   }
 }
