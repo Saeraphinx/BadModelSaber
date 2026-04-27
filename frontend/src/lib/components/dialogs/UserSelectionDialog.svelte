@@ -5,6 +5,7 @@
   import * as Command from "$shadcn/components/ui/command";
   import debounce from "debounce";
   import { trpc } from "$lib/scripts/utils/api";
+  import { m } from "../../paraglide/messages";
 
 
   let open = $state(false);
@@ -50,8 +51,8 @@
       </Command.Root>
     </div>
     <Dialog.Footer>
-      <Button variant="outline">Cancel</Button>
-      <Button>Confirm</Button>
+      <Button variant="outline">{m["dialogs.cancel"]()}</Button>
+      <Button>{m["dialogs.confirm"]()}</Button>
     </Dialog.Footer>
   </Dialog.Content>
 </Dialog.Root>

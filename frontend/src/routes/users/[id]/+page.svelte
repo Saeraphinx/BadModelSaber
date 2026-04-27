@@ -17,6 +17,7 @@
   import { Textarea } from "../../../lib/shadcn/components/ui/textarea";
   import { Label } from "../../../lib/shadcn/components/ui/label";
   import { invalidate } from "$app/navigation";
+  import { m } from "../../../lib/paraglide/messages";
 
   const { data: _internal } = $props();
   const { pageData, trpc, user } = $derived(_internal);
@@ -76,7 +77,7 @@
                 isEditing = true
                 tabsValue = "edit";
               }}>
-                Edit Profile
+                {m["dialogs.edit"]()}
               </Button>
             {/if}
             {#if isEditing}
@@ -84,7 +85,7 @@
                 isEditing = false;
                 tabsValue = "mods";
               }}>
-                Cancel
+                {m["dialogs.cancel"]()}
               </Button>
             {/if}
           </div>
@@ -96,38 +97,38 @@
   <Tabs.Root bind:value={tabsValue} class="w-full">
     <Tabs.List variant="line" class="justify-center items-center m-auto">
       {#if !isEditing}
-        <Tabs.Trigger value="mods">Mods</Tabs.Trigger>
-        <Tabs.Trigger value="assets">Assets</Tabs.Trigger>
+        <Tabs.Trigger value="mods">{m["mods.mods"]()}</Tabs.Trigger>
+        <Tabs.Trigger value="assets">{m["assets.assets"]()}</Tabs.Trigger>
       {/if}
       {#if isEditing}
-        <Tabs.Trigger value="edit">Edit</Tabs.Trigger>
+        <Tabs.Trigger value="edit">{m["dialogs.edit"]()}</Tabs.Trigger>
       {/if}
     </Tabs.List>
       <Tabs.Content value="mods" class="w-full mt-4 flex flex-row flex-wrap justify-center gap-8 m-auto">
         {#each mods as mod}
           <ModCard project={mod} />
         {:else}
-          <p class="text-base text-muted-foreground">No mods found for this user.</p>
+          <p class="text-base text-muted-foreground">{m["users.noModsFoundForUser"]({name: pdUser.displayName})}</p>
         {/each}
       </Tabs.Content>
       <Tabs.Content value="assets" class="w-full mt-4 flex flex-row flex-wrap justify-evenly gap-8 m-auto">
         {#each assets as asset}
           <AssetCard {asset} size="large" approvalDialog={dialog} />
         {:else}
-          <p class="text-base text-muted-foreground">No assets found for this user.</p>
+          <p class="text-base text-muted-foreground">{m["users.noAssetsFoundForUser"]({ name: pdUser.displayName })}</p>
         {/each}
       </Tabs.Content>
       <Tabs.Content value="edit" class="w-full mt-4 flex flex-col items-center gap-4 m-auto">
         <div class="flex flex-col justify-center w-full max-w-md p-4 gap-2 bg-card rounded-lg">
           <span class="w-full max-w-lg">
-            <Label class="p-1 pb-2" for="displayName">Display Name</Label>
+            <Label class="p-1 pb-2" for="displayName">{m["users.displayName"]()}</Label>
             <Input placeholder="Display Name" bind:value={editDisplayName} class="w-full" />
           </span>
           <span class="w-full max-w-lg">
-            <Label class="p-1 pb-2" for="bio">Bio</Label>
+            <Label class="p-1 pb-2" for="bio">{m["users.bio"]()}</Label>
             <Textarea placeholder="Bio" bind:value={editBio} class="w-full" />
           </span>
-          <Button onclick={onEditSubmit}>Save Changes</Button>
+          <Button onclick={onEditSubmit}>{m["dialogs.saveChanges"]()}</Button>
         </div>
         {#if pdUser.id == user?.id}
           <div class="flex flex-col justify-center w-full max-w-md p-4 gap-2 bg-card rounded-lg">
@@ -138,14 +139,14 @@
                 }).catch((err) => {
                   toast.error(`Failed to link GitHub account`, { description: parseErrorMessage(err) });
                 })
-              }}>Link GitHub</Button>
+              }}>{m["users.linkToGithub"]()}</Button>
               <Button variant="outline" disabled={user?.discordId !== null} onclick={() => {
                 trpc.internal.auth.linkDiscordToAccount.query({}).then(({ url }) => {
                   window.open(url, "_blank");
                 }).catch((err) => {
-                  toast.error(`Failed to link GitHub account`, { description: parseErrorMessage(err) });
+                  toast.error(`Failed to link Discord account`, { description: parseErrorMessage(err) });
                 })
-              }}>Link Discord</Button>
+              }}>{m["users.linkToDiscord"]()}</Button>
             </div>
           </div>
         {/if}

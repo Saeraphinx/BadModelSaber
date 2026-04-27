@@ -104,7 +104,7 @@
       {/each}
     </ScrollArea>
     <Dialog.Footer>
-      <Button variant="secondary" class="w-full" onclick={() => open = false}>Close</Button>
+      <Button variant="secondary" class="w-full" onclick={() => open = false}>{m["dialogs.close"]()}</Button>
     </Dialog.Footer>
   </Dialog.Content>
 </Dialog.Root>

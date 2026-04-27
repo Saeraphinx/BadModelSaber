@@ -111,6 +111,7 @@
   },
   "assets": {
     "asset": "Asset",
+    "assets": "Assets",
     "noAssetsFound": "No assets found.",
     "statusHover": {
       "verified": {
@@ -173,6 +174,7 @@
   },
   "mods": {
     "mod": "Mod",
+    "mods": "Mods",
     "project": "Project",
     "version": "Version",
     "game": "Game",
@@ -282,6 +284,15 @@
     "noMessagesFound": "No messages found for this request.",
     "submitMessage": "Submit Message"
   },
+  "users": {
+    "linkToGithub": "Link to GitHub",
+    "linkToDiscord": "Link to Discord",
+    "username": "Username",
+    "displayName": "Display Name",
+    "bio": "Bio",
+    "noAssetsFoundForUser": "No assets found for {name}.",
+    "noModsFoundForUser": "No mods found for {name}."
+  },
   "enums": {
     "status": {
       "private": "Private",
@@ -390,6 +401,7 @@
     "cancel": "Cancel",
     "submit": "Submit",
     "accept": "Accept",
+    "confirm": "Confirm",
     "reject": "Reject",
     "close": "Close",
     "remove": "Remove",
@@ -460,6 +472,6 @@
     "failedToLoadMods": "Failed to load mods. Please try again later.",
     "failedToLoadAlerts": "Failed to load alerts. Please try again later.",
     "failedToLoadRequests": "Failed to load requests. Please try again later.",
-    "failedToSubmit": "Failed to submit. Please try again later.",
+    "failedToSubmit": "Failed to submit. Please try again later."
   }
 }
