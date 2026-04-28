@@ -150,7 +150,7 @@
           isRelatedLoading = false;
         })
         .catch((err) => {
-          toast.error(`Failed to load related assets: ${err.message}`);
+          toast.error(m["toasts.failedToLoadAsset"]());
           isRelatedLoading = false;
         });
     } else {
@@ -386,7 +386,7 @@
               trpc.internal.updateThings.submitAssetForApproval
                 .mutate({ assetId: pageData.id })
                 .then(() => {
-                  toast.success("Asset submitted for approval!");
+                  toast.success(m["toasts.assetSubmittedForApproval"]());
                 })
                 .catch((err) => {
                   toast.error(`Failed to submit asset for approval: ${err.message}`);

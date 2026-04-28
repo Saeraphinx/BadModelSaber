@@ -65,7 +65,7 @@
         supportedGameVersionIds: editedGameVersionIds.map(id => parseInt(id)),
       }
     }).then(() => {
-      toast.success(`Version updated successfully!`);
+      toast.success(m["toasts.versionUpdateSuccess"]());
       isEditing = false;
       version.supportedGameVersions = gameVersions.filter(gv => editedGameVersionIds.includes(gv.id.toString()));
     }).catch(err => {

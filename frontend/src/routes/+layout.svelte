@@ -46,6 +46,7 @@
   import { m } from "$lib/paraglide/messages";
   import { Spinner } from "$shadcn/components/ui/spinner";
   import { checkRoles } from "$lib/scripts/utils/checkRoles";
+  import { parseErrorMessage } from "../lib/scripts/utils/api";
 
   const { data: _internal, children } = $props();
   const { user, alertCount, pendingToasts, trpc } = $derived(_internal);
@@ -74,7 +75,7 @@
 
       if (inputSequence.join("") === konamiCode.join("")) {
         if (!isLoggedIn) {
-          toast.error("You must be logged in to activate this feature.", {
+          toast.error(m["toasts.secretFeaturesMustBeLoggedIn"](), {
             duration: 5000,
             closeButton: true,
             dismissable: true,
@@ -82,8 +83,8 @@
           return;
         }
         if (checkRoles(user, [UserPermissions.Secret_Features])) {
-          toast.info("You have already activated the secret features.", {
-            description: "If you want to disable them, disable them in your user settings.",
+          toast.info(m["toasts.secretFeaturesAlreadyEnabled"](), {
+            description: m["toasts.secretFeaturesAlreadyEnabledDescription"](),
             duration: 5000,
             closeButton: true,
             dismissable: true,
@@ -91,8 +92,8 @@
           return;
         }
         inputSequence = []; // Reset the sequence after activation
-        toast.info("Secret features unlocked!", {
-          description: "If you enable these features, you will be able to access hidden content and features on ModelSaber. ModelSaber is not responsible for any damage caused by this content.",
+        toast.info(m["toasts.secretFeaturesUnlocked"](), {
+          description: m["toasts.secretFeaturesUnlockedDescription"](),
           duration: 60000,
           dismissable: true,
           action: {
@@ -101,15 +102,15 @@
               trpc.internal.updateUser.toggleSecretFeatures
                 .mutate({ enabled: true })
                 .then(() => {
-                  toast.success("Secret features enabled!", {
-                    description: "You can now access hidden content and features on ModelSaber. Use responsibly!",
+                  toast.success(m["toasts.secretFeaturesEnabled"](), {
+                    description: m["toasts.secretFeaturesEnabledDescription"](),
                     closeButton: true,
                   });
                   invalidateAll(); // Refresh user data to reflect new roles
                 })
                 .catch((error) => {
                   toast.error("Failed to enable secret features.", {
-                    description: error.message,
+                    description: parseErrorMessage(error),
                   });
                 });
               console.log("Secret features enabled!");

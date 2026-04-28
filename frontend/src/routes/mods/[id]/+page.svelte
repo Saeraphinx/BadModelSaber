@@ -147,7 +147,7 @@
         data: parsed.data,
       })
       .then(() => {
-        toast.success("Project updated successfully.");
+        toast.success(m["toasts.projectUpdateSuccess"]());
         invalidateAll().then(() => {
           isEditing = false;
           isSaving = false;
@@ -182,7 +182,7 @@
         translatedString: stringToUse,
       })
       .then(() => {
-        toast.success("Translation saved successfully.");
+        toast.success(m["toasts.translationUpdateSuccess"]());
         invalidateAll().then(() => {
           isTranslating = false;
           isSaving = false;
@@ -336,7 +336,7 @@
                   trpc.internal.updateThings.updateProjectIcon
                     .mutate(formData)
                     .then(() => {
-                      toast.success("Icon updated successfully.");
+                      toast.success(m["toasts.iconUploadSuccess"]());
                       invalidateAll();
                     })
                     .catch((e) => {

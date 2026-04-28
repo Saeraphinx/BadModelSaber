@@ -90,7 +90,7 @@
       })
       .catch((error) => {
         console.error("Error fetching assets:", error);
-        toast.error("Failed to load assets. Please try again later.", {
+        toast.error(m["toasts.failedToLoadAsset"](), {
           description: `${error.message || "Unknown error"}`,
           closeButton: true,
           duration: 30000,
@@ -263,7 +263,7 @@
 
 <ApprovalPopup bind:this={dialog} />
 <Drawer.Root bind:open={filterMobileDrawerVisible}>
-  <Drawer.Header>Filters</Drawer.Header>
+  <Drawer.Header>{m["search.filters"]}</Drawer.Header>
   <Drawer.Content>
     <div class="overflow-y-auto h-full pr-4">
       {@render filters()}

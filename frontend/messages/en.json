@@ -90,7 +90,8 @@
     "cardsPerPage": "# per page",
     "size": "Size",
     "showFilters": "Show Filters",
-    "xToYOfZResults": "{start}-{end} of {total} results"
+    "xToYOfZResults": "{start}-{end} of {total} results",
+    "filters": "Filters"
   },
   "common": {
     "buttons": {
