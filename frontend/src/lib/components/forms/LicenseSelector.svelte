@@ -1,11 +1,8 @@
 <script lang="ts">
-  import Check from "@lucide/svelte/icons/check";
   import ChevronsUpDown from "@lucide/svelte/icons/chevrons-up-down";
-  import * as Command from "$shadcn/components/ui/command/index.js";
   import * as Popover from "$shadcn/components/ui/popover/index.js";
-  import { Button, buttonVariants } from "$shadcn/components/ui/button/index.js";
-  import { cn } from "$shadcn/utils";
-  import { onMount, tick } from "svelte";
+  import { buttonVariants } from "$shadcn/components/ui/button/index.js";
+  import { onMount } from "svelte";
   import Checkbox from "$shadcn/components/ui/checkbox/checkbox.svelte";
   import Label from "$shadcn/components/ui/label/label.svelte";
   import Separator from "$shadcn/components/ui/separator/separator.svelte";

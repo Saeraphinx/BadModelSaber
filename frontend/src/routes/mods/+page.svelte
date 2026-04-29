@@ -2,7 +2,7 @@
   import MiniPagination from "$lib/components/generic/MiniPagination.svelte";
   import ModCard from "$lib/components/mods/ModCard.svelte";
   import { m } from "$lib/paraglide/messages.js";
-  import { Status, UserPermissions, type ElementType, type GameVersionApiV3 } from "$lib/scripts/api/DBTypes";
+  import { Status, UserPermissions, type GameVersionApiV3 } from "$lib/scripts/api/DBTypes";
   import { generateProjectSearchEngine } from "$lib/scripts/utils/search.js";
   import { getStatusString } from "$lib/scripts/utils/stylizer";
   import Checkbox from "$shadcn/components/ui/checkbox/checkbox.svelte";

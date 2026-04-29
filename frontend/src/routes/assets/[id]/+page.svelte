@@ -8,24 +8,16 @@
   import { type CarouselAPI } from "$shadcn/components/ui/carousel/context.js";
   import {
     BadgeAlert,
-    Car,
-    ChevronLeftIcon,
-    ChevronRightIcon,
-    CircleDot,
-    CircleIcon,
     ClipboardCopyIcon,
     CloudDownloadIcon,
-    DotIcon,
     DownloadIcon,
     Edit,
-    HamburgerIcon,
     MegaphoneIcon,
-    MenuIcon,
     PlusIcon,
     SquarePenIcon,
   } from "@lucide/svelte";
   import { MediaQuery } from "svelte/reactivity";
-  import { navigating, page } from "$app/state";
+  import { navigating } from "$app/state";
   import Skeleton from "$shadcn/components/ui/skeleton/skeleton.svelte";
   import CarouselNavigator from "$lib/components/generic/CarouselNavigator.svelte";
   import { getOneClickUrl, getAssetDownloadUrl, getThumbnailUrl, parseErrorMessage } from "$lib/scripts/utils/api.js";
@@ -95,12 +87,11 @@
   // #region Edit Submissions
   function saveChanges() {
     if (!isPendingSave) {
-      toast.info("No changes to save.");
       return;
     }
 
     if (!zAssetName.success && !zAssetDescription.success) {
-      toast.error("Invalid asset name or description.");
+      toast.error(m["toasts.error.validationTitle"]());
       return;
     }
 
@@ -114,22 +105,14 @@
         },
       })
       .then((res) => {
-        toast.success("Changes saved successfully!", {
-          description: "Reload the page to see the changes.",
-          duration: 100 * 60 * 60 * 24, // 24 hours
-          dismissable: false,
-          action: {
-            label: "Reload",
-            onClick: () => {
-              invalidateAll();
-            },
-          },
+        toast.success(m["toasts.success.savedChanges"]());
+        invalidateAll().then(() => {
+          isEditing = false;
         });
-        isEditing = false;
       })
       .catch((err) => {
         console.error("Error saving changes:", err);
-        toast.error(`Error saving changes: ${err.message}`);
+        toast.error(m["toasts.error.generic"](), { description: parseErrorMessage(err) });
       });
   }
   // #endregion
@@ -150,7 +133,7 @@
           isRelatedLoading = false;
         })
         .catch((err) => {
-          toast.error(m["toasts.failedToLoadAsset"]());
+          toast.error(m["toasts.failedTo.loadAssets"]());
           isRelatedLoading = false;
         });
     } else {
@@ -163,7 +146,7 @@
         isAuthorLoading = false;
       })
       .catch((err) => {
-        toast.error(`Failed to load author's other assets: ${err.message}`);
+        toast.error(m["toasts.failedTo.loadAssets"]());
         isAuthorLoading = false;
       });
     await Promise.all([pa, pb]);
@@ -386,10 +369,10 @@
               trpc.internal.updateThings.submitAssetForApproval
                 .mutate({ assetId: pageData.id })
                 .then(() => {
-                  toast.success(m["toasts.assetSubmittedForApproval"]());
+                  toast.success(m["toasts.success.assetSubmittedForApproval"]());
                 })
                 .catch((err) => {
-                  toast.error(`Failed to submit asset for approval: ${err.message}`);
+                  toast.error(m["toasts.error.generic"](), { description: parseErrorMessage(err) });
                 });
             }}>
             <BadgeAlert />

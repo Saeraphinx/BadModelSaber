@@ -45,10 +45,10 @@
     }).then(() => {
       isEditing = false;
       tabsValue = "mods";
-      toast.success(`User updated successfully`);
+      toast.success(m["toasts.success.savedChanges"]());
       invalidate((url) => url.pathname.includes(`v3.user.getUserById`));
     }).catch((err) => {
-      toast.error(`Failed to update user`, { description: parseErrorMessage(err) });
+      toast.error(m["toasts.error.generic"](), { description: parseErrorMessage(err) });
     });
   }
 
@@ -137,14 +137,14 @@
                 trpc.internal.auth.linkGitHubToaccount.query({}).then(({ url }) => {
                   window.open(url, "_blank");
                 }).catch((err) => {
-                  toast.error(`Failed to link GitHub account`, { description: parseErrorMessage(err) });
+                  toast.error(m["toasts.error.generic"](), { description: parseErrorMessage(err) });
                 })
               }}>{m["users.linkToGithub"]()}</Button>
               <Button variant="outline" disabled={user?.discordId !== null} onclick={() => {
                 trpc.internal.auth.linkDiscordToAccount.query({}).then(({ url }) => {
                   window.open(url, "_blank");
                 }).catch((err) => {
-                  toast.error(`Failed to link Discord account`, { description: parseErrorMessage(err) });
+                  toast.error(m["toasts.error.generic"](), { description: parseErrorMessage(err) });
                 })
               }}>{m["users.linkToDiscord"]()}</Button>
             </div>

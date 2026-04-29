@@ -2,9 +2,9 @@
   import { invalidateAll } from "$app/navigation";
   import { m } from "$lib/paraglide/messages";
   import { Status } from "$lib/scripts/api/DBTypes";
-  import { trpc } from "$lib/scripts/utils/api";
+  import { parseErrorMessage, trpc } from "$lib/scripts/utils/api";
   import { getStatusString } from "$lib/scripts/utils/stylizer";
-  import { Button, buttonVariants } from "$shadcn/components/ui/button/index.js";
+  import { Button } from "$shadcn/components/ui/button/index.js";
   import * as Dialog from "$shadcn/components/ui/dialog/index.js";
   import { Input } from "$shadcn/components/ui/input/index.js";
   import { Label } from "$shadcn/components/ui/label/index.js";
@@ -70,8 +70,8 @@
       })
       .catch((err) => {
         console.error(`Error updating thing ${id} (${name}):`, err);
-        toast.error(`Error updating thing ${name}`, {
-          description: "An unexpected error occurred while updating the thing status.",
+        toast.error(m["toasts.error.save"](), {
+          description: parseErrorMessage(err),
           dismissable: true,
           duration: 30000,
         });

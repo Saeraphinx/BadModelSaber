@@ -33,8 +33,7 @@
   import { Toaster } from "$shadcn/components/ui/sonner";
   import { toast, type ExternalToast } from "svelte-sonner";
   import { env } from "$env/dynamic/public";
-  import { UserPermissions, type AlertApiV3, availableLocales } from "$lib/scripts/api/DBTypes";
-  import Separator from "$shadcn/components/ui/separator/separator.svelte";
+  import { UserPermissions, type AlertApiV3, availableLocales } from "$lib/scripts/api/DBTypes"
   import { Badge } from "$shadcn/components/ui/badge";
   import * as Sheet from "$shadcn/components/ui/sheet";
   import Alert from "$lib/components/generic/Alert.svelte";
@@ -75,7 +74,7 @@
 
       if (inputSequence.join("") === konamiCode.join("")) {
         if (!isLoggedIn) {
-          toast.error(m["toasts.secretFeaturesMustBeLoggedIn"](), {
+          toast.error(m["toasts.secretFeatures.mustBeLoggedIn"](), {
             duration: 5000,
             closeButton: true,
             dismissable: true,
@@ -83,8 +82,8 @@
           return;
         }
         if (checkRoles(user, [UserPermissions.Secret_Features])) {
-          toast.info(m["toasts.secretFeaturesAlreadyEnabled"](), {
-            description: m["toasts.secretFeaturesAlreadyEnabledDescription"](),
+          toast.info(m["toasts.secretFeatures.alreadyEnabled"](), {
+            description: m["toasts.secretFeatures.alreadyEnabledDescription"](),
             duration: 5000,
             closeButton: true,
             dismissable: true,
@@ -92,8 +91,8 @@
           return;
         }
         inputSequence = []; // Reset the sequence after activation
-        toast.info(m["toasts.secretFeaturesUnlocked"](), {
-          description: m["toasts.secretFeaturesUnlockedDescription"](),
+        toast.info(m["toasts.secretFeatures.unlocked"](), {
+          description: m["toasts.secretFeatures.unlockedDescription"](),
           duration: 60000,
           dismissable: true,
           action: {
@@ -102,14 +101,14 @@
               trpc.internal.updateUser.toggleSecretFeatures
                 .mutate({ enabled: true })
                 .then(() => {
-                  toast.success(m["toasts.secretFeaturesEnabled"](), {
-                    description: m["toasts.secretFeaturesEnabledDescription"](),
+                  toast.success(m["toasts.secretFeatures.enabled"](), {
+                    description: m["toasts.secretFeatures.enabledDescription"](),
                     closeButton: true,
                   });
                   invalidateAll(); // Refresh user data to reflect new roles
                 })
                 .catch((error) => {
-                  toast.error("Failed to enable secret features.", {
+                  toast.error(m["toasts.error.generic"](), {
                     description: parseErrorMessage(error),
                   });
                 });
@@ -132,14 +131,14 @@
     trpc.internal.updateUser.toggleSecretFeatures
       .mutate({ enabled: false })
       .then(() => {
-        toast.info("Secret features disabled!", {
-          description: "Access to hidden content and features has been revoked.",
+        toast.info(m["toasts.secretFeatures.disabled"](), {
+          description: m["toasts.secretFeatures.disabledDescription"](),
         });
         invalidateAll(); // Refresh user data
       })
       .catch((error) => {
-        toast.error("Failed to disable secret features.", {
-          description: error.message,
+        toast.error(m["toasts.error.generic"](), {
+          description: parseErrorMessage(error),
         });
       });
   }
@@ -171,7 +170,7 @@
         wasEverFetchedAlerts = true;
       })
       .catch((error) => {
-        toast.error("Failed to fetch read alerts.", {
+        toast.error(m["toasts.failedTo.loadAlerts"](), {
           description: error.message,
         });
         return [];
@@ -187,7 +186,7 @@
   // Alert count toast
   onMount(() => {
     if (isPendingAlerts) {
-      toast.info(`You have ${unreadAlertCount} unread alert${unreadAlertCount == 1 ? `` : `s`}.`, {
+      toast.info(m["toasts.unreadAlerts"]({ count: unreadAlertCount }), {
         description: "",
         duration: 10000,
         closeButton: true,
@@ -290,6 +289,7 @@
   <meta property="og:image" content={`${env.PUBLIC_BASE_URL}/modelsaber-logo-web.svg`} />
   <meta name="theme-color" content="#972DE2" />
 </svelte:head>
+<!-- #endregion Page title & favicon -->
 
 <div>
   <!-- #region top bar -->

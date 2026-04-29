@@ -16,28 +16,35 @@ export const availableLocales: {
   name: string;
   secret: boolean; // whether this is a secret translation that should not be advertised as available on the frontend
   frontend: boolean; // whether this translation is used on the frontend
-  things: boolean; // whether this translation is used in mod/asset translations
+  backend: boolean; // whether this translation is used in mod/asset translations (e.g. backend things) or just text translations (e.g. frontend things)
 }[] = [
   {
     code: "en",
     name: "English",
     secret: false,
-    things: false,
+    backend: false, // English is the default language and is used as a fallback for missing translations, so it should not be marked as a backend translation
     frontend: true,
   },
   {
     code: "ja",
     name: "日本語", // Japanese
     secret: false,
-    things: true,
+    backend: true,
     frontend: false,
+  },
+  {
+    code: "owo",
+    name: "OwO",
+    secret: true,
+    frontend: true,
+    backend: false,
   },
   {
     code: "keys",
     name: "Translation Keys",
     secret: true,
     frontend: true,
-    things: false,
+    backend: false,
   }
 ]
 

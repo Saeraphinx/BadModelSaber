@@ -1,6 +1,5 @@
 <script lang="ts">
   import Button from "$shadcn/components/ui/button/button.svelte";
-  import * as Carousel from "$shadcn/components/ui/carousel/index.js";
   import { type CarouselAPI } from "$shadcn/components/ui/carousel/context.js";
   import { ChevronLeftIcon, ChevronRightIcon } from "@lucide/svelte";
   import { onMount } from "svelte";

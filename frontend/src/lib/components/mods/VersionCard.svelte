@@ -1,8 +1,8 @@
 <script lang="ts">
-  import { Status, type GameVersionApiV3, type VersionApiV3 } from "$lib/scripts/api/DBTypes";
+  import { type GameVersionApiV3, type VersionApiV3 } from "$lib/scripts/api/DBTypes";
   import { getRelativeTimeString } from "$lib/scripts/utils/stylizer";
   import * as Accordion from "$shadcn/components/ui/accordion/index";
-  import { BadgeInfoIcon, FileCodeIcon, FolderIcon, InfoIcon, ServerCogIcon, ShieldPlusIcon } from "@lucide/svelte";
+  import { BadgeInfoIcon, FileCodeIcon, FolderIcon, InfoIcon, ServerCogIcon } from "@lucide/svelte";
   import ApprovalDialog from "../dialogs/ApprovalDialog.svelte";
   import CodeDialog from "../dialogs/CodeDialog.svelte";
   import StatusHoverCard from "../generic/StatusHoverCard.svelte";
@@ -65,13 +65,13 @@
         supportedGameVersionIds: editedGameVersionIds.map(id => parseInt(id)),
       }
     }).then(() => {
-      toast.success(m["toasts.versionUpdateSuccess"]());
+      toast.success(m["toasts.success.savedChanges"]());
       isEditing = false;
       version.supportedGameVersions = gameVersions.filter(gv => editedGameVersionIds.includes(gv.id.toString()));
     }).catch(err => {
       // handle error, maybe show a toast or something
       console.error(err);
-      toast.error(`Failed to update version`, {
+      toast.error(m["toasts.error.save"](), {
         description: parseErrorMessage(err),
       });
     });

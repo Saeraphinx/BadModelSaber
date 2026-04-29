@@ -1,6 +1,5 @@
 <script lang="ts">
   import { m } from "$lib/paraglide/messages";
-  import { getLocale } from "$lib/paraglide/runtime";
   import type { RequestMessage } from "$lib/scripts/api/DBTypes";
   import { Button } from "$shadcn/components/ui/button";
   import { cn } from "$shadcn/utils";

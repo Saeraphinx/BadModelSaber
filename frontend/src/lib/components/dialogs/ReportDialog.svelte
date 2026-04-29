@@ -1,6 +1,6 @@
 <script lang="ts">
   import { m } from "$lib/paraglide/messages";
-  import { trpc } from "$lib/scripts/utils/api";
+  import { parseErrorMessage, trpc } from "$lib/scripts/utils/api";
   import { Button } from "$shadcn/components/ui/button";
   import * as Dialog from "$shadcn/components/ui/dialog";
   import { Textarea } from "$shadcn/components/ui/textarea";
@@ -25,15 +25,14 @@
         reason: reason,
       }).then((res) => {
         console.log(`Successfully reported asset ${id}`);
-        toast.success(`Successfully reported asset`, {
-          description: "The asset has been reported successfully.",
+        toast.success(m["toasts.success.reportSubmitted"](), {
           dismissable: true,
         });
         visible = false;
       }).catch((err) => {
       console.error(`Error reporting asset ${id}:`, err);
-      toast.error(`Error reporting asset`, {
-        description: "An unexpected error occurred while reporting the asset.",
+      toast.error(m["toasts.error.generic"](), {
+        description: parseErrorMessage(err),
         dismissable: true,
         duration: 30000
       });

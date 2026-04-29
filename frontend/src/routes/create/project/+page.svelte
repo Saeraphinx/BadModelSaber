@@ -1,6 +1,5 @@
 <script lang="ts">
   import { m } from "$lib/paraglide/messages";
-  import { AssetFileFormat } from "$lib/scripts/api/DBTypes";
   import { zProject } from "$lib/scripts/api/validators";
   import { Button } from "$shadcn/components/ui/button";
   import { Input } from "$shadcn/components/ui/input";

@@ -53,7 +53,7 @@
   <div class="flex-1 flex flex-col justify-between">
     <p class="text-base line-clamp-3">{project.summary}</p>
     <div class="grid grid-cols-2 gap-2 mt-2">
-      <Button variant="secondary" href="/mods/{project.id}" class="">View Details</Button>
+      <Button variant="secondary" href="/mods/{project.id}" class="">{m["common.buttons.viewDetails"]()}</Button>
       {#if version}
         <DownloadButton variant="outline" downloadType="mod" status={version.status} href={getVersionDownloadUrl(version)} class="">{m["common.buttons.download"]()}</DownloadButton>
       {:else}

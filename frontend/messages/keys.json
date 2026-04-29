@@ -75,6 +75,7 @@
   "search.size": "search.size",
   "search.showFilters": "search.showFilters",
   "search.xToYOfZResults": "search.xToYOfZResults",
+  "search.filters": "search.filters",
   "common.buttons.download": "common.buttons.download",
   "common.buttons.oneClickInstall": "common.buttons.oneClickInstall",
   "common.buttons.approvalDialog": "common.buttons.approvalDialog",
@@ -87,6 +88,7 @@
   "common.hover.updateStatus": "common.hover.updateStatus",
   "common.hover.openApprovalDialog": "common.hover.openApprovalDialog",
   "assets.asset": "assets.asset",
+  "assets.assets": "assets.assets",
   "assets.noAssetsFound": "assets.noAssetsFound",
   "assets.statusHover.verified.title": "assets.statusHover.verified.title",
   "assets.statusHover.verified.description": "assets.statusHover.verified.description",
@@ -133,6 +135,7 @@
   "assets.preview.textOnlySr": "assets.preview.textOnlySr",
   "assets.preview.failedToLoadError": "assets.preview.failedToLoadError",
   "mods.mod": "mods.mod",
+  "mods.mods": "mods.mods",
   "mods.project": "mods.project",
   "mods.version": "mods.version",
   "mods.game": "mods.game",
@@ -219,6 +222,13 @@
   "requests.typeYourMessageHere": "requests.typeYourMessageHere",
   "requests.noMessagesFound": "requests.noMessagesFound",
   "requests.submitMessage": "requests.submitMessage",
+  "users.linkToGithub": "users.linkToGithub",
+  "users.linkToDiscord": "users.linkToDiscord",
+  "users.username": "users.username",
+  "users.displayName": "users.displayName",
+  "users.bio": "users.bio",
+  "users.noAssetsFoundForUser": "users.noAssetsFoundForUser",
+  "users.noModsFoundForUser": "users.noModsFoundForUser",
   "enums.status.private": "enums.status.private",
   "enums.status.pending": "enums.status.pending",
   "enums.status.unverified": "enums.status.unverified",
@@ -310,6 +320,7 @@
   "dialogs.cancel": "dialogs.cancel",
   "dialogs.submit": "dialogs.submit",
   "dialogs.accept": "dialogs.accept",
+  "dialogs.confirm": "dialogs.confirm",
   "dialogs.reject": "dialogs.reject",
   "dialogs.close": "dialogs.close",
   "dialogs.remove": "dialogs.remove",
@@ -340,5 +351,46 @@
   "dialogs.linkAssetDialog.linkTypes.newerVersion.title": "dialogs.linkAssetDialog.linkTypes.newerVersion.title",
   "dialogs.linkAssetDialog.linkTypes.newerVersion.description": "dialogs.linkAssetDialog.linkTypes.newerVersion.description",
   "dialogs.linkAssetDialog.linkTypes.olderVersion.title": "dialogs.linkAssetDialog.linkTypes.olderVersion.title",
-  "dialogs.linkAssetDialog.linkTypes.olderVersion.description": "dialogs.linkAssetDialog.linkTypes.olderVersion.description"
+  "dialogs.linkAssetDialog.linkTypes.olderVersion.description": "dialogs.linkAssetDialog.linkTypes.olderVersion.description",
+  "toasts.unreadAlerts": [
+    {
+      "declarations": [
+        "input count",
+        "local countPlural = count: plural"
+      ],
+      "selectors": [
+        "countPlural"
+      ],
+      "match": {
+        "countPlural=one": "You have {count} unread alert.",
+        "countPlural=other": "You have {count} unread alerts."
+      }
+    }
+  ],
+  "toasts.error.generic": "toasts.error.generic",
+  "toasts.error.save": "toasts.error.save",
+  "toasts.error.validationTitle": "toasts.error.validationTitle",
+  "toasts.error.validation.missingFields": "toasts.error.validation.missingFields",
+  "toasts.error.validation.invalidUrl": "toasts.error.validation.invalidUrl",
+  "toasts.error.validation.invalidFile": "toasts.error.validation.invalidFile",
+  "toasts.success.assetLink": "toasts.success.assetLink",
+  "toasts.success.reportSubmitted": "toasts.success.reportSubmitted",
+  "toasts.success.assetSubmittedForApproval": "toasts.success.assetSubmittedForApproval",
+  "toasts.success.iconUpload": "toasts.success.iconUpload",
+  "toasts.success.savedChanges": "toasts.success.savedChanges",
+  "toasts.success.submit": "toasts.success.submit",
+  "toasts.secretFeatures.unlocked": "toasts.secretFeatures.unlocked",
+  "toasts.secretFeatures.unlockedDescription": "toasts.secretFeatures.unlockedDescription",
+  "toasts.secretFeatures.enabled": "toasts.secretFeatures.enabled",
+  "toasts.secretFeatures.enabledDescription": "toasts.secretFeatures.enabledDescription",
+  "toasts.secretFeatures.mustBeLoggedIn": "toasts.secretFeatures.mustBeLoggedIn",
+  "toasts.secretFeatures.alreadyEnabled": "toasts.secretFeatures.alreadyEnabled",
+  "toasts.secretFeatures.alreadyEnabledDescription": "toasts.secretFeatures.alreadyEnabledDescription",
+  "toasts.secretFeatures.disabled": "toasts.secretFeatures.disabled",
+  "toasts.secretFeatures.disabledDescription": "toasts.secretFeatures.disabledDescription",
+  "toasts.failedTo.loadAssets": "toasts.failedTo.loadAssets",
+  "toasts.failedTo.loadMods": "toasts.failedTo.loadMods",
+  "toasts.failedTo.loadAlerts": "toasts.failedTo.loadAlerts",
+  "toasts.failedTo.loadRequests": "toasts.failedTo.loadRequests",
+  "toasts.failedTo.submit": "toasts.failedTo.submit"
 }

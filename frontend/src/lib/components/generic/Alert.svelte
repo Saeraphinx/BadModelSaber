@@ -1,11 +1,12 @@
 <script lang="ts">
   import { AlertType, type AlertApiV3 } from '$lib/scripts/api/DBTypes';
-  import { trpc } from '$lib/scripts/utils/api';
+  import { parseErrorMessage, trpc } from '$lib/scripts/utils/api';
   import Button from '$shadcn/components/ui/button/button.svelte';
   import { cn } from '$shadcn/utils';
   import { ExternalLinkIcon } from '@lucide/svelte';
   import { toast } from 'svelte-sonner';
   import type { HTMLAttributes } from 'svelte/elements';
+  import { m } from '../../paraglide/messages';
 
   let {
     alert,
@@ -40,8 +41,8 @@
     isVisible = false;
     trpc.internal.alerts.markAlertRead.mutate({ id: alert.id }).catch((error) => {
       console.error('Failed to mark alert as read:', error);
-      toast.error('Failed to mark alert as read.', {
-        description: error.message,
+      toast.error(m["toasts.error.generic"](), {
+        description: parseErrorMessage(error),
       });
     });
     if (deleteFromArray) {
@@ -53,8 +54,8 @@
     isVisible = false;
      trpc.internal.alerts.deleteAlert.mutate({ id: alert.id }).catch((error) => {
       console.error('Failed to delete alert:', error);
-      toast.error('Failed to delete alert.', {
-        description: error.message,
+      toast.error(m["toasts.error.generic"](), {
+        description: parseErrorMessage(error),
       });
     });
     if (deleteFromArray) {

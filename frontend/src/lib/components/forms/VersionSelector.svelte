@@ -4,20 +4,20 @@
   import { tick } from "svelte";
   import * as Command from "$shadcn/components/ui/command/index.js";
   import * as Popover from "$shadcn/components/ui/popover/index.js";
-  import { Button, buttonVariants } from "$shadcn/components/ui/button/index.js";
+  import { buttonVariants } from "$shadcn/components/ui/button/index.js";
   import { cn } from "$shadcn/utils.js";
   import { AssetFileFormat } from "$lib/scripts/api/DBTypes";
   import { getAssetTypeData } from "$lib/scripts/utils/stylizer";
   import type { ClassValue } from "svelte/elements";
 
   let { 
-    value = $bindable(NaN), 
+    value = $bindable(undefined), 
     open = $bindable(true), 
     projectId = -1,
     id = "typeSelector",
     class: className = "",
   } : {
-    value?: number;
+    value?: AssetFileFormat;
     open?: boolean;
     id?: string;
     projectId: number;

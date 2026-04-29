@@ -1,6 +1,6 @@
 <script lang="ts">
   import AssetCard from "$lib/components/assets/AssetCard.svelte";
-  import { Status, UserPermissions, type AssetApiV3 } from "$lib/scripts/api/DBTypes";
+  import { type AssetApiV3 } from "$lib/scripts/api/DBTypes";
   import { trpc } from "$lib/scripts/utils/api";
   import { Button } from "$shadcn/components/ui/button";
   import * as Carousel from "$shadcn/components/ui/carousel";

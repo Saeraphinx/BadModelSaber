@@ -1,22 +1,18 @@
 <script lang="ts">
   import { AssetFileFormat, Status, UserPermissions, type AssetApiV3 } from "$lib/scripts/api/DBTypes";
   import AssetCard from "$lib/components/assets/AssetCard.svelte";
-  import * as RadioGroup from "$shadcn/components/ui/radio-group/index.js";
-  import * as Pagination from "$shadcn/components/ui/pagination";
   import Separator from "$shadcn/components/ui/separator/separator.svelte";
-  import * as Tabs from "$shadcn/components/ui/tabs/index.js";
-  import { ChevronLeft, ChevronRight, FunnelIcon } from "@lucide/svelte";
+  import { ChevronRight, FunnelIcon } from "@lucide/svelte";
   import { Label } from "$shadcn/components/ui/label";
   import { Checkbox } from "$shadcn/components/ui/checkbox/index.js";
   import Input from "$shadcn/components/ui/input/input.svelte";
-  import { DropdownMenu } from "$shadcn/components/ui/dropdown-menu";
   import * as Select from "$shadcn/components/ui/select/index.js";
   import Button from "$shadcn/components/ui/button/button.svelte";
   import { Skeleton } from "$shadcn/components/ui/skeleton";
   import { MediaQuery } from "svelte/reactivity";
   import * as Collapsible from "$shadcn/components/ui/collapsible";
   import { generateAssetSearchEngine } from "$lib/scripts/utils/search.js";
-  import { getContext, onMount } from "svelte";
+  import { onMount } from "svelte";
   import ApprovalPopup from "$lib/components/dialogs/ApprovalDialog.svelte";
   import { toast } from "svelte-sonner";
   import { getAssetTypeCategories, getStatusString } from "$lib/scripts/utils/stylizer.js";
@@ -25,6 +21,7 @@
   import BigPagination from "$lib/components/generic/BigPagination.svelte";
   import { checkRoles } from "$lib/scripts/utils/checkRoles.js";
   import * as Drawer from "$shadcn/components/ui/drawer";
+  import { parseErrorMessage } from "../../lib/scripts/utils/api.js";
 
   const { data: _internal } = $props();
   // svelte-ignore state_referenced_locally
@@ -90,8 +87,8 @@
       })
       .catch((error) => {
         console.error("Error fetching assets:", error);
-        toast.error(m["toasts.failedToLoadAsset"](), {
-          description: `${error.message || "Unknown error"}`,
+        toast.error(m["toasts.failedTo.loadAssets"](), {
+          description: parseErrorMessage(error),
           closeButton: true,
           duration: 30000,
         });
@@ -263,7 +260,7 @@
 
 <ApprovalPopup bind:this={dialog} />
 <Drawer.Root bind:open={filterMobileDrawerVisible}>
-  <Drawer.Header>{m["search.filters"]}</Drawer.Header>
+  <Drawer.Header>{m["search.filters"]()}</Drawer.Header>
   <Drawer.Content>
     <div class="overflow-y-auto h-full pr-4">
       {@render filters()}

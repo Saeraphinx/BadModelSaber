@@ -5,11 +5,10 @@
   import { parseErrorMessage, trpc } from "$lib/scripts/utils/api";
   import { Button } from "$shadcn/components/ui/button";
   import * as Dialog from "$shadcn/components/ui/dialog";
-  import * as RadioGroup from "$shadcn/components/ui/dropdown-menu";
   import Input from "$shadcn/components/ui/input/input.svelte";
   import { Label } from "$shadcn/components/ui/label";
   import * as Select from "$shadcn/components/ui/select";
-  import { LoaderCircleIcon, LoaderIcon } from "@lucide/svelte";
+  import { LoaderIcon } from "@lucide/svelte";
   import { toast } from "svelte-sonner";
 
   
@@ -39,7 +38,8 @@
     console.log("Link Asset Submitted");
     let id = -1;
     if (!assetId || assetId <= 0) {
-      toast.error("No asset specified to link from.", { description: `Please report this message to the site administrators.` });
+      console.error("Invalid asset ID, this is very bad:", assetId);
+      toast.error(m["toasts.error.generic"]());
       return;
     }
     if (idToLinkTo.startsWith("https://") || idToLinkTo.startsWith("http://")) {
@@ -49,7 +49,7 @@
       id = parseInt(idToLinkTo, 10);
     }
     if (isNaN(id) || id <= 0) {
-      toast.error("Please enter a valid asset URL or ID to link to.");
+      toast.error(m["toasts.error.validationTitle"](), { description: m["toasts.error.validation.invalidUrl"]() });
       return;
     }
     showLoading = true;
@@ -57,12 +57,12 @@
       assetId: assetId,
       type: selectedLinkType,
       linkToId: id
-    }).then(() => {
-      toast.success("Asset linked successfully.");
+    }).then((response) => {
+      toast.success(m["toasts.success.assetLink"]());
       showLoading = false;
       visible = false;
     }).catch((err) => {
-      toast.error("Failed to link asset.", { description: `${parseErrorMessage(err)}` });
+      toast.error(m["toasts.error.generic"](), {description: `${parseErrorMessage(err)}` });
       showLoading = false;
     });
   }

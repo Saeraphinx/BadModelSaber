@@ -6,7 +6,6 @@
   import { CodeXmlIcon, HomeIcon } from "@lucide/svelte";
   import { onMount } from "svelte";
   import { toast } from "svelte-sonner";
-  import { set } from "zod";
 
   let pageUserOmitted = $derived.by(() => {
     return {

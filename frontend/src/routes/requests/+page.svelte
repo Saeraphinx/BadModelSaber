@@ -8,27 +8,32 @@
   import Button from "$shadcn/components/ui/button/button.svelte";
   import { RefreshCwIcon } from "@lucide/svelte";
   import { checkRoles } from "$lib/scripts/utils/checkRoles.js";
-
+  
   let { data: _internal } = $props();
   const { requestCounts, trpc, user } = $derived(_internal);
 
   let incomingRequests: ThingRequestApiV3[] = $state([]);
   let outgoingRequests: ThingRequestApiV3[] = $state([]);
   let reports: ThingRequestApiV3[] | null = $state([]);
+  let isLoading = $state(true);
 
   onMount(() => {
     getRequests();
+
   });
 
-  function getRequests() {
-    trpc.internal.requests.getMyRequests.query({})
+  async function getRequests() {
+    isLoading = true;
+    await trpc.internal.requests.getMyRequests.query({})
       .then((res) => {
         console.log(res);
         incomingRequests = res.incoming || [];
         outgoingRequests = res.outgoing || [];
+        isLoading = false;
       })
       .catch((err) => {
         console.error("Failed to fetch requests:", err);
+        isLoading = false;
       });
   }
 </script>
@@ -68,7 +73,12 @@
           </Badge>
         </Tabs.Trigger>
         {/if}
-        <Button variant="ghost" size="icon" onclick={getRequests}><RefreshCwIcon /></Button>
+        <Button variant="ghost" size="icon" disabled={isLoading} onclick={() => {
+          document.getElementById("refreshIcon")?.classList.add("animate-spin");
+          getRequests().then(() => {
+            document.getElementById("refreshIcon")?.classList.remove("animate-spin");
+          });
+        }}><RefreshCwIcon id="refreshIcon" class="transition-all duration-300"/></Button>
       </Tabs.List>
     <Tabs.Content value="outgoing">
       {@render requestCards(outgoingRequests)}

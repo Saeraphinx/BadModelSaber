@@ -222,7 +222,7 @@ export function getSponserUrlData(sponsorUrl: string | string[] | null) {
 
 }
 
-export function getRelativeTimeString(date: Date, lang = navigator.language) {
+export function getRelativeTimeString(date: Date, lang = getLocale()) {
   // Allow dates or times to be passed
   const timeMs = typeof date === "number" ? date : date.getTime();
   const diff = timeMs - Date.now();
@@ -237,6 +237,10 @@ export function getRelativeTimeString(date: Date, lang = navigator.language) {
     { unit: "minute", ms: 60000 },
     { unit: "second", ms: 1000 },
   ];
+
+  if (lang === `keys` || lang === `owo`) {
+    lang = `en`;
+  }
 
   for (const { unit, ms } of units) {
     if (absDiff >= ms || unit === "second") {

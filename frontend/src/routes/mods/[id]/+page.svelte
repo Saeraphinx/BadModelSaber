@@ -5,11 +5,10 @@
   import Markdown from "$lib/components/generic/Markdown.svelte";
   import VersionCard from "$lib/components/mods/VersionCard.svelte";
   import { m } from "$lib/paraglide/messages";
-  import { type UserApiV3, UserPermissions } from "$lib/scripts/api/DBTypes.js";
+  import { availableLocales, type UserApiV3, UserPermissions } from "$lib/scripts/api/DBTypes.js";
   import { checkRoles } from "$lib/scripts/utils/checkRoles.js";
   import { getRelativeTimeString, getStatusString } from "$lib/scripts/utils/stylizer.js";
   import { Separator } from "$shadcn/components/ui/separator";
-  import { Skeleton } from "$shadcn/components/ui/skeleton";
   import * as Tooltip from "$shadcn/components/ui/tooltip/index.js";
   import Input from "$shadcn/components/ui/input/input.svelte";
   import { Button } from "$shadcn/components/ui/button/index.js";
@@ -17,14 +16,13 @@
   import * as Tabs from "$shadcn/components/ui/tabs/index.js";
   import Textarea from "$shadcn/components/ui/textarea/textarea.svelte";
   import * as Select from "$shadcn/components/ui/select";
-  import { CrossIcon, PlusIcon, UploadIcon, XIcon } from "@lucide/svelte";
+  import { PlusIcon, UploadIcon } from "@lucide/svelte";
   import UserBadge from "$lib/components/users/UserBadge.svelte";
   import UserSelectionDialog from "$lib/components/dialogs/UserSelectionDialog.svelte";
-  import { zAsset, zProject } from "$lib/scripts/api/validators";
+  import { zProject } from "$lib/scripts/api/validators";
   import { toast } from "svelte-sonner";
-  import { getProjectThumbnailUrl, handleTrpcError, trpc } from "$lib/scripts/utils/api.js";
+  import { getProjectThumbnailUrl, handleTrpcError, parseErrorMessage, trpc } from "$lib/scripts/utils/api.js";
   import { invalidateAll } from "$app/navigation";
-  import { form } from "$app/server";
 
   const { data: _internal } = $props();
   const {
@@ -136,7 +134,7 @@
       });
 
     if (!parsed.success) {
-      toast.error("Please fill out all fields correctly.");
+      toast.error(m["toasts.error.validationTitle"](), { description: m["toasts.error.validation.missingFields"]() });
       return;
     }
 
@@ -147,7 +145,7 @@
         data: parsed.data,
       })
       .then(() => {
-        toast.success(m["toasts.projectUpdateSuccess"]());
+        toast.success(m["toasts.success.savedChanges"]());
         invalidateAll().then(() => {
           isEditing = false;
           isSaving = false;
@@ -155,7 +153,7 @@
       })
       .catch((e) => {
         let error = handleTrpcError(false, `full`)(e);
-        toast.error("Failed to update project.", {
+        toast.error(m["toasts.error.save"](), {
           description: error.formattedMessage,
         });
         isSaving = false;
@@ -169,7 +167,7 @@
     else if (type === `description`) stringToUse = translationDescription;
 
     if (!stringToUse || stringToUse.trim() === ``) {
-      toast.error("Please fill out all fields correctly.");
+      toast.error(m["toasts.error.validationTitle"](), { description: m["toasts.error.validation.missingFields"]() });
       return;
     }
 
@@ -182,7 +180,7 @@
         translatedString: stringToUse,
       })
       .then(() => {
-        toast.success(m["toasts.translationUpdateSuccess"]());
+        toast.success(m["toasts.success.savedChanges"]());
         invalidateAll().then(() => {
           isTranslating = false;
           isSaving = false;
@@ -190,7 +188,7 @@
       })
       .catch((e) => {
         let error = handleTrpcError(false, `full`)(e);
-        toast.error("Failed to save translation.", {
+        toast.error(m["toasts.error.save"](), {
           description: error.formattedMessage,
         });
         isSaving = false;
@@ -199,13 +197,13 @@
 
   function fetchGithubReadme() {
     if (!project.gitUrl) {
-      toast.error("No Git URL provided for this project.");
+      toast.error(m["toasts.error.validationTitle"](), { description: m["toasts.error.validation.invalidUrl"]() });
       return;
     }
 
     let regex = project.gitUrl.match(/https:\/\/github.com[\/:]([^\/:]+)\/(.+)/i);
     if (!regex || regex.length === 0) {
-      toast.error("Invalid GitHub URL format.");
+      toast.error(m["toasts.error.validationTitle"](), { description: m["toasts.error.validation.invalidUrl"]() });
       return;
     }
 
@@ -216,7 +214,7 @@
           return fetch(`https://raw.githubusercontent.com/${regex[1]}/${regex[2]}/refs/heads/master/README.md`)
             .then((res) => {
               if (!res.ok) {
-                toast.error("Failed to fetch README from GitHub. Make sure the repository is public and has a README.md file in the main branch.");
+                toast.error(m["toasts.error.generic"](), { description: `Could not fetch README from GitHub. Please make sure the repository has a README.md file in the root directory.` });
                 return;
               }
               return res.text().then((text) => {
@@ -231,8 +229,8 @@
         });
       })
       .catch((e) => {
-        toast.error("An error occurred while fetching the README from GitHub.", {
-          description: e instanceof Error ? e.message : String(e),
+        toast.error(m["toasts.error.generic"](), {
+          description: parseErrorMessage(e),
         });
       });
   }
@@ -327,7 +325,7 @@
                 disabled={!editedIconFile || editedIconFile?.length === 0}
                 onclick={() => {
                   if (!editedIconFile || editedIconFile.length === 0) {
-                    toast.error("Please select an icon to upload.");
+                    toast.error(m["toasts.error.validationTitle"](), { description: m["toasts.error.validation.invalidFile"]() });
                     return;
                   }
                   let formData = new FormData();
@@ -336,17 +334,17 @@
                   trpc.internal.updateThings.updateProjectIcon
                     .mutate(formData)
                     .then(() => {
-                      toast.success(m["toasts.iconUploadSuccess"]());
+                      toast.success(m["toasts.success.iconUpload"]());
                       invalidateAll();
                     })
                     .catch((e) => {
                       let error = handleTrpcError(false, `full`)(e);
-                      toast.error("Failed to update icon.", {
+                      toast.error(m["toasts.error.save"](), {
                         description: error.formattedMessage,
                       });
                     });
                 }}>
-                Upload & Save Icon
+                {m["mods.uploadAndSaveIcon"]()} 
               </Button>
             </div>
             <Label for="summary">{m["mods.dataTable.summary"]()}</Label>
@@ -435,7 +433,16 @@
           <div class="grid grid-cols-[1fr_6fr] gap-2">
             <Label for="language">{m["mods.translation.language"]()}</Label>
             <div class="flex flex-row items-center gap-2">
-              <Input id="language" bind:value={translatingLanguage} placeholder="e.g. 'fr' for French" />
+              <Select.Root type="single" bind:value={translatingLanguage}>
+                <Select.Trigger class="w-full" id="language">
+                  {availableLocales.find((l) => l.code == translatingLanguage)?.name || m["mods.translation.language"]()}
+                </Select.Trigger>
+                <Select.Content class="w-full">
+                  {#each availableLocales.filter(l => l.backend) as locale}
+                    <Select.Item value={locale.code}>{locale.name}</Select.Item>
+                  {/each}
+                </Select.Content>
+              </Select.Root>
             </div>
             <Label for="name">{m[`mods.dataTable.name`]()}</Label>
             <div class="flex flex-row items-center gap-2">

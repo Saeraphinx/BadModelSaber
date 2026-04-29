@@ -1,7 +1,7 @@
 <script lang="ts">
   import DependencySelector from "$lib/components/forms/ProjectSelector.svelte";
   import { m } from "$lib/paraglide/messages.js";
-  import { Status, type GameVersionApiV3, type VersionApiV3 } from "$lib/scripts/api/DBTypes.js";
+  import { Status, type GameVersionApiV3 } from "$lib/scripts/api/DBTypes.js";
   import { getManifestFromFile, getManifestFromZip, type Manifest } from "$lib/scripts/api/modParser.js";
   import { manifestAllDependenciesExist, manifestGameVersionIsLowestSupportedVersion } from "$lib/scripts/utils/checkManifest.js";
   import { Button } from "$shadcn/components/ui/button";
@@ -12,7 +12,7 @@
   import * as Select from "$shadcn/components/ui/select";
   import { Spinner } from "$shadcn/components/ui/spinner";
   import type { LocalizedString } from "@inlang/paraglide-js";
-  import { CheckCheckIcon, CheckIcon } from "@lucide/svelte";
+  import { CheckIcon } from "@lucide/svelte";
   import JSZip from "jszip";
   import { parse, validRange } from "semver";
   import { onMount } from "svelte";
@@ -94,7 +94,7 @@
   async function submit() {
     let file = files && files.length > 0 ? files[0] : null;
     if (!file) {
-      toast.error("no worky");
+      toast.error(m["toasts.error.validationTitle"](), { description: m["toasts.error.validation.invalidFile"]() });
       return;
     }
 
@@ -308,7 +308,7 @@
                 openDepCloneDialog = false;
               })
               .catch(() => {
-                toast.error(`Dependency data for that version could not be loaded. Please try again later.`);
+                toast.error(m["toasts.error.generic"]());
               });
           }}>
           {m["dialogs.submit"]()}</Button>

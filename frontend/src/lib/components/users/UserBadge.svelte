@@ -26,6 +26,11 @@
         badgeBorder: `bg-card`,
         textColor: `text-white`,
       };
+
+    let developerRole = roleStyles.find((role) => role.value === UserPermissions.C_Developer);
+    let bsmgStaffRole = roleStyles.find((role) => role.value === UserPermissions.C_BSMG_Staff);
+    if (developerRole) return developerRole;
+    if (bsmgStaffRole) return bsmgStaffRole;
     return roleStyles[0];
   });
 </script>

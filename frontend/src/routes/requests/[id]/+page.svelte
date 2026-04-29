@@ -135,7 +135,7 @@
       })
       .catch((err) => {
         console.error("Failed to send message:", err);
-        toast.error("Failed to send message. Check your error log for more info.")
+        toast.error(m["toasts.error.generic"](), { description: parseErrorMessage(err) });
       });
   }
 
@@ -146,14 +146,14 @@
     }).then(r => {
       return r.message
     }).catch(e => {
-      return toast.error(parseErrorMessage(e));
+      return toast.error(m["toasts.error.generic"](), { description: parseErrorMessage(e) });
     })
   }
 </script>
 
 <div class="flex flex-row items-start justify-center gap-4" data-sveltekit-preload-code="false">
   <div class="flex flex-col gap-2">
-    {#if pageData.refrencedThing}
+    {#if pageData.refrencedThing && `oldId` in pageData.refrencedThing}
       <AssetCard asset={pageData.refrencedThing} size="large" alwaysShowHover />
     {/if}
     <div class="flex flex-col items-start gap-2 bg-card p-4 rounded-lg shadow-md w-full max-w-2xl">

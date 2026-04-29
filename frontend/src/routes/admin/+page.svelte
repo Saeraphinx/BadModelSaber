@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { AlertType, UserPermissions, WebhookLogType, type GameVersionApiV3, type GameVersionApiV3_full } from "$lib/scripts/api/DBTypes";
+  import { AlertType, UserPermissions, WebhookLogType, type GameVersionApiV3_full } from "$lib/scripts/api/DBTypes";
   import * as Tabs from "$shadcn/components/ui/tabs/index.js";
   import * as Select from "$shadcn/components/ui/select/index.js";
   import * as Accordion from "$shadcn/components/ui/accordion/index.js";

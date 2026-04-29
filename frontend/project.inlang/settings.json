@@ -4,11 +4,13 @@
   "sourceLanguageTag": "en",
   "languageTags": [
     "en",
-    "keys"
+    "keys",
+    "owo"
   ],
   "locales": [
     "en",
-    "keys"
+    "keys",
+    "owo"
   ],
   "modules": [
     "https://cdn.jsdelivr.net/npm/@inlang/plugin-message-format@4/dist/index.js",

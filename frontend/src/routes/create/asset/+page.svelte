@@ -1,16 +1,15 @@
 <script lang="ts">
   import { AssetFileFormat, Tags } from "$lib/scripts/api/DBTypes";
   import LicenseSelector from "$lib/components/forms/LicenseSelector.svelte";
-  import Button, { buttonVariants } from "$shadcn/components/ui/button/button.svelte";
+  import Button from "$shadcn/components/ui/button/button.svelte";
   import Input from "$shadcn/components/ui/input/input.svelte";
   import Label from "$shadcn/components/ui/label/label.svelte";
   import Textarea from "$shadcn/components/ui/textarea/textarea.svelte";
   import TagPicker from "$lib/components/dialogs/TagPickerDialog.svelte";
-  import { DivideCircleIcon, TagIcon } from "@lucide/svelte";
+  import { TagIcon } from "@lucide/svelte";
   import TagBadge from "$lib/components/assets/TagBadge.svelte";
   import TypeSelector from "$lib/components/forms/TypeSelector.svelte";
   import { parseErrorMessage, trpc } from "$lib/scripts/utils/api";
-  import { redirect } from "@sveltejs/kit";
   import { toast } from "svelte-sonner";
   import { zAsset } from "$lib/scripts/api/validators";
   import { m } from "$lib/paraglide/messages";
@@ -51,7 +50,8 @@
       thumbnails,
     });
     if (!asset || !asset[0]) {
-      toast.error("Please select an asset file to upload.");
+      toast.error(m["toasts.error.validationTitle"](), { description: m["toasts.error.validation.invalidFile"]() });
+      console.error("No asset file selected.");
       return;
     }
     formData.append("asset", asset[0]);
@@ -60,20 +60,20 @@
         formData.append(`icon_${i+1}`, thumbnails[i]);
       }
     } else {
-      toast.error("Please select a thumbnail image to upload.");
+      toast.error(m["toasts.error.validationTitle"](), { description: m["toasts.error.validation.invalidFile"]() });
+      console.error("No thumbnail file(s) selected.");
       return;
     }
 
     // needs to be awaited since redirect is an error throw
-    let newAsset = trpc.v3.upload.assetUpload.mutate(formData).catch((err) => {
-      toast.error(`Failed to submit asset: ${parseErrorMessage(err)}`);
-      console.error(err);
-    });
-    Promise.resolve(newAsset).then((asset) => {
+    let newAsset = trpc.v3.upload.assetUpload.mutate(formData).then((asset) => {
       if (asset) {
-        toast.success("Asset submitted successfully!");
+        toast.success(m["toasts.success.submit"]());
         window.location.href = `/assets/${asset.id}`; // redirect to new asset page
       }
+    }).catch((err) => {
+      toast.error(m["toasts.error.generic"](), { description: parseErrorMessage(err) });
+      console.error(err);
     });
   }
 </script>
