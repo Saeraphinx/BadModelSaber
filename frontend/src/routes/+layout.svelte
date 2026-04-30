@@ -2,28 +2,21 @@
   import "../app.css";
   import * as NavigationMenu from "$shadcn/components/ui/navigation-menu/index.js";
   import * as DropdownMenu from "$shadcn/components/ui/dropdown-menu/index.js";
-  import { getContext, onMount, setContext } from "svelte";
-  import { Button, buttonVariants } from "$shadcn/components/ui/button";
+  import { onMount } from "svelte";
+  import { buttonVariants } from "$shadcn/components/ui/button";
   import * as Avatar from "$shadcn/components/ui/avatar";
   import {
-    BellDotIcon,
     BellIcon,
-    FileBadgeIcon,
-    GitBranchIcon,
-    Link2Icon,
     LogInIcon,
     LogOutIcon,
     Menu,
     MessageCircleQuestionIcon,
     PlusIcon,
     Settings,
-    SunIcon,
     TrafficConeIcon,
     UserIcon,
     SettingsIcon,
-    SunMoonIcon,
     LanguagesIcon,
-    LinkIcon,
     FolderGit2Icon,
     FileAxis3DIcon,
   } from "@lucide/svelte";
@@ -281,12 +274,24 @@
 
 <!-- #region Page title & favicon -->
 <svelte:head>
-  <title>{page.data.pageMetadata?.title ? `${page.data.pageMetadata.title} - ${m.name()}` : `${m.name()}`}</title>
+  {#if page.data.pageMetadata?.title && page.data.pageMetadata?.title.includes(" - ")}
+    <title>{page.data.pageMetadata.title}</title>
+  {:else if page.data.pageMetadata?.title}
+    <title>{page.data.pageMetadata?.title ? `${page.data.pageMetadata.title} - ${m.name()}` : `${m.name()}`}</title>
+  {:else}
+    <title>{m.name()}</title>
+  {/if}
   <link rel="icon" href="/favicon.png" />
   <!-- OpenGraph -->
-  <meta property="og:title" content={page.data.pageMetadata?.title ? `${page.data.pageMetadata.title} - ${m.name()}` : `${m.name()}`} />
+  {#if page.data.pageMetadata?.title && page.data.pageMetadata?.title.includes(" - ")}
+    <meta property="og:title" content={page.data.pageMetadata.title} />
+  {:else if page.data.pageMetadata?.title}
+      <meta property="og:title" content={`${page.data.pageMetadata.title} - ${m.name()}`} />
+  {:else}
+    <meta property="og:title" content={`${m.name()}`} />
+  {/if}
   <meta property="og:description" content={page.data.pageMetadata?.description! ?? m["homepage.subtitle"]()} />
-  <meta property="og:image" content={`${env.PUBLIC_BASE_URL}/modelsaber-logo-web.svg`} />
+  <meta property="og:image" content={page.data.pageMetadata?.imageUrl ?? `${env.PUBLIC_BASE_URL}/modelsaber-logo-web.svg`} />
   <meta name="theme-color" content="#972DE2" />
 </svelte:head>
 <!-- #endregion Page title & favicon -->

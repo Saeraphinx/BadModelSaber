@@ -166,6 +166,10 @@ export function handleTrpcError(shouldThrow = true, shouldLog = `minimal`): (err
 
     let isZodError = parsedError.zodError !== undefined;
     if (shouldThrow) {
+      if (parsedError.formattedMessage === `fetch failed`) {
+        parsedError.formattedMessage = `Network error: Unable to reach the server. Please check your internet connection and try again.`;
+        parsedError.httpCode = 503;
+      }
       throw error(parsedError.httpCode, {
         message: parsedError.formattedMessage,
         additionalInfo: parsedError.zodError ? z.prettifyError(parsedError.zodError) : undefined,

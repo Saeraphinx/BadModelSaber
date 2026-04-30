@@ -41,7 +41,7 @@ Where
 
 export const uploadStuff = router({
     assetUpload: loggedInProcedure()
-//    .meta({ openapi: { method: 'POST', path: '/v3/asset/upload', tags: ['Upload'] } })
+    //.meta({ openapi: { method: 'POST', path: '/v3/asset/upload', tags: ['Upload'], enabled: false } })
     .input(zfd.formData({
         data: zfd.json(Asset.validator.pick({
             type: true,
@@ -130,7 +130,7 @@ export const uploadStuff = router({
         });
     }),
     projectCreate: loggedInProcedure()
-    //.meta({ openapi: { method: 'POST', path: '/v3/project/create', tags: ['Upload'] } })
+    //.meta({ openapi: { method: 'POST', path: '/v3/project/create', tags: ['Upload'], enabled: false } })
     .input(zfd.formData({
         data: zfd.json(Project.validator.pick({
             name: true,
@@ -184,7 +184,7 @@ export const uploadStuff = router({
         });
     }),
     versionUpload: loggedInProcedure()
-    //.meta({ openapi: { method: 'POST', path: '/v3/project/{id}/upload', tags: ['Upload'] } })
+    //.meta({ openapi: { method: 'POST', path: '/v3/project/{id}/upload', tags: ['Upload'], enabled: false } })
     .input(zfd.formData({
         id: zfd.text(),
         data: zfd.json(Version.validator.pick({

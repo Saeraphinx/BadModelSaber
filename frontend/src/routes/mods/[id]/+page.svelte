@@ -239,19 +239,19 @@
 
 <div class="flex flex-col gap-4 m-auto w-[90%] max-w-[95%]">
   <!-- Top Bar -->
-  <div class="flex flex-row grow items-center">
+  <div class="flex flex-row grow not-md:flex-col items-center">
     <img src={getProjectThumbnailUrl(project)} alt="Project Thumbnail" class="w-32 h-32 object-cover rounded-lg" />
     <!-- <Skeleton class="w-32 h-32 rounded-lg" /> -->
     <div class="flex flex-col ml-4">
       <h1 class="text-3xl font-bold mb-1">{project.name}</h1>
       <p class="text-gray-600 mb-2">{project.summary}</p>
-      <div class="flex items-center gap-2 mb-2">
+      <div class="flex items-center not-md:justify-center gap-2 mb-2">
         {#each project.authors as author (author.id)}
           <UserBadge user={author} />
         {/each}
       </div>
     </div>
-    <div class="grid grid-cols-1 gap-2 ml-auto">
+    <div class="grid grid-cols-1 not-md:grid-cols-2 not-md:w-full gap-2 ml-auto">
       {#if shouldAllowEdit}
         {#if !isEditing && !isTranslating}
           <Button variant="outline" class="ml-auto w-full" onclick={() => (isEditing = true)}>{m[`dialogs.edit`]()}</Button>
@@ -267,7 +267,7 @@
   <Separator />
   <div class="flex flex-row not-md:flex-col-reverse gap-4">
     <!-- Version List -->
-    <div class="w-md max-w-sm">
+    <div class="w-md md:max-w-sm not-md:max-w-full not-md:w-full">
       {#if checkRoles(user, [UserPermissions.Mods_UploadAll], project.gameName) || project.authors.some((a) => a.id === user?.id)}
         <div class="flex flex-row items-center justify-between mb-4 mx-1">
           <h2 class="text-xl font-bold">{m["mods.uploadNewVersion"]()}</h2>
