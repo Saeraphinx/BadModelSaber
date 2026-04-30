@@ -265,7 +265,7 @@
     </div>
   </div>
   <Separator />
-  <div class="flex flex-row gap-4">
+  <div class="flex flex-row not-md:flex-col-reverse gap-4">
     <!-- Version List -->
     <div class="w-md max-w-sm">
       {#if checkRoles(user, [UserPermissions.Mods_UploadAll], project.gameName) || project.authors.some((a) => a.id === user?.id)}
@@ -285,23 +285,23 @@
     <div class="w-full overflow-hidden">
       <!-- Databar -->
       <div class="flex justify-evenly bg-card rounded-md p-4 mb-4">
-        <div class="flex flex-col items-center justify-center">
+        <div class="flex flex-col items-center text-center justify-center">
           <p class="text-sm text-gray-500">{m["mods.dataTable.status"]()}</p>
           <p class="text-base font-bold">{getStatusString(project.status)}</p>
         </div>
-        <div class="flex flex-col items-center justify-center">
+        <div class="flex flex-col items-center text-center justify-center">
           <p class="text-sm text-gray-500">{m["mods.dataTable.game"]()}</p>
           <p class="text-base font-bold">{game.displayName}</p>
         </div>
-        <div class="flex flex-col items-center justify-center">
+        <div class="flex flex-col items-center text-center justify-center">
           <p class="text-sm text-gray-500">{m["mods.dataTable.category"]()}</p>
           <p class="text-base font-bold">{project.category}</p>
         </div>
-        <div class="flex flex-col items-center justify-center">
+        <div class="flex flex-col items-center text-center justify-center">
           <p class="text-sm text-gray-500">{m["mods.dataTable.moreInfo"]()}</p>
           <a class="text-base font-bold hover:text-blue-400 transition-colors" href={project.gitUrl}>{m["mods.dataTable.sourceUrl"]()}</a>
         </div>
-        <div class="flex flex-col items-center justify-center">
+        <div class="flex flex-col items-center text-center justify-center">
           <p class="text-sm text-gray-500">{m["mods.dataTable.created"]()}</p>
           <Tooltip.Root>
             <Tooltip.Trigger class="text-base font-bold">
