@@ -65,11 +65,14 @@
   async function fetchMods() {
     if (!selectedGame) return;
     isLoading = true;
-    let statusLookup = [Status.Verified, Status.Unverified];
+    let statusLookup = [Status.Verified];
     if (checkRoles(user, { hasOneOf: [UserPermissions.Secret_Features]})) {
       statusLookup.push(Status.Pending);
     } else if (checkRoles(user, { hasOneOf: [UserPermissions.Mods_ViewAll]})) {
       statusLookup.push(Status.Pending, Status.Removed, Status.Private);
+    }
+    if (user) {
+      statusLookup.push(Status.Unverified);
     }
     if (gameVersions.some((v) => v.gameName !== selectedGame.name)) {
       await trpc.v3.games.getGameVersions.query({ gameName: selectedGame.name }).then((versions) => {

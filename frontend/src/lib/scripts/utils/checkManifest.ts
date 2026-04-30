@@ -1,4 +1,4 @@
-import { parse, Range, SemVer, validRange } from "semver";
+import { parse, Range, SemVer } from "semver";
 import type { GameVersionApiV3 } from "../api/DBTypes";
 import type { Manifest } from "../api/modParser";
 import { m } from "../../paraglide/messages";

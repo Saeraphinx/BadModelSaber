@@ -173,7 +173,7 @@ export class User extends Model<InferAttributes<User>, InferCreationAttributes<U
         if (user) {
             return user.getAllowedStatuses(type, gameName);
         } else {
-            return [Status.Verified];
+            return [Status.Verified, Status.Unverified];
         }
     }
 
