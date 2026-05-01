@@ -1,5 +1,5 @@
 import { Logger } from "../../../../shared/Logger.ts";
-import { GameVersion, GameVersionWhereOptions, Project, ProjectApiV3, projectApiV3Schema, ProjectWhereOptions, Status, User, UserPermissions, Version, versionApiV3Schema } from "../../../../shared/Database.ts";
+import { availableBackendLocaleCodes, GameVersion, GameVersionWhereOptions, Project, ProjectApiV3, projectApiV3Schema, ProjectWhereOptions, Status, User, UserPermissions, Version, versionApiV3Schema } from "../../../../shared/Database.ts";
 import { anyGameProcedure, anyProcedure, gameProcedure, router } from "../../../trpc.ts";
 import z from "zod/v4";
 import { TRPCError } from "@trpc/server";
@@ -15,6 +15,7 @@ export const GetModsV3 = router({
                 method: `GET`,
                 path: `/v3/mods`,
                 tags: ['Mods'],
+                summary: 'Get a list of mods with filtering options',
             }
         })
         .input(z.object({
@@ -23,7 +24,7 @@ export const GetModsV3 = router({
             name: z.string().optional(),
             authors: z.array(z.int()).optional(),
             platform: z.string().optional(),
-            language: z.string().optional(),
+            language: z.enum(availableBackendLocaleCodes).optional(),
         }))
         .output(z.array(z.object({
             project: projectApiV3Schema,
@@ -127,22 +128,6 @@ export const GetModsV3 = router({
                 timingString += `, filterp1;dur=${Date.now() - filter1Start}`;
                 return v;
             });
-            startTime = Date.now();
-
-            // these filters are applied after the db query because only the version table is pulled from the db
-            if (input.name) {
-                output = output.filter(o => o.project.name.toLowerCase().includes(input.name!.toLowerCase()));
-            }
-
-            if (input.authors) {
-                output = output.filter(o => o.project.authors?.some(a => {
-                    if (Array.isArray(input.authors)) {
-                        return input.authors.includes(a.id);
-                    } else {
-                        return a === input.authors;
-                    }
-                }));
-            }
 
             startTime = Date.now();
             let outputApi = await Promise.all(output.map(async o => ({
@@ -165,11 +150,12 @@ export const GetModsV3 = router({
                 method: `GET`,
                 path: `/v3/mods/{projectId}`,
                 tags: ['Mods'],
+                summary: 'Get a project and all of its versions',
             }
         })
         .input(z.object({
             projectId: z.number(),
-            language: z.string().optional(),
+            language: z.enum(availableBackendLocaleCodes).optional(),
         }))
         .output(z.object({
             project: projectApiV3Schema,

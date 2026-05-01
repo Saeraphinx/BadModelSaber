@@ -15,6 +15,7 @@ export const userRouterV3 = router({
                 method: 'GET',
                 path: '/v3/users/me',
                 tags: ['Users'],
+                summary: 'Get the currently authenticated user',
             }
         })
         .input(z.void())

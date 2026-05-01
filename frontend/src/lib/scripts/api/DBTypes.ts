@@ -48,6 +48,9 @@ export const availableLocales: {
   }
 ]
 
+export const availableFrontendLocaleCodes = availableLocales.filter(l => l.frontend).map(l => l.code);
+export const availableBackendLocaleCodes = availableLocales.filter(l => l.backend).map(l => l.code);
+
 // #region Asset Enums
 // Changes to this enum should be made note of and checked for in translation documents if needed
 export enum AssetFileFormat {

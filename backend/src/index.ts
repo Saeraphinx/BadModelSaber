@@ -8,9 +8,10 @@ import { Logger, LogLevel } from "./shared/Logger.ts";
 import { FileRoutes } from "./api/routes/files/files.ts";
 import { Sequelize } from "sequelize";
 import { importFromOldModelSaber } from "./shared/Importer.ts";
-import { generateOpenAPIDoc, loadExpressMiddleware, loadOpenApiMiddleware } from "./api/routers.ts";
+import { createCaller, generateOpenAPIDoc, loadExpressMiddleware, loadOpenApiMiddleware } from "./api/routers.ts";
 import swaggerUi from "swagger-ui-express";
 import { file } from "jszip";
+import { OpenAPIUploadDocs } from "./api/routes/public/v3/upload.ts";
 
     // eslint-disable-next-line quotes
     declare module 'express-serve-static-core' {
@@ -101,6 +102,10 @@ export async function init(overrideDbName?: string) {
     apiDoc.servers = [{
         url: EnvConfig.server.backendUrl + EnvConfig.server.apiRoute
     }]
+    apiDoc.paths = {
+        ...apiDoc.paths,
+        ...OpenAPIUploadDocs
+    }
 
     apiRouter.use(`/docs`, swaggerUi.serve, swaggerUi.setup(apiDoc));
 
@@ -113,14 +118,43 @@ export async function init(overrideDbName?: string) {
     apiRouter.use((req, res, next) => {
         if (req.url.startsWith(`/mods`)) {
             req.url = req.url.replace(`/mods`, `/v2/mods`);
+            return next();
         }
         if (req.url.startsWith(`/hashlookup`)) {
             req.url = req.url.replace(`/hashlookup`, `/v2/hashlookup`);
+            return next();
         }
         if (req.url.startsWith(`/multi/hashlookup`)) {
             req.url = req.url.replace(`/multi/hashlookup`, `/v2/multi/hashlookup`);
+            return next();
         }
-        next();
+
+        let caller: Promise<any> | null = null;
+        if (req.url.startsWith(`/v3/asset/upload`) && req.method === 'POST') {
+            caller = createCaller({
+                req, res, db,
+                userId: req.session['userId'],
+            }).v3.upload.assetUpload(req.body);
+        } else if (req.url.match(/^\/v3\/project\/[^\/]+\/upload$/) && req.method === 'POST') {
+            caller = createCaller({
+                req, res, db,
+                userId: req.session['userId'],
+            }).v3.upload.versionUpload({
+                id: req.url.split(`/`)[3],
+                ...req.body
+            });
+        }
+
+        if (caller) {
+            return caller.then((result) => {
+                return res.json(result);
+            }).catch((err) => {
+                Logger.error(`Error handling legacy upload route: ${err}`);
+                res.status(500).json({ message: `Server error` });
+            });
+        } else {
+            next();
+        }
     });
     apiRouter.use(loadOpenApiMiddleware); // load all openapi routes
 

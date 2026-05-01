@@ -1,6 +1,6 @@
 import { TRPCError } from "@trpc/server";
 import { router, anyProcedure, loggedInProcedure } from "../../trpc.ts";
-import { Project } from "../../../shared/Database.ts";
+import { availableBackendLocaleCodes, availableFrontendLocaleCodes, Project } from "../../../shared/Database.ts";
 import z from "zod";
 import { Translation } from "../../../shared/database/tables/Translation.ts";
 
@@ -30,7 +30,7 @@ export const getEditTranslationsRouter = router({
     createOrUpdateTranslationForProject: loggedInProcedure()
         .input(z.object({
             projectId: z.number(),
-            language: z.string(),
+            language: z.enum(availableBackendLocaleCodes),
             contentType: z.enum([`name`, `description`, `summary`]),
             translatedString: z.string(),
         }))

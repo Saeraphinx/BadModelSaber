@@ -9,10 +9,11 @@ import { loggedInProcedure, router } from "../../../trpc.ts";
 import { zfd } from "zod-form-data";
 import { createHash } from "node:crypto";
 import { TRPCError } from "@trpc/server";
-import JSZip, { support } from "jszip";
+import JSZip from "jszip";
 import { getManifestFromString, Manifest } from "../../../../shared/ModParser.ts";
 import z from "zod";
 import { Op } from "sequelize";
+import { PathsObject } from "openapi3-ts/oas31";
 
 /*
 == Assets ==
@@ -130,7 +131,6 @@ export const uploadStuff = router({
         });
     }),
     projectCreate: loggedInProcedure()
-    //.meta({ openapi: { method: 'POST', path: '/v3/project/create', tags: ['Upload'], enabled: false } })
     .input(zfd.formData({
         data: zfd.json(Project.validator.pick({
             name: true,
@@ -311,3 +311,136 @@ export const uploadStuff = router({
         });
     })
 })
+
+export const OpenAPIUploadDocs: PathsObject = {
+    "/v3/asset/upload": {
+        post: {
+            tags: ["Assets"],
+            summary: "Upload a new asset",
+            requestBody: {
+                content: {
+                    "multipart/form-data": {
+                        schema: {
+                            type: "object",
+                            properties: {
+                                data: {
+                                    type: "string",
+                                    format: "json",
+                                    description: "JSON string containing the asset data, including type, name, description, license, licenseUrl (if applicable), sourceUrl, and tags. See the Asset shcema for more details."
+                                },
+                                immidateSubmit: {
+                                    type: "boolean",
+                                },
+                                asset: {
+                                    type: "string",
+                                    format: "binary",
+                                },
+                                icon_1: {
+                                    type: "string",
+                                    format: "binary",
+                                },
+                                icon_2: {
+                                    type: "string",
+                                    format: "binary",
+                                },
+                                icon_3: {
+                                    type: "string",
+                                    format: "binary",
+                                },
+                                icon_4: {
+                                    type: "string",
+                                    format: "binary",
+                                },
+                                icon_5: {
+                                    type: "string",
+                                    format: "binary",
+                                },
+                            },
+                            required: ["data", "asset", "icon_1"],
+                        }
+                    }
+                }
+            },
+            responses: {
+                200: {
+                    description: "Asset uploaded successfully",
+                    content: {
+                        "application/json": {
+                            schema: assetApiV3Schema,
+                        }
+                    }
+                },
+                400: {
+                    description: "Bad request, invalid input data",
+                },
+                401: {
+                    description: "Unauthorized, user not logged in",
+                },
+                403: {
+                    description: "Forbidden, user does not have permission to upload assets",
+                },
+                500: {
+                    description: "Internal server error",
+                }
+            }
+         }
+    },
+    "/v3/project/{id}/upload": {
+        post: {
+            tags: ["Mods"],
+            summary: "Upload a new version for a project",
+            requestBody: {
+                content: {
+                    "multipart/form-data": {
+                        schema: {
+                            type: "object",
+                            properties: {
+                                id: {
+                                    type: "string",
+                                },
+                                data: {
+                                    type: "string",
+                                    format: "json",
+                                    description: "JSON string containing the version data, including platform, semver, dependencies, and supportedGameVersionIds. See the Version shcema for more details."
+                                },
+                                modZip: {
+                                    type: "string",
+                                    format: "binary",
+                                },
+                                immidateSubmit: {
+                                    type: "boolean",
+                                },
+                            },
+                            required: ["id", "data", "modZip"],
+                        }
+                    }
+                }
+            },
+            responses: {
+                200: {
+                    description: "Version uploaded successfully",
+                    content: {
+                        "application/json": {
+                            schema: versionApiV3Schema,
+                        }
+                    }
+                },
+                400: {
+                    description: "Bad request, invalid input data",
+                },
+                401: {
+                    description: "Unauthorized, user not logged in",
+                },
+                403: {
+                    description: "Forbidden, user does not have permission to upload versions for this project",
+                },
+                404: {
+                    description: "Project not found",
+                },
+                500: {
+                    description: "Internal server error",
+                }
+            }
+        }
+    }
+}

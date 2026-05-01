@@ -116,6 +116,11 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
     @Column(DataType.ARRAY(DataType.JSONB))
     declare statusHistory: CreationOptional<StatusHistory[]>;
 
+    @AllowNull(false)
+    @Default(true)
+    @Column(DataType.BOOLEAN)
+    declare eligbleForVerification: CreationOptional<boolean>; // whether this project is eligble for verification - allows for a unverified status to be hidden from approval queues w/o removing the project entirely
+
     @CreatedAt
     declare readonly createdAt: CreationOptional<Date>;
     @UpdatedAt
@@ -191,6 +196,7 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
         fileSize: z.number(),
         statusHistory: z.array(statusHistorySchema),
         baseFileName: z.string(),
+        eligbleForVerification: z.boolean(),
         createdAt: z.date(),
         updatedAt: z.date(),
         deletedAt: z.date().nullable(),
