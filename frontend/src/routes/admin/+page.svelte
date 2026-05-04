@@ -13,13 +13,16 @@
   import { Dialog, DialogContent } from "$shadcn/components/ui/dialog/index.js";
   import { checkRoles } from "$lib/scripts/utils/checkRoles.js";
   import { onMount } from "svelte";
-  import { parseErrorMessage } from "$lib/scripts/utils/api.js";
+  import { getVersionDecompUrl, getVersionManifestUrl, parseErrorMessage } from "$lib/scripts/utils/api.js";
   import ModCard from "$lib/components/mods/ModCard.svelte";
+  import ModCompactCard from "$lib/components/mods/ModCompactCard.svelte";
+  import ApprovalDialog from "$lib/components/dialogs/ApprovalDialog.svelte";
+  import CodeDialog from "$lib/components/dialogs/CodeDialog.svelte";
 
   const { data: _internal } = $props();
   // svelte-ignore state_referenced_locally
   const { user, trpc } = $derived(_internal);
-  let currentTab = $state("manual");
+  let currentTab = $state("approval");
   // #region Alert
   let alertType = $state(AlertType.Generic);
   let alertUserId = $state("5");
@@ -257,7 +260,29 @@
       
   }
   // #endregion
-
+  // #region Approval Queue
+  let approvalDialog: ApprovalDialog | null = null;
+  let codeDialog: CodeDialog | null = null;
+  let aqSelectedGameName = $state("");
+  let aqSelectedGame = $derived.by(() => games.find((game) => game.name === aqSelectedGameName));
+  let aqModsInApprovalQueue: Awaited<ReturnType<typeof fetchApprovalQueue>> = $state([]);
+  async function fetchApprovalQueue() {
+    if (!aqSelectedGameName) {
+      toast.error("Please select a game to view its approval queue.");
+      return [];
+    }
+    return await trpc.internal.mods.approvalQueueVersions
+      .query({ gameName: aqSelectedGameName })
+      .then((res) => {
+        aqModsInApprovalQueue = res;
+        return res;
+      })
+      .catch((err) => {
+        console.error(err);
+        toast.error("Failed to fetch approval queue.");
+        return [];
+      });
+  }
 </script>
 
 <div class="flex flex-col gap-4 m-auto p-4 justify-center">
@@ -283,7 +308,10 @@
       {#if checkRoles(user, [UserPermissions.Game_Create, UserPermissions.Game_Edit, UserPermissions.Game_EditVersions, UserPermissions.Game_ViewExtras])}
         <Tabs.Trigger value="games">Game Management</Tabs.Trigger>
       {/if}
-      <Tabs.Trigger value="bulkactions">Bulk Actions (Mods)</Tabs.Trigger>
+      {#if checkRoles(user, [UserPermissions.Mods_Approval])}
+        <Tabs.Trigger value="bulkactions">Bulk Actions (Mods)</Tabs.Trigger>
+        <Tabs.Trigger value="approval">Approval Queue (Mods)</Tabs.Trigger>
+      {/if}
     </Tabs.List>
     <!-- Admin Logs Panel -->
     <Tabs.Content value="logs">
@@ -701,6 +729,46 @@
         {/each}
       </div>
     </Tabs.Content>
+    <Tabs.Content value="approval">
+      <div class="flex flex-col m-auto gap-2 w-[480px] items-center p-4 bg-accent rounded-lg justify-center">
+        <!-- Game Selection -->
+        <div class="flex flex-row gap-1">
+          <Select.Root type="single" bind:value={aqSelectedGameName}>
+            <Select.Trigger class="w-[180px]">{aqSelectedGame?.displayName ?? `Select a game...`}</Select.Trigger>
+            <Select.Content>
+              {#each games as game}
+                <Select.Item value={game.name}>{game.displayName}</Select.Item>
+              {/each}
+            </Select.Content>
+          </Select.Root>
+          <Button variant="outline" size="icon" onclick={() => {fetchGames(); toast.success("Games fetched.");}}><RefreshCwIcon /></Button>
+        </div>
+        <Button disabled={!aqSelectedGameName} variant="default" onclick={fetchApprovalQueue}>Fetch Approval Queue</Button>
+      </div>
+      <div class="mt-4 gap-4 flex flex-row flex-wrap items-center-safe justify-center-safe">
+        {#each aqModsInApprovalQueue as mod}
+          <ModCompactCard project={mod.project} version={mod.version} showNonAuthorWarning 
+            showApprovalDialog={() => approvalDialog?.showDialog(mod.version.id, mod.project.name, `version`)} 
+            showCodeDialog={() => {
+              fetch(getVersionDecompUrl(mod.version)).then(res => res.text()).then(code => {
+                codeDialog?.showDialog(code, `cs`, true, getVersionDecompUrl(mod.version));
+              }).catch(err => {
+                console.error(err);
+                toast.error("Failed to fetch decompiled code.");
+              });
+            }}
+            showManifestDialog={() => {
+              fetch(getVersionManifestUrl(mod.version)).then(res => res.text()).then(manifest => {
+                codeDialog?.showDialog(manifest, `json`, true, getVersionManifestUrl(mod.version));
+              }).catch(err => {
+                console.error(err);
+                toast.error("Failed to fetch manifest.");
+              });
+            }}
+          />
+        {/each}
+      </div>
+    </Tabs.Content>
   </Tabs.Root>
 </div>
 
@@ -853,6 +921,10 @@
     </div>
   </DialogContent>
 </Dialog>
+
+<ApprovalDialog bind:this={approvalDialog} />
+<CodeDialog bind:this={codeDialog} />
+
 <style>
   table {
     width: 80%;

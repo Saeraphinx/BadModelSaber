@@ -21,7 +21,7 @@
   import BigPagination from "$lib/components/generic/BigPagination.svelte";
   import { checkRoles } from "$lib/scripts/utils/checkRoles.js";
   import * as Drawer from "$shadcn/components/ui/drawer";
-  import { parseErrorMessage } from "../../lib/scripts/utils/api.js";
+  import { parseErrorMessage } from "$lib/scripts/utils/api.js";
 
   const { data: _internal } = $props();
   // svelte-ignore state_referenced_locally

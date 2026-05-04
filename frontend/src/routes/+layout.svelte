@@ -38,7 +38,7 @@
   import { m } from "$lib/paraglide/messages";
   import { Spinner } from "$shadcn/components/ui/spinner";
   import { checkRoles } from "$lib/scripts/utils/checkRoles";
-  import { parseErrorMessage } from "../lib/scripts/utils/api";
+  import { parseErrorMessage } from "$lib/scripts/utils/api";
 
   const { data: _internal, children } = $props();
   const { user, alertCount, pendingToasts, trpc } = $derived(_internal);
@@ -227,7 +227,8 @@
         { href: "/mods", label: m["layout.navbar.mods.browseMods"]() },
         { href: "https://bsmg.wiki/mods/getting-started", label: m["layout.navbar.mods.beatsaberBeginngersGuide"](), target: "_blank" },
         { href: "https://bsmg.wiki/mods/creating-mods", label: m["layout.navbar.mods.moddersGuide"](), target: "_blank" },
-        { href: "", label: m["layout.navbar.mods.pcApprovalGuide"](), target: "_blank" },
+        { href: "https://github.com/Saeraphinx/BadModelSaber/blob/main/mod-approval-guidelines.md", label: m["layout.navbar.mods.pcApprovalGuide"](), target: "_blank" },
+        { href: "/mods/compare", label: m["layout.navbar.mods.compareVersions"]() },
       ],
     },
     {

@@ -13,11 +13,11 @@
   import { Button } from "$lib/shadcn/components/ui/button/index.js";
   import ModCard from "$lib/components/mods/ModCard.svelte";
   import * as Tabs from "$lib/shadcn/components/ui/tabs/index.js";
-  import { Input } from "../../../lib/shadcn/components/ui/input";
-  import { Textarea } from "../../../lib/shadcn/components/ui/textarea";
-  import { Label } from "../../../lib/shadcn/components/ui/label";
+  import { Input } from "$lib/shadcn/components/ui/input";
+  import { Textarea } from "$lib/shadcn/components/ui/textarea";
+  import { Label } from "$lib/shadcn/components/ui/label";
   import { invalidate } from "$app/navigation";
-  import { m } from "../../../lib/paraglide/messages";
+  import { m } from "$lib/paraglide/messages";
 
   const { data: _internal } = $props();
   const { pageData, trpc, user } = $derived(_internal);

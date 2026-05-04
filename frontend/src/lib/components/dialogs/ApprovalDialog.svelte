@@ -10,6 +10,7 @@
   import { Label } from "$shadcn/components/ui/label/index.js";
   import * as RadioGroup from "$shadcn/components/ui/radio-group";
   import { toast } from "svelte-sonner";
+  import Switch from "../../shadcn/components/ui/switch/switch.svelte";
 
   let statuses = Object.values(Status).map((status) => ({
     value: status,
@@ -23,6 +24,7 @@
   let id = $state<number>(0);
   let visible = $state<boolean>(false);
   let type = $state<`asset` | `project` | `version`>("asset");
+  let eligbleForVerification = $state<boolean>(false);
 
   export function showDialog(p_id: number, p_name: string, thingType: `asset` | `project` | `version`) {
     reason = "";
@@ -53,6 +55,7 @@
         id: id,
         status: selectedStatus,
         reason: reason,
+        eligbleForVerification: eligbleForVerification,
       });
     }
     res
@@ -102,7 +105,10 @@
       </div>
     </div>
     <Dialog.Footer>
-      <Button variant="ghost" onclick={() => (visible = false)}>{m["dialogs.cancel"]()}</Button>
+      {#if type === `version`}
+        <Switch id="sefv" bind:checked={eligbleForVerification} class="mt-2" />
+        <Label for="sefv" class="ml-2">eligbleForVerification</Label>
+      {/if}      <Button variant="ghost" onclick={() => (visible = false)}>{m["dialogs.cancel"]()}</Button>
       <Button type="submit" onclick={handleSubmit}>{m["dialogs.submit"]()}</Button>
     </Dialog.Footer>
   </Dialog.Content>

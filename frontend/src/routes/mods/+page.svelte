@@ -14,8 +14,8 @@
   import { ChevronRightIcon, FunnelIcon } from "@lucide/svelte";
   import { onMount } from "svelte";
   import { MediaQuery } from "svelte/reactivity";
-  import { Button } from "../../lib/shadcn/components/ui/button";
-  import { checkRoles } from "../../lib/scripts/utils/checkRoles";
+  import { Button } from "$lib/shadcn/components/ui/button";
+  import { checkRoles } from "$lib/scripts/utils/checkRoles";
 
   const { data: _internal } = $props();
   const { pageData, trpc, user } = $derived(_internal);

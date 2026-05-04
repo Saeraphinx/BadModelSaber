@@ -1,9 +1,9 @@
 import { Asset, Project, Status, UserPermissions, Version } from "../../../shared/Database.ts";
-import { Validator } from "../../../shared/Validator.ts";
 import { parseErrorMessage } from "../../../shared/Tools.ts";
 import { loggedInProcedure, router } from "../../trpc.ts";
-import z, { set } from "zod/v4";
+import z from "zod/v4";
 import { TRPCError } from "@trpc/server";
+import { Logger } from "../../../shared/Logger.ts";
 
 export const approvalRouter = router({
     setStatusAsset: loggedInProcedure([UserPermissions.Asset_Approval]).input(z.object({
@@ -44,7 +44,8 @@ export const approvalRouter = router({
     setStatusVersion: loggedInProcedure([UserPermissions.Mods_Approval]).input(z.object({
         id: z.number().int().positive(),
         status: z.enum(Status),
-        reason: z.string().max(1000).optional()
+        reason: z.string().max(1000).optional(),
+        eligbleForVerification: z.boolean().optional(),
     })).mutation(async ({input, ctx}) => {
         const version = await Version.findByPk(input.id);
         if (!version) {
@@ -52,25 +53,14 @@ export const approvalRouter = router({
         }
 
         await version.setStatus(input.status, ctx.user, input.reason ?? `No reason given.`).then(() => {
+            if (input.eligbleForVerification !== version.eligbleForVerification) {
+                Logger.log(`Updating version ${version.id} eligbleForVerification to ${input.eligbleForVerification}`);
+                version.update({ eligbleForVerification: input.eligbleForVerification });
+            }
+
             return version.toApiV3();
         }).catch(err => {
             throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: `Error updating version status: ${parseErrorMessage(err)}` });
-        });
-    }),
-    setEligbleForVerificationVersion: loggedInProcedure([UserPermissions.Mods_Approval]).input(z.object({
-        id: z.number().int().positive(),
-        eligbleForVerification: z.boolean(),
-    })).mutation(async ({input, ctx}) => {
-        const version = await Version.findByPk(input.id);
-        if (!version) {
-            throw new TRPCError({ code: 'NOT_FOUND', message: 'Version not found' });
-        }
-
-        version.eligbleForVerification = input.eligbleForVerification;
-        await version.save().then(() => {
-            return version.toApiV3();
-        }).catch(err => {
-            throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: `Error updating version verification eligibility: ${parseErrorMessage(err)}` });
         });
     }),
 });

@@ -93,7 +93,7 @@ export const getModsInternal = router({
         }),
     // #endregion
     // #region approvalQueue
-    approvalQueueProjects: loggedInProcedure({hasAllOf: [UserPermissions.Mods_ViewAll, UserPermissions.Mods_Approval]})
+    approvalQueueVersions: loggedInProcedure({hasAllOf: [UserPermissions.Mods_ViewAll, UserPermissions.Mods_Approval]})
         .input(z.object({
             gameName: z.string()
         }))
@@ -133,5 +133,7 @@ export const getModsInternal = router({
                 project: await o.project.toApiV3() as ProjectApiV3,
                 version: await o.version.toApiV3()
             })));
+            
+            return outputApi;
         }),
 })
