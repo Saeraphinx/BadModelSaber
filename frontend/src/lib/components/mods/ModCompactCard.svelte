@@ -14,6 +14,7 @@
     project,
     version,
     class: className,
+    showFileDialog,
     showCodeDialog,
     showManifestDialog,
     showApprovalDialog,
@@ -22,6 +23,7 @@
   }: {
     project: ProjectApiV3,
     version: VersionApiV3,
+    showFileDialog?: () => void
     showCodeDialog?: () => void
     showManifestDialog?: () => void
     showApprovalDialog?: () => void
@@ -62,6 +64,9 @@
   </div>
   <div class="flex-1 flex flex-col justify-between">
     <div class="flex flex-row justify-end items-end gap-2">
+      {#if showFileDialog}
+        <Button variant="secondary" size="icon" onclick={showFileDialog} class=""><FileBracesCornerIcon /></Button>
+      {/if}
       {#if showManifestDialog}
         <Button variant="secondary" size="icon" onclick={showManifestDialog} class=""><FileBracesCornerIcon /></Button>
       {/if}

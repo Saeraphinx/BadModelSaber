@@ -1,32 +1,19 @@
 <script lang="ts">
   import "../app.css";
   import * as NavigationMenu from "$shadcn/components/ui/navigation-menu/index.js";
+  import { NavigationMenu as NavigationMenuPrimitive } from "bits-ui";
   import * as DropdownMenu from "$shadcn/components/ui/dropdown-menu/index.js";
   import { onMount } from "svelte";
   import { buttonVariants } from "$shadcn/components/ui/button";
   import * as Avatar from "$shadcn/components/ui/avatar";
-  import {
-    BellIcon,
-    LogInIcon,
-    LogOutIcon,
-    Menu,
-    MessageCircleQuestionIcon,
-    PlusIcon,
-    Settings,
-    TrafficConeIcon,
-    UserIcon,
-    SettingsIcon,
-    LanguagesIcon,
-    FolderGit2Icon,
-    FileAxis3DIcon,
-  } from "@lucide/svelte";
+  import { BellIcon, LogInIcon, LogOutIcon, Menu, MessageCircleQuestionIcon, PlusIcon, Settings, TrafficConeIcon, UserIcon, SettingsIcon, LanguagesIcon, FolderGit2Icon, FileAxis3DIcon } from "@lucide/svelte";
   import { MediaQuery } from "svelte/reactivity";
   import * as Popover from "$shadcn/components/ui/popover";
   import { page } from "$app/state";
   import { Toaster } from "$shadcn/components/ui/sonner";
   import { toast, type ExternalToast } from "svelte-sonner";
   import { env } from "$env/dynamic/public";
-  import { UserPermissions, type AlertApiV3, availableLocales } from "$lib/scripts/api/DBTypes"
+  import { UserPermissions, type AlertApiV3, availableLocales } from "$lib/scripts/api/DBTypes";
   import { Badge } from "$shadcn/components/ui/badge";
   import * as Sheet from "$shadcn/components/ui/sheet";
   import Alert from "$lib/components/generic/Alert.svelte";
@@ -237,10 +224,18 @@
       target: undefined,
       children: [
         { href: "/assets", label: m["layout.navbar.assets.browseAssets"]() },
-        { href: "https://bsmg.wiki/assets/getting-started", label: m["layout.navbar.assets.3dModelGuide"](), target: "_blank" },
+        {
+          label: m["layout.navbar.assets.creationGuide"](), 
+          href: "https://bsmg.wiki/beginners-guide.html#making-3d-models", target: "_blank"
+        },
+        {
+          label: m["layout.navbar.assets.installationGuide"](),
+          href: "https://bsmg.wiki/models/custom-sabers.html", target: "_blank"
+        },
       ],
     },
     { href: "https://bsmg.wiki", label: m["layout.navbar.wiki"](), target: "_blank" },
+    { href: "https://discord.gg/beatsabermods", label: m["layout.navbar.discord"](), target: "_blank" },
   ];
 </script>
 
@@ -255,9 +250,9 @@
               <ul class="grid gap-4 p-2">
                 <li>
                   {#each link.children as child}
-                    <NavigationMenu.Link href={child.href} target={child.target} class="text-base text-nowrap">
-                      {child.label}
-                    </NavigationMenu.Link>
+                      <NavigationMenu.Link href={child.href} target={child.target} class="text-base text-nowrap">
+                        {child.label}
+                      </NavigationMenu.Link>
                   {/each}
                 </li>
               </ul>
@@ -287,7 +282,7 @@
   {#if page.data.pageMetadata?.title && page.data.pageMetadata?.title.includes(" - ")}
     <meta property="og:title" content={page.data.pageMetadata.title} />
   {:else if page.data.pageMetadata?.title}
-      <meta property="og:title" content={`${page.data.pageMetadata.title} - ${m.name()}`} />
+    <meta property="og:title" content={`${page.data.pageMetadata.title} - ${m.name()}`} />
   {:else}
     <meta property="og:title" content={`${m.name()}`} />
   {/if}

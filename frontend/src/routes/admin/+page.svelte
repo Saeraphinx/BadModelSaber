@@ -765,6 +765,9 @@
                 toast.error("Failed to fetch manifest.");
               });
             }}
+            showFileDialog={() => {
+              codeDialog?.showDialog(JSON.stringify(mod.version.contentHashes, null, 4), `json`, true);
+            }}
           />
         {/each}
       </div>

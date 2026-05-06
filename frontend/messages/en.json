@@ -22,9 +22,11 @@
       "assets": {
         "assets": "Assets",
         "browseAssets": "Browse Assets",
-        "3dModelGuide": "3D Models Guide"
+        "creationGuide": "Creation Guide",
+        "installationGuide": "Installation Guide"
       },
-      "wiki": "Wiki"
+      "wiki": "Wiki",
+      "discord": "Discord"
     },
     "userMenu": {
       "profile": "Profile",
