@@ -225,7 +225,7 @@
         {/if}
       {/if}
       <DownloadButton variant="outline" size="sm" downloadType="mod" status={version.status} href={getVersionDownloadUrl(version)}>
-        {m[`common.buttons.download`]()} ({version.fileSize > 0 ? (version.fileSize / (1024 * 1024)).toFixed(2) + " MB" : "N/A"})
+        {m[`common.buttons.download`]()} ({version.fileSize > (1024 * 1024) ? `${(version.fileSize / (1024 * 1024)).toFixed(2)} MB` : `${(version.fileSize / 1024).toFixed(2)} KB`})
       </DownloadButton>
     </div>
   </div>

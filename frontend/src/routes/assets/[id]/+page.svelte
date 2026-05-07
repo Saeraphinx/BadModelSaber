@@ -24,7 +24,7 @@
   import ApprovalPopup from "$lib/components/dialogs/ApprovalDialog.svelte";
   import { onMount } from "svelte";
   import { toast } from "svelte-sonner";
-  import { getAssetTypeData, getStatusString } from "$lib/scripts/utils/stylizer";
+  import { getAssetTypeData, getRenderingMethodString, getRenderingMethodSupportedGV, getStatusString } from "$lib/scripts/utils/stylizer";
   import TagBadge from "$lib/components/assets/TagBadge.svelte";
   import Input from "$shadcn/components/ui/input/input.svelte";
   import Textarea from "$shadcn/components/ui/textarea/textarea.svelte";
@@ -214,6 +214,15 @@
         {@render dT_Regular(m["assets.dataTable.fileSize"](), `${(pageData.fileSize / (1024 * 1024)).toFixed(2)} MB`)}
       {:else}
         {@render dT_Regular(m["assets.dataTable.fileSize"](), `${(pageData.fileSize / 1024).toFixed(2)} KB`)}
+      {/if}
+      {#if pageData.renderingMethod}
+        <div class="flex justify-between items-center">
+          <span class="text-muted-foreground pr-1">{m["assets.dataTable.renderingMethod"]()}</span>
+          <span class="font-medium text-right text-primary">
+            {getRenderingMethodString(pageData.renderingMethod)}
+            <p class="text-xs text-muted-foreground">{getRenderingMethodSupportedGV(pageData.renderingMethod)}</p>
+          </span>
+        </div>
       {/if}
       <div class="flex justify-between items-center">
         <span class="text-muted-foreground pr-2">{m["assets.dataTable.status"]()}</span>

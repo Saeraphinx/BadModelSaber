@@ -114,6 +114,12 @@ export enum LinkedAssetLinkType {
   Alternate = 'alternate', // e.g. an alternate version of the asset (e.g. a different color scheme)
 }
 
+export enum RenderingModes {
+  BIRP_SinglePass = "birp_sp",
+  BIRP_SinglePassInstanced = "birp_spi",
+  URP_Unity6 = "urp_u6",
+  Unknown = "unknown",
+}
 // #endregion Asset Enums
 
 // #region Tags
@@ -596,6 +602,7 @@ export const assetApiV3Schema = z.object({
   gameName: z.string(),
   linkedIds: z.array(linkedAssetSchema),
   type: assetFileFormatSchema,
+  renderingMethod: z.enum(RenderingModes).nullable(),
   uploaderId: dbId,
   uploader: userApiV3Schema.nullable(),
   icons: z.array(z.string()),

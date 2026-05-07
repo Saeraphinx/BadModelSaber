@@ -1,6 +1,6 @@
 import { m } from "$lib/paraglide/messages";
 import { getLocale } from "$lib/paraglide/runtime";
-import { AssetFileFormat, Status, UserPermissions } from "../api/DBTypes";
+import { AssetFileFormat, RenderingModes, Status, UserPermissions } from "../api/DBTypes";
 
 // export function capitalizeFirstLetter(str: any): string {
 //   if (!str) return ``; // Handle empty strings
@@ -12,6 +12,22 @@ export function getStatusString(status: Status): string {
   return m[`enums.status.${status}`]();
 }
 
+export function getRenderingMethodString(method: RenderingModes): string {
+  return m[`enums.renderingModes.${method}`]();
+}
+
+export function getRenderingMethodSupportedGV(method: RenderingModes): string {
+  switch (method) {
+    case RenderingModes.BIRP_SinglePass:
+      return `0.13.2 - 1.29.1`;
+    case RenderingModes.BIRP_SinglePassInstanced:
+      return `1.29.4 - 1.43.0`;
+    case RenderingModes.URP_Unity6:
+      return `1.43.100+ (BETA)`;
+    default:
+      return ``;
+  }
+}
 
 // export function getAssetTypeString(type: AssetFileFormat): string {
 //   switch (type) {

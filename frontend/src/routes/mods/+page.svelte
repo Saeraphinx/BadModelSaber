@@ -141,9 +141,9 @@
       <span>
         <Label class="pb-2 px-1">{m[`mods.gameVersion`]()}</Label>
         <Select.Root type="single" bind:value={selectedGameVersionId} onValueChange={fetchMods}>
-          <Select.Trigger class="w-full">{selectedGameVersion?.version || `All`}</Select.Trigger>
+          <Select.Trigger class="w-full">{selectedGameVersion?.version || m[`common.all`]()}</Select.Trigger>
           <Select.Content>
-            <Select.Item value={``}>All</Select.Item>
+            <Select.Item value={``}>{m[`common.all`]()}</Select.Item>
             {#each gameVersions as version}
               <Select.Item value={version.id.toString()}>{version.version}</Select.Item>
             {/each}

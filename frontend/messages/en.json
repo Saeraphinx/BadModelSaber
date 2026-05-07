@@ -97,6 +97,7 @@
     "filters": "Filters"
   },
   "common": {
+    "all": "All",
     "buttons": {
       "download": "Download",
       "oneClickInstall": "OneClick Install",
@@ -144,6 +145,7 @@
       "noTags": "No Tags Selected.",
       "type": "Type",
       "fileSize": "File Size",
+      "renderingMethod": "Rendering Method",
       "status": "Status",
       "license": "License",
       "customLicense": "Custom License...",
@@ -385,6 +387,12 @@
         "config": "Configs",
         "other": "Other"
       }
+    },
+    "renderingModes": {
+      "birp_sp": "BIRP Single Pass",
+      "birp_spi": "BIRP Single Pass Instanced",
+      "urp_u6": "URP Unity 6",
+      "unknown": "Unknown"
     },
     "requestTypes": {
       "asset_credit": "Credit",

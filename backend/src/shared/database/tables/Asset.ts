@@ -1,14 +1,14 @@
 import { AfterValidate, AllowNull, BelongsTo, Column, CreatedAt, DataType, Default, DeletedAt, ForeignKey, Model, Sequelize, Table, Unique, UpdatedAt } from "sequelize-typescript";
 import { InferAttributes, InferCreationAttributes, NonAttribute, CreationOptional } from "sequelize";
 import { Alert, ThingRequest, User, UserPermissions } from "../../Database.ts";
-import { AlertType, AssetApiV3, AssetFileFormat, AssetPublicAPIv1, AssetPublicAPIv2, dbId, License, LinkedAsset, LinkedAssetLinkType, RequestType, Status, StatusHistory, Tags, UserApiV3, WebhookLogType } from "../DBExtras.ts";
+import { AlertType, AssetApiV3, AssetFileFormat, AssetPublicAPIv1, AssetPublicAPIv2, dbId, License, LinkedAsset, LinkedAssetLinkType, RenderingModes, RequestType, Status, StatusHistory, Tags, UserApiV3, WebhookLogType } from "../DBExtras.ts";
 import { z } from "zod/v4";
 import { EnvConfig } from "../../EnvConfig.ts";
 import { Logger } from "../../Logger.ts";
 import { WebhookPayloadGenerator, Webhooks } from "../../Webhooks.ts";
 import path from "node:path";
 import { IReportable, IPermissionsChecks } from "./common.ts";
-import { Literal } from "sequelize/lib/utils";
+import { Col, Literal } from "sequelize/lib/utils";
 import { parseErrorMessage } from "../../Tools.ts";
 
 export type AssetInfer = InferAttributes<Asset>;
@@ -114,6 +114,13 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
     declare statusHistory: CreationOptional<StatusHistory[]>;
 
     @Column({
+        type: DataType.STRING,
+        allowNull: true,
+        defaultValue: null,
+    })
+    declare renderingMethod: CreationOptional<RenderingModes | null>; // a flag that can be used to identify the rendering type &  (e.g. BIRP single pass, BIRP singlepass instanced, and URP)
+
+    @Column({
         type: DataType.ARRAY(DataType.STRING),
         allowNull: false,
         defaultValue: [],
@@ -200,6 +207,7 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
         })),
         tags: z.array(z.enum(Tags)).default([]),
         gameName: z.string().min(1).max(64),
+        renderingMethod: z.enum(RenderingModes).nullable(),
         createdAt: z.date(),
         updatedAt: z.date(),
         deletedAt: z.date().nullable(),
@@ -226,6 +234,24 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
             return `If license is custom, licenseUrl must be provided`;
         } else if (data.license !== 'custom' && data.licenseUrl) {
             return `If license is not custom, licenseUrl must not be provided`
+        }
+
+        if (data.type === AssetFileFormat.Saber_Saber ||
+            data.type === AssetFileFormat.Platform_Plat ||
+            data.type === AssetFileFormat.Note_Bloq ||
+            data.type === AssetFileFormat.Avatar_Avatar ||
+            data.type === AssetFileFormat.Note_Cyoob ||
+            data.type === AssetFileFormat.Saber_Whacker ||
+            data.type === AssetFileFormat.Wall_Pixie ||
+            data.type === AssetFileFormat.Wall_Box
+        ) {
+            if (!data.renderingMethod) {
+                return `renderingMethod is required for asset type ${data.type}`;
+            }
+        } else {
+            if (data.renderingMethod) {
+                return `renderingMethod must be null for asset type ${data.type}`;
+            }
         }
         return null;
     }
@@ -658,6 +684,7 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
             linkedIds: this.linkedIds,
             gameName: this.gameName,
             type: this.type,
+            renderingMethod: this.renderingMethod,
             uploaderId: this.uploaderId,
             uploader: authorApi,
             name: this.name,

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { AssetFileFormat, Status, UserPermissions, type AssetApiV3 } from "$lib/scripts/api/DBTypes";
+  import { AssetFileFormat, RenderingModes, Status, UserPermissions, type AssetApiV3 } from "$lib/scripts/api/DBTypes";
   import AssetCard from "$lib/components/assets/AssetCard.svelte";
   import Separator from "$shadcn/components/ui/separator/separator.svelte";
   import { ChevronRight, FunnelIcon } from "@lucide/svelte";
@@ -15,17 +15,18 @@
   import { onMount } from "svelte";
   import ApprovalPopup from "$lib/components/dialogs/ApprovalDialog.svelte";
   import { toast } from "svelte-sonner";
-  import { getAssetTypeCategories, getStatusString } from "$lib/scripts/utils/stylizer.js";
+  import { getAssetTypeCategories, getRenderingMethodString, getRenderingMethodSupportedGV, getStatusString } from "$lib/scripts/utils/stylizer.js";
   import { m } from "$lib/paraglide/messages.js";
   import MiniPagination from "$lib/components/generic/MiniPagination.svelte";
   import BigPagination from "$lib/components/generic/BigPagination.svelte";
   import { checkRoles } from "$lib/scripts/utils/checkRoles.js";
   import * as Drawer from "$shadcn/components/ui/drawer";
-  import { parseErrorMessage } from "$lib/scripts/utils/api.js";
+  import { parseErrorMessage } from "../../lib/scripts/utils/api.js";
+  import * as RadioGroup from "../../lib/shadcn/components/ui/radio-group";
 
   const { data: _internal } = $props();
   // svelte-ignore state_referenced_locally
-  const { trpc, user } = $derived(_internal);
+  const { trpc, user, pageData: initQuery } = $derived(_internal);
   // Generic Page Data
   let smallerIcons = new MediaQuery("max-width: 1000px");
   let tooSmall = new MediaQuery("max-width: 768px");
@@ -45,12 +46,17 @@
   // Filter Data
   let filterFileFormatVisible = $state<boolean>(true);
   let filterStatusVisible = $state<boolean>(true);
+  let filterRenderingMethodVisible = $state<boolean>(true);
   let filterMobileDrawerVisible = $state<boolean>(false);
-  let selectedFileFormats = $state<AssetFileFormat[]>([]);
-  let selectedStatuses = $state<Status[]>([Status.Verified]);
+  // svelte-ignore state_referenced_locally
+  let selectedFileFormats = $state<AssetFileFormat[]>(initQuery.fileFormat && initQuery.fileFormat.every(ff => ff !== `all`) ? initQuery.fileFormat : []);
+  // svelte-ignore state_referenced_locally
+  let selectedStatuses = $state<Status[]>(initQuery.status ? [initQuery.status] : [Status.Verified]);
+  // svelte-ignore state_referenced_locally
+  let selectedRenderingMethod = $state<RenderingModes | `all`>(initQuery.renderingMethod ? initQuery.renderingMethod : `all`);
   let searchQuery = $state<string>("");
   let assetStatuses = $derived.by(() => {
-    if (!user) return [Status.Verified, Status.Unverified];
+    if (!user) return [Status.Verified];
     if (checkRoles(user, [UserPermissions.Asset_ViewAll], `any`)) {
       return Object.values(Status);
     }
@@ -67,7 +73,8 @@
     return searchOut.filter((asset) => {
       let matchesFormat = selectedFileFormats.length === 0 || selectedFileFormats.includes(asset.type);
       let matchesStatus = selectedStatuses.length === 0 || selectedStatuses.includes(asset.status);
-      return matchesFormat && matchesStatus;
+      let matchesRenderingMethod = selectedRenderingMethod === `all` || asset.renderingMethod === selectedRenderingMethod;
+      return matchesFormat && matchesStatus && matchesRenderingMethod;
     });
   });
   let currentAssetArray: AssetApiV3[] = $derived.by(() => {
@@ -103,6 +110,21 @@
   onMount(() => {
     fetchAssets();
   });
+
+  $effect(() => {
+    //update url based on filters
+    let params = new URLSearchParams();
+    if (selectedFileFormats.length > 0) {
+      params.set("type", selectedFileFormats.join(","));
+    }
+    if (selectedRenderingMethod !== `all`) {
+      params.set("renderingMethod", selectedRenderingMethod);
+    }
+    if (selectedStatuses.length > 0 && !(selectedStatuses.length === 1 && selectedStatuses[0] === Status.Verified)) {
+      params.set("status", selectedStatuses[0]);
+    }
+    history.replaceState(null, "", `${location.pathname}?${params.toString()}`);
+  });
 </script>
 
 {#snippet filters()}
@@ -121,6 +143,7 @@
             {#each type[1] as format}
               <div class="flex items-center space-x-2 py-1">
                 <Checkbox
+                  checked={selectedFileFormats.includes(format.rawString)}
                   onCheckedChange={(e) => {
                     if (e) {
                       selectedFileFormats.push(format.rawString);
@@ -140,6 +163,38 @@
             {/each}
           </div>
         {/each}
+      </Collapsible.Content>
+    </div>
+  </Collapsible.Root>
+  <!-- render mode Filter -->
+  <Collapsible.Root bind:open={filterRenderingMethodVisible} class="mt-4">
+    <div class="flex flex-col bg-card rounded-2xl min-w-62 w-full py-2 px-4">
+      <Collapsible.Trigger class="flex items-center justify-between w-full">
+        <span class="text-lg font-semibold">{m["assets.dataTable.renderingMethod"]()}</span>
+        <ChevronRight class="h-4 w-4 transition-transform {filterRenderingMethodVisible ? `rotate-90` : ``}" />
+      </Collapsible.Trigger>
+      <Collapsible.Content class="my-2">
+        <RadioGroup.Root bind:value={selectedRenderingMethod} class="flex flex-col">
+          {#each Object.entries(RenderingModes) as mode}
+            {#if mode[1] !== RenderingModes.Unknown}
+            <div class="flex items-center space-x-2">
+              <RadioGroup.Item value={mode[1]} id={mode[1]} />
+              <span class="flex flex-col">
+                <Label for={mode[1]}>
+                  {getRenderingMethodString(mode[1])}
+                </Label>
+                  <p class="text-xs text-gray-400">For {getRenderingMethodSupportedGV(mode[1])}</p>
+              </span>
+            </div>
+            {/if}
+          {/each}
+          <div class="flex items-center space-x-2">
+            <RadioGroup.Item value="all" id="all" />
+            <Label for="all">
+              {m["common.all"]()}
+            </Label>
+          </div>
+        </RadioGroup.Root>
       </Collapsible.Content>
     </div>
   </Collapsible.Root>
@@ -226,13 +281,13 @@
       <div class="flex flex-col items-start mb-4 mr-4 whitespace-nowrap">
         {@render search(false)}
         {@render filters()}
-      </div>      
+      </div>
     {/if}
     <!-- Content -->
     <div class="flex flex-col items-center w-full">
       {#if tooSmall.current}
         {@render search(true)}
-       {/if}
+      {/if}
       <!-- Cards -->
       <div class="flex flex-row flex-wrap justify-evenly gap-4">
         {#if assetsLoading}

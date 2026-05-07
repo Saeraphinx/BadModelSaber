@@ -5,8 +5,11 @@ import { checkRoles } from "$lib/scripts/utils/checkRoles.js";
 import { createTRPC, handleTrpcError } from "$lib/scripts/utils/api.js";
 
 //export const ssr = false;
-export const load: PageLoad = async ({ fetch }) => {
+export const load: PageLoad = async ({ fetch, url }) => {
   const trpc = createTRPC(fetch);
+  let game = url.searchParams.get("game");
+  let gameVersion = url.searchParams.get("gameVersion");
+  let category = url.searchParams.get("category");
 
   let games = await trpc.v3.games.getGames.query().catch(handleTrpcError());
   let gameVersions = await trpc.v3.games.getGameVersions.query({

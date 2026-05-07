@@ -1,15 +1,29 @@
-import { AssetFileFormat } from '$lib/scripts/api/DBTypes';
+import { AssetFileFormat, RenderingModes, Status } from '$lib/scripts/api/DBTypes';
 import type { PageLoad } from './$types';
 
 export const load = (async (data) => {
-  let fileFormat = data.url.searchParams.get('type') || 'all';
-  if ((Object.values(AssetFileFormat) as string[]).includes(fileFormat)) {
-    fileFormat = fileFormat as AssetFileFormat;
+  let fileFormat = data.url.searchParams.get('type')?.split(',') || ['all'];
+  let renderingMethod = data.url.searchParams.get('renderingMethod');
+  let status = data.url.searchParams.get('status');
+  if (fileFormat.every(format => (Object.values(AssetFileFormat) as string[]).includes(format))) {
+    fileFormat = fileFormat as AssetFileFormat[];
   } else {
-    fileFormat = 'all';
+    fileFormat = ['all'];
   }
 
-  let typeCapital = fileFormat.split(`_`)[0].split(' ').map(str => {
+  if (renderingMethod && (Object.values(RenderingModes) as string[]).includes(renderingMethod)) {
+    renderingMethod = renderingMethod as RenderingModes;
+  } else {
+    renderingMethod = null;
+  }
+
+  if (status && (Object.values(Status) as string[]).includes(status)) {
+    status = status as Status;
+  } else {
+    status = null;
+  }
+
+  let typeCapital = fileFormat[0].split(`_`)[0].split(' ').map(str => {
     if (str.length === 0) {
       return ''; // Handle empty strings
     }
@@ -18,10 +32,13 @@ export const load = (async (data) => {
 
   return {
     pageData: {
-      fileFormat: fileFormat
+      // type checks are done above
+      fileFormat: fileFormat as AssetFileFormat[] | ['all'],
+      renderingMethod: renderingMethod as RenderingModes | null,
+      status: status as Status | null
     },
     pageMetadata: {
-      title: `${typeCapital === `all` || typeCapital === `` ? `Assets` : typeCapital}`,
+      title: `Assets`,
     },
-  };
-}) satisfies PageLoad;
+  } satisfies PageLoad;
+});
