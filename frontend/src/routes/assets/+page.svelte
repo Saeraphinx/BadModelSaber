@@ -310,18 +310,19 @@
         {/if}
       </div>
       <Separator class="my-4 w-full" />
-      {#if !smallerIcons.current}
-        <BigPagination {selectedPageSize} bind:currentPage totalItems={filteredAssets.length} />
-      {:else}
-        <MiniPagination {selectedPageSize} bind:currentPage totalCount={filteredAssets.length} />
-      {/if}
+      <div class="mb-4">
+        {#if !smallerIcons.current}
+          <BigPagination {selectedPageSize} bind:currentPage totalItems={filteredAssets.length} />
+        {:else}
+          <MiniPagination {selectedPageSize} bind:currentPage totalCount={filteredAssets.length} />
+        {/if}
+      </div>
     </div>
   </div>
 </div>
 
 <ApprovalPopup bind:this={dialog} />
 <Drawer.Root bind:open={filterMobileDrawerVisible}>
-  <Drawer.Header>{m["search.filters"]()}</Drawer.Header>
   <Drawer.Content>
     <div class="overflow-y-auto h-full pr-4">
       {@render filters()}

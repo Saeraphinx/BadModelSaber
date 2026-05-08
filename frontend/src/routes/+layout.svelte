@@ -31,6 +31,7 @@
   const { user, alertCount, pendingToasts, trpc } = $derived(_internal);
   let theme: `system` | `light` | `dark` = $state("system");
   let showFullBar = new MediaQuery("min-width: 769px");
+  let showDevbar = new MediaQuery(`min-height: 600px`);
   let isLoggedIn = $derived(!!(user && user.id));
 
   // #region KonamiListener
@@ -225,12 +226,14 @@
       children: [
         { href: "/assets", label: m["layout.navbar.assets.browseAssets"]() },
         {
-          label: m["layout.navbar.assets.creationGuide"](), 
-          href: "https://bsmg.wiki/beginners-guide.html#making-3d-models", target: "_blank"
+          label: m["layout.navbar.assets.creationGuide"](),
+          href: "https://bsmg.wiki/beginners-guide.html#making-3d-models",
+          target: "_blank",
         },
         {
           label: m["layout.navbar.assets.installationGuide"](),
-          href: "https://bsmg.wiki/models/custom-sabers.html", target: "_blank"
+          href: "https://bsmg.wiki/models/custom-sabers.html",
+          target: "_blank",
         },
       ],
     },
@@ -250,9 +253,9 @@
               <ul class="grid gap-4 p-2">
                 <li>
                   {#each link.children as child}
-                      <NavigationMenu.Link href={child.href} target={child.target} class="text-base text-nowrap">
-                        {child.label}
-                      </NavigationMenu.Link>
+                    <NavigationMenu.Link href={child.href} target={child.target} class="text-base text-nowrap">
+                      {child.label}
+                    </NavigationMenu.Link>
                   {/each}
                 </li>
               </ul>
@@ -294,6 +297,23 @@
 
 <div>
   <!-- #region top bar -->
+  {#if showDevbar.current}
+    {#if env.PUBLIC_BASE_URL.includes(`localhost`)}
+      <div class="sticky top-0 z-50 text-center py-1 px-8 w-full bg-linear-to-r from-[#8e28e229] via-[#8e28e299] to-[#8e28e229]">
+        <!-- svelte-ignore a11y_distracting_elements -->
+        <marquee behavior="alternate" class="text-base">ModelSaber Development Instance</marquee>
+      </div>
+    {:else if env.PUBLIC_BASE_URL.includes(`saera.gay`)}
+      <div class="sticky top-0 z-50 text-center py-1 w-full bg-linear-to-r from-[#DC2DE220] via-[#DC2DE299] to-[#DC2DE220]">
+        <!-- svelte-ignore a11y_distracting_elements -->
+        <marquee behavior="alternate" class="text-base">ModelSaber Public Development Instance</marquee>
+      </div>
+    {/if}
+  {:else}
+      <div class="sticky z-50">
+        <span class="bg-[#8e28e2] w-2 h-2 block absolute top-7 left-7 rounded-full animate-pulse"></span>
+      </div>
+  {/if}
   <div class="flex w-auto flex-row text-base justify-between">
     <!-- Logo -->
     <a href="/">

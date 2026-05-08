@@ -114,6 +114,16 @@ export enum LinkedAssetLinkType {
   Alternate = 'alternate', // e.g. an alternate version of the asset (e.g. a different color scheme)
 }
 
+export const AssetTypesWithRenderingMethod = [
+  AssetFileFormat.Saber_Whacker,
+  AssetFileFormat.Saber_Saber,
+  AssetFileFormat.Platform_Plat,
+  AssetFileFormat.Note_Bloq,
+  AssetFileFormat.Note_Cyoob,
+  AssetFileFormat.Wall_Pixie,
+  AssetFileFormat.Wall_Box,
+  AssetFileFormat.Avatar_Avatar,
+]
 export enum RenderingModes {
   BIRP_SinglePass = "birp_sp",
   BIRP_SinglePassInstanced = "birp_spi",

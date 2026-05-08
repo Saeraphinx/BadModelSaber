@@ -1,7 +1,7 @@
 import { AfterValidate, AllowNull, BelongsTo, Column, CreatedAt, DataType, Default, DeletedAt, ForeignKey, Model, Sequelize, Table, Unique, UpdatedAt } from "sequelize-typescript";
 import { InferAttributes, InferCreationAttributes, NonAttribute, CreationOptional } from "sequelize";
 import { Alert, ThingRequest, User, UserPermissions } from "../../Database.ts";
-import { AlertType, AssetApiV3, AssetFileFormat, AssetPublicAPIv1, AssetPublicAPIv2, dbId, License, LinkedAsset, LinkedAssetLinkType, RenderingModes, RequestType, Status, StatusHistory, Tags, UserApiV3, WebhookLogType } from "../DBExtras.ts";
+import { AlertType, AssetApiV3, AssetFileFormat, AssetPublicAPIv1, AssetPublicAPIv2, AssetTypesWithRenderingMethod, dbId, License, LinkedAsset, LinkedAssetLinkType, RenderingModes, RequestType, Status, StatusHistory, Tags, UserApiV3, WebhookLogType } from "../DBExtras.ts";
 import { z } from "zod/v4";
 import { EnvConfig } from "../../EnvConfig.ts";
 import { Logger } from "../../Logger.ts";
@@ -236,15 +236,7 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
             return `If license is not custom, licenseUrl must not be provided`
         }
 
-        if (data.type === AssetFileFormat.Saber_Saber ||
-            data.type === AssetFileFormat.Platform_Plat ||
-            data.type === AssetFileFormat.Note_Bloq ||
-            data.type === AssetFileFormat.Avatar_Avatar ||
-            data.type === AssetFileFormat.Note_Cyoob ||
-            data.type === AssetFileFormat.Saber_Whacker ||
-            data.type === AssetFileFormat.Wall_Pixie ||
-            data.type === AssetFileFormat.Wall_Box
-        ) {
+        if (AssetTypesWithRenderingMethod.includes(data.type)) {
             if (!data.renderingMethod) {
                 return `renderingMethod is required for asset type ${data.type}`;
             }

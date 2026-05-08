@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { AssetFileFormat, Tags } from "$lib/scripts/api/DBTypes";
+  import { AssetFileFormat, AssetTypesWithRenderingMethod, RenderingModes, Tags } from "$lib/scripts/api/DBTypes";
   import LicenseSelector from "$lib/components/forms/LicenseSelector.svelte";
   import Button from "$shadcn/components/ui/button/button.svelte";
   import Input from "$shadcn/components/ui/input/input.svelte";
@@ -13,8 +13,11 @@
   import { toast } from "svelte-sonner";
   import { zAsset } from "$lib/scripts/api/validators";
   import { m } from "$lib/paraglide/messages";
+  import * as RadioGroup from "../../../lib/shadcn/components/ui/radio-group";
+  import { getRenderingMethodString, getRenderingMethodSupportedGV } from "../../../lib/scripts/utils/stylizer";
 
   let type = $state(AssetFileFormat.Note_Bloq);
+  let renderingMethod: string = $state(``);
   let name = $state("");
   let description = $state("");
   let license = $state("");
@@ -26,18 +29,36 @@
 
   let openTagPicker = $state(false);
 
+  let isAbleToSubmit: boolean = $derived.by(() => {
+    return Boolean(
+      zAsset.shape.name.safeParse(name).success &&
+      zAsset.shape.description.safeParse(description).success &&
+      zAsset.shape.licenseUrl.safeParse(customLicense).success &&
+      !!asset &&
+      asset.length > 0 &&
+      !!thumbnails &&
+      thumbnails.length > 0 &&
+      (license !== "custom" || customLicense.length > 0) &&
+      (!AssetTypesWithRenderingMethod.includes(type) || renderingMethod.length > 0)
+    );
+  });
+
   function submitAsset() {
     let formData = new FormData();
-    formData.append("data", JSON.stringify({
-      type,
-      name,
-      description,
-      license: license,
-      licenseUrl: !customLicense || customLicense.length == 0 ? null : customLicense,
-      sourceUrl: null,
-      tags,
-      credits,
-    }));
+    formData.append(
+      "data",
+      JSON.stringify({
+        type,
+        name,
+        description,
+        license: license,
+        licenseUrl: !customLicense || customLicense.length == 0 ? null : customLicense,
+        sourceUrl: null,
+        tags,
+        credits,
+        renderingMethod: renderingMethod && AssetTypesWithRenderingMethod.includes(type) ? renderingMethod : null,
+      }),
+    );
     console.log("Submitting asset with data:", {
       type,
       name,
@@ -46,6 +67,7 @@
       licenseUrl: !customLicense || customLicense.length == 0 ? null : customLicense,
       tags,
       credits,
+      renderingMethod: renderingMethod && AssetTypesWithRenderingMethod.includes(type) ? renderingMethod : null,
       asset,
       thumbnails,
     });
@@ -57,7 +79,7 @@
     formData.append("asset", asset[0]);
     if (thumbnails && thumbnails.length > 0) {
       for (let i = 0; i < thumbnails.length; i++) {
-        formData.append(`icon_${i+1}`, thumbnails[i]);
+        formData.append(`icon_${i + 1}`, thumbnails[i]);
       }
     } else {
       toast.error(m["toasts.error.validationTitle"](), { description: m["toasts.error.validation.invalidFile"]() });
@@ -66,15 +88,18 @@
     }
 
     // needs to be awaited since redirect is an error throw
-    let newAsset = trpc.v3.upload.assetUpload.mutate(formData).then((asset) => {
-      if (asset) {
-        toast.success(m["toasts.success.submit"]());
-        window.location.href = `/assets/${asset.id}`; // redirect to new asset page
-      }
-    }).catch((err) => {
-      toast.error(m["toasts.error.generic"](), { description: parseErrorMessage(err) });
-      console.error(err);
-    });
+    let newAsset = trpc.v3.upload.assetUpload
+      .mutate(formData)
+      .then((asset) => {
+        if (asset) {
+          toast.success(m["toasts.success.submit"]());
+          window.location.href = `/assets/${asset.id}`; // redirect to new asset page
+        }
+      })
+      .catch((err) => {
+        toast.error(m["toasts.error.generic"](), { description: parseErrorMessage(err) });
+        console.error(err);
+      });
   }
 </script>
 
@@ -84,17 +109,37 @@
 </div>
 
 <div class="flex flex-row flex-wrap justify-center p-4 gap-4">
-  <div class="flex flex-col w-full max-w-md">
+  <div class="flex flex-col w-full max-w-xl">
     <!-- left side -->
-    <div class="flex flex-col justify-center w-full max-w-md p-4 gap-2 bg-card rounded-lg shadow-md">
-      <span>
-        <Label class="p-1 pb-2" for="type">{m["assets.dataTable.type"]()}</Label>
-        <TypeSelector bind:value={type} id="type" class="w-full" />
-      </span>
+    <div class="flex flex-col justify-center w-full max-w-xl p-4 gap-2 bg-card rounded-lg shadow-md">
       <span>
         <Label class="p-1 pb-2" for="name">{m["assets.dataTable.name"]()}</Label>
         <Input bind:value={name} aria-invalid={!zAsset.shape.name.safeParse(name).success} id="name" />
       </span>
+      <span>
+        <Label class="p-1 pb-2" for="type">{m["assets.dataTable.type"]()}</Label>
+        <TypeSelector bind:value={type} id="type" class="w-full" />
+      </span>
+      {#if AssetTypesWithRenderingMethod.includes(type)}
+        <span>
+          <Label class="p-1 pb-2" for="renderingMethod">{m["assets.dataTable.renderingMethod"]()}</Label>
+          <RadioGroup.Root bind:value={renderingMethod} class="flex flex-row flex-wrap">
+            {#each Object.entries(RenderingModes) as mode}
+              {#if mode[1] !== RenderingModes.Unknown}
+                <div class="flex items-center space-x-2">
+                  <RadioGroup.Item value={mode[1]} id={mode[1]} />
+                  <span class="flex flex-col">
+                    <Label for={mode[1]}>
+                      {getRenderingMethodString(mode[1])}
+                    </Label>
+                    <p class="text-xs text-gray-400">For {getRenderingMethodSupportedGV(mode[1])}</p>
+                  </span>
+                </div>
+              {/if}
+            {/each}
+          </RadioGroup.Root>
+        </span>
+      {/if}
       <span>
         <Label class="p-1 pb-2" for="description">{m["assets.dataTable.description"]()}</Label>
         <Textarea class="min-h-32" bind:value={description} aria-invalid={!zAsset.shape.description.safeParse(description).success} id="description" />
@@ -119,7 +164,7 @@
               <span class="text-muted-foreground">{m["assets.dataTable.noTags"]()}</span>
             {/each}
           </div>
-          <Button variant="secondary" onclick={() => openTagPicker = true}>
+          <Button variant="secondary" onclick={() => (openTagPicker = true)}>
             Select Tags
             <TagIcon />
           </Button>
@@ -156,11 +201,11 @@
       <p class="text-sm text-muted-foreground mt-2 pl-1">{m["assets.upload.ensureRights"]()}</p>
     </div>
     <div class="flex flex-col justify-center w-full max-w-md p-4 bg-card rounded-lg shadow-md mt-4">
-      <Button onclick={submitAsset} class="w-full">{m["dialogs.submit"]()}</Button>
+      <Button onclick={submitAsset} disabled={!isAbleToSubmit} class="w-full">{m["dialogs.submit"]()}</Button>
     </div>
   </div>
 </div>
 
 {#key type}
-  <TagPicker type={type} bind:selectedTags={tags} bind:open={openTagPicker} />
+  <TagPicker {type} bind:selectedTags={tags} bind:open={openTagPicker} />
 {/key}

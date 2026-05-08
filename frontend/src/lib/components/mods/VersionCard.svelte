@@ -2,7 +2,7 @@
   import { type GameVersionApiV3, type VersionApiV3 } from "$lib/scripts/api/DBTypes";
   import { getRelativeTimeString } from "$lib/scripts/utils/stylizer";
   import * as Accordion from "$shadcn/components/ui/accordion/index";
-  import { BadgeInfoIcon, FileCodeIcon, FolderIcon, InfoIcon, ServerCogIcon } from "@lucide/svelte";
+  import { BadgeInfoIcon, FileCodeIcon, FolderIcon, InfoIcon, Link2Icon, LinkIcon, ServerCogIcon } from "@lucide/svelte";
   import ApprovalDialog from "../dialogs/ApprovalDialog.svelte";
   import CodeDialog from "../dialogs/CodeDialog.svelte";
   import StatusHoverCard from "../generic/StatusHoverCard.svelte";
@@ -14,6 +14,7 @@
   import * as Select from "$shadcn/components/ui/select";
   import { toast } from "svelte-sonner";
   import { gvCompareDecending } from "../../scripts/api/sortGV";
+  import { onMount, tick } from "svelte";
 
   const {
     version,
@@ -22,6 +23,7 @@
     codeDialog,
     isEditable = false,
     gameVersions = $bindable([]),
+    id = version.id.toString()
   }: {
     version: VersionApiV3;
     showStatusHistory?: boolean;
@@ -29,6 +31,7 @@
     codeDialog?: CodeDialog;
     isEditable?: boolean;
     gameVersions?: GameVersionApiV3[];
+    id?: string;
   } = $props();
 
 
@@ -76,13 +79,28 @@
       });
     });
   }
+
+  let highlighted = $state(false);
+  onMount(async () => {
+    await tick();
+    if (id) {
+      if (window.location.hash === `#${id}`) {
+        let e = document.getElementById(document.location.hash.slice(1));
+        if (e) {
+          highlighted = true;
+          e.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+      }
+    }
+  });
   
 </script>
 
-<div class="p-2 border rounded-md bg-card" data-sveltekit-preload-data="false" data-sveltekit-preload-code="false">
-  <div class="flex items-start justify-between mb-2 px-2">
-    <p class="text-lg font-medium">{version.semver}</p>
+<div id="{id}" class="p-2 border rounded-md bg-card {highlighted ? `border-2 border-blue-500` : ``}" data-sveltekit-preload-data="false" data-sveltekit-preload-code="false" >
+  <div class="flex items-center justify-between mb-2 px-2">
+    <a class="text-lg font-medium" href="/mods/{version.projectId}#{version.id}">{version.semver}</a>
     <span class="flex flex-row items-center gap-1">
+      <!-- <Button variant="ghost" size="sm" href="/mods/{version.projectId}#{version.id}" class="has-[>svg]:px-1 h-6"><Link2Icon class="text-gray-400"/></Button> -->
       <p title={new Date(version.createdAt).toISOString()} class="text-sm text-gray-500">{getRelativeTimeString(new Date(version.createdAt))}</p>
       <StatusHoverCard status={version.status} type="mod" />
     </span>

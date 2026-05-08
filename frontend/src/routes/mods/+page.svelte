@@ -16,6 +16,7 @@
   import { MediaQuery } from "svelte/reactivity";
   import { Button } from "$lib/shadcn/components/ui/button";
   import { checkRoles } from "$lib/scripts/utils/checkRoles";
+  import * as Drawer from "../../lib/shadcn/components/ui/drawer";
 
   const { data: _internal } = $props();
   const { pageData, trpc, user } = $derived(_internal);
@@ -24,24 +25,27 @@
   let isLoading = $state(true);
   const games = $derived(pageData.games);
   // svelte-ignore state_referenced_locally
-  let selectedGameName = $state<string>(pageData.defaultGame.game.name || ``);
+  let selectedGameName = $state<string>(pageData.startingGame.game.name || ``);
   // svelte-ignore state_referenced_locally
   let selectedGame = $derived.by(() => games?.find((g) => g.name === selectedGameName));
   // svelte-ignore state_referenced_locally
-  let gameVersions: GameVersionApiV3[] = $state(pageData.defaultGame.gameVersions || []);
+  let gameVersions: GameVersionApiV3[] = $state(pageData.startingGame.gameVersions || []);
   // svelte-ignore state_referenced_locally
-  let selectedGameVersionId = $state<string>(pageData.defaultGame.gameVersions.find((v: any) => v.defaultVersion)?.id.toString() || ``);
+  let selectedGameVersionId = $state<string>(pageData.query.gameVersionId || ``);
   let selectedGameVersion = $derived.by(() => gameVersions.find((v) => v.id === parseInt(selectedGameVersionId)));
 
   let isFilterStatusVisible = $state(true);
   let isFilterCategoryVisible = $state(true);
+  let filterMobileDrawerVisible = $state(false);
   let searchEngine = $state<ReturnType<typeof generateProjectSearchEngine>>();
-  let searchQuery = $state("");
+  // svelte-ignore state_referenced_locally
+  let searchQuery = $state(pageData.query.searchQuery || ``);
   let currentPage = $state(1);
   let pageSize = $state(20);
   // svelte-ignore non_reactive_update
   let totalUnfilteredSize = $derived(searchEngine?.mods.size || -1);
-  let selectedStatuses = $state<Status[]>([Status.Verified]);
+  // svelte-ignore state_referenced_locally
+  let selectedStatuses = $state<Status[]>(pageData.query.statuses.length > 0 ? pageData.query.statuses : [Status.Verified]);
   let selectedCategories = $state<string[]>([]);
   let filteredMods = $derived.by(() => {
     if (!searchEngine) return [];
@@ -103,6 +107,14 @@
     } else {
       isFilterStatusVisible = true;
     }
+
+    let searchParams = new URLSearchParams();
+    if (selectedGame) searchParams.set("game", selectedGame.name);
+    if (selectedGameVersion) searchParams.set("gameVersion", selectedGameVersion.id.toString());
+    if (selectedCategories.length > 0) searchParams.set("category", selectedCategories.join(","));
+    if (searchQuery.trim() !== "") searchParams.set("search", searchQuery);
+    if (selectedStatuses.length > 0 && selectedStatuses.every(s => s !== Status.Verified)) searchParams.set("status", selectedStatuses.join(","));
+    history.replaceState(null, "", `?${searchParams.toString()}`);
   });
 </script>
 
@@ -111,7 +123,7 @@
     <div class="flex flex-row w-full gap-2">
       <Input bind:value={searchQuery} placeholder="Search..." />
       {#if tooSmall.current}
-        <Button variant="outline">
+        <Button variant="outline" onclick={() => (filterMobileDrawerVisible = true)}>
           <FunnelIcon class="h-4 w-4" />
           <span class="sr-only">{m["search.showFilters"]()}</span>
         </Button>
@@ -214,7 +226,7 @@
   </Collapsible.Root>
 {/snippet}
 
-<div class="flex flex-row not-md:flex-col gap-4 m-auto max-w-[95%] not-sm:mb-4">
+<div class="flex flex-row not-md:flex-col gap-4 m-auto max-w-[95%] mb-4">
   <!-- left filter/search bar -->
   {#if !tooSmall.current}
     <div class="flex flex-col w-64 gap-2">
@@ -247,3 +259,12 @@
     </div>
   {/if}
 </div>
+
+<Drawer.Root bind:open={filterMobileDrawerVisible}>
+  <Drawer.Content>
+    <div class="overflow-y-auto h-full pr-4">
+      {@render categoryFilter()}
+      {@render statusFilter()}
+    </div>
+  </Drawer.Content>
+</Drawer.Root>

@@ -17,7 +17,7 @@
   });
 </script>
 
-<div class={cn("flex flex-col bg-card p-4 rounded-lg", className)} {...restProps} >
+<div class={cn("flex flex-col bg-card p-4 rounded-md", className)} {...restProps} >
   <div class="flex flex-row">
     <div class="flex w-16 min-h-full shrink-0 items-center">
       {#if user.permissions.sitewide.includes(UserPermissions.C_System)}

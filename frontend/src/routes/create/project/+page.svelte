@@ -53,7 +53,7 @@
   <p class="text-base mb-4">{m["mods.createProject.subtitle"]()}</p>
 </div>
 <div class="flex flex-row flex-wrap justify-center p-4 gap-4">
-  <div class="flex flex-col w-full max-w-md">
+  <div class="flex flex-col w-full max-w-sm">
     <!-- left side -->
     <div class="flex flex-col justify-center w-full max-w-md p-4 gap-2 bg-card rounded-lg shadow-md">
       <span>
@@ -103,19 +103,19 @@
       <p class="text-sm text-muted-foreground mt-2 pl-1">{m["mods.createProject.thumbnailFooter"]()}</p>
     </div>
   </div>
-  <div class="flex flex-col w-full max-w-md">
+  <div class="flex flex-col w-full max-w-2xl">
     <!-- right side -->
-    <div class="flex flex-col justify-center w-full max-w-md p-4 gap-2 bg-card rounded-lg shadow-md">
+    <div class="flex flex-col justify-center w-full max-w-2xl p-4 gap-2 bg-card rounded-lg shadow-md">
       <span>
         <Label class="p-1 pb-2" for="summary">{m["mods.dataTable.summary"]()}</Label>
-        <Textarea class="min-h-16" bind:value={projectSummary} aria-invalid={!zProject.shape.summary.safeParse(projectSummary).success} id="summary" />
+        <Textarea class="min-h-9 max-h-27 h-9" bind:value={projectSummary} aria-invalid={!zProject.shape.summary.safeParse(projectSummary).success} id="summary" />
       </span>
       <span>
         <Label class="p-1 pb-2" for="description">{m["mods.dataTable.description"]()}</Label>
         <Textarea class="min-h-64" bind:value={projectDescription} aria-invalid={!zProject.shape.description.safeParse(projectDescription).success} id="description" />
       </span>
     </div>
-    <div class="flex flex-col justify-center w-full max-w-md p-4 bg-card rounded-lg shadow-md mt-4">
+    <div class="flex flex-col justify-center w-full max-w-2xl p-4 bg-card rounded-lg shadow-md mt-4">
       <Button class="w-full">{m["dialogs.submit"]()}</Button>
     </div>
   </div>

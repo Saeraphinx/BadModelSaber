@@ -42,5 +42,5 @@ export const load = (async (data) => {
     pageMetadata: {
       title: `Assets`,
     },
-  } satisfies PageLoad;
+  };
 });

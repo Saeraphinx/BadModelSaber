@@ -1,21 +1,31 @@
-import { UserPermissions } from "$lib/scripts/api/DBTypes";
+import { Status, UserPermissions } from "$lib/scripts/api/DBTypes";
 import { error } from "@sveltejs/kit";
 import type { PageLoad } from "./$types";
 import { checkRoles } from "$lib/scripts/utils/checkRoles.js";
 import { createTRPC, handleTrpcError } from "$lib/scripts/utils/api.js";
+import { m } from "../../lib/paraglide/messages";
 
 //export const ssr = false;
 export const load: PageLoad = async ({ fetch, url }) => {
   const trpc = createTRPC(fetch);
   let game = url.searchParams.get("game");
   let gameVersion = url.searchParams.get("gameVersion");
-  let category = url.searchParams.get("category");
+  let category = (url.searchParams.get("category") ?? ``).toLowerCase().split(",") || [];
+  let statuses = (url.searchParams.get("status") ?? ``).toLowerCase().split(",") || [];
+  let searchQuery = url.searchParams.get("search") || "";
+
+  if (statuses.every(status => status === "" || Object.values(Status).includes(status as Status))) {
+    statuses = statuses.filter(status => status !== "") as Status[];
+  }
 
   let games = await trpc.v3.games.getGames.query().catch(handleTrpcError());
-  let gameVersions = await trpc.v3.games.getGameVersions.query({
-    gameName: games.find(g => g.default)?.name || games[0]?.name,
+  let gameToQuery = game && games.some(g => g.name === game) ? game : games.find(g => g.default)?.name || games[0]?.name;
+  let selectedGame = await trpc.v3.games.getGameVersions.query({
+    gameName: gameToQuery,
     includeExtras: true,
   })
+  // @ts-expect-error trust me
+  let selectedGameVersionId: string = gameVersion && selectedGame.gameVersions.some(v => v.id.toString() === gameVersion) ? gameVersion : selectedGame.gameVersions.find(v => v.defaultVersion)?.id.toString() || selectedGame.gameVersions[0]?.id.toString();
 
   return {
     pageMetadata: {
@@ -23,7 +33,14 @@ export const load: PageLoad = async ({ fetch, url }) => {
     },
     pageData: {
       games: games || [],
-      defaultGame: gameVersions || [],
+      startingGame: selectedGame || [],
+      query: {
+        game: game || null,
+        gameVersionId: selectedGameVersionId,
+        category: category || null,
+        searchQuery: searchQuery || null,
+        statuses: statuses as Status[]
+      },
     }
   };
 }

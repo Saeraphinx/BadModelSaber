@@ -47,6 +47,7 @@ export const uploadStuff = router({
         data: zfd.json(Asset.validator.pick({
             type: true,
             name: true,
+            renderingMethod: true,
             description: true,
             license: true,
             licenseUrl: true,
@@ -94,6 +95,7 @@ export const uploadStuff = router({
             uploaderId: ctx.user.id,
             fileHash: fileHash,
             fileSize: input.asset.size,
+            renderingMethod: input.data.renderingMethod,
             iconNames: Array.from(imageNames.keys()),
             status: Status.Private,
             gameName: defaultGame.name,

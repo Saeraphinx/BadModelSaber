@@ -17,7 +17,7 @@
   });
 </script>
 
-<div class={cn("p-4 border rounded-lg shadow-sm hover:shadow-md transition-shadow", className)}>
+<div class={cn("p-4 border rounded-md shadow-sm hover:shadow-md transition-shadow", className)}>
   <a href={`/requests/${request.id}`} class="text-blue-600 hover:underline">
     <p>{requestTypeTitleString}: {request.refrencedThing?.name ?? `???`}</p>
   </a>
