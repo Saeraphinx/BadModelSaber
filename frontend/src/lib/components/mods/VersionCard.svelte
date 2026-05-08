@@ -79,7 +79,7 @@
   
 </script>
 
-<div class="p-2 border rounded-lg bg-card" data-sveltekit-preload-data="false" data-sveltekit-preload-code="false">
+<div class="p-2 border rounded-md bg-card" data-sveltekit-preload-data="false" data-sveltekit-preload-code="false">
   <div class="flex items-start justify-between mb-2 px-2">
     <p class="text-lg font-medium">{version.semver}</p>
     <span class="flex flex-row items-center gap-1">
