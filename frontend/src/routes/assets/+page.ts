@@ -5,6 +5,7 @@ export const load = (async (data) => {
   let fileFormat = data.url.searchParams.get('type')?.split(',') || ['all'];
   let renderingMethod = data.url.searchParams.get('renderingMethod');
   let status = data.url.searchParams.get('status');
+  let searchQuery = data.url.searchParams.get('search') || '';
   if (fileFormat.every(format => (Object.values(AssetFileFormat) as string[]).includes(format))) {
     fileFormat = fileFormat as AssetFileFormat[];
   } else {
@@ -35,7 +36,8 @@ export const load = (async (data) => {
       // type checks are done above
       fileFormat: fileFormat as AssetFileFormat[] | ['all'],
       renderingMethod: renderingMethod as RenderingModes | null,
-      status: status as Status | null
+      status: status as Status | null,
+      searchQuery: searchQuery as string,
     },
     pageMetadata: {
       title: `Assets`,

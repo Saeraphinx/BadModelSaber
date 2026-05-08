@@ -23,6 +23,7 @@
   import * as Drawer from "$shadcn/components/ui/drawer";
   import { parseErrorMessage } from "../../lib/scripts/utils/api.js";
   import * as RadioGroup from "../../lib/shadcn/components/ui/radio-group";
+  import { navigating } from "$app/state";
 
   const { data: _internal } = $props();
   // svelte-ignore state_referenced_locally
@@ -54,7 +55,8 @@
   let selectedStatuses = $state<Status[]>(initQuery.status ? [initQuery.status] : [Status.Verified]);
   // svelte-ignore state_referenced_locally
   let selectedRenderingMethod = $state<RenderingModes | `all`>(initQuery.renderingMethod ? initQuery.renderingMethod : `all`);
-  let searchQuery = $state<string>("");
+  // svelte-ignore state_referenced_locally
+  let searchQuery = $state<string>(initQuery.searchQuery || ``);
   let assetStatuses = $derived.by(() => {
     if (!user) return [Status.Verified];
     if (checkRoles(user, [UserPermissions.Asset_ViewAll], `any`)) {
@@ -113,6 +115,7 @@
 
   $effect(() => {
     //update url based on filters
+
     let params = new URLSearchParams();
     if (selectedFileFormats.length > 0) {
       params.set("type", selectedFileFormats.join(","));
@@ -123,7 +126,10 @@
     if (selectedStatuses.length > 0 && !(selectedStatuses.length === 1 && selectedStatuses[0] === Status.Verified)) {
       params.set("status", selectedStatuses[0]);
     }
-    history.replaceState(null, "", `${location.pathname}?${params.toString()}`);
+    if (searchQuery.length > 0) {
+      params.set("search", searchQuery);
+    }
+    history.replaceState(null, "", `${location.pathname}${params.size > 0 ? `?${params.toString()}` : ""}`);
   });
 </script>
 
