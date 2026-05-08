@@ -61,7 +61,7 @@ The frontend uses Inlang/Paraglide for translations. All translation files are l
 The frontend does not know what translations it has available, so if you add a new translation, you must also add it to the `availableLocales` array in `frontend/src/lib/stylizer.ts`.
 
 
-The backend uses a custom translation system for user generated content. Errors and alerts generated do not have support for translations.
+The backend uses a custom translation system for user generated content. Errors and alerts generated do not have support for translations. Backend system is based on [ftro027's PR to BadBeatMods](https://github.com/Saeraphinx/BadBeatMods/pull/91).
 
 ## Tests
 The backend uses Vitest for testing. Test files are located in the `test` folder. You can run the tests by executing `yarn test` in the backend folder. Docker is required for running the tests as it relies on a PostgreSQL container.
