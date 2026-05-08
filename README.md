@@ -57,8 +57,8 @@ storage/
 
 ## Translations
 The frontend uses Inlang/Paraglide for translations. All translation files are located in `frontend/src/lib/paraglide/messages/`. Translations are built when running `yarn install` in the frontend folder, but you can also run `yarn i18n` to rebuild them. 
-:::note
-The frontend does not know what translations it has available, so if you add a new translation, you must also add it to the `availableLocales` array in `frontend/src/lib/stylizer.ts`.
+> [!NOTE]
+> The frontend does not know what translations it has available, so if you add a new translation, you must also add it to the `availableLocales` object array in DB extras file found in the fontend and backend.
 
 
 The backend uses a custom translation system for user generated content. Errors and alerts generated do not have support for translations. Backend system is based on [frto027's PR to BadBeatMods](https://github.com/Saeraphinx/BadBeatMods/pull/91).
