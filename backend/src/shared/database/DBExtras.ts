@@ -33,14 +33,14 @@ export const availableLocales: {
     frontend: false,
   },
   {
-    code: "x-owo",
+    code: "qab",
     name: "OwO",
     secret: true,
     frontend: true,
     backend: false,
   },
   {
-    code: "x-keys",
+    code: "qaa",
     name: "Translation Keys",
     secret: true,
     frontend: true,
