@@ -7,6 +7,7 @@
   import { cn } from "$shadcn/utils.js";
   import type { ClassValue } from "svelte/elements";
   import { trpc } from "$lib/scripts/utils/api";
+  import debounce from "debounce";
 
   let { 
     selectedProjectName = $bindable(``),
@@ -36,7 +37,6 @@
     });
   }
 
-  let searchTimeout: NodeJS.Timeout;
   let searchQuery = $state("");
   let searchResults: {name: string, id:number}[] = $state([]);
   async function searchProjects(query: string) {
@@ -54,8 +54,7 @@
   <Popover.Content class="p-0">
     <Command.Root shouldFilter={false} >
       <Command.Input bind:value={searchQuery} oninput={() => {
-        clearTimeout(searchTimeout);
-        searchTimeout = setTimeout(() => {
+        debounce(() => {
           searchProjects(searchQuery).then((res) => {
             searchResults = res;
           });

@@ -8,7 +8,7 @@
   import { cn } from "$shadcn/utils";
   import UserBadge from "../users/UserBadge.svelte";
   import StatusHoverCard from "../generic/StatusHoverCard.svelte";
-  import { BadgeAlertIcon, Code2Icon, DownloadIcon, FileBracesCornerIcon, InfoIcon } from "@lucide/svelte";
+  import { BadgeAlertIcon, Code2Icon, DownloadIcon, FileBracesCornerIcon, FolderKanbanIcon, InfoIcon } from "@lucide/svelte";
 
   const {
     project,
@@ -65,7 +65,7 @@
   <div class="flex-1 flex flex-col justify-between">
     <div class="flex flex-row justify-end items-end gap-2">
       {#if showFileDialog}
-        <Button variant="secondary" size="icon" onclick={showFileDialog} class=""><FileBracesCornerIcon /></Button>
+        <Button variant="secondary" size="icon" onclick={showFileDialog} class=""><FolderKanbanIcon /></Button>
       {/if}
       {#if showManifestDialog}
         <Button variant="secondary" size="icon" onclick={showManifestDialog} class=""><FileBracesCornerIcon /></Button>

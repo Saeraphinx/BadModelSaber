@@ -1,14 +1,17 @@
 <script lang="ts">
   import * as Dialog from "$shadcn/components/ui/dialog";
+  import type { Component } from "svelte";
   import { Button } from "../../shadcn/components/ui/button";
   import Markdown from "../generic/Markdown.svelte";
 
   let open = $state(false);
   let markdown = $state("");
   let showCopy = $state(false);
+  let rawCode = $state("");
   let codeUrlhref = $state<string | null>(null);
+  let AdvancedViewerObj: Component | null = $state(null); 
 
-  export function showDialog(string: string, language: string = "cs", allowCopy: boolean = false, codeUrl: string | null = null) {
+  export async function showDialog(string: string, language: string = "cs", allowCopy: boolean = false, codeUrl: string | null = null, advancedViewer: boolean = false) {
     if (language === `json`) {
       try {
         string = JSON.stringify(JSON.parse(string), null, 2);
@@ -16,6 +19,7 @@
         // ignore
       }
     }
+    rawCode = string;
     markdown = `\`\`\`${language}\n${string}\n\`\`\``;
     showCopy = allowCopy;
     codeUrlhref = codeUrl;

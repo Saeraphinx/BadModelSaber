@@ -30,7 +30,7 @@ const appRouter = router({
         approval: approvalRouter,
         requests: RequestRouter,
         updateThings: UpdateAssetRouter,
-        updateUser: konamiRouter,
+        user: konamiRouter,
         auth: authRouter,
         status: statusRouter,
         games: editGameRouter,

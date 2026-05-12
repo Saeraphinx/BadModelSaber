@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { AlertType, UserPermissions, WebhookLogType, type GameVersionApiV3_full } from "$lib/scripts/api/DBTypes";
+  import { AlertType, UserPermissions, WebhookLogType, type GameVersionApiV3_full, type UserApiV3 } from "$lib/scripts/api/DBTypes";
   import * as Tabs from "$shadcn/components/ui/tabs/index.js";
   import * as Select from "$shadcn/components/ui/select/index.js";
   import * as Accordion from "$shadcn/components/ui/accordion/index.js";
@@ -18,11 +18,12 @@
   import ModCompactCard from "$lib/components/mods/ModCompactCard.svelte";
   import ApprovalDialog from "$lib/components/dialogs/ApprovalDialog.svelte";
   import CodeDialog from "$lib/components/dialogs/CodeDialog.svelte";
+  import debounce from "debounce";
 
   const { data: _internal } = $props();
   // svelte-ignore state_referenced_locally
   const { user, trpc } = $derived(_internal);
-  let currentTab = $state("approval");
+  let currentTab = $state("unpicked");
   // #region Alert
   let alertType = $state(AlertType.Generic);
   let alertUserId = $state("5");
@@ -141,6 +142,21 @@
   }
   // #endregion
 
+  // #region User Management
+  let userSearchQuery = $state("");
+  let userSearchResults: Awaited<ReturnType<typeof searchUsers>> = $state([]);
+  async function searchUsers() {
+    if (userSearchQuery.trim().length === 0) {
+      userSearchResults = [];
+      return [];
+    }
+    return await trpc.internal.user.searchUsers.query({ query: userSearchQuery }).then((res) => {
+      userSearchResults = res;
+      return res;
+    });
+  }
+  // #endregion
+
   // #region Game Management
   let games: Exclude<Awaited<ReturnType<typeof fetchGames>>, never[]> = $state([]);
   let gameVersions: Record<string, GameVersionApiV3_full[]> = $state({});
@@ -202,10 +218,10 @@
   let modsEligibleForBulkAction: Awaited<ReturnType<typeof fetchModsEligibleForBulkAction>> = $state([]);
   let baSelectedGameName = $state("");
   let baSelectedGame = $derived.by(() => games.find((game) => game.name === baSelectedGameName));
-  let baSelectedGameVersionToId = $state(""); 
+  let baSelectedGameVersionToId = $state("");
   let baSelectedGameVersionFromId = $state("");
-  let baSelectedGameVersionTo = $derived.by(() => gameVersions[baSelectedGameName]?.find(v => v.id === parseInt(baSelectedGameVersionToId)));
-  let baSelectedGameVersionFrom = $derived.by(() => gameVersions[baSelectedGameName]?.find(v => v.id === parseInt(baSelectedGameVersionFromId)));
+  let baSelectedGameVersionTo = $derived.by(() => gameVersions[baSelectedGameName]?.find((v) => v.id === parseInt(baSelectedGameVersionToId)));
+  let baSelectedGameVersionFrom = $derived.by(() => gameVersions[baSelectedGameName]?.find((v) => v.id === parseInt(baSelectedGameVersionFromId)));
   let baSelectedVersionIds = $state<number[]>([]);
   async function fetchModsEligibleForBulkAction() {
     return await trpc.v3.mods.getMods
@@ -232,7 +248,7 @@
     let promises = [];
     for (const modId of baSelectedVersionIds) {
       let version = modsEligibleForBulkAction.find((mod) => mod.version.id === modId)?.version;
-      let gameVersionIds = version?.supportedGameVersions.map(gv => gv.id) ?? [];
+      let gameVersionIds = version?.supportedGameVersions.map((gv) => gv.id) ?? [];
       if (gameVersionIds.length === 0) {
         toast.error(`Mod with ID ${modId} does not have any supported game versions. Skipping.`);
         continue;
@@ -244,20 +260,20 @@
             data: {
               supportedGameVersionIds: [...gameVersionIds, baSelectedGameVersionTo.id],
             },
-          }).catch((err) => {
+          })
+          .catch((err) => {
             console.error(`Failed to update mod ${modId}:`, err);
             toast.error(`Failed to update mod with ID ${modId}.`, { description: parseErrorMessage(err) });
-          })
+          }),
       );
     }
     toast.promise(Promise.all(promises), {
       loading: "Updating mods...",
       success: (data) => {
-        return `Successfully updated ${data.length} mods.`
+        return `Successfully updated ${data.length} mods.`;
       },
       error: "Failed to update some or all selected mods.",
     });
-      
   }
   // #endregion
   // #region Approval Queue
@@ -287,24 +303,28 @@
 
 <div class="flex flex-col gap-4 m-auto p-4 justify-center">
   <div class="flex flex-col m-auto justify-center text-center">
-    <div class="text-3xl mb-4">Admin Panel</div>
+    <div class="text-3xl">Admin Panel</div>
     {#await getAdminStatus()}
-      <p>Loading Admin Data...</p>
+      <p class="text-sm text-muted-foreground">Loading Admin Data...</p>
     {:then adminStatus}
       {#if adminStatus}
-        <p>DB Status: {adminStatus.dbConnectionOK ?? `Unknown`} | Version: {adminStatus.version} | Signed in as {adminStatus.discordTokenUser?.username}#{adminStatus.discordTokenUser?.discriminator}</p>
+        <p class="text-sm text-muted-foreground">DB Status: {adminStatus.dbConnectionOK ?? `Unknown`} | BE Version: {adminStatus.version} | Signed in as {adminStatus.discordTokenUser?.username}#{adminStatus.discordTokenUser?.discriminator}</p>
       {:else}
-        <p>Unable to fetch admin status.</p>
+        <p class="text-sm text-red-500">Unable to fetch admin status.</p>
       {/if}
     {:catch}
-      <p>Error loading admin status.</p>
+      <p class="text-sm text-red-500">Unable to fetch admin status.</p>
     {/await}
   </div>
   <Tabs.Root bind:value={currentTab}>
     <Tabs.List class="m-auto" variant="line">
-      <Tabs.Trigger value="logs">Admin Logs</Tabs.Trigger>
-      <Tabs.Trigger value="manual">Manual Operations</Tabs.Trigger>
-      <Tabs.Trigger value="users">User Management</Tabs.Trigger>
+      {#if checkRoles(user, [UserPermissions.Administrative_Tasks])}
+        <Tabs.Trigger value="logs">Admin Logs</Tabs.Trigger>
+        <Tabs.Trigger value="manual">Manual Operations</Tabs.Trigger>
+      {/if}
+      {#if checkRoles(user, [UserPermissions.Users_EditAll, UserPermissions.Users_Ban, UserPermissions.Users_EditAllRoles])}
+        <Tabs.Trigger value="users">User Management</Tabs.Trigger>
+      {/if}
       {#if checkRoles(user, [UserPermissions.Game_Create, UserPermissions.Game_Edit, UserPermissions.Game_EditVersions, UserPermissions.Game_ViewExtras])}
         <Tabs.Trigger value="games">Game Management</Tabs.Trigger>
       {/if}
@@ -351,7 +371,9 @@
           <Tabs.Root value="roles" class="w-full">
             <Tabs.List class="m-auto">
               <Tabs.Trigger value="alerts">Alerts</Tabs.Trigger>
-              <Tabs.Trigger value="roles">Roles</Tabs.Trigger>
+              {#if checkRoles(user, [UserPermissions.Users_EditAllRoles])}
+                <Tabs.Trigger value="roles">Roles</Tabs.Trigger>
+              {/if}
               <Tabs.Trigger value="requests">Requests</Tabs.Trigger>
             </Tabs.List>
             <Tabs.Content value="alerts">
@@ -404,7 +426,7 @@
                 <Button onclick={loadUserRoles} class="w-1/4">Fetch</Button>
               </div>
               <div class="flex flex-row justify-end items-center mt-2">
-                <Button size="sm" variant="ghost" onclick={() => roleAddGameDialogOpen = true}>Add Game</Button>
+                <Button size="sm" variant="ghost" onclick={() => (roleAddGameDialogOpen = true)}>Add Game</Button>
               </div>
               <Accordion.Root type="single" class="w-full">
                 <Accordion.Item value="sitewide" class="border rounded-md mb-2">
@@ -487,7 +509,7 @@
                   toast.error("Failed to start import.");
                 });
             }}>Import Old ModelSaber Data</Button>
-            <Button 
+          <Button
             class="mt-4 mb-2 w-full"
             onclick={() => {
               trpc.internal.admin.importFromBeatmods
@@ -531,7 +553,50 @@
         </div>
       </div>
     </Tabs.Content>
-    <Tabs.Content value="users"></Tabs.Content>
+    <Tabs.Content value="users">
+      <div class="flex flex-col m-auto w-full items-center gap-4 p-4">
+        <div class="flex flex-col items-center p-4 bg-accent rounded-lg justify-center w-sm ">
+          <Input placeholder="Search by username or ID..." bind:value={userSearchQuery} class="" oninput={ debounce(searchUsers, 500, { immediate: true })} />
+        </div>
+          <table class="table-auto w-full">
+            <thead>
+              <tr>
+                <th></th>
+                <th>User ID</th>
+                <th>Username</th>
+                <th>Display Name</th>
+                <th>Github ID</th>
+                <th>Discord ID</th>
+                <th>Roles</th>
+              </tr>
+            </thead>
+            <tbody>
+              {#each userSearchResults as user}
+                <tr>
+                  <td class="w-12"><img src={user.avatarUrl} alt="Avatar" class="w-8 h-8 rounded-full" /></td>
+                  <td>{user.id}</td>
+                  <td>{user.username}</td>
+                  <td>{user.displayName}</td>
+                  <td>{user.githubId ?? "N/A"}</td>
+                  <td>{user.discordId ?? "N/A"}</td>
+                  <td>
+                    <div class="flex flex-row flex-wrap overflow-scroll gap-1">
+                      {#each user.permissions.sitewide as perm}
+                        <span class="px-2 py-1 bg-secondary rounded">{perm}</span>
+                      {/each}
+                      {#each Object.entries(user.permissions.perGame) as [game, perms]}
+                        {#each perms as perm}
+                          <span class="px-2 py-1 bg-secondary rounded">{game}: {perm}</span>
+                        {/each}
+                      {/each}
+                    </div>
+                  </td>
+                </tr>
+              {/each}
+            </tbody>
+          </table>
+      </div>
+    </Tabs.Content>
     <Tabs.Content value="games">
       <div class="flex flex-col m-auto w-[400px] items-center p-4 bg-accent rounded-lg justify-center">
         <p class="p-2 text-2xl">Selected Game</p>
@@ -544,7 +609,13 @@
               {/each}
             </Select.Content>
           </Select.Root>
-          <Button variant="outline" size="icon" onclick={() => {fetchGames(); toast.success("Games fetched.");}}><RefreshCwIcon /></Button>
+          <Button
+            variant="outline"
+            size="icon"
+            onclick={() => {
+              fetchGames();
+              toast.success("Games fetched.");
+            }}><RefreshCwIcon /></Button>
           {#if checkRoles(user, [UserPermissions.Game_Create])}
             <Button variant="default" size="icon" onclick={() => (createGameDialogOpen = true)}><PlusIcon /></Button>
           {/if}
@@ -562,13 +633,13 @@
             {/if}
           </Tabs.List>
           <Tabs.Content value="details">
-              <div class="flex flex-col items-center p-4 bg-accent rounded-lg">
-                <p><strong>Name:</strong> {selectedGame.name}</p>
-                <p><strong>Display Name:</strong> {selectedGame.displayName}</p>
-                <p><strong>Platforms:</strong> {selectedGame.platforms.join(", ")}</p>
-                <p><strong>Categories:</strong> {selectedGame.categories.join(", ")}</p>
-                <p><strong>Is Default:</strong> {selectedGame.default ? "Yes" : "No"}</p>
-              </div>
+            <div class="flex flex-col items-center p-4 bg-accent rounded-lg">
+              <p><strong>Name:</strong> {selectedGame.name}</p>
+              <p><strong>Display Name:</strong> {selectedGame.displayName}</p>
+              <p><strong>Platforms:</strong> {selectedGame.platforms.join(", ")}</p>
+              <p><strong>Categories:</strong> {selectedGame.categories.join(", ")}</p>
+              <p><strong>Is Default:</strong> {selectedGame.default ? "Yes" : "No"}</p>
+            </div>
           </Tabs.Content>
           <Tabs.Content value="versions" class="flex flex-col items-center">
             <div class="flex flex-row mb-4 gap-2">
@@ -594,27 +665,35 @@
                     <td>{version.id}</td>
                     <td>{version.version}</td>
                     <td>
-                      <Button variant={version.defaultVersion ? "default" : "outline"} disabled={version.defaultVersion} onclick={() => {
-                        trpc.internal.games.setDefaultVersion
-                          .mutate({ gameName: selectedGame.name, versionId: version.id })
-                          .then(() => {
-                            toast.success(`Version ${version.version} set as default.`);
-                            fetchGames()
-                          }).catch((err) => {
-                            console.error(err);
-                            toast.error(`Failed to set version ${version.version} as default. ${parseErrorMessage(err)}`);
-                          });
-                      }}>
+                      <Button
+                        variant={version.defaultVersion ? "default" : "outline"}
+                        disabled={version.defaultVersion}
+                        onclick={() => {
+                          trpc.internal.games.setDefaultVersion
+                            .mutate({ gameName: selectedGame.name, versionId: version.id })
+                            .then(() => {
+                              toast.success(`Version ${version.version} set as default.`);
+                              fetchGames();
+                            })
+                            .catch((err) => {
+                              console.error(err);
+                              toast.error(`Failed to set version ${version.version} as default. ${parseErrorMessage(err)}`);
+                            });
+                        }}>
                         {version.defaultVersion ? "Default" : "Set as Default"}
                       </Button>
                     </td>
                     <td>
                       {version.linkedVersionIds.length > 0 ? `Linked to: ${version.linkedVersionIds.join(", ")}` : "No linked versions"}
-                      <Button variant="outline" size="icon" class="ml-2" onclick={() => {
-                         linkVersionSourceId = version.id.toString();
-                         linkVersionTargetId = "";
-                         linkVersionDialogOpen = true;
-                      }}>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        class="ml-2"
+                        onclick={() => {
+                          linkVersionSourceId = version.id.toString();
+                          linkVersionTargetId = "";
+                          linkVersionDialogOpen = true;
+                        }}>
                         <PencilLine />
                       </Button>
                     </td>
@@ -645,18 +724,21 @@
                       <Button variant="outline" size="icon">
                         <PencilLine />
                       </Button>
-                      <Button variant="destructive" size="icon" onclick={() => {
-                        trpc.internal.games.removeWebhook
-                          .mutate({ gameName: selectedGame.name, webhookId: webhook.id })
-                          .then(() => {
-                            toast.success("Webhook deleted.");
-                            fetchGames();
-                          })
-                          .catch((err) => {
-                            console.error(err);
-                            toast.error("Failed to delete webhook.", { description: parseErrorMessage(err) });
-                          });
-                      }}>
+                      <Button
+                        variant="destructive"
+                        size="icon"
+                        onclick={() => {
+                          trpc.internal.games.removeWebhook
+                            .mutate({ gameName: selectedGame.name, webhookId: webhook.id })
+                            .then(() => {
+                              toast.success("Webhook deleted.");
+                              fetchGames();
+                            })
+                            .catch((err) => {
+                              console.error(err);
+                              toast.error("Failed to delete webhook.", { description: parseErrorMessage(err) });
+                            });
+                        }}>
                         <TrashIcon />
                       </Button>
                     </td>
@@ -680,7 +762,13 @@
               {/each}
             </Select.Content>
           </Select.Root>
-          <Button variant="outline" size="icon" onclick={() => {fetchGames(); toast.success("Games fetched.");}}><RefreshCwIcon /></Button>
+          <Button
+            variant="outline"
+            size="icon"
+            onclick={() => {
+              fetchGames();
+              toast.success("Games fetched.");
+            }}><RefreshCwIcon /></Button>
         </div>
         <!-- Version Selection -->
         <div class="flex flex-col gap-2">
@@ -705,27 +793,33 @@
           <Button variant="default" onclick={fetchModsEligibleForBulkAction}>Fetch Eligible Mods</Button>
           <Button disabled={!(baSelectedGameName && baSelectedGameVersionFromId && baSelectedGameVersionToId)} variant="destructive" onclick={baEditSelectedMods}>Mark as Supporting {baSelectedGameVersionTo?.version}</Button>
           <div class="grid grid-cols-2 gap-2">
-            <Button disabled={baSelectedVersionIds.length === modsEligibleForBulkAction.length || modsEligibleForBulkAction.length === 0} onclick={() => {
-              baSelectedVersionIds = modsEligibleForBulkAction.map(mod => mod.version.id);
-            }}>Select All</Button>
-            <Button disabled={baSelectedVersionIds.length === 0} onclick={() => {
-              baSelectedVersionIds = [];
-            }}>Clear Selection</Button>
+            <Button
+              disabled={baSelectedVersionIds.length === modsEligibleForBulkAction.length || modsEligibleForBulkAction.length === 0}
+              onclick={() => {
+                baSelectedVersionIds = modsEligibleForBulkAction.map((mod) => mod.version.id);
+              }}>Select All</Button>
+            <Button
+              disabled={baSelectedVersionIds.length === 0}
+              onclick={() => {
+                baSelectedVersionIds = [];
+              }}>Clear Selection</Button>
           </div>
         </div>
       </div>
       <div class="mt-4 gap-4 flex flex-row flex-wrap items-center-safe justify-center-safe">
         {#each modsEligibleForBulkAction as mod}
-          <ModCard project={mod.project} version={mod.version} gameDisplayName={baSelectedGame?.displayName}
+          <ModCard
+            project={mod.project}
+            version={mod.version}
+            gameDisplayName={baSelectedGame?.displayName}
             class={baSelectedVersionIds.includes(mod.version.id) ? "border-2 border-green-500" : "border"}
             onclick={() => {
               if (baSelectedVersionIds.includes(mod.version.id)) {
-                baSelectedVersionIds = baSelectedVersionIds.filter(id => id !== mod.version.id);
+                baSelectedVersionIds = baSelectedVersionIds.filter((id) => id !== mod.version.id);
               } else {
                 baSelectedVersionIds = [...baSelectedVersionIds, mod.version.id];
               }
-            }}
-          />
+            }} />
         {/each}
       </div>
     </Tabs.Content>
@@ -741,36 +835,55 @@
               {/each}
             </Select.Content>
           </Select.Root>
-          <Button variant="outline" size="icon" onclick={() => {fetchGames(); toast.success("Games fetched.");}}><RefreshCwIcon /></Button>
+          <Button
+            variant="outline"
+            size="icon"
+            onclick={() => {
+              fetchGames();
+              toast.success("Games fetched.");
+            }}><RefreshCwIcon /></Button>
         </div>
         <Button disabled={!aqSelectedGameName} variant="default" onclick={fetchApprovalQueue}>Fetch Approval Queue</Button>
       </div>
       <div class="mt-4 gap-4 flex flex-row flex-wrap items-center-safe justify-center-safe">
         {#each aqModsInApprovalQueue as mod}
-          <ModCompactCard project={mod.project} version={mod.version} showNonAuthorWarning 
-            showApprovalDialog={() => approvalDialog?.showDialog(mod.version.id, mod.project.name, `version`)} 
+          <ModCompactCard
+            project={mod.project}
+            version={mod.version}
+            showNonAuthorWarning
+            showApprovalDialog={() => approvalDialog?.showDialog(mod.version.id, mod.project.name, `version`)}
             showCodeDialog={() => {
-              fetch(getVersionDecompUrl(mod.version)).then(res => res.text()).then(code => {
-                codeDialog?.showDialog(code, `cs`, true, getVersionDecompUrl(mod.version));
-              }).catch(err => {
-                console.error(err);
-                toast.error("Failed to fetch decompiled code.");
-              });
+              fetch(getVersionDecompUrl(mod.version))
+                .then((res) => res.text())
+                .then((code) => {
+                  codeDialog?.showDialog(code, `cs`, true, getVersionDecompUrl(mod.version));
+                })
+                .catch((err) => {
+                  console.error(err);
+                  toast.error("Failed to fetch decompiled code.");
+                });
             }}
             showManifestDialog={() => {
-              fetch(getVersionManifestUrl(mod.version)).then(res => res.text()).then(manifest => {
-                codeDialog?.showDialog(manifest, `json`, true, getVersionManifestUrl(mod.version));
-              }).catch(err => {
-                console.error(err);
-                toast.error("Failed to fetch manifest.");
-              });
+              fetch(getVersionManifestUrl(mod.version))
+                .then((res) => res.text())
+                .then((manifest) => {
+                  codeDialog?.showDialog(manifest, `json`, true, getVersionManifestUrl(mod.version));
+                })
+                .catch((err) => {
+                  console.error(err);
+                  toast.error("Failed to fetch manifest.");
+                });
             }}
             showFileDialog={() => {
               codeDialog?.showDialog(JSON.stringify(mod.version.contentHashes, null, 4), `json`, true);
-            }}
-          />
+            }} />
         {/each}
       </div>
+    </Tabs.Content>
+    <Tabs.Content value="unpicked">
+        <div class="flex flex-col m-auto items-center p-4 max-w-md w-full bg-accent rounded-lg">
+          <p>Select a tab above.</p>
+        </div>
     </Tabs.Content>
   </Tabs.Root>
 </div>
@@ -781,28 +894,30 @@
       <p class="p-2 text-2xl">Create New Game</p>
       <Input placeholder="Game Name" class="w-full mb-2" bind:value={newGameName} />
       <Input placeholder="Display Name" class="w-full mb-2" bind:value={newGameDisplayName} />
-      <Button class="w-full" onclick={async () => {
-        if (!newGameName || !newGameDisplayName || newGameName.trim() === "" || newGameDisplayName.trim() === "") {
-      toast.error("Please fill in all fields.");
-      return;
-    }
-    return await trpc.internal.games.createGame
-      .mutate({
-        gameName: newGameName,
-        displayName: newGameDisplayName,
-      })
-      .then((game) => {
-        toast.success("Game created.");
-        newGameName = "";
-        newGameDisplayName = "";
-        createGameDialogOpen = false;
-        return game;
-      })
-      .catch((err) => {
-        console.error(err);
-        toast.error("Failed to create game.");
-      });
-      }}>Create Game</Button>
+      <Button
+        class="w-full"
+        onclick={async () => {
+          if (!newGameName || !newGameDisplayName || newGameName.trim() === "" || newGameDisplayName.trim() === "") {
+            toast.error("Please fill in all fields.");
+            return;
+          }
+          return await trpc.internal.games.createGame
+            .mutate({
+              gameName: newGameName,
+              displayName: newGameDisplayName,
+            })
+            .then((game) => {
+              toast.success("Game created.");
+              newGameName = "";
+              newGameDisplayName = "";
+              createGameDialogOpen = false;
+              return game;
+            })
+            .catch((err) => {
+              console.error(err);
+              toast.error("Failed to create game.");
+            });
+        }}>Create Game</Button>
     </div>
   </DialogContent>
 </Dialog>
@@ -812,24 +927,26 @@
     <div class="flex flex-col items-center rounded-lg justify-center">
       <p class="p-2 text-2xl">Create New Version for {selectedGame?.displayName}</p>
       <Input placeholder="Version String" class="w-full mb-2" bind:value={createVersionVersion} />
-      <Button class="w-full" onclick={() => {
-        if (!createVersionVersion || createVersionVersion.trim() === "") {
-          toast.error("Please enter a version string.");
-          return;
-        }
-        trpc.internal.games.createGameVersion
-          .mutate({ gameName: selectedGame?.name ?? "", version: createVersionVersion })
-          .then(() => {
-            toast.success("Version created.");
-            createVersionVersion = "";
-            createVersionDialogOpen = false;
-            fetchGames();
-          })
-          .catch((err) => {
-            console.error(err);
-            toast.error("Failed to create version.");
-          });
-      }}>Create Version</Button>
+      <Button
+        class="w-full"
+        onclick={() => {
+          if (!createVersionVersion || createVersionVersion.trim() === "") {
+            toast.error("Please enter a version string.");
+            return;
+          }
+          trpc.internal.games.createGameVersion
+            .mutate({ gameName: selectedGame?.name ?? "", version: createVersionVersion })
+            .then(() => {
+              toast.success("Version created.");
+              createVersionVersion = "";
+              createVersionDialogOpen = false;
+              fetchGames();
+            })
+            .catch((err) => {
+              console.error(err);
+              toast.error("Failed to create version.");
+            });
+        }}>Create Version</Button>
     </div>
   </DialogContent>
 </Dialog>
@@ -840,25 +957,27 @@
       <p class="p-2 text-2xl">Link Versions for {selectedGame?.displayName}</p>
       <Input placeholder="Version ID #1" class="w-full mb-2" bind:value={linkVersionSourceId} />
       <Input placeholder="Version ID #2" class="w-full mb-2" bind:value={linkVersionTargetId} />
-      <Button class="w-full" onclick={() => {
-        if (!linkVersionSourceId || !linkVersionTargetId) {
-          toast.error("Please enter both source and target version IDs.");
-          return;
-        }
-        trpc.internal.games.linkVersions
-          .mutate({ gameName: selectedGame?.name ?? "", versionId1: parseInt(linkVersionSourceId), versionId2: parseInt(linkVersionTargetId) })
-          .then(() => {
-            toast.success("Versions linked.");
-            linkVersionSourceId = "";
-            linkVersionTargetId = "";
-            linkVersionDialogOpen = false;
-            fetchGames();
-          })
-          .catch((err) => {
-            console.error(err);
-            toast.error("Failed to link versions.");
-          });
-      }}>Link Versions</Button>
+      <Button
+        class="w-full"
+        onclick={() => {
+          if (!linkVersionSourceId || !linkVersionTargetId) {
+            toast.error("Please enter both source and target version IDs.");
+            return;
+          }
+          trpc.internal.games.linkVersions
+            .mutate({ gameName: selectedGame?.name ?? "", versionId1: parseInt(linkVersionSourceId), versionId2: parseInt(linkVersionTargetId) })
+            .then(() => {
+              toast.success("Versions linked.");
+              linkVersionSourceId = "";
+              linkVersionTargetId = "";
+              linkVersionDialogOpen = false;
+              fetchGames();
+            })
+            .catch((err) => {
+              console.error(err);
+              toast.error("Failed to link versions.");
+            });
+        }}>Link Versions</Button>
     </div>
   </DialogContent>
 </Dialog>
@@ -881,30 +1000,32 @@
         <Checkbox bind:checked={newWebhookIsAsset} id="isAsset" />
         <Label for="isAsset">Is Asset Webhook</Label>
       </div>
-      <Button class="w-full mt-4" onclick={() => {
-        if (!newWebhookUrl || newWebhookUrl.trim() === "") {
-          toast.error("Please enter a webhook URL.");
-          return;
-        }
-        if (newWebhookTypes.length === 0) {
-          toast.error("Please select at least one log type.");
-          return;
-        }
-        trpc.internal.games.addWebhook
-          .mutate({ gameName: selectedGame?.name ?? "", url: newWebhookUrl, types: newWebhookTypes, isAssetWebhook: newWebhookIsAsset })
-          .then(() => {
-            toast.success("Webhook created.");
-            newWebhookUrl = "";
-            newWebhookTypes = [];
-            newWebhookIsAsset = false;
-            createWebhookDialogOpen = false;
-            fetchGames();
-          })
-          .catch((err) => {
-            console.error(err);
-            toast.error("Failed to create webhook.", { description: parseErrorMessage(err) });
-          });
-      }}>Create Webhook</Button>
+      <Button
+        class="w-full mt-4"
+        onclick={() => {
+          if (!newWebhookUrl || newWebhookUrl.trim() === "") {
+            toast.error("Please enter a webhook URL.");
+            return;
+          }
+          if (newWebhookTypes.length === 0) {
+            toast.error("Please select at least one log type.");
+            return;
+          }
+          trpc.internal.games.addWebhook
+            .mutate({ gameName: selectedGame?.name ?? "", url: newWebhookUrl, types: newWebhookTypes, isAssetWebhook: newWebhookIsAsset })
+            .then(() => {
+              toast.success("Webhook created.");
+              newWebhookUrl = "";
+              newWebhookTypes = [];
+              newWebhookIsAsset = false;
+              createWebhookDialogOpen = false;
+              fetchGames();
+            })
+            .catch((err) => {
+              console.error(err);
+              toast.error("Failed to create webhook.", { description: parseErrorMessage(err) });
+            });
+        }}>Create Webhook</Button>
     </div>
   </DialogContent>
 </Dialog>
@@ -915,10 +1036,12 @@
       <p class="p-2 text-2xl">Add Game to pergame</p>
       {#each games as g}
         {#if !Object.keys(perGamePermissions).includes(g.name)}
-          <Button class=" mb-2" onclick={() => {
-            addGameToPerGamePermissions(g.name);
-            roleAddGameDialogOpen = false;
-          }}>{g.displayName}</Button>
+          <Button
+            class=" mb-2"
+            onclick={() => {
+              addGameToPerGamePermissions(g.name);
+              roleAddGameDialogOpen = false;
+            }}>{g.displayName}</Button>
         {/if}
       {/each}
     </div>
@@ -931,7 +1054,6 @@
 <style>
   table {
     width: 80%;
-    border: #2c2c2c80 solid 1px;
     border-radius: 0.5rem;
   }
 
@@ -955,5 +1077,9 @@
   }
   th:last-child {
     border-top-right-radius: 0.5rem;
+  }
+
+  tr:nth-child(even) {
+    background-color: #2c2c2c40;
   }
 </style>

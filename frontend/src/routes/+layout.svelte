@@ -29,9 +29,8 @@
 
   const { data: _internal, children } = $props();
   const { user, alertCount, pendingToasts, trpc } = $derived(_internal);
-  let theme: `system` | `light` | `dark` = $state("system");
   let showFullBar = new MediaQuery("min-width: 769px");
-  let showDevbar = new MediaQuery(`min-height: 600px`);
+  let showDevbar = new MediaQuery(`min-height: 550px`);
   let isLoggedIn = $derived(!!(user && user.id));
 
   // #region KonamiListener
@@ -79,7 +78,7 @@
           action: {
             label: "Enable",
             onClick: () => {
-              trpc.internal.updateUser.toggleSecretFeatures
+              trpc.internal.user.toggleSecretFeatures
                 .mutate({ enabled: true })
                 .then(() => {
                   toast.success(m["toasts.secretFeatures.enabled"](), {
@@ -109,7 +108,7 @@
   });
 
   function removeSecret() {
-    trpc.internal.updateUser.toggleSecretFeatures
+    trpc.internal.user.toggleSecretFeatures
       .mutate({ enabled: false })
       .then(() => {
         toast.info(m["toasts.secretFeatures.disabled"](), {
@@ -299,20 +298,22 @@
   <!-- #region top bar -->
   {#if showDevbar.current}
     {#if env.PUBLIC_BASE_URL.includes(`localhost`)}
-      <div class="sticky top-0 z-50 text-center py-1 px-8 w-full bg-linear-to-r from-[#8e28e229] via-[#8e28e299] to-[#8e28e229]">
+      <div class="sticky top-0 z-50 text-center pt-0.5 px-8 w-full bg-linear-to-r from-[#8e28e229] via-[#8e28e299] to-[#8e28e229]">
         <!-- svelte-ignore a11y_distracting_elements -->
         <marquee behavior="alternate" class="text-base">ModelSaber Development Instance</marquee>
       </div>
     {:else if env.PUBLIC_BASE_URL.includes(`saera.gay`)}
-      <div class="sticky top-0 z-50 text-center py-1 w-full bg-linear-to-r from-[#DC2DE220] via-[#DC2DE299] to-[#DC2DE220]">
+      <div class="sticky top-0 z-50 text-center pt-0.5 w-full bg-linear-to-r from-[#DC2DE220] via-[#DC2DE299] to-[#DC2DE220]">
         <!-- svelte-ignore a11y_distracting_elements -->
         <marquee behavior="alternate" class="text-base">ModelSaber Public Development Instance</marquee>
       </div>
     {/if}
   {:else}
+    {#if env.PUBLIC_BASE_URL.includes(`localhost`) || env.PUBLIC_BASE_URL.includes(`saera.gay`)}
       <div class="sticky z-50">
         <span class="bg-[#8e28e2] w-2 h-2 block absolute top-7 left-7 rounded-full animate-pulse"></span>
       </div>
+    {/if}
   {/if}
   <div class="flex w-auto flex-row text-base justify-between">
     <!-- Logo -->

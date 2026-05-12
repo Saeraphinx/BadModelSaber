@@ -4,6 +4,7 @@ import { loggedInProcedure, router } from "../../trpc.ts";
 import { dedupeArray } from "../../../shared/Tools.ts";
 import { TRPCError } from "@trpc/server";
 import { Logger } from "../../../shared/Logger.ts";
+import { Op } from "sequelize";
 
 export const konamiRouter = router({
     updateUser: loggedInProcedure([UserPermissions.Users_EditSelf]).input(z.object({
@@ -31,8 +32,8 @@ export const konamiRouter = router({
             }
             if (input.ban) {
                 targetUser.permissions = {
-                    sitewide: dedupeArray([...targetUser.permissions.sitewide.filter(r => 
-                        r !== UserPermissions.Asset_Create && 
+                    sitewide: dedupeArray([...targetUser.permissions.sitewide.filter(r =>
+                        r !== UserPermissions.Asset_Create &&
                         r !== UserPermissions.Mods_Create &&
                         r !== UserPermissions.Users_EditSelf &&
                         r !== UserPermissions.Secret_Features
@@ -41,17 +42,17 @@ export const konamiRouter = router({
                 }
             } else {
                 targetUser.permissions = {
-                    sitewide: dedupeArray([...targetUser.permissions.sitewide, 
-                        UserPermissions.Asset_Create, 
-                        UserPermissions.Mods_Create,
-                        UserPermissions.Users_EditSelf
+                    sitewide: dedupeArray([...targetUser.permissions.sitewide,
+                    UserPermissions.Asset_Create,
+                    UserPermissions.Mods_Create,
+                    UserPermissions.Users_EditSelf
                     ]),
                     perGame: targetUser.permissions.perGame
                 }
             }
             targetUser.save();
         }),
-    toggleSecretFeatures: loggedInProcedure({denied: [UserPermissions.C_Banned]}).input(z.object({
+    toggleSecretFeatures: loggedInProcedure({ denied: [UserPermissions.C_Banned] }).input(z.object({
         enabled: z.boolean(),
     })).mutation(async ({ ctx, input }) => {
         if (!input.enabled) {
@@ -68,5 +69,29 @@ export const konamiRouter = router({
             Logger.info(`User ${ctx.user.id} (${ctx.user.username}) has enabled secret features.`);
         }
         await ctx.user.save();
-    })
+    }),
+    searchUsers: loggedInProcedure([UserPermissions.Users_EditAll, UserPermissions.Users_Ban, UserPermissions.Users_EditAllRoles]).input(z.object({
+        query: z.string().min(1).max(16)
+    })).query(async ({ input, ctx }) => {
+        const users = await User.findAll({
+            where: {
+                [Op.or]: {
+                    displayName: {
+                        [Op.iLike]: `%${input.query}%`
+                    },
+                    username: {
+                        [Op.iLike]: `%${input.query}%`
+                    }
+                }
+            },
+            limit: 10
+        });
+        return users.map(u => {
+            return {
+                ...u.toApiV3(),
+                githubId: u.githubId,
+                discordId: u.discordId,
+            };
+        });
+    }),
 });
