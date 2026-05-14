@@ -46,7 +46,7 @@
       })
       .catch((err) => {
         console.error(err);
-        toast.error(`Failed to send alert.`);
+        toast.error(`Failed to send alert.`, { description: parseErrorMessage(err) });
       });
   }
   // #endregion
@@ -299,6 +299,7 @@
         return [];
       });
   }
+  // #endregion
 </script>
 
 <div class="flex flex-col gap-4 m-auto p-4 justify-center">

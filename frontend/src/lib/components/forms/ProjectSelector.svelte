@@ -12,6 +12,7 @@
   let { 
     selectedProjectName = $bindable(``),
     selectedProjectId = $bindable(-1), 
+    selectedProjectNameId = $bindable(),
     open = $bindable(true), 
     id = "depProjectSelector",
     gameName = "",
@@ -19,6 +20,7 @@
   } : {
     selectedProjectName?: string;
     selectedProjectId?: number;
+    selectedProjectNameId?: string;
     open?: boolean;
     id?: string;
     gameName?: string;
@@ -38,7 +40,7 @@
   }
 
   let searchQuery = $state("");
-  let searchResults: {name: string, id:number}[] = $state([]);
+  let searchResults: {name: string, id:number, nameId: string}[] = $state([]);
   async function searchProjects(query: string) {
     if (query.length === 0) return searchResults;
     let res = await trpc.internal.mods.searchProjects.query({ query, gameName: gameName });
@@ -53,13 +55,12 @@
   </Popover.Trigger>
   <Popover.Content class="p-0">
     <Command.Root shouldFilter={false} >
-      <Command.Input bind:value={searchQuery} oninput={() => {
-        debounce(() => {
+      <Command.Input bind:value={searchQuery} oninput={debounce(() => {
           searchProjects(searchQuery).then((res) => {
             searchResults = res;
           });
-        }, 1000);
-      }} placeholder="Search projects..." />
+        }, 500)
+      } placeholder="Search projects..." />
       <Command.List>
         <Command.Empty>No project found.</Command.Empty>
         {#each searchResults as project}
@@ -69,10 +70,12 @@
               //console.log("Selected project ID:", selectedProjectId);
               selectedProjectId = project.id;
               selectedProjectName = project.name;
+              selectedProjectNameId = project.nameId;
               closeAndFocusTrigger();
             }}
           >
             {project.name}
+            <p class="text-xs text-gray-500">{`ID: ${project.id}`}</p>
           </Command.Item>
         {/each}
       </Command.List>

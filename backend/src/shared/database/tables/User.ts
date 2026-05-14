@@ -87,6 +87,13 @@ export class User extends Model<InferAttributes<User>, InferCreationAttributes<U
         sitewide: UserPermissions[]
     }>;
 
+    @Column({
+        type: DataType.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
+    })
+    declare shouldDmAlerts: CreationOptional<boolean>;
+
     @BelongsToMany(() => Project, () => ProjectAuthor)
     declare authoredProjects: NonAttribute<Project[]>;
 
@@ -112,6 +119,7 @@ export class User extends Model<InferAttributes<User>, InferCreationAttributes<U
             perGame: z.record(z.string(), z.array(z.enum(UserPermissions))),
             sitewide: z.array(z.enum(UserPermissions))
         }),
+        shouldDmAlerts: z.boolean(),
         createdAt: z.date(),
         updatedAt: z.date(),
         deletedAt: z.date().nullable()
@@ -127,6 +135,7 @@ export class User extends Model<InferAttributes<User>, InferCreationAttributes<U
         avatarUrl: User.validator.shape.avatarUrl.nullish(),
         userPlatforms: User.validator.shape.userPlatforms.nullish(),
         permissions: User.validator.shape.permissions.nullish(),
+        shouldDmAlerts: User.validator.shape.shouldDmAlerts.nullish(),
         createdAt: User.validator.shape.createdAt.nullish(),
         updatedAt: User.validator.shape.updatedAt.nullish(),
         deletedAt: User.validator.shape.deletedAt.nullish(),
@@ -208,7 +217,7 @@ export class User extends Model<InferAttributes<User>, InferCreationAttributes<U
     }): Promise<Alert> {
         return User.createAlert(this.id, {
             ...data,
-        });
+        }, this);
     }
 
     public static createAlert(userId: number, data: {
@@ -219,13 +228,26 @@ export class User extends Model<InferAttributes<User>, InferCreationAttributes<U
         requestId?: number | null;
         header: string;
         message: string;
-    }): Promise<Alert> {
+    }, user?: User): Promise<Alert> {
         Logger.debug(`Creating alert for user ${userId}: ${data.header}`);
         return Alert.create({
             ...data,
             userId: userId,
             read: false,
-            discordMessageSent: true
+            discordMessageSent: !(user?.shouldDmAlerts ?? false), // if user doesn't want DMs, we consider the alert "sent" for the purposes of not trying to send a DM
+        }).then(alert => {
+            if (user && user.shouldDmAlerts) {
+                Logger.debug(`Sending DM alert to user ${userId} for alert ${alert.id}`);
+                // send discord DM
+                // we don't await this, because we don't want to block the main thread if discord is having issues
+                alert.sendDiscordMessage(user).catch(err => {
+                    Logger.warn(`Failed to send Discord DM for alert ${alert.id} to user ${userId}: ${parseErrorMessage(err)}`);
+                });
+            }
+            return alert;
+        }).catch(err => {
+            Logger.error(`Failed to create alert for user ${userId}: ${parseErrorMessage(err)}`);
+            throw err;
         });
     }
     // #endregion

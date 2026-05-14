@@ -105,10 +105,13 @@
   };
 
   html.unrendered > body > div.unrendered {
-    @apply flex flex-col items-center justify-center h-screen gap-4;
+    @apply absolute flex flex-col items-center justify-center gap-4;
     color:oklch(0.708 0 0);
     font-size: 1.25rem;
     font-weight: 500;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
   }
 
   html > body > div.unrendered {

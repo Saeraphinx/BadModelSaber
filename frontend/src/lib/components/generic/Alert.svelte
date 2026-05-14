@@ -21,6 +21,7 @@
   } & HTMLAttributes<HTMLDivElement> = $props();
 
   let isVisible = $state(true);
+  let isPendingHidden = $state(false);
 
   let bgColor = $derived.by(() => {
     switch (alert.type) {
@@ -38,33 +39,43 @@
   });
 
   function markRead() {
-    isVisible = false;
+    isPendingHidden = true;
+    setTimeout(() => {
+      if (deleteFromArray) {
+        deleteFromArray();
+      } else {
+        isVisible = false;
+      }
+      isPendingHidden = false;
+    }, 500);
     trpc.internal.alerts.markAlertRead.mutate({ id: alert.id }).catch((error) => {
       console.error('Failed to mark alert as read:', error);
       toast.error(m["toasts.error.generic"](), {
         description: parseErrorMessage(error),
       });
     });
-    if (deleteFromArray) {
-      deleteFromArray();
-    }
   }
 
   function deleteAlert() {
-    isVisible = false;
+    isPendingHidden = true;
+    setTimeout(() => {
+      if (deleteFromArray) {
+        deleteFromArray();
+      } else {
+        isVisible = false;
+      }
+      isPendingHidden = false;
+    }, 500);
      trpc.internal.alerts.deleteAlert.mutate({ id: alert.id }).catch((error) => {
       console.error('Failed to delete alert:', error);
       toast.error(m["toasts.error.generic"](), {
         description: parseErrorMessage(error),
       });
     });
-    if (deleteFromArray) {
-      deleteFromArray();
-    }
   }
 </script>
 
-<div class={cn(`${bgColor} ${isVisible ? `` : `hidden`} rounded-xl p-4`,className)} {...restProps}>
+<div class={cn(`${bgColor} ${isVisible ? `` : `hidden`} ${isPendingHidden ? `translate-x-100 transition-transform duration-500` : ``} rounded-xl p-4`, className)} {...restProps}>
   <div class="flex items-center justify-between">
     <span class="font-semibold text-foreground">{alert.header}</span>
     <span class="text-sm text-gray-500">{new Date(alert.createdAt).toLocaleDateString()}</span>
@@ -84,19 +95,11 @@
       </Button>
     {/if}
     {#if !alert.read}
-    <Button variant="outline" onclick={() => {
-      if (!showRead) {
-        isVisible = false;
-      }
-      markRead();
-    }}>
+    <Button variant="outline" onclick={markRead}>
       Mark as Read
     </Button>
     {:else}
-    <Button variant="destructive" onclick={() => {
-      isVisible = false
-      deleteAlert();
-    }}>
+    <Button variant="destructive" onclick={deleteAlert}>
       Delete
     </Button>
     {/if}

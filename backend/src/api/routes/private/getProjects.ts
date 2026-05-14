@@ -76,7 +76,7 @@ export const getModsInternal = router({
                     },
                     gameName: input.gameName
                 },
-                attributes: [`id`, `name`, `gameName`, `status`],
+                attributes: [`id`, `name`, `gameName`, `nameId`, `status`],
                 include: [{
                     model: User,
                     attributes: [`id`, 'permissions']
@@ -88,6 +88,38 @@ export const getModsInternal = router({
                 return {
                     id: p.id as number,
                     name: p.name,
+                    nameId: p.nameId,
+                }
+            });
+        }),
+    // #endregion
+    // #region searchProjectsByNameId
+    searchProjectsByNameId: anyProcedure()
+        .input(z.object({
+            nameIds: z.array(z.string()),
+            gameName: z.string()
+        }))
+        .query(async ({ ctx, input }) => {
+            let projects = await Project.findAll({
+                where: {
+                    nameId: {
+                        [Op.in]: input.nameIds
+                    },
+                    gameName: input.gameName
+                },
+                attributes: [`id`, `name`, `gameName`, `nameId`, `status`],
+                include: [{
+                    model: User,
+                    attributes: [`id`, 'permissions']
+                }]
+            });
+
+            projects = projects.filter(async p => await p.canView(ctx.user));
+            return projects.map(p => {
+                return {
+                    id: p.id as number,
+                    name: p.name,
+                    nameId: p.nameId,
                 }
             });
         }),
@@ -136,4 +168,5 @@ export const getModsInternal = router({
             
             return outputApi;
         }),
+        // #endregion
 })

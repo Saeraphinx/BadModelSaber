@@ -126,6 +126,18 @@
       "unverified": {
         "title": "This asset has <b>not</b> been verified by the ModelSaber team. <span class=\"text-orange-400\">Use at your own risk!</span>",
         "description": "Unverified assets have not been checked for malware. Be cautious when downloading and using these assets."
+      },
+      "pending": {
+        "title": "This asset is currently pending approval. <span class=\"text-red-600\">Use with caution!</span>",
+        "description": "Pending assets have not been reviewed by the approval team. They may contain malware or be incompatible with the game. Be cautious when downloading and using these asset. <b>You will not receive support for unverified assets.</b>"
+      },
+      "private": {
+        "title": "This asset is private.",
+        "description": "Private assets are not visible to the public"
+      },
+      "removed": {
+        "title": "This asset has been removed.",
+        "description": "Removed assets have been taken down by the approval team and are not visible to the public."
       }
     },
     "previewTitle": "Asset Preview",
@@ -191,8 +203,10 @@
     "uploadNewVersion": "Upload New Version",
     "upload": "Upload",
     "uploadAndSaveIcon": "Upload & Save Icon",
+    "nameIdExplanation": "The Manifest ID is a unique identifier for this project that is used in the manifest (e.g. the \"id\" field in a BSIPA manifest) of all of your versions. It is typically the same as the name. This cannot be changed after the project is created.",
     "dataTable": {
       "name": "Name",
+      "nameId": "Manifest ID",
       "summary": "Summary",
       "description": "Description",
       "uploadedBy": "Uploaded by",
@@ -235,6 +249,8 @@
       "addDependency": "Add Dependency",
       "semverShouldMatchManifest": "The semantic version should match the version specified in your manifest.json file.",
       "importFromOtherVersion": "Import dependencies from another version",
+      "importAllFromManifest": "Import all data from manifest",
+      "importDepsFromManifest": "Import dependencies from manifest",
       "importFromOtherVersionDialogTitle": "Import Dependencies from Another Version",
       "importFromOtherVersionDialogDescription": "Select another version of {projectName} to import dependencies from. This will copy all dependencies from the selected version to the new version you are creating.",
       "searchVersion": "Search Versions...",
@@ -246,6 +262,7 @@
       "noIssuesFound": "No issues found.",
       "couldNotReadManifest": "Could not read manifest from file. Please ensure it is a valid .dll or .zip file containing a manifest.json.",
       "manifestProjectNameMismatch": "The name specified in your manifest ({manifestName}) doesn't match the name of the project you're uploading to ({expectedName}). Please ensure the 'name' field in your manifest matches the name of your project on ModelSaber.",
+      "manifestProjectIdMismatch" : "The manifest ID specified in your manifest ({manifestId}) doesn't match the manifest ID of the project you're uploading to ({expectedManifestId}). Please ensure the 'id' field in your manifest matches the manifest ID of your project on ModelSaber.",
       "dependencies": {
         "manifestMissingdependsOn": "Your manifest is missing the 'dependsOn' field, which is required to specify your mod's dependencies. Please add this field to your manifest and try again.",
         "webInvalidRange": "Dependency {depName} has an invalid game version range specified: {sv}. Please ensure all dependencies have valid semantic version ranges.",
@@ -272,6 +289,14 @@
       "pending": {
         "title": "This mod is currently pending approval. <span class=\"text-red-600\">Use with caution!</span>",
         "description": "Pending mods have not been reviewed by the approval team. They may contain malware or be incompatible with the game. Be cautious when downloading and using these mods. <b>You will not receive support for unverified mods.</b>"
+      },
+      "private": {
+        "title": "This mod is private.",
+        "description": "Private mods are not visible to the public"
+      },
+      "removed": {
+        "title": "This mod has been removed.",
+        "description": "Removed mods have been taken down by the approval team and are not visible to the public."
       }
     }
   },

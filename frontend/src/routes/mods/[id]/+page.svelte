@@ -262,6 +262,9 @@
           <Button variant="outline" class="ml-auto w-full" onclick={() => (isTranslating = true)}>{m[`dialogs.translate`]()}</Button>
         {/if}
       {/if}
+      {#if shouldAllowApproval}
+        <Button variant="outline" class="ml-auto w-full" onclick={() => approvalDialog?.showDialog(project.id, project.name, `project`)}>{m["common.buttons.approvalDialog"]()}</Button>
+      {/if}
     </div>
   </div>
   <Separator />

@@ -47,7 +47,7 @@ export async function getManifestFromZip(file: File | ArrayBuffer | Buffer<Array
     let manifestJson: Manifest | null = null;
     for (let fileName in zip.files) {
       const file = zip.files[fileName];
-      if (file.dir) return null;
+      if (file.dir) continue; // skip directories
 
       let data = await file.async("text").catch((err) => {
         throw new Error(`Failed to read file ${fileName} from zip archive: ${err.message}`);

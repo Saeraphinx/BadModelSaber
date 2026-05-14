@@ -35,12 +35,14 @@
 
   // #region KonamiListener
   onMount(() => {
-    if (!isLoggedIn && checkRoles(user, [UserPermissions.C_Banned])) return;
     const konamiCode = ["ArrowUp", "ArrowUp", "ArrowDown", "ArrowDown", "ArrowLeft", "ArrowRight", "ArrowLeft", "ArrowRight", "b", "a"];
 
     let inputSequence: string[] = [];
 
     const handleKeydown = (event: KeyboardEvent) => {
+      // Skip if user is banned or not logged in
+      if (!isLoggedIn && checkRoles(user, [UserPermissions.C_Banned])) return;
+      
       if (event.repeat) return; // Ignore repeated key presses
       if (!konamiCode.includes(event.key)) {
         inputSequence = []; // Reset if an invalid key is pressed
@@ -125,37 +127,26 @@
   // #endregion KonamiListener
 
   // #region Alerts
-  let allAlerts = $state<AlertApiV3[]>([]);
-  let unreadAlerts = $derived(allAlerts.filter((alert) => !alert.read));
-  let wasEverFetchedAlerts = $state(false);
-  let unreadAlertCount = $derived.by(() => {
-    if (wasEverFetchedAlerts) {
-      return unreadAlerts.length;
-    } else {
-      return alertCount ?? 0;
-    }
-  });
-  let isPendingAlerts = $derived(unreadAlertCount > 0);
   let openAlerts = $state(false);
   let showRead = $state(false);
+  let allAlerts = $state<AlertApiV3[]>([]);
   let isLoadingAlerts = $state(false);
+  let unreadAlertCount = $derived.by(() => {
+    return allAlerts.filter((alert) => !alert.read).length;
+  });
+  let hasUnreadAlerts = $derived(unreadAlertCount > 0);
   async function updateAlerts() {
-    // this is honestly a fucking mess but its what works for now
     isLoadingAlerts = true;
-    await trpc.internal.alerts.getAlerts
-      .query({ read: `all` })
-      .then((val) => {
-        allAlerts = val;
-        isLoadingAlerts = false;
-        wasEverFetchedAlerts = true;
-      })
-      .catch((error) => {
-        toast.error(m["toasts.failedTo.loadAlerts"](), {
-          description: error.message,
-        });
-        return [];
-      });
-  }
+    await trpc.internal.alerts.getAlerts.query({ read: `all` }).then((data) => {
+      allAlerts = data;
+      return data;
+    }).catch((err) => {
+      toast.error(m["toasts.error.generic"](), { description: parseErrorMessage(err) });
+      return [];
+    }).finally(() => {
+      isLoadingAlerts = false;
+    });
+  } 
   async function openAlertsSidebar() {
     openAlerts = true;
     await updateAlerts();
@@ -165,7 +156,7 @@
   // #region Toasts
   // Alert count toast
   onMount(() => {
-    if (isPendingAlerts) {
+    if (hasUnreadAlerts) {
       toast.info(m["toasts.unreadAlerts"]({ count: unreadAlertCount }), {
         description: "",
         duration: 10000,
@@ -298,22 +289,20 @@
   <!-- #region top bar -->
   {#if showDevbar.current}
     {#if env.PUBLIC_BASE_URL.includes(`localhost`)}
-      <div class="sticky top-0 z-50 text-center pt-0.5 px-8 w-full bg-linear-to-r from-[#8e28e229] via-[#8e28e299] to-[#8e28e229]">
+      <div class="absolute top-0 z-50 text-center pt-0.5 w-full bg-linear-to-r from-[#8e28e200] via-[#8e28e299] to-[#8e28e200]">
         <!-- svelte-ignore a11y_distracting_elements -->
-        <marquee behavior="alternate" class="text-base">ModelSaber Development Instance</marquee>
+        <p class="text-base">ModelSaber Development Instance</p>
       </div>
     {:else if env.PUBLIC_BASE_URL.includes(`saera.gay`)}
-      <div class="sticky top-0 z-50 text-center pt-0.5 w-full bg-linear-to-r from-[#DC2DE220] via-[#DC2DE299] to-[#DC2DE220]">
+      <div class="absolute top-0 z-50 text-center pt-0.5 m-auto w-full bg-linear-to-r from-[#DC2DE220] via-[#DC2DE299] to-[#DC2DE220]">
         <!-- svelte-ignore a11y_distracting_elements -->
-        <marquee behavior="alternate" class="text-base">ModelSaber Public Development Instance</marquee>
+        <p class="text-base">ModelSaber Public Development Instance</p>
       </div>
     {/if}
-  {:else}
-    {#if env.PUBLIC_BASE_URL.includes(`localhost`) || env.PUBLIC_BASE_URL.includes(`saera.gay`)}
-      <div class="sticky z-50">
-        <span class="bg-[#8e28e2] w-2 h-2 block absolute top-7 left-7 rounded-full animate-pulse"></span>
-      </div>
-    {/if}
+  {:else if env.PUBLIC_BASE_URL.includes(`localhost`) || env.PUBLIC_BASE_URL.includes(`saera.gay`)}
+    <div class="sticky z-50">
+      <span class="bg-[#8e28e2] w-2 h-2 block absolute top-7 left-7 rounded-full animate-pulse"></span>
+    </div>
   {/if}
   <div class="flex w-auto flex-row text-base justify-between">
     <!-- Logo -->
@@ -346,7 +335,7 @@
         <DropdownMenu.Trigger class="p-2 rounded-full hover:bg-accent transition-colors duration-300">
           {#if isLoggedIn}
             <Avatar.Root>
-              {#if isPendingAlerts}
+              {#if hasUnreadAlerts}
                 <Avatar.Badge class="bg-red-400 top-0" />
               {/if}
               <Avatar.Image src={user?.avatarUrl} alt={user?.displayName} />
@@ -368,7 +357,7 @@
               <DropdownMenu.Item>
                 <BellIcon />
                 {m["layout.userMenu.alerts"]()}
-                {#if isPendingAlerts}
+                {#if hasUnreadAlerts}
                   <Badge class="ml-0.5" variant="destructive">
                     {unreadAlertCount}
                   </Badge>
@@ -515,7 +504,7 @@
             {#if showRead}
               {m["layout.alertSidebar.readAlerts"]({ count: allAlerts.length })}
             {:else}
-              {m["layout.alertSidebar.unreadAlerts"]({ count: unreadAlerts.length })}
+              {m["layout.alertSidebar.unreadAlerts"]({ count: unreadAlertCount })}
             {/if}
           {:else}
             <div class="flex flex-row items-center justify-center gap-2">
@@ -530,43 +519,27 @@
         </div>
       </div>
     </Sheet.Header>
-    <ScrollArea class="mx-4 min-h-0">
+    <ScrollArea class="mx-4 min-h-0 transition-all duration-500">
       {#if showRead}
-        {#if allAlerts.length > 0}
-          {#each allAlerts as alert}
-            <Alert
-              {alert}
-              deleteFromArray={() => {
-                allAlerts = allAlerts.filter((a) => a.id !== alert.id);
-              }}
-              class="mb-2" />
-          {/each}
+        {#each allAlerts as alert}
+          <Alert {alert} class="mb-2" deleteFromArray={() => { 
+            allAlerts = allAlerts.filter(a => a.id !== alert.id && a.createdAt !== alert.createdAt)
+            }} />
         {:else}
-          <p class="text-gray-500">{m["layout.alertSidebar.noAlertsAvailable"]()}</p>
-        {/if}
-      {:else if unreadAlerts.length > 0}
-        {#each unreadAlerts as alert}
-          <Alert
-            {alert}
-            deleteFromArray={() => {
-              // mark alert as read on client
-              unreadAlerts = unreadAlerts.map((a) => {
-                if (a.id === alert.id) {
-                  return {
-                    ...a,
-                    read: true,
-                  };
-                } else {
-                  return a;
-                }
-              });
-            }}
-            class="mb-2" />
+          <div class="flex justify-center items-center gap-2">
+            <p class="text-gray-500">{m["layout.alertSidebar.noAlertsAvailable"]()}</p>
+          </div>
         {/each}
       {:else}
-        <div class="flex justify-center items-center gap-2">
-          <p class="text-gray-500">{m["layout.alertSidebar.noUnreadAlerts"]()}</p>
-        </div>
+        {#each allAlerts.filter(a => !a.read) as alert}
+          <Alert {alert} class="mb-2" deleteFromArray={() => {
+            allAlerts = allAlerts.filter(a => a.id !== alert.id && a.createdAt !== alert.createdAt)
+          }}/>
+        {:else}
+          <div class="flex justify-center items-center gap-2">
+            <p class="text-gray-500">{m["layout.alertSidebar.noUnreadAlerts"]()}</p>
+          </div>
+        {/each}
       {/if}
     </ScrollArea>
     <Sheet.Footer>

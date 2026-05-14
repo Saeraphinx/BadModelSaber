@@ -14,6 +14,7 @@ import { getManifestFromString, Manifest } from "../../../../shared/ModParser.ts
 import z from "zod";
 import { Op } from "sequelize";
 import { PathsObject } from "openapi3-ts/oas31";
+import { parse, SemVer } from "semver";
 
 /*
 == Assets ==
@@ -191,9 +192,11 @@ export const uploadStuff = router({
         id: zfd.text(),
         data: zfd.json(Version.validator.pick({
             platform: true,
-            semver: true,
             dependencies: true,
         }).extend({
+            semver: z.string().refine((version) => {
+                return !!parse(version, true, false);
+            }, { message: "Invalid semantic version format" }),
             supportedGameVersionIds: z.array(z.number()).nonempty(),
         })),
         modZip: zfd.file(), // main asset file, will be validated later based on type,
@@ -213,21 +216,21 @@ export const uploadStuff = router({
             throw new TRPCError({ code: 'FORBIDDEN', message: 'You do not have permission to upload versions for this project.' });
         }
 
-        let newGameVersions = GameVersion.findAll({
+        let newGameVersions = await GameVersion.findAll({
             where: {
                 [Op.or]: [
                     { id: input.data.supportedGameVersionIds },
                     { linkedVersionIds: { [Op.overlap]: input.data.supportedGameVersionIds } } // also include game versions that have linkedVersionIds that overlap with the provided supportedGameVersionIds,
                 ]
             }
-        }).then((gameVersions) => {
-            if (gameVersions.length >= input.data.supportedGameVersionIds.length) {
-                throw new TRPCError({ code: 'BAD_REQUEST', message: 'One or more supported game versions not found' });
-            }
-            return gameVersions;
         }).catch((err) => {
             Logger.error(`Error validating supported game versions: ${parseErrorMessage(err)}`);
             throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Failed to validate supported game versions. Please contact a site administrator.' });
+        }).then((gameVersions) => {
+            if (gameVersions.length > input.data.supportedGameVersionIds.length) {
+                throw new TRPCError({ code: 'BAD_REQUEST', message: 'One or more supported game versions not found' });
+            }
+            return gameVersions;
         });
 
         let fileHash = await getHashFromFile(input.modZip);
@@ -268,33 +271,34 @@ export const uploadStuff = router({
         if (!manifestJson) {
             Logger.warn(`No manifest found in uploaded zip file for project ID ${project.id}. Version will be created without manifest data.`);
         } else {
-            if (manifestJson.id !== project.nameId) {
+            if (manifestJson.id !== project.nameId && EnvConfig.isDevMode) {
                 throw new TRPCError({ code: 'BAD_REQUEST', message: 'Manifest mod ID does not match project nameId.' });
             }
         }
 
-        await newGameVersions; // trigger errors before we create the version entry or save the file ideally
-
-        return await Version.create({
+        let retVal = await Version.create({
             projectId: project.id,
             platform: input.data.platform,
-            semver: input.data.semver,
+            semver: new SemVer(input.data.semver, true),
             dependencies: input.data.dependencies,
             zipHash: fileHash,
             fileSize: input.modZip.size,
             uploaderId: ctx.user.id,
             lastUpdatedById: ctx.user.id,
             status: Status.Private,
-            contentHashes: [], // will be filled in later by a background job after the file is saved and processed
+            contentHashes: hashes,
+        }).catch((err) => {
+            Logger.error(`Error creating version: ${parseErrorMessage(err)}`);
+            throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Failed to create version. Please contact a site administrator.' });
         }).then(async (version) => {
-            version.$set(`supportedGameVersions`, await newGameVersions);
+            version.$set(`supportedGameVersions`, newGameVersions);
             Logger.log(`Version database entry created for user ${ctx.user?.id} with version ID ${version.id} for project ID ${project.id}`);
             let versionFolder = path.join(project.folderPath, version.id.toString());
             fs.mkdirSync(versionFolder, { recursive: true });
             await input.modZip.arrayBuffer().then(async (buffer) => {
-                fs.writeFileSync(path.join(versionFolder, await version.zipFileName), Buffer.from(buffer));
+                fs.writeFileSync(path.join(versionFolder, version.zipFileName), Buffer.from(buffer));
                 if (manifestJson) {
-                    fs.writeFileSync(path.join(versionFolder, await version.manifestName), JSON.stringify(manifestJson));
+                    fs.writeFileSync(path.join(versionFolder, version.manifestName), JSON.stringify(manifestJson));
                 }
             }).catch((err) => {
                 Logger.error(`Error saving version mod file: ${err.message}`)
@@ -307,10 +311,9 @@ export const uploadStuff = router({
                 });
             }
             return await version.toApiV3();
-        }).catch((err) => {
-            Logger.error(`Error creating version: ${parseErrorMessage(err)}`);
-            throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Failed to create version. Please contact a site administrator.' });
-        });
+        })
+
+        return retVal;
     })
 })
 

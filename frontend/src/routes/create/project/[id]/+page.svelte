@@ -13,10 +13,12 @@
   import { Spinner } from "$shadcn/components/ui/spinner";
   import type { LocalizedString } from "@inlang/paraglide-js";
   import { CheckIcon } from "@lucide/svelte";
+  import { redirect } from "@sveltejs/kit";
   import JSZip from "jszip";
   import { parse, validRange } from "semver";
   import { onMount } from "svelte";
   import { toast } from "svelte-sonner";
+  import { parseErrorMessage } from "../../../../lib/scripts/utils/api.js";
 
   const { data: _internal } = $props();
   const { trpc, pageData } = $derived(_internal);
@@ -24,32 +26,38 @@
   let semverString = $state("");
   let platform = $state("universal");
   let supportedGameVersionIds = $state<string[]>([]);
-  let webDependencies = $state<{ pId: number; pName: string; sv: string }[]>([]);
+  let webDependencies = $state<{ pId: number; pName: string; pNameId: string; sv: string }[]>([]);
   let files: FileList | undefined = $state();
 
   let openDepCloneDialog = $state(false);
   let versionIdToCloneFrom = $state(-1);
 
   let manifest: Manifest | null = $state(null);
-  let manifestIssues: LocalizedString[] = $derived.by(() => {
+  let manifestIssues: { str: LocalizedString; issueType: `warn` | `error` }[] = $derived.by(() => {
     if (validGameInfo === null) return [];
-    if (!manifest) return [m["mods.manifestChecks.couldNotReadManifest"]()];
+    if (!manifest) return [{ issueType: `error`, str: m["mods.manifestChecks.couldNotReadManifest"]() }];
 
-    let issues: LocalizedString[] = [];
-    if (
-      manifestGameVersionIsLowestSupportedVersion(
-        manifest,
-        validGameInfo.gameVersions.filter((gv) => supportedGameVersionIds.includes(gv.id.toString())),
-      )
-    ) {
-      issues.push(m["mods.manifestChecks.manifestGameVersionIsntLowest"]({ manifestGameVersion: manifest.gameVersion }));
+    let issues: { str: LocalizedString; issueType: `warn` | `error` }[] = [];
+    if (!manifestGameVersionIsLowestSupportedVersion(manifest, validGameInfo.gameVersions.filter((gv) => supportedGameVersionIds.includes(gv.id.toString())))) {
+      issues.push({
+        issueType: `error`,
+        str: m["mods.manifestChecks.manifestGameVersionIsntLowest"]({ manifestGameVersion: manifest.gameVersion }),
+      });
     }
     if (manifest.name !== pageData.name) {
-      issues.push(m["mods.manifestChecks.manifestProjectNameMismatch"]({ manifestName: manifest.name, expectedName: pageData.name }));
+      issues.push({ issueType: `warn`, str: m["mods.manifestChecks.manifestProjectNameMismatch"]({ manifestName: manifest.name, expectedName: pageData.name }) });
     }
+    if (manifest.id !== pageData.nameId) {
+      issues.push({ issueType: `error`, str: m["mods.manifestChecks.manifestProjectIdMismatch"]({ manifestId: manifest.id ?? ``, expectedManifestId: pageData.nameId }) });
+    }
+    //console.log(webDependencies);
     let depIssues = manifestAllDependenciesExist(manifest, webDependencies);
     if (depIssues.length > 0) {
-      issues.push(...depIssues);
+      issues.push(
+        ...depIssues.map((issue) => {
+          return { str: issue, issueType: `error` as `error` };
+        }),
+      );
     }
     return issues;
   });
@@ -66,10 +74,32 @@
     });
   }
 
+  function saveDataToLocalStorage() {
+    localStorage.setItem(`createVersionData-${pageData.id}`, JSON.stringify({ semverString, platform, supportedGameVersionIds, webDependencies }));
+  }
   onMount(() => {
     getGameInfo().then((info) => {
       validGameInfo = info;
     });
+    let savedData = localStorage.getItem(`createVersionData-${pageData.id}`);
+    if (savedData) {
+      try {
+        let { semverString: savedSemverString, platform: savedPlatform, supportedGameVersionIds: savedSupportedGameVersionIds, webDependencies: savedWebDependencies } = JSON.parse(savedData);
+        semverString = savedSemverString || "";
+        platform = savedPlatform || "universal";
+        supportedGameVersionIds = savedSupportedGameVersionIds || [];
+        webDependencies = savedWebDependencies || [];
+      } catch (e) {
+        console.error("Failed to parse saved data from local storage:", e);
+      }
+    }
+  });
+  $effect(() => {
+    semverString;
+    platform;
+    supportedGameVersionIds;
+    webDependencies;
+    saveDataToLocalStorage();
   });
 
   async function getVersionsForDepCloneDialog() {
@@ -82,11 +112,11 @@
     let file = files[0];
     if (file.name.endsWith(`.zip`)) {
       manifest = await getManifestFromZip(file);
-      //debugger;
     } else {
       manifest = await getManifestFromFile(file);
     }
     if (!manifest) {
+      console.error("Failed to read manifest from file");
       toast.error(m["mods.manifestChecks.couldNotReadManifest"]());
     }
   }
@@ -106,19 +136,57 @@
       file = new File([zippedFile], file.name.replace(`.dll`, `.zip`), { type: "application/zip" });
     }
 
-    await trpc.v3.upload.versionUpload.mutate({
-      id: pageData.id,
-      data: {
+    let formData = new FormData();
+    formData.append("id", pageData.id.toString());
+    formData.append(
+      "data",
+      JSON.stringify({
         semver: semverString,
         platform,
         supportedGameVersionIds: supportedGameVersionIds.map((id) => parseInt(id)),
         dependencies: webDependencies.map((d) => {
           return { pId: d.pId, sv: d.sv };
         }),
-      },
-      modZip: file,
-      immidateSubmit: false,
+      }),
+    );
+    formData.append("modZip", file);
+    formData.append("immidateSubmit", `on`); // omit to not submit immidately, include to submit immidately
+    await trpc.v3.upload.versionUpload
+      .mutate(formData)
+      .then(() => {
+        toast.success(m["toasts.success.submit"]());
+        localStorage.removeItem(`createVersionData-${pageData.id}`);
+        redirect(303, `/mod/${pageData.id}`);
+      })
+      .catch((error) => {
+        console.error("Error submitting version:", error);
+        toast.error(m["toasts.error.generic"](), {
+          description: parseErrorMessage(error),
+        });
+      });
+  }
+
+  // @ts-ignore sometimes typescript forgets its not real
+  let allowManifestImport = $derived(manifest && manifest.dependsOn && Object.keys(manifest.dependsOn).length > 0)
+  async function importDepsFromManifest() {
+    if (!allowManifestImport) return;
+    // @ts-ignore oh my god i literally check for this right above you
+    trpc.internal.mods.searchProjectsByNameId.query({ nameIds: Object.keys(manifest.dependsOn), gameName: pageData.gameName }).then((res) => {
+      res.forEach((project) => {
+        let manifestDepVersion = manifest?.dependsOn ? manifest.dependsOn[project.nameId] : null;
+        webDependencies.push({ pId: project.id, pName: project.name, pNameId: project.nameId, sv: manifestDepVersion });
+      });
+    }).catch(() => {
+      toast.error(m["toasts.error.generic"]());
     });
+  }
+  async function importAllFromManifest() {
+    if (!allowManifestImport) return;
+    importDepsFromManifest();
+    semverString = manifest?.version || "";
+    let manGv = validGameInfo?.gameVersions.find((gv) => gv.version === manifest?.gameVersion);
+    supportedGameVersionIds = manGv ? [manGv.id.toString()] : [];
+    platform = `universal`;
   }
 </script>
 
@@ -132,7 +200,10 @@
     <!-- left side -->
     <div class="flex flex-col justify-center w-full max-w-md p-4 gap-2 bg-card rounded-lg shadow-md">
       {#if validGameInfo === null}
-        <p>{m["loading"]()}</p>
+        <p class="flex flex-row items-center gap-2">
+          <Spinner />
+          {m["loading"]()}
+        </p>
       {:else}
         <span>
           <Label class="p-1 pb-2" for="semver">{m["mods.dataTable.semver"]()}</Label>
@@ -180,23 +251,31 @@
         </span>
       {/if}
     </div>
+    <!-- dependencies -->
     <div class="flex flex-col justify-center w-full max-w-md p-4 bg-card rounded-lg shadow-md gap-2 mt-4">
-      <Label class="p-1 pb-2" for="dependencies">{m["mods.dataTable.dependencies"]()}</Label>
-      <div id="dependencies">
-        {#each webDependencies as dep, i}
-          <div class="flex flex-row gap-2">
-            <DependencySelector gameName={pageData.gameName} bind:selectedProjectId={webDependencies[i].pId} bind:selectedProjectName={webDependencies[i].pName} />
-            <Input bind:value={webDependencies[i].sv} placeholder={m["mods.dataTable.semver"]()} aria-invalid={validRange(dep.sv, false) ? false : true} />
+      {#if validGameInfo === null}
+        <p class="flex flex-row items-center gap-2">
+          <Spinner />
+          {m["loading"]()}
+        </p>
+      {:else}
+        <Label class="p-1 pb-2" for="dependencies">{m["mods.dataTable.dependencies"]()}</Label>
+        <div id="dependencies" class="grid grid-cols-[2fr_1fr_0.4fr] col-gap-1 gap-2 items-center">
+          {#each webDependencies as dep, i}
+            <DependencySelector gameName={pageData.gameName} bind:selectedProjectId={webDependencies[i].pId} bind:selectedProjectName={webDependencies[i].pName} bind:selectedProjectNameId={webDependencies[i].pNameId} />
+            <Input bind:value={webDependencies[i].sv} placeholder={`SemVer`} aria-invalid={validRange(dep.sv, false) ? false : true} />
             <Button variant="destructive" onclick={() => (webDependencies = webDependencies.filter((_, _i) => _i !== i))}>
               {m["dialogs.remove"]()}
             </Button>
-          </div>
-        {/each}
-      </div>
-      <Button variant="outline" class="mt-2" onclick={() => (webDependencies = [...webDependencies, { pId: -1, pName: ``, sv: "" }])}>
-        {m["mods.createVersion.addDependency"]()}
-      </Button>
-      <Button variant="ghost" class="w-full" onclick={() => (openDepCloneDialog = true)}>{m["mods.createVersion.importFromOtherVersion"]()}</Button>
+          {/each}
+        </div>
+        <Button variant="outline" class="mt-2" onclick={() => (webDependencies = [...webDependencies, { pId: -1, pName: ``, pNameId: ``, sv: "" }])}>
+          {m["mods.createVersion.addDependency"]()}
+        </Button>
+        <Button variant="ghost" class="w-full" onclick={() => (openDepCloneDialog = true)}>{m["mods.createVersion.importFromOtherVersion"]()}</Button>
+        <Button variant="ghost" class="w-full" onclick={importDepsFromManifest} disabled={!allowManifestImport}>{m["mods.createVersion.importDepsFromManifest"]()}</Button>
+        <Button variant="ghost" class="w-full" onclick={importAllFromManifest} disabled={!allowManifestImport}>{m["mods.createVersion.importAllFromManifest"]()}</Button>
+      {/if}
     </div>
   </div>
   <div class="flex flex-col w-full max-w-md">
@@ -217,13 +296,17 @@
           <ol class="text-sm max-h-64 w-full overflow-auto p-2 bg-muted rounded-2xl whitespace-pre font-mono list-decimal" aria-hidden="true">
             {#each JSON.stringify(manifest, null, 2).split(`\n`) as line}
               <li>{line}</li>
-            {/each} 
+            {/each}
           </ol>
           {#if manifestIssues.length > 0}
             <div class="flex flex-col gap-2">
-              <ul class="list-disc list-inside text-sm text-red-500">
+              <ul class="list-disc list-inside text-sm">
                 {#each manifestIssues as issue}
-                  <li>{issue}</li>
+                  {#if issue.issueType === `error`}
+                    <li class="text-red-500">{issue.str}</li>
+                  {:else if issue.issueType === `warn`}
+                    <li class="text-yellow-500">{issue.str}</li>
+                  {/if}
                 {/each}
               </ul>
             </div>
@@ -303,7 +386,7 @@
               .then((res) => {
                 webDependencies = versionToCloneFrom.dependencies.map((d) => {
                   let project = res.find((p) => p.id === d.pId);
-                  return { pId: d.pId, pName: project ? project.name : `Project ${d.pId}`, sv: d.sv };
+                  return { pId: d.pId, pName: project ? project.name : `Project ${d.pId}`, pNameId: project ? project.nameId : `p${d.pId}`, sv: d.sv };
                 });
                 openDepCloneDialog = false;
               })

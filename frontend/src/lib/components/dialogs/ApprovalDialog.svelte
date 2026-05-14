@@ -62,14 +62,11 @@
       .then((res) => {
         console.log(`Successfully updated thing ${id} (${name}) to status ${selectedStatus}`);
         toast.success(`Successfully updated thing ${name} to ${selectedStatus}`, {
-          description: "The thing status has been updated successfully. Reload the page to see changes.",
+          description: "The thing status has been updated successfully.",
           dismissable: false,
-          action: {
-            label: "Reload",
-            onClick: () => invalidateAll(),
-          },
         });
         visible = false;
+        invalidateAll();
       })
       .catch((err) => {
         console.error(`Error updating thing ${id} (${name}):`, err);
@@ -91,7 +88,7 @@
       <Dialog.Description>{m["dialogs.approvalDialog.description"]({ name })}</Dialog.Description>
     </Dialog.Header>
     <div class="flex flex-row">
-      <RadioGroup.Root>
+      <RadioGroup.Root bind:value={selectedStatus} >
         {#each statuses as status}
           <div class="flex items-center space-x-2 capitalize">
             <RadioGroup.Item value={status.value} id={status.value} />

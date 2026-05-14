@@ -15,6 +15,7 @@
   import { m } from "$lib/paraglide/messages";
   import * as RadioGroup from "../../../lib/shadcn/components/ui/radio-group";
   import { getRenderingMethodString, getRenderingMethodSupportedGV } from "../../../lib/scripts/utils/stylizer";
+  import { onMount } from "svelte";
 
   let type = $state(AssetFileFormat.Note_Bloq);
   let renderingMethod: string = $state(``);
@@ -92,6 +93,7 @@
       .mutate(formData)
       .then((asset) => {
         if (asset) {
+          localStorage.removeItem(`createAssetData`);
           toast.success(m["toasts.success.submit"]());
           window.location.href = `/assets/${asset.id}`; // redirect to new asset page
         }
@@ -101,6 +103,38 @@
         console.error(err);
       });
   }
+
+  function saveDataToLocalStorage() {
+    localStorage.setItem(`createAssetData`, JSON.stringify({ 
+      name, 
+      type,
+      description,
+      license,
+      customLicense,
+      tags,
+      credits,
+      renderingMethod,
+    }));
+  }
+  onMount(() => {
+    // on load, try to load saved data from local storage
+    const savedDataString = localStorage.getItem(`createAssetData`);
+    if (savedDataString) {
+      const savedData = JSON.parse(savedDataString);
+      name = savedData.name || "";
+      type = savedData.type || AssetFileFormat.Note_Bloq;
+      description = savedData.description || "";
+      license = savedData.license || "";
+      customLicense = savedData.customLicense || "";
+      tags = savedData.tags || [];
+      credits = savedData.credits || "";
+      renderingMethod = savedData.renderingMethod || "";
+    }
+  });
+  $effect(() => {
+    tags; renderingMethod; //oninput doesn't grab these
+    saveDataToLocalStorage();
+  });
 </script>
 
 <div class="flex flex-col text-center w-full p-4">
@@ -111,7 +145,7 @@
 <div class="flex flex-row flex-wrap justify-center p-4 gap-4">
   <div class="flex flex-col w-full max-w-xl">
     <!-- left side -->
-    <div class="flex flex-col justify-center w-full max-w-xl p-4 gap-2 bg-card rounded-lg shadow-md">
+    <div class="flex flex-col justify-center w-full max-w-xl p-4 gap-2 bg-card rounded-lg shadow-md" oninput={saveDataToLocalStorage}>
       <span>
         <Label class="p-1 pb-2" for="name">{m["assets.dataTable.name"]()}</Label>
         <Input bind:value={name} aria-invalid={!zAsset.shape.name.safeParse(name).success} id="name" />

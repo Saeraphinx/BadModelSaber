@@ -1,8 +1,8 @@
 import { AssetFileFormat, Status, Tags } from "./database/DBExtras.ts";
-import { Asset } from "./database/tables/Asset.ts";
 import jszip from "jszip";
 import { parseErrorMessage } from "./Tools.ts";
 import z from "zod/v4";
+import { EnvConfig } from "./EnvConfig.ts";
 
 export class Validator {
     public static validateThumbnail(file: File) {
@@ -12,7 +12,7 @@ export class Validator {
                 (file.type === `image/gif` && file.name.endsWith(`.gif`)) ||
                 (file.type === `image/webp` && file.name.endsWith(`.webp`)));
 
-        return isAcceptableImage && file.size <= 8 * 1024 * 1024; // 8MB limit
+        return isAcceptableImage && (file.size <= 8 * 1024 * 1024 || EnvConfig.isDevMode); // 8MB limit
     }
 
     public static validateAssetFile(file: File, type: AssetFileFormat): boolean {

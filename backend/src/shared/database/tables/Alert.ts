@@ -9,6 +9,8 @@ import { Project } from "./Project.ts";
 import { Version } from "./Version.ts";
 import { ThingRequest } from "./ThingRequest.ts";
 import { capitalizeWords } from "../../Tools.ts";
+import { APIDMChannel, REST, RESTGetAPIChannelResult, Routes } from "discord.js";
+import { Logger } from "../../Logger.ts";
 
 export type AlertInfer = InferAttributes<Alert>;
 @Table({
@@ -25,7 +27,7 @@ export class Alert extends Model<InferAttributes<Alert>, InferCreationAttributes
         allowNull: false,
     })
     declare id: CreationOptional<number>;
-    
+
     @AllowNull(false)
     @Column(DataType.STRING)
     declare type: AlertType; // Type of alert, e.g. "new_asset", "asset_approved", etc.
@@ -105,7 +107,7 @@ export class Alert extends Model<InferAttributes<Alert>, InferCreationAttributes
         discordMessageSent: z.boolean(),
         createdAt: z.date(),
         updatedAt: z.date(),
-    }) satisfies z.ZodType<AlertInfer> 
+    }) satisfies z.ZodType<AlertInfer>
 
     public static validatorCreation = z.object({
         ...Alert.validator.shape,
@@ -120,7 +122,7 @@ export class Alert extends Model<InferAttributes<Alert>, InferCreationAttributes
         updatedAt: Alert.validator.shape.updatedAt.nullish(),
     })
 
-    public static validateExtended(data: Alert | AlertInfer) : string | null {
+    public static validateExtended(data: Alert | AlertInfer): string | null {
         if (data.assetId && data.requestId) {
             return "Either assetId or requestId can be provided, but not both.";
         }
@@ -129,17 +131,54 @@ export class Alert extends Model<InferAttributes<Alert>, InferCreationAttributes
 
     @AfterValidate
     private static async runValidator(alert: Alert) {
-            if (alert.isNewRecord) {
-                await Alert.validatorCreation.parseAsync(alert);
-            } else {
-                await Alert.validator.parseAsync(alert);
-            }
-            let isNotValid = Alert.validateExtended(alert);
-            if (isNotValid) {
-                throw new Error(isNotValid);
-            }
+        if (alert.isNewRecord) {
+            await Alert.validatorCreation.parseAsync(alert);
+        } else {
+            await Alert.validator.parseAsync(alert);
         }
+        let isNotValid = Alert.validateExtended(alert);
+        if (isNotValid) {
+            throw new Error(isNotValid);
+        }
+    }
     // #endregion Validators
+    private static channelCache: Map<number, APIDMChannel> = new Map();
+    public async sendDiscordMessage(user: User) {
+        let client = new REST({ version: `10` }).setToken(process.env.DISCORD_TOKEN || ``);
+        if (!client) {
+            Logger.error(`Failed to create Discord REST client for sending alert ${this.id} to user ${user.id}`);
+            return;
+        }
+        let channel = Alert.channelCache.get(this.userId);
+        if (!channel) {
+            Logger.log(`No cached DM channel found for user ${user.id} when sending alert ${this.id}, creating new DM channel.`);
+            let newChannel = await client.post(Routes.userChannels(), { body: { recipient_id: user.discordId } }).then((response) => {
+                Alert.channelCache.set(this.userId, response as APIDMChannel);
+                return response as APIDMChannel;
+            }).catch((err) => {
+                Logger.error(`Failed to create DM channel for user ${user.id} when sending alert ${this.id}: ${err}`);
+                return null;
+            });
+            if (!newChannel) {
+                User.update({ shouldDmAlerts: false }, { where: { id: this.userId } });
+                Logger.error(`Disabling DM alerts for user ${user.id} because we failed to create a DM channel for them.`);
+                return null;
+            }
+            channel = newChannel;
+        }
+
+        client.post(Routes.channelMessages(channel.id), {
+            body: {
+                content: `**${this.header}**\n${this.message}`,
+            }
+        }).then(() => {
+            this.update({ discordMessageSent: true }).catch((err) => {
+                Logger.error(`Failed to update alert ${this.id} after sending Discord message to user ${user.id}: ${err}`);
+            });
+        }).catch((err) => {
+            Logger.error(`Failed to send DM for alert ${this.id} to user ${user.id}: ${err}`);
+        });
+    }
 
     public toApiV3(): AlertApiV3 {
         return {
