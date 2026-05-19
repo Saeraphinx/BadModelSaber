@@ -42,6 +42,10 @@ Mods must be of a certain level of quality to be marked as verified. Mods that d
     a. While unverified mods are allowed a bit of leeway with this rule, they must still be compatible with the base game and not cause any crashes or major issues. Unverified mods that cause crashes or major issues will be removed.
 5. If using the Harmony library, be sure to patch/unpatch your changes correctly. Doing so incorrectly can lead to Harmony unloading all patches, and a removal of your mod.
 
+### 7. AI Use
+<!-- from https://zulip.readthedocs.io/en/latest/contributing/contributing.html#ai-use-policy-and-guidelines !-->
+You can use any tools that help you understand what you're doing and write code, including AI tools. However, you always need to understand and be ready to explain what your code does, whether or not you used an LLM as part of your process to produce them. The answer to “Why?” should never be “I’m not sure. The AI did it.” You are responsible for the code that you publish.
+
 ## Verified vs Unverified
 Verified mods are mods that have been reviewed by the BeatMods team and have been deemed to meet the quality standards set forth in these guidelines. They will not cause any issues with other verified mods, and are safe to use. 
 
