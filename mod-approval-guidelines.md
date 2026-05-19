@@ -1,6 +1,6 @@
 <div align="center">
 <h1>BeatMods Verification Guidelines</h1>
-<h3>Last Updated: May 12 2026</h3>
+<h3>Last Updated: May 19 2026</h3>
 </div>
 
 ## Definitions
@@ -8,15 +8,10 @@
 A Plugin is active code, loaded by the plugin architecture (IPA or BSIPA), and executes and affects things independently. It should be a single DLL located in the Plugins folder of a Beat Saber installation. A Plugin can be tagged as a Library on BeatMods if it serves a useful enough purpose to be a dependency of many other mods, such as CustomUI or Beat Saber Utils.
 ### Library
 A Library is exclusively passive code that won’t do anything on its own. It can reside outside of the Plugins folder, in other directories where code is stored. Libraries are used by other Plugins as dependencies, and every Library will get tagged as such on BeatMods. Popular Libraries include Newtonsoft JSON and Harmony.
-### Asset
-Assets are any other files that do not contain any code whatsoever, and are not executed or executable. Asset files can only be read from, and never written to. Common Assets include custom songs, custom sabers, and any similar types of files.
 
 ## Guidelines
 ### 1. Names and Descriptions
-1. Names and descriptions must not contain any obscene language, including slurs, vulgar language, or sexual content. This includes names and descriptions in the mod’s metadata.
-2. The word "Plugin" should not be used in the name or title of a mod.
-3. Please include all necessary information to get the mod working on your GitHub repository, including but not limited to: configuration and documentation.
-4. If you are using BSIPA, all proper information, including names, description, dependencies, and version, must be included in manifest.json
+Names and descriptions should be free of any obscene language, including slurs, vulgar language, or sexual content. This includes names and descriptions in the mod's metadata. Mods that violate this rule will be removed from the platform. Additionally, the words "Plugin" and "Mod" shouldn't be used in the name of a mod, as they are redundant. All necessary information to get your mod wortking should be included on your GitHub repository and the description on ModelSaber. If you are using BSIPA, all proper information, including names, description, dependencies, and version, must be included in manifest.json. 
 
 ### 2. Versioning
 1. All versions of a mod must follow the [Semantic Versioning](https://semver.org/) specification.
@@ -29,7 +24,7 @@ Assets are any other files that do not contain any code whatsoever, and are not 
 ### 3. Dependencies
 All dependencies must be properly declared. If your mod requires a dependency, it must be declared in the manifest.json file (if using BSIPA) and on the BeatMods version submission form.
 > [!NOTE]
-> **Harmony** is included with BSIPA and does not need to be declared as a dependency. If your mod declares Harmony in it's manifest.json file, it will be denied.
+> **Harmony** is included with BSIPA and does not need to be declared as a dependency. If your mod declares Harmony in it's manifest.json file, it will be removed.
 
 ### 4. Zip Contents
 Uploaded files should only have one DLL file in either the `Libs` or `Plugins` folder. Plugins may not have any files that are written to in the uploaded file. These will be overwritten when the user re-installs your mod. Instead, consider generating these at runtime with default config options and error handling.
