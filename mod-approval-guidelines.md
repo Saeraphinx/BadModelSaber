@@ -1,52 +1,82 @@
 <div align="center">
 <h1>BeatMods Verification Guidelines</h1>
-<h3>Last Updated: May 19 2026</h3>
+<h3>Last Updated: June 16 2026</h3>
 </div>
 
-## Definitions
-### Plugin
-A Plugin is active code, loaded by the plugin architecture (IPA or BSIPA), and executes and affects things independently. It should be a single DLL located in the Plugins folder of a Beat Saber installation. A Plugin can be tagged as a Library on BeatMods if it serves a useful enough purpose to be a dependency of many other mods, such as CustomUI or Beat Saber Utils.
-### Library
-A Library is exclusively passive code that won’t do anything on its own. It can reside outside of the Plugins folder, in other directories where code is stored. Libraries are used by other Plugins as dependencies, and every Library will get tagged as such on BeatMods. Popular Libraries include Newtonsoft JSON and Harmony.
-
 ## Guidelines
-### 1. Names and Descriptions
-Names and descriptions should be free of any obscene language, including slurs, vulgar language, or sexual content. This includes names and descriptions in the mod's metadata. Mods that violate this rule will be removed from the platform. Additionally, the words "Plugin" and "Mod" shouldn't be used in the name of a mod, as they are redundant. All necessary information to get your mod wortking should be included on your GitHub repository and the description on ModelSaber. If you are using BSIPA, all proper information, including names, description, dependencies, and version, must be included in manifest.json. 
+### 1\. Project Management
+Keep names and descriptions clean:
+- No slurs.  
+- No vulgar language.  
+- No sexual content.  
+- Don't put "Plugin" or "Mod" in the name.
 
-### 2. Versioning
-1. All versions of a mod must follow the [Semantic Versioning](https://semver.org/) specification.
-2. Versions uploaded to BeatMods are final. They will not be removed unless it is critically necessary.
-3. When submitting a mod on BeatMods, both the mod version and name must match on all of the following (Mod name will not be as strictly enforced as version):
-    - BeatMods, when publishing your mod
-    - Assembly metadata (Located in AssemblyInfo.cs) and the name of the DLL file
-    - manifest.json (If using BSIPA)
+This applies everywhere, including in your mod's metadata. Violations will be removed from the platform. Make sure all of the info someone needs to get your mod up and running is publicly available. If you're using BSIPA, your manifest.json must include your mod’s name, description, dependency list, and version.
 
-### 3. Dependencies
-All dependencies must be properly declared. If your mod requires a dependency, it must be declared in the manifest.json file (if using BSIPA) and on the BeatMods version submission form.
-> [!NOTE]
-> **Harmony** is included with BSIPA and does not need to be declared as a dependency. If your mod declares Harmony in it's manifest.json file, it will be removed.
+You are required to declare all your dependencies in your manifest.json (if using BSIPA) alongside the submission form. Harmony comes bundled with BSIPA, and therefore should not be listed as a dependency.
 
-### 4. Zip Contents
-Uploaded files should only have one DLL file in either the `Libs` or `Plugins` folder. Plugins may not have any files that are written to in the uploaded file. These will be overwritten when the user re-installs your mod. Instead, consider generating these at runtime with default config options and error handling.
+Your project must follow Semantic Versioning. Once a version is uploaded, it's there for good.   
+> [!IMPORTANT]
+> Your version number needs to match in all of these places:
+> - BeatMods itself  
+> - your assembly metadata (AssemblyInfo.cs).  
+> - The DLL filename  
+> - Your mods manifest.json (If you're using BSIPA).
 
-### 5. Obfuscation
-While obfuscation is frowned upon, it is not strictly disallowed. If you choose to obfuscate your mod, you must provide the original source code of the mod to the approval team for review. The team must be able to reproduce the obfuscated code from the source code to verify that the obfuscated code is safe. Failure to provide the original source code will result in the mod being rejected. Obfuscated mods are not eligible for the unverified tag. 
+### 2\. Zip Contents
+Your zip should only contain files in either the `Libs` or `Plugins` folder. Don't bundle files that are written to at runtime as they'll get overwritten whenever someone reinstalls your plugin/library. You should instead create those files at runtime with sensible defaults and error handling.
 
-### 6. Quality
-Mods must be of a certain level of quality to be marked as verified. Mods that do not meet this level of quality might still be allowed on the platform, but they will be marked as unverified. 
+### 3\. Obfuscation
+While obfuscation is frowned upon, it is not strictly disallowed. If you choose to obfuscate your mod, you'll need to have the original source to hand to the approval team so we can confirm the obfuscated build actually matches it. No source, no approval. **Obfuscated mods must go through the full verification process and are not allowed to have a status of unverified.**
 
-1. Obvious joke/meme mods will not be marked as verified. Any mods that include joke/meme settings, such as April Fools jokes must be toggleable in game. 
-2. Mods that are unfinished, such as mods that are missing core features or have major bugs that prevent them from being used for their intended purpose will be removed.
-3. Mods that interact with external APIs **must** do so over HTTPS/TLS. If a mod is downloading and saving content / running external code from an external source, that source must be verified too.
-4. Mods must be fully compatible with the base game and all other approved mods on BeatMods (with the exception of any mods you mark as conflicting). See [Testing in the Modding Guide](https://bsmg.wiki/modding/pc/testing.html) for more information in testing with debug builds.
-    a. While unverified mods are allowed a bit of leeway with this rule, they must still be compatible with the base game and not cause any crashes or major issues. Unverified mods that cause crashes or major issues will be removed.
-5. If using the Harmony library, be sure to patch/unpatch your changes correctly. Doing so incorrectly can lead to Harmony unloading all patches, and a removal of your mod.
+### 4\. Quality
+In order for a mod to be verified, it must have a decent level of quality. If it doesn't quite get there, it may still be allowed on the platform but marked as unverified.
 
-### 7. AI Use
-<!-- from https://zulip.readthedocs.io/en/latest/contributing/contributing.html#ai-use-policy-and-guidelines !-->
-You can use any tools that help you understand what you're doing and write code, including AI tools. However, you always need to understand and be ready to explain what your code does, whether or not you used an LLM as part of your process to produce them. The answer to “Why?” should never be “I’m not sure. The AI did it.” You are responsible for the code that you publish.
+Here are some quality rules to follow:
+- **Your mod needs to work:** If your mod is missing core features or has bugs that stop it from doing what it's supposed to do, it'll be removed. [^1]  
+- **Low Effort Joke/Meme Mods:** Mods that exist purely as a joke are not eligible for verification. Mods that contain jokes, April Fools, or other timed event code that affect every user must be toggleable or able to be hidden within the game.[^2]  
+- **External content:** If your mod talks to any external APIs, it must be over HTTPS/TLS with no exceptions. If your mod downloads or runs content from somewhere outside the game, that source needs to be one you own, or a well-known public API with a decent security track record.  
+- **Compatibility:** Your mod needs to play nicely with the base game and every other approved mod on BeatMods, with exceptions to any mods that you've explicitly flagged as conflicting.  
+- **Your code is your responsibility:** AI tools are fine to use, but you need to understand what your code actually does. If someone on the approval team asks why something works a certain way, "I don't know, the AI wrote it" isn't an answer.
+
+## Mods vs Libraries
+There are two types of code on BeatMods: **Plugins** and **Libraries**.
+
+- **Plugins** are loaded by IPA or BSIPA. They run independently, and are what actually do things. They live as a single DLL which is placed in the games Plugins folder.  
+- **Libraries** are the opposite. They're passive code that does nothing on their own. Libraries are used by Plugins as a dependency, living outside the Plugins folder and in the Libs folder.
+
+Both get tagged appropriately on BeatMods.
+
+**Examples:**
+- Projects such as Newtonsoft.JSON, [FFmpeg](https://beatmods.com/mods/196) and [Heck](https://beatmods.com/mods/338) are all considered Libraries.  
+- [ScoreSaber](https://beatmods.com/mods/281) & [BeatLeader](https://beatmods.com/mods/268) are considered Plugins.  
+- [SiraUtil](https://beatmods.com/mods/130) is a Plugin that is depended on enough to be tagged as a library.
 
 ## Verified vs Unverified
-Verified mods are mods that have been reviewed by the BeatMods team and have been deemed to meet the quality standards set forth in these guidelines. They will not cause any issues with other verified mods, and are safe to use. 
+### Verified
+Verified mods have been looked over by the BeatMods team and meet everything in these guidelines. They're safe, compatible with other verified mods, and are supported.
 
-Unverified mods are mods that have either not been reviewed by the BeatMods team, or have been reviewed and deemed to not meet the quality standards set forth in these guidelines. They may cause issues with other mods, or with the base game, and should be used with caution. While they are usually safe to use, **you should not use unverified mods unless you know what you are doing, and you will not receive support for any issues caused by unverified mods.** Unverified mods will be clearly marked as such on the platform, and users will be warned about the potential risks of using them.
+### Unverified
+Unverified mods are still on the platform, but haven't been confirmed to meet the full standard. This could be because they haven't been reviewed yet, or because something about them fell short without being bad enough to remove.
+
+**If your mod ends up unverified, it's likely for one of these reasons:**
+- It's waiting to be fully reviewed.  
+- It works, but has rough edges or minor bugs that keep it out of being verified.  
+- It has a joke or meme element that can't be turned off, but otherwise is a real mod.  
+- It uses obfuscation, which automatically disqualifies it from obtaining verified status.  
+- It has unmarked compatibility issues with other mods.
+
+**Unverified isn't a rejection\!** Your mod is still up, available and can still be used by people. Although, it'll be clearly labelled as unverified and no support will be given. Any mod, verified or not, that crashes the game or breaks things significantly will be taken down.  
+
+
+[^1]: A score tracker that doesn't save scores, or a mod that causes a full game crash on certain map types are examples of mods that would get removed.
+
+[^2]:  For example: a mod that crashes the game on a miss would not be verified under this rule, but a mod that has an option, that is disabled by default, to close the game gracefully on a miss is okay. Mods that randomly crash the game may be removed all together.
+
+<details>
+<summary>Changelog</summary>
+
+### June 16 2026
+- Revamped the guidelines for new service launch.
+
+</details>
