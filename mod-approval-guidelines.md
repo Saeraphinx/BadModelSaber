@@ -11,17 +11,16 @@ Keep names and descriptions clean:
 - No overtly sexual, excessively violent imagery, or explicit adult content (18+ only).  
 - Don't put "Plugin" or "Mod" in the name of the mod.
 
-This applies everywhere, including in your mod's metadata. Violations will be removed from the platform. Make sure all of the info someone needs to get your mod up and running is publicly available. If you're using BSIPA, your manifest.json must include your mod’s name, description, dependency list, and version.
+This applies everywhere, including in your mod's metadata. Violations will be removed from the platform. Make sure all of the info someone needs to get your mod up and running is publicly available. If you're using BSIPA, your `manifest.json` must include your mod’s name, description, dependency list, and version.
 
-You are required to declare all your dependencies in your manifest.json (if using BSIPA) alongside the submission form. Harmony comes bundled with BSIPA, and therefore should not be listed as a dependency.
+You are required to declare all your dependencies in your `manifest.json` (if using BSIPA) alongside the submission form. Harmony comes bundled with BSIPA, and therefore should not be listed as a dependency.
 
 Your project must follow [Semantic Versioning](https://semver.org/). Once a version is uploaded, it's there for good.   
 > [!IMPORTANT]
 > Your version number needs to match in all of these places:
 > - BeatMods itself  
-> - your assembly metadata (AssemblyInfo.cs).  
-> - The DLL filename  
-> - Your mods manifest.json (If you're using BSIPA).
+> - your assembly metadata (`AssemblyInfo.cs`).  
+> - Your mods `manifest.json` (If you're using BSIPA).
 
 ### 2\. Zip Contents
 Your zip should only contain files in either the `Libs` or `Plugins` folder. Don't bundle files that are written to at runtime as they'll get overwritten whenever someone reinstalls your plugin/library. You should instead create those files at runtime with sensible defaults and error handling.
