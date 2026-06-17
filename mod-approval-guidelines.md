@@ -27,7 +27,9 @@ Your project must follow [Semantic Versioning](https://semver.org/). Once a vers
 Your zip should only contain files in either the `Libs` or `Plugins` folder. Don't bundle files that are written to at runtime as they'll get overwritten whenever someone reinstalls your plugin/library. You should instead create those files at runtime with sensible defaults and error handling.
 
 ### 3\. Obfuscation
-While obfuscation is frowned upon, it is not strictly disallowed. If you choose to obfuscate your mod, you'll need to have the original source to hand to the approval team so we can confirm the obfuscated build actually matches it. No source, no approval. **Obfuscated mods must go through the full verification process and are not allowed to have a status of unverified.**
+While obfuscation is frowned upon, it is not strictly disallowed. If you choose to obfuscate your mod, you'll need to have the original source to hand to the approval team so we can confirm the obfuscated build actually matches it. No source, no approval. 
+
+**Obfuscated mods must go through the full verification process and are not allowed to have a status of unverified.**
 
 ### 4\. Quality
 In order for a mod to be verified, it must have a decent level of quality. If it doesn't quite get there, it may still be allowed on the platform but marked as unverified.
