@@ -6,16 +6,16 @@
 ## Guidelines
 ### 1\. Project Management
 Keep names and descriptions clean:
-- No slurs.  
-- No vulgar language.  
-- No sexual content.  
-- Don't put "Plugin" or "Mod" in the name.
+- No harassment or hate speech.  
+- No vulgar or offensive language.  
+- No overtly sexual, excessively violent imagery, or explicit adult content (18+ only).  
+- Don't put "Plugin" or "Mod" in the name of the mod.
 
 This applies everywhere, including in your mod's metadata. Violations will be removed from the platform. Make sure all of the info someone needs to get your mod up and running is publicly available. If you're using BSIPA, your manifest.json must include your mod’s name, description, dependency list, and version.
 
 You are required to declare all your dependencies in your manifest.json (if using BSIPA) alongside the submission form. Harmony comes bundled with BSIPA, and therefore should not be listed as a dependency.
 
-Your project must follow Semantic Versioning. Once a version is uploaded, it's there for good.   
+Your project must follow [Semantic Versioning](https://semver.org/). Once a version is uploaded, it's there for good.   
 > [!IMPORTANT]
 > Your version number needs to match in all of these places:
 > - BeatMods itself  
@@ -37,15 +37,13 @@ Here are some quality rules to follow:
 - **Low Effort Joke/Meme Mods:** Mods that exist purely as a joke are not eligible for verification. Mods that contain jokes, April Fools, or other timed event code that affect every user must be toggleable or able to be hidden within the game.[^2]  
 - **External content:** If your mod talks to any external APIs, it must be over HTTPS/TLS with no exceptions. If your mod downloads or runs content from somewhere outside the game, that source needs to be one you own, or a well-known public API with a decent security track record.  
 - **Compatibility:** Your mod needs to play nicely with the base game and every other approved mod on BeatMods, with exceptions to any mods that you've explicitly flagged as conflicting.  
-- **Your code is your responsibility:** AI tools are fine to use, but you need to understand what your code actually does. If someone on the approval team asks why something works a certain way, "I don't know, the AI wrote it" isn't an answer.
+- **Your code is your responsibility:** AI tools are fine to use, but you need to understand what your code actually does. If someone on the approval team asks why something works a certain way, "I don't know, the AI wrote it" isn't an acceptable answer.
 
 ## Mods vs Libraries
 There are two types of code on BeatMods: **Plugins** and **Libraries**.
 
 - **Plugins** are loaded by IPA or BSIPA. They run independently, and are what actually do things. They live as a single DLL which is placed in the games Plugins folder.  
 - **Libraries** are the opposite. They're passive code that does nothing on their own. Libraries are used by Plugins as a dependency, living outside the Plugins folder and in the Libs folder.
-
-Both get tagged appropriately on BeatMods.
 
 **Examples:**
 - Projects such as Newtonsoft.JSON, [FFmpeg](https://beatmods.com/mods/196) and [Heck](https://beatmods.com/mods/338) are all considered Libraries.  
@@ -63,7 +61,6 @@ Unverified mods are still on the platform, but haven't been confirmed to meet th
 - It's waiting to be fully reviewed.  
 - It works, but has rough edges or minor bugs that keep it out of being verified.  
 - It has a joke or meme element that can't be turned off, but otherwise is a real mod.  
-- It uses obfuscation, which automatically disqualifies it from obtaining verified status.  
 - It has unmarked compatibility issues with other mods.
 
 **Unverified isn't a rejection\!** Your mod is still up, available and can still be used by people. Although, it'll be clearly labelled as unverified and no support will be given. Any mod, verified or not, that crashes the game or breaks things significantly will be taken down.  
