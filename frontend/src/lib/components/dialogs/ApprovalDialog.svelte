@@ -11,6 +11,7 @@
   import * as RadioGroup from "$shadcn/components/ui/radio-group";
   import { toast } from "svelte-sonner";
   import Switch from "../../shadcn/components/ui/switch/switch.svelte";
+  import * as Select from "../../shadcn/components/ui/select";
 
   let statuses = Object.values(Status).map((status) => ({
     value: status,
@@ -20,11 +21,24 @@
   let selectedStatus = $state(statuses[0].value);
   let reason = $state("");
 
+  let presetReasons = [
+    "Inappropriate content",
+    "Pending full review",
+    "Version mismatch",
+    "Causes crashes or issues with base game",
+    "Minor issues reported by users",
+    "Unmarked incompatibility with other mods",
+    "Malformed zip file",
+    "Missing or incorrect metadata",
+    "Missing dependencies",
+    "Removed per submitter",
+  ]
+
   let name = $state<string>("");
   let id = $state<number>(0);
   let visible = $state<boolean>(false);
   let type = $state<`asset` | `project` | `version`>("asset");
-  let eligbleForVerification = $state<boolean>(false);
+  let eligbleForVerification = $state<boolean>(true);
 
   export function showDialog(p_id: number, p_name: string, thingType: `asset` | `project` | `version`) {
     reason = "";
@@ -51,6 +65,9 @@
         reason: reason,
       });
     } else {
+      if (selectedStatus === Status.Verified) {
+        eligbleForVerification = false;
+      }
       res = trpc.internal.approval.setStatusVersion.mutate({
         id: id,
         status: selectedStatus,
@@ -99,13 +116,25 @@
       <div class="flex flex-col w-full ml-4">
         <Input type="text" placeholder={m["dialogs.approvalDialog.reasonPlaceholder"]()} class="w-full" bind:value={reason} />
         <p class="text-sm text-muted-foreground mt-1">{m["dialogs.approvalDialog.reasonWillBeVisible"]({ name })}</p>
+        <Label class="mt-4">Preset Reasons</Label>
+        <Select.Root type="single" >
+          <Select.Trigger class="w-full mt-1">
+            Select a preset...
+          </Select.Trigger>
+          <Select.Content class="w-full">
+              {#each presetReasons as preset}
+                <Select.Item value={preset} onclick={() => reason = preset}>{preset}</Select.Item>
+              {/each}
+          </Select.Content>
+        </Select.Root>
       </div>
     </div>
     <Dialog.Footer>
       {#if type === `version`}
+        <Label for="sefv" class="ml-2">Is Eligble For Verification</Label>
         <Switch id="sefv" bind:checked={eligbleForVerification} class="mt-2" />
-        <Label for="sefv" class="ml-2">eligbleForVerification</Label>
-      {/if}      <Button variant="ghost" onclick={() => (visible = false)}>{m["dialogs.cancel"]()}</Button>
+      {/if}      
+      <Button variant="ghost" onclick={() => (visible = false)}>{m["dialogs.cancel"]()}</Button>
       <Button type="submit" onclick={handleSubmit}>{m["dialogs.submit"]()}</Button>
     </Dialog.Footer>
   </Dialog.Content>
