@@ -5,7 +5,7 @@
 
 ## Guidelines
 ### 1\. Project Management
-1.1. Keep names and descriptions clean:
+Keep names and descriptions clean:
 - No harassment or hate speech.  
 - No vulgar or offensive language.  
 - No overtly sexual, excessively violent imagery, or explicit adult content (18+ only).  
@@ -36,7 +36,7 @@ In order for a mod to be verified, it must have a decent level of quality. If it
 
 Here are some quality rules to follow:
 1. **Your mod needs to work:** If your mod is missing core features or has bugs that stop it from doing what it's supposed to do, it'll be removed. [^1]  
-2. **Low Effort Joke/Meme Mods:** Mods that exist purely as a joke are not eligible for verification. Mods that contain jokes, April Fools, or other timed event code that affect every user must be toggleable or able to be hidden within the game.[^2]  
+2. **Low Effort Joke/Meme Mods:** Mods that exist purely as a joke are not eligible for verification. Mods that contain jokes, April Fools, or other timed event code that affect every user must be toggleable or able to be hidden within the game. [^2]  
 3. **External content:** If your mod talks to any external APIs, it must be over HTTPS/TLS with no exceptions. If your mod downloads or runs content from somewhere outside the game, that source needs to be one you own, or a well-known public API with a decent security track record.  
 4. **Compatibility:** Your mod needs to play nicely with the base game and every other approved mod on BeatMods, with exceptions to any mods that you've explicitly flagged as conflicting.  
 5. **Your code is your responsibility:** AI tools are fine to use, but you need to understand what your code actually does. If someone on the approval team asks why something works a certain way, "I don't know, the AI wrote it" isn't an acceptable answer.
