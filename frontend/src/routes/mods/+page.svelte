@@ -12,7 +12,7 @@
   import * as Select from "$shadcn/components/ui/select";
   import Skeleton from "$shadcn/components/ui/skeleton/skeleton.svelte";
   import { ChevronRightIcon, FunnelIcon } from "@lucide/svelte";
-  import { onMount } from "svelte";
+  import { onMount, untrack } from "svelte";
   import { MediaQuery } from "svelte/reactivity";
   import { Button } from "$lib/shadcn/components/ui/button";
   import { checkRoles } from "$lib/scripts/utils/checkRoles";
@@ -114,7 +114,7 @@
     if (selectedCategories.length > 0) searchParams.set("category", selectedCategories.join(","));
     if (searchQuery.trim() !== "") searchParams.set("search", searchQuery);
     if (selectedStatuses.length > 0 && selectedStatuses.every(s => s !== Status.Verified)) searchParams.set("status", selectedStatuses.join(","));
-    history.replaceState(null, "", `?${searchParams.toString()}`);
+    untrack(() => history.replaceState(null, "", `${location.pathname}${searchParams.size > 0 ? `?${searchParams.toString()}` : ""}`));
   });
 </script>
 

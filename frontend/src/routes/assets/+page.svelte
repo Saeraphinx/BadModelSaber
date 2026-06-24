@@ -12,7 +12,7 @@
   import { MediaQuery } from "svelte/reactivity";
   import * as Collapsible from "$shadcn/components/ui/collapsible";
   import { generateAssetSearchEngine } from "$lib/scripts/utils/search.js";
-  import { onMount } from "svelte";
+  import { onMount, untrack } from "svelte";
   import ApprovalPopup from "$lib/components/dialogs/ApprovalDialog.svelte";
   import { toast } from "svelte-sonner";
   import { getAssetTypeCategories, getRenderingMethodString, getRenderingMethodSupportedGV, getStatusString } from "$lib/scripts/utils/stylizer.js";
@@ -129,7 +129,7 @@
     if (searchQuery.length > 0) {
       params.set("search", searchQuery);
     }
-    history.replaceState(null, "", `${location.pathname}${params.size > 0 ? `?${params.toString()}` : ""}`);
+    untrack(() => history.replaceState(null, "", `${location.pathname}${params.size > 0 ? `?${params.toString()}` : ""}`));
   });
 </script>
 
