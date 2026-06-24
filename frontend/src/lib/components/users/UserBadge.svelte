@@ -40,13 +40,13 @@
     {#if user.permissions.sitewide.includes(UserPermissions.C_System)}
       <img src="/system_pfp.svg" alt={user.displayName} class="w-6 h-6 rounded-full border-2 border-accent" />
     {:else}
-      <img src={user.avatarUrl} alt={user.displayName} class="w-6 h-6 rounded-full border-2 border-accent" />
+      <img src={user.avatarUrl} alt={user.displayName} class="w-6 h-6 rounded-full border-2 border-accent" crossorigin="anonymous" />
     {/if}
   {:else}
    {#if user.permissions.sitewide.includes(UserPermissions.C_System)}
       <img src="/system_pfp.svg" alt={user.displayName} class="w-8 h-8 rounded-full border-2 border-accent" />
     {:else}
-      <img src={user.avatarUrl} alt={user.displayName} class="w-8 h-8 rounded-full border-2 border-accent" />
+      <img src={user.avatarUrl} alt={user.displayName} class="w-8 h-8 rounded-full border-2 border-accent" crossorigin="anonymous" />
     {/if}
   {/if}
   <a href="/users/{user.id}" class="{small ? `text-xs` : `text-sm`}">{user.displayName}</a>

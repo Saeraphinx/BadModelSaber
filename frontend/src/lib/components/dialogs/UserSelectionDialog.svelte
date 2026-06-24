@@ -21,7 +21,7 @@
   // only search after the user has stopped typing for 300ms
 
   function searchUsers() {
-    trpc.v3.user.searchUsers.query({query: searchQuery}).then(results => {
+    trpc.internal.user.searchUsers.query({query: searchQuery}).then(results => {
       searchResults = results;
     });
   }
@@ -42,7 +42,7 @@
           {#each searchResults as user (user.id)}
             <Command.Item onSelect={() => {onSubmit(user); open = false}}>
               <div class="flex items-center gap-2">
-                <img src={user.avatarUrl} alt="{user.displayName} Avatar" class="w-6 h-6 rounded-full" />
+                <img src={user.avatarUrl} alt="{user.displayName} Avatar" class="w-6 h-6 rounded-full" crossorigin="anonymous"/>
                 <span>{user.displayName}</span>
               </div>
             </Command.Item>

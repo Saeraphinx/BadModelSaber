@@ -574,7 +574,7 @@
             <tbody>
               {#each userSearchResults as user}
                 <tr>
-                  <td class="w-12"><img src={user.avatarUrl} alt="Avatar" class="w-8 h-8 rounded-full" /></td>
+                  <td class="w-12"><img src={user.avatarUrl} alt="Avatar" class="w-8 h-8 rounded-full" crossorigin="anonymous" /></td>
                   <td>{user.id}</td>
                   <td>{user.username}</td>
                   <td>{user.displayName}</td>
