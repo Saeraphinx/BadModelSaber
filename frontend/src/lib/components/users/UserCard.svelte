@@ -23,7 +23,7 @@
       {#if user.permissions.sitewide.includes(UserPermissions.C_System)}
         <img src="/system_pfp.svg" alt={user.displayName} class="w-16 h-16 rounded-full" />
       {:else}
-        <img src={user.avatarUrl} alt={user.displayName} class="w-16 h-16 rounded-full" crossorigin="anonymous" />
+        <img src={user.avatarUrl} alt={user.displayName} class="w-16 h-16 rounded-full" />
       {/if}
     </div>
     <div class="flex flex-col justify-center ml-4">

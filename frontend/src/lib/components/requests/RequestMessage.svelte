@@ -27,7 +27,7 @@
 <div class={cn(`p-4 bg-card rounded-lg shadow`, className)}>
   <div class="flex items-center mb-2 justify-between">
     <a href="/users/{user.id}" class="flex flex-row items-center">
-      <img src={user.avatarUrl} alt={user.displayName} class="w-8 h-8 rounded-full mr-2" crossorigin="anonymous"/>
+      <img src={user.avatarUrl} alt={user.displayName} class="w-8 h-8 rounded-full mr-2"/>
       <span class="font-semibold">{user.displayName}</span>
     </a>
     <span class="text-sm text-gray-500 ml-2">{new Date(message.timestamp).toLocaleString()}</span>

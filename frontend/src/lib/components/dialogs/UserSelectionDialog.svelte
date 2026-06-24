@@ -42,7 +42,7 @@
           {#each searchResults as user (user.id)}
             <Command.Item onSelect={() => {onSubmit(user); open = false}}>
               <div class="flex items-center gap-2">
-                <img src={user.avatarUrl} alt="{user.displayName} Avatar" class="w-6 h-6 rounded-full" crossorigin="anonymous"/>
+                <img src={user.avatarUrl} alt="{user.displayName} Avatar" class="w-6 h-6 rounded-full"/>
                 <span>{user.displayName}</span>
               </div>
             </Command.Item>
