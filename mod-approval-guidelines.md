@@ -1,11 +1,12 @@
 <div align="center">
 <h1>BeatMods Verification Guidelines</h1>
 <h3>Last Updated: June 18 2026</h3>
+<h4>This date & the changelog will not be updated until the website is released.</h4>
 </div>
 
 ## Guidelines
 ### 1\. Project Management
-Keep names and descriptions clean:
+Keep names and content clean:
 - No harassment or hate speech.  
 - No vulgar or offensive language.  
 - No overtly sexual, excessively violent imagery, or explicit adult content (18+ only).  
