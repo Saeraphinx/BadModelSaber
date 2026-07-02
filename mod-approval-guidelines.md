@@ -32,7 +32,7 @@ While obfuscation is frowned upon, it is not strictly disallowed. If you choose 
 
 **Obfuscated mods must go through the full verification process and are not allowed to have a status of unverified.**
 
-### 4\. Quality
+### 5\. Quality
 In order for a mod to be verified, it must have a decent level of quality. If it doesn't quite get there, it may still be allowed on the platform but marked as unverified.
 
 Here are some quality rules to follow:
