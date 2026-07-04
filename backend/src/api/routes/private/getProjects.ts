@@ -3,6 +3,8 @@ import { Op } from "sequelize";
 import z from "zod";
 import { Project, ProjectApiV3, versionApiV3Schema, Version, User, GameVersion, UserPermissions } from "../../../shared/Database.ts";
 import { anyProcedure, loggedInProcedure, router } from "../../trpc.ts";
+import fs from "fs";
+import { createPatch, diffLines, lineDiff } from "diff";
 
 export const getModsInternal = router({
     // #region getProject
@@ -30,8 +32,8 @@ export const getModsInternal = router({
                     id: {
                         [Op.in]: input.projectIds
                     }
-                }, 
-                include: [{all: true}]
+                },
+                include: [{ all: true }]
             });
             projects = projects.filter(async p => await p.canView(ctx.user));
             return await Promise.all(projects.map(async p => await p.toApiV3() as ProjectApiV3));
@@ -125,7 +127,7 @@ export const getModsInternal = router({
         }),
     // #endregion
     // #region approvalQueue
-    approvalQueueVersions: loggedInProcedure({hasAllOf: [UserPermissions.Mods_ViewAll, UserPermissions.Mods_Approval]})
+    approvalQueueVersions: loggedInProcedure({ hasAllOf: [UserPermissions.Mods_ViewAll, UserPermissions.Mods_Approval] })
         .input(z.object({
             gameName: z.string()
         }))
@@ -165,8 +167,40 @@ export const getModsInternal = router({
                 project: await o.project.toApiV3() as ProjectApiV3,
                 version: await o.version.toApiV3()
             })));
-            
+
             return outputApi;
         }),
-        // #endregion
+    // #endregion
+    // #region generateDiff
+    generateDiff: loggedInProcedure({ hasAllOf: [UserPermissions.Mods_ViewAll, UserPermissions.Mods_Approval] })
+        .input(z.object({
+            versionId1: z.number(),
+            versionId2: z.number()
+        }))
+        .query(async ({ ctx, input }) => {
+            let version1 = await Version.findByPk(input.versionId1, { include: [Project] });
+            let version2 = await Version.findByPk(input.versionId2, { include: [Project] });
+
+            if (!version1 || !version2) {
+                throw new TRPCError({ code: 'NOT_FOUND', message: 'One or both versions not found.' });
+            }
+
+            if (version1.projectId !== version2.projectId) {
+                throw new TRPCError({ code: 'BAD_REQUEST', message: 'Versions belong to different projects.' });
+            }
+
+            if (!(await version1.canView(ctx.user)) || !(await version2.canView(ctx.user))) {
+                throw new TRPCError({ code: 'FORBIDDEN', message: 'You do not have permission to view one or both versions.' });
+            }
+
+            if (!version1.doesDecompiledVersionExist() || !version2.doesDecompiledVersionExist()) {
+                throw new TRPCError({ code: 'BAD_REQUEST', message: 'Decompiled version for at least one of the versions does not exist.' });
+            }
+
+            let code1 = fs.readFileSync(version1.decompiledPath, 'utf-8');
+            let code2 = fs.readFileSync(version2.decompiledPath, 'utf-8');
+
+            let diff = diffLines(code1, code2);
+            return diff;
+        }),
 })

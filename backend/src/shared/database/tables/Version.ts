@@ -167,6 +167,10 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
         return path.join(this.versionFolderPath, `${this.baseFileName}.dll`);
     }
 
+    get decompiledPath(): NonAttribute<string> {
+        return path.join(this.versionFolderPath, `decompiled`, `${this.baseFileName}.decompiled.cs`);
+    }
+
     get zipFileName(): NonAttribute<string> {
         return `${this.baseFileName}.zip`;
     }
