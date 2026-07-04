@@ -49,12 +49,11 @@ Mods that are found to have issues after being approved can be either removed or
 There are two types of code on BeatMods: **Plugins** and **Libraries**.
 
 - **Plugins** are loaded by IPA or BSIPA. They run independently, and are what actually do things. They live as a single DLL which is placed in the games Plugins folder.  
-- **Libraries** are the opposite. They're passive code that does nothing on their own. Libraries are used by Plugins as a dependency, living outside the Plugins folder and in the Libs folder.
+- **Libraries** are the opposite. They're available for plugins to make use of and do very little or nothing on their own. Libraries are used by Plugins as a dependency, typically living outside the Plugins folder and in the Libs folder.
 
 **Examples:**
 - Projects such as [BeatSaverSharp](https://beatmods.com/mods/101), [FFmpeg](https://beatmods.com/mods/196) and [Heck](https://beatmods.com/mods/338) are all considered Libraries.  
-- [ScoreSaber](https://beatmods.com/mods/281) & [BeatLeader](https://beatmods.com/mods/268) are considered Plugins.  
-- [SiraUtil](https://beatmods.com/mods/130) is a Plugin that is depended on enough to be tagged as a library.
+- [ScoreSaber](https://beatmods.com/mods/281) & [BeatLeader](https://beatmods.com/mods/268) are considered Plugins.  
 
 ## Verified vs Unverified
 ### Verified
