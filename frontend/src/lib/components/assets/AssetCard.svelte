@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Status, Tags, type AssetApiV3 } from "$lib/scripts/api/DBTypes";
+  import { Status, Tags, type AssetApiV3 } from "$lib/scripts/from_backend/DBExtras";
   import Button from "$shadcn/components/ui/button/button.svelte";
   import { BadgeAlert, BadgeCheck, BadgeX, Download, DownloadCloud, InfoIcon, CircleHelp } from "@lucide/svelte";
   import ApprovalDialog from "../dialogs/ApprovalDialog.svelte";
@@ -110,7 +110,7 @@
       <StatusHoverCard status={props.asset.status} type="asset">
         <BadgeCheck class="text-green-400" />
       </StatusHoverCard>
-    {:else if props.asset.status === Status.Pending}
+    {:else if props.asset.status === Status.Queue}
       <BadgeAlert class="text-yellow-400" />
     {:else if props.asset.status === Status.Unverified}
       <StatusHoverCard status={props.asset.status} type="asset">

@@ -563,7 +563,7 @@ export async function importFromBadBeatMods() {
                 timestamp: new Date(sh.setAt).toISOString(),
                 userId: newUsers.get(sh.userId)?.id || importerUser.id,
             })),
-            status: mod.status as Status,
+            status: mod.status == `verified` || mod.status == `pending` ? Status.Verified : Status.Private,
             lastApprovedById: mod.status === Status.Verified ? importerUser.id : undefined,
         }).then(async project => {
             project.$set(`authors`, mod.authors.map(a => newUsers.get(a.id)?.id || importerUser.id)).catch(err => {

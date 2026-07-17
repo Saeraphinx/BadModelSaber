@@ -1,5 +1,5 @@
 import { env } from "$env/dynamic/public";
-import type { AssetApiV3, ProjectApiV3, VersionApiV3 } from "../api/DBTypes";
+import type { AssetApiV3, ProjectApiV3, VersionApiV3 } from "../from_backend/DBExtras";
 
 export function getThumbnailUrl(id: number | string, thumbnailName: string): string {
   return `${env.PUBLIC_FILE_URL}/${id}/${thumbnailName}`;

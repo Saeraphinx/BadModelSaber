@@ -1,4 +1,4 @@
-import type { UserPermissions } from "../api/DBTypes";
+import type { UserPermissions } from "../from_backend/DBExtras";
 
 type UserPermObj = { permissions: { sitewide: UserPermissions[], perGame: Record<string, UserPermissions[]> } }
 type CheckRolesInput = { hasAllOf?: UserPermissions[], hasOneOf?: UserPermissions[], denied?: UserPermissions[] };

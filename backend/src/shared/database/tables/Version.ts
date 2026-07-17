@@ -22,6 +22,9 @@ export type VersionAllowedEdit = Partial<Pick<Version, `semver` | `dependencies`
     supportedGameVersionIds?: number[];
 };
 export type VersionWhereOptions = WhereOptions<Version>;
+export type VersionValidStatuses = Status.Verified | Status.Unverified | Status.Queue | Status.Testing | Status.Private | Status.Removed;
+export const VersionValidStatusesArray = [Status.Verified, Status.Unverified, Status.Queue, Status.Testing, Status.Private, Status.Removed] as const;
+
 @Table({
     tableName: `versions`,
     modelName: `Version`,
@@ -76,7 +79,7 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
 
     @AllowNull(false)
     @Column(DataType.STRING)
-    declare status: CreationOptional<Status>;
+    declare status: CreationOptional<VersionValidStatuses>;
 
     @AllowNull(false)
     @Column(DataType.ARRAY(DataType.JSONB))
@@ -116,10 +119,18 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
     @Column(DataType.ARRAY(DataType.JSONB))
     declare statusHistory: CreationOptional<StatusHistory[]>;
 
-    @AllowNull(false)
-    @Default(true)
-    @Column(DataType.BOOLEAN)
-    declare eligbleForVerification: CreationOptional<boolean>; // whether this project is eligble for verification - allows for a unverified status to be hidden from approval queues w/o removing the project entirely
+    @Column({
+        type: DataType.STRING,
+        allowNull: false,
+        get() {
+            const rawValue = this.getDataValue(`testingAutoVerifyTime`);
+            return new Date(rawValue);
+        },
+        set(value: Date) {
+            this.setDataValue(`testingAutoVerifyTime`, value.toISOString());
+        }
+    })
+    declare testingAutoVerifyTime: CreationOptional<Date> | null;
 
     @CreatedAt
     declare readonly createdAt: CreationOptional<Date>;
@@ -190,7 +201,7 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
         projectId: z.number(),
         uploaderId: z.number(),
         semver: z.instanceof(SemVer),
-        status: z.enum(Status),
+        status: z.custom<VersionValidStatuses>((val) => VersionValidStatusesArray.includes(val as VersionValidStatuses)),
         dependencies: z.array(DependencySchema),
         platform: z.string(),
         zipHash: z.string(),
@@ -200,7 +211,7 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
         fileSize: z.number(),
         statusHistory: z.array(statusHistorySchema),
         baseFileName: z.string(),
-        eligbleForVerification: z.boolean(),
+        testingAutoVerifyTime: z.date().nullable(),
         createdAt: z.date(),
         updatedAt: z.date(),
         deletedAt: z.date().nullable(),
@@ -213,6 +224,7 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
         status: Version.validator.shape.status.nullish(),
         statusHistory: Version.validator.shape.statusHistory.nullish(),
         baseFileName: Version.validator.shape.baseFileName.nullish(),
+        testingAutoVerifyTime: Version.validator.shape.testingAutoVerifyTime.nullish(),
         createdAt: Version.validator.shape.createdAt.nullish(),
         updatedAt: Version.validator.shape.updatedAt.nullish(),
         deletedAt: Version.validator.shape.deletedAt.nullish(),
@@ -277,7 +289,7 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
             projectId: projectId,
             semver: semver.raw,
             status: {
-                [Op.or]: [Status.Verified, Status.Unverified, Status.Pending],
+                [Op.or]: [Status.Verified, Status.Unverified, Status.Queue, Status.Testing],
             },
         };
         if (excludeId) {
@@ -380,60 +392,86 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
     }
     // #endregion
     // #region Setters
-    public async setStatus(newStatus: Status, user: User, reason: string, shouldAlert=true, shouldSendWebhooks = true): Promise<this> {
-        if (this.status === newStatus) {
-            return this;
-        }
-
+    public async setStatus(newStatus: VersionValidStatuses, user: User, reason: string, shouldAlert=true, shouldSendWebhooks = true): Promise<this> {
         let previousStatus = this.status;
-        let newlyVerified = newStatus === Status.Verified && previousStatus !== Status.Verified && this.statusHistory.some(entry => entry.status === Status.Verified) === false;
-        let newlyUnverified = newStatus === Status.Unverified && previousStatus !== Status.Unverified && this.statusHistory.some(entry => entry.status === Status.Verified || entry.status === Status.Unverified) === false;
-        
-
-        let historyEntry: StatusHistory = {
+        this.status = newStatus;
+        this.statusHistory = [...this.statusHistory, {
             status: newStatus,
+            reason: reason,
             userId: user.id,
             timestamp: new Date().toISOString(),
-            reason: reason,
-        };
-
-        this.status = newStatus;
-        this.statusHistory = [...(this.statusHistory || []), historyEntry];
+        }];
 
         if (newStatus === Status.Verified) {
             this.lastApprovedById = user.id;
         }
 
-        await this.save();
+        if (newStatus === Status.Testing) {
+            this.testingAutoVerifyTime = new Date(Date.now() + EnvConfig.server.testingAutoVerifyTime);
+        }
+
+        await this.save().then(() => {
+            Logger.info(`Version id ${this.id} status changed from ${previousStatus} to ${newStatus} by user id ${user.id} for reason: ${reason}`);
+        }).catch((err) => {
+            Logger.error(`Error updating version status for version id ${this.id} from ${previousStatus} to ${newStatus} by user id ${user.id} for reason: ${reason}: ${err}`);
+            throw err;
+        });
+
+        // alerts & webhooks
+        let isFirstVerification = previousStatus !== Status.Verified && newStatus === Status.Verified && this.statusHistory.some(entry => entry.status === Status.Verified) === false;
+        let isFirstUnverification = previousStatus !== Status.Unverified && newStatus === Status.Unverified && this.statusHistory.some(entry => entry.status === Status.Verified || entry.status === Status.Unverified) === false;
+        let wasPlacedInTesting = previousStatus !== Status.Testing && newStatus === Status.Testing;
+        let wasPlacedInQueue = previousStatus !== Status.Queue && newStatus === Status.Queue;
+        let wasVerificationRemoved = previousStatus === Status.Verified && newStatus !== Status.Verified;
+        let wasRemoved = previousStatus !== Status.Removed && newStatus === Status.Removed;
+
+        let gameName = (await this.project)?.gameName || `unknown`;
         if (shouldSendWebhooks) {
-            Webhooks.sendWebhookLog((await this.project)?.gameName || `unknown`, WebhookLogType.Text_StatusUpdate, false, WebhookPayloadGenerator.generateStatusPayload(this, user, previousStatus, newStatus, reason));
-            Webhooks.sendWebhookLog((await this.project)?.gameName || `unknown`, WebhookLogType.StatusUpdate, false, WebhookPayloadGenerator.generateInternalStatusUpdateEmbedPayload(this, user, previousStatus, newStatus, reason));
-            if (newlyVerified) {
-                Webhooks.sendWebhookLog((await this.project)?.gameName || `unknown`, WebhookLogType.NewlyVerifiedVersion, false, WebhookPayloadGenerator.generateNewlyVerifiedThingEmbedPayload(this, user));
-            } else if (newlyUnverified) {
-                Webhooks.sendWebhookLog((await this.project)?.gameName || `unknown`, WebhookLogType.NewlyUnverifiedVersion, false, WebhookPayloadGenerator.generateNewlyVerifiedThingEmbedPayload(this, user));
+            let internalEmbedPayload = WebhookPayloadGenerator.generateInternalStatusUpdateEmbedPayload(this, user, previousStatus, newStatus, reason);
+            let externalEmbedPayload = WebhookPayloadGenerator.generateNewlyVerifiedThingEmbedPayload(this, user);
+            Webhooks.sendWebhookLog(gameName, WebhookLogType.Text_StatusUpdate, false, WebhookPayloadGenerator.generateStatusPayload(this, user, previousStatus, newStatus, reason));
+            Webhooks.sendWebhookLog(gameName, WebhookLogType.StatusUpdate, false, internalEmbedPayload);
+            
+            if (isFirstVerification) {
+                Webhooks.sendWebhookLog(gameName, WebhookLogType.FirstVerificationVersion, false, externalEmbedPayload);
+            } else if (isFirstUnverification) {
+                Webhooks.sendWebhookLog(gameName, WebhookLogType.FirstUnverificationVersion, false, externalEmbedPayload);
+            } else if (wasPlacedInTesting) {
+                Webhooks.sendWebhookLog(gameName, WebhookLogType.AddedToTestingVersion, false, internalEmbedPayload);
+            } else if (wasPlacedInQueue) {
+                Webhooks.sendWebhookLog(gameName, WebhookLogType.AddedToQueueVersion, false, internalEmbedPayload);
             }
         }
         if (shouldAlert) {
-            if (newlyVerified) {
+            let thingName = `${(await this.project)?.name} v${this.semver.raw}`;
+            if (isFirstVerification) {
                 await this.createAlert({
-                    type: AlertType.ThingVerified,
-                    ...AlertTemplates.setFirstVersionApproval(`version`, `${(await this.project)?.name} v${this.semver.raw}`, true),
+                    type: AlertType.ThingGood,
+                    ...AlertTemplates.setFirstApproval(`version`, thingName, true),
                 });
-            } else if (previousStatus === Status.Verified && newStatus !== Status.Verified) {
+            } else if (isFirstUnverification) {
                 await this.createAlert({
-                    type: AlertType.ThingRemoval,
-                    ...AlertTemplates.verifiedRevoked(`version`, `${(await this.project)?.name} v${this.semver.raw}`, newStatus),
+                    type: AlertType.ThingGood,
+                    ...AlertTemplates.setFirstApproval(`version`, thingName, false),
                 });
-            } else if (newStatus === Status.Removed) {
+            // order is specific here to trigger correct alerts
+            } else if (wasRemoved) {
                 await this.createAlert({
-                    type: AlertType.ThingRejected,
-                    ...AlertTemplates.statusChange(`version`, `${(await this.project)?.name} v${this.semver.raw}`, newStatus),
+                    type: AlertType.ThingBad,
+                    ...AlertTemplates.verifiedRevoked(`version`, thingName, newStatus),
+                });
+            } else if (wasVerificationRemoved) {
+                await this.createAlert({
+                    type: AlertType.ThingBad,
+                    ...AlertTemplates.verifiedRevoked(`version`, thingName, newStatus),
+                });
+            } else {
+                await this.createAlert({
+                    type: AlertType.ThingInfo,
+                    ...AlertTemplates.statusChange(`version`, thingName, newStatus),
                 });
             }
-        }
-        Logger.info(`Version id ${this.id} status changed from ${previousStatus} to ${newStatus} by user id ${user.id} for reason: ${reason}`);
-        
+        }   
         return this;
     }
 
@@ -457,7 +495,7 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
             await this.$set(`supportedGameVersions`, desiredGameVersions);
 
             // find all of the new game versions that aren't in the old game versions, and add any of their linked versions
-            let newGameVersions = desiredGameVersions.filter(id => currentVersionGameVersions.every(current => current.id !== id));
+            let newGameVersions = desiredGameVersions.filter(dGv => currentVersionGameVersions.every(current => current.id !== dGv.id));
             for (let newGameVersion of newGameVersions) {
                 if (newGameVersion.linkedVersionIds && newGameVersion.linkedVersionIds.length > 0) {
                     for (let linkedVersionId of newGameVersion.linkedVersionIds) {
@@ -558,6 +596,17 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
             throw new Error(`Uploader not found for Version id ${this.id}`);
         }
 
+        let translatedStatus: ModVersionsApiv2[`status`] = Status.Private;
+        switch (this.status) {
+            case Status.Queue:
+            case Status.Testing:
+                translatedStatus = `pending`;
+                break;
+            default:
+                translatedStatus = this.status;
+        }
+
+
         return {
             id: this.id,
             modId: this.projectId,
@@ -566,7 +615,7 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
             platform: this.platform,
             zipHash: this.zipHash,
             contentHashes: this.contentHashes,
-            status: this.status,
+            status: translatedStatus,
             // fix this later
             dependencies: this.dependencies.map((dep) => dep.pId),
             supportedGameVersions: this.supportedGameVersions.map((gv) => gv.toApiV2()),
@@ -609,7 +658,8 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
             case Status.Private: // this should never happen
                 status = `declined`;
                 break;
-            case Status.Pending:
+            case Status.Queue:
+            case Status.Testing:
             case Status.Unverified:
                 status = `pending`;
                 break;

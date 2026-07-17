@@ -2,7 +2,7 @@
   import MiniPagination from "$lib/components/generic/MiniPagination.svelte";
   import ModCard from "$lib/components/mods/ModCard.svelte";
   import { m } from "$lib/paraglide/messages.js";
-  import { Status, UserPermissions, type GameVersionApiV3 } from "$lib/scripts/api/DBTypes";
+  import { Status, UserPermissions, type GameVersionApiV3 } from "$lib/scripts/from_backend/DBExtras";
   import { generateProjectSearchEngine } from "$lib/scripts/utils/search.js";
   import { getStatusString } from "$lib/scripts/utils/stylizer";
   import Checkbox from "$shadcn/components/ui/checkbox/checkbox.svelte";
@@ -12,11 +12,12 @@
   import * as Select from "$shadcn/components/ui/select";
   import Skeleton from "$shadcn/components/ui/skeleton/skeleton.svelte";
   import { ChevronRightIcon, FunnelIcon } from "@lucide/svelte";
-  import { onMount, untrack } from "svelte";
+  import { onMount, tick, untrack } from "svelte";
   import { MediaQuery } from "svelte/reactivity";
   import { Button } from "$lib/shadcn/components/ui/button";
   import { checkRoles } from "$lib/scripts/utils/checkRoles";
   import * as Drawer from "../../lib/shadcn/components/ui/drawer";
+  import { replaceState } from "$app/navigation";
 
   const { data: _internal } = $props();
   const { pageData, trpc, user } = $derived(_internal);
@@ -71,9 +72,9 @@
     isLoading = true;
     let statusLookup = [Status.Verified];
     if (checkRoles(user, { hasOneOf: [UserPermissions.Secret_Features]})) {
-      statusLookup.push(Status.Pending);
+      statusLookup.push(Status.Queue, Status.Testing);
     } else if (checkRoles(user, { hasOneOf: [UserPermissions.Mods_ViewAll]})) {
-      statusLookup.push(Status.Pending, Status.Removed, Status.Private);
+      statusLookup.push(Status.Queue, Status.Testing, Status.Removed, Status.Private);
     }
     if (user) {
       statusLookup.push(Status.Unverified);
@@ -107,14 +108,17 @@
     } else {
       isFilterStatusVisible = true;
     }
+  });
 
+  $effect(() => {
+    if (!selectedGame) return;
     let searchParams = new URLSearchParams();
     if (selectedGame) searchParams.set("game", selectedGame.name);
     if (selectedGameVersion) searchParams.set("gameVersion", selectedGameVersion.id.toString());
     if (selectedCategories.length > 0) searchParams.set("category", selectedCategories.join(","));
     if (searchQuery.trim() !== "") searchParams.set("search", searchQuery);
     if (selectedStatuses.length > 0 && selectedStatuses.every(s => s !== Status.Verified)) searchParams.set("status", selectedStatuses.join(","));
-    untrack(() => history.replaceState(null, "", `${location.pathname}${searchParams.size > 0 ? `?${searchParams.toString()}` : ""}`));
+    untrack(() => tick().then(() => replaceState("", `${location.pathname}${searchParams.size > 0 ? `?${searchParams.toString()}` : ""}`)));
   });
 </script>
 

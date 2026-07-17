@@ -1,4 +1,4 @@
-import { Status, UserPermissions } from "$lib/scripts/api/DBTypes";
+import { Status, UserPermissions } from "$lib/scripts/from_backend/DBExtras";
 import { error } from "@sveltejs/kit";
 import type { PageLoad } from "./$types";
 import { checkRoles } from "$lib/scripts/utils/checkRoles.js";

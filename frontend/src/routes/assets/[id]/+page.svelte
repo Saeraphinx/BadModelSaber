@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Status, Tags, UserPermissions, type AssetApiV3 } from "$lib/scripts/api/DBTypes.js";
+  import { Status, Tags, UserPermissions, type AssetApiV3 } from "$lib/scripts/from_backend/DBExtras.js";
   import AssetCard from "$lib/components/assets/AssetCard.svelte";
   import Badge from "$shadcn/components/ui/badge/badge.svelte";
   import Button from "$shadcn/components/ui/button/button.svelte";
@@ -29,7 +29,7 @@
   import Input from "$shadcn/components/ui/input/input.svelte";
   import Textarea from "$shadcn/components/ui/textarea/textarea.svelte";
   import TagPickerDialog from "$lib/components/dialogs/TagPickerDialog.svelte";
-  import { zAsset } from "$lib/scripts/api/validators";
+  import { zAsset } from "$lib/scripts/from_backend/validators.js";
   import { cn } from "$shadcn/utils";
   import LinkAssetDialog from "$lib/components/dialogs/LinkAssetDialog.svelte";
   import { invalidateAll } from "$app/navigation";

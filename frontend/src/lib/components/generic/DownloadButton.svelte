@@ -4,7 +4,7 @@
   import * as Dialog from "$shadcn/components/ui/dialog";
   import { onMount, type Snippet } from "svelte";
   import type { ClassValue } from "svelte/elements";
-  import { Status } from "$lib/scripts/api/DBTypes";
+  import { Status } from "$lib/scripts/from_backend/DBExtras";
 
   let {
     href,
@@ -22,20 +22,20 @@
   } & ButtonProps = $props();
 
   let dialogVisible = $state(false);
-  let dialogToUse: `asset` | `unverifiedmod` | `pendingmod` | null = $derived.by(() => {
-    if (downloadType === `asset` && status === `unverified`) {
-      return `asset`;
-    } else if (downloadType === `mod` && status === `unverified`) {
-      return `unverifiedmod`;
-    } else if (downloadType === `mod` && status === `pending`) {
-      return `pendingmod`;
+  let dialogToUse: `assetNonverified` | `modNonverified` | `modTesting` | null = $derived.by(() => {
+    if (downloadType === `asset` && (status === Status.Queue || status === Status.Unverified)) {
+      return `assetNonverified`;
+    } else if (downloadType === `mod` && (Status.Queue || status === Status.Unverified)) {
+      return `modNonverified`;
+    } else if (downloadType === `mod` && status === Status.Testing) {
+      return `modTesting`;
     } else {
       return null;
     }
   });
   let showWarning = $state(false);
   onMount(() => {
-    if (localStorage.getItem(`suppressUnverifiedDownloadWarning-${downloadType}`) === "true") {
+    if (localStorage.getItem(`suppressDownloadWarning-${downloadType}-${status}`) === "true") {
       showWarning = false;
     } else if (status === Status.Verified) {
       showWarning = false;
@@ -90,25 +90,25 @@
   <Dialog.Root bind:open={dialogVisible}>
     <Dialog.Content class="">
       <Dialog.Header>
-        {#if dialogToUse === `asset`}
+        {#if dialogToUse === `assetNonverified`}
           <Dialog.Title>{m["dialogs.downloadDialog.assetTitle"]()}</Dialog.Title>
-        {:else if dialogToUse === `unverifiedmod`}
-          <Dialog.Title>{m["dialogs.downloadDialog.unverifiedModTitle"]()}</Dialog.Title>
-        {:else if dialogToUse === `pendingmod`}
-          <Dialog.Title>{m["dialogs.downloadDialog.pendingModTitle"]()}</Dialog.Title>
+        {:else if dialogToUse === `modNonverified`}
+          <Dialog.Title>{m["dialogs.downloadDialog.nonVerifiedModTitle"]()}</Dialog.Title>
+        {:else if dialogToUse === `modTesting`}
+          <Dialog.Title>{m["dialogs.downloadDialog.testingModTitle"]()}</Dialog.Title>
         {/if}
       </Dialog.Header>
-      {#if dialogToUse === `asset`}
+      {#if dialogToUse === `assetNonverified`}
         <p class="text-md">{@html m["dialogs.downloadDialog.assetDescription"]()}</p>
-      {:else if dialogToUse === `unverifiedmod`}
-        <p class="text-md">{@html m["dialogs.downloadDialog.unverifiedModDescription"]()}</p>
-      {:else if dialogToUse === `pendingmod`}
-        <p class="text-md">{@html m["dialogs.downloadDialog.pendingModDescription"]()}</p>
+      {:else if dialogToUse === `modNonverified`}
+        <p class="text-md">{@html m["dialogs.downloadDialog.nonVerifiedModDescription"]()}</p>
+      {:else if dialogToUse === `modTesting`}
+        <p class="text-md">{@html m["dialogs.downloadDialog.testingModDescription"]()}</p>
       {/if}
       <p class="text-sm text-muted-foreground">{m["dialogs.downloadDialog.neverShowAgain"]()}</p>
       <Dialog.Footer>
         <Button disabled={ignoreCountdown >= 1} variant="ghost" onclick={() => {
-          localStorage.setItem(`suppressUnverifiedDownloadWarning-${downloadType}`, "true");
+          localStorage.setItem(`suppressUnverifiedDownloadWarning-${downloadType}-${status}`, "true");
           dialogVisible = false;
           showWarning = false;
         }}>{m["dialogs.dontShowAgain"]()}</Button>

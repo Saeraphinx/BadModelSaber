@@ -1,7 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { Op } from "sequelize";
 import z from "zod";
-import { Project, ProjectApiV3, versionApiV3Schema, Version, User, GameVersion, UserPermissions } from "../../../shared/Database.ts";
+import { Project, ProjectApiV3, versionApiV3Schema, Version, User, GameVersion, UserPermissions, Status } from "../../../shared/Database.ts";
 import { anyProcedure, loggedInProcedure, router } from "../../trpc.ts";
 import fs from "fs";
 import { createPatch, diffLines, lineDiff } from "diff";
@@ -134,8 +134,7 @@ export const getModsInternal = router({
         .query(async ({ ctx, input }) => {
             let versions = await Version.findAll({
                 where: {
-                    status: [`pending`, `unverified`],
-                    eligbleForVerification: true,
+                    status: [Status.Queue, Status.Testing],
                 },
                 include: [{
                     model: Project,

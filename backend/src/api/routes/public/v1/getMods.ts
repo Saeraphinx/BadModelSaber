@@ -86,7 +86,7 @@ export const getModsV1Router = router({
 
             let versions = await Version.findAll({
                 where: {
-                    status: showUnverified ? [Status.Verified, Status.Unverified, Status.Pending] : [Status.Verified],
+                    status: showUnverified ? [Status.Verified, Status.Unverified, Status.Queue, Status.Testing] : [Status.Verified],
                 },
                 include: [Project, User, {
                     model: GameVersion,

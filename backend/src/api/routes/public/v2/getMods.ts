@@ -17,7 +17,7 @@ export const getModsV2Router = router({
         .input(z.object({
             gameName: z.string().default(`beatsaber`),
             gameVersion: z.string().optional(),
-            status: z.enum([...Object.values(Status), `all`]).default(Status.Verified),
+            status: z.enum([`verified`, `unverified`, `pending`, `all`]).default(Status.Verified),
         }))
         .output(z.object({
             mods: z.object({
@@ -36,10 +36,10 @@ export const getModsV2Router = router({
             let allowedStatuses: Status[];
             switch (input.status) {
                 case `all`:
-                    allowedStatuses = [Status.Verified, Status.Unverified, Status.Pending];
+                    allowedStatuses = [Status.Verified, Status.Unverified, Status.Queue, Status.Testing];
                     break;
-                case Status.Pending:
-                    allowedStatuses = [Status.Verified, Status.Pending];
+                case `pending`:
+                    allowedStatuses = [Status.Verified, Status.Queue, Status.Testing];
                     break;
                 case Status.Unverified:
                     allowedStatuses = [Status.Verified, Status.Unverified];

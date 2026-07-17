@@ -1,6 +1,6 @@
 // See https://svelte.dev/docs/kit/types#app.d.ts
 // for information about these interfaces
-import type { AlertPublicAPIv3, AssetRequestPublicAPIv3, UserPublicAPI } from '$lib/scripts/api/DBTypes';
+import type { AlertPublicAPIv3, AssetRequestPublicAPIv3, UserPublicAPI } from '$lib/scripts/from_backend/DBExtras';
 import 'unplugin-icons/types/svelte'
 import type { AppRouter } from '../../../../../backend/src/api/routers';
 import type { createTRPC } from '$lib/scripts/utils/api';

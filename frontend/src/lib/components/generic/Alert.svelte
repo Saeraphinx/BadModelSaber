@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { AlertType, type AlertApiV3 } from '$lib/scripts/api/DBTypes';
+  import { AlertType, type AlertApiV3 } from '$lib/scripts/from_backend/DBExtras';
   import { parseErrorMessage, trpc } from '$lib/scripts/utils/api';
   import Button from '$shadcn/components/ui/button/button.svelte';
   import { cn } from '$shadcn/utils';
@@ -26,13 +26,15 @@
   let bgColor = $derived.by(() => {
     switch (alert.type) {
       case AlertType.RequestAccepted:
-      case AlertType.ThingVerified:
+      case AlertType.ThingGood:
         return 'bg-green-800/20';
-      case AlertType.ThingRejected:
+      case AlertType.ThingBad:
         return 'bg-red-800/20';
       case AlertType.RequestDeclined:
-      case AlertType.ThingRemoval:
+      case AlertType.ThingWarn:
         return 'bg-yellow-800/20';
+      case AlertType.ThingInfo:
+        return 'bg-blue-800/20';
       default:
         return 'bg-gray-800';
     }

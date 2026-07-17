@@ -11,7 +11,7 @@
     "strict": true,
     "strictNullChecks": true,
     "moduleResolution": "bundler",
-    "isolatedModules": true
+    "isolatedModules": true,
   }
   // Path aliases are handled by https://svelte.dev/docs/kit/configuration#alias
   // except $lib which is handled by https://svelte.dev/docs/kit/configuration#files

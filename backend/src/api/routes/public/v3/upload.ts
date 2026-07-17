@@ -122,8 +122,8 @@ export const uploadStuff = router({
             }
             Logger.debug(`Asset upload completed for user ${ctx.user?.id} with asset ID ${asset.id}`);
             if (input.immidateSubmit) {
-                await asset.setStatus(Status.Pending, ctx.user, "Asset immidately submitted for review by uploader").catch((err) => {
-                    Logger.error(`Error setting asset status to pending: ${parseErrorMessage(err)}`);
+                await asset.setStatus(Status.Queue, ctx.user, "Asset immidately submitted for review by uploader").catch((err) => {
+                    Logger.error(`Error setting asset status to queue: ${parseErrorMessage(err)}`);
                     throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Failed to submit asset for review. Please contact a site administrator.' });
                 });
             }
@@ -171,7 +171,7 @@ export const uploadStuff = router({
             lastUpdatedById: ctx.user.id,
             status: Status.Private,
         }).then(async (project) => {
-            project.$add(`authors`, ctx.user);
+            await project.$add(`authors`, ctx.user);
             Logger.log(`Project database entry created for user ${ctx.user?.id} with project ID ${project.id}`);
             fs.mkdirSync(project.folderPath, { recursive: true });
             await iconFile.arrayBuffer().then(async (buffer) => {
@@ -305,8 +305,8 @@ export const uploadStuff = router({
                 throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Failed to save version mod file. Please contact a site administrator.' });
             });
             if (input.immidateSubmit) {
-                await version.setStatus(Status.Pending, ctx.user, "Version immidately submitted for review by uploader").catch((err) => {
-                    Logger.error(`Error setting version status to pending: ${parseErrorMessage(err)}`);
+                await version.setStatus(Status.Queue, ctx.user, "Version immidately submitted for review by uploader").catch((err) => {
+                    Logger.error(`Error setting version status to queue: ${parseErrorMessage(err)}`);
                     throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Failed to submit version for review. Please contact a site administrator.' });
                 });
             }

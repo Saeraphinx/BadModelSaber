@@ -205,7 +205,7 @@ export class AlertTemplates {
         }
     }
 
-    public static setFirstVersionApproval(thingType: `project` | `version` | `asset`, thingName: string, fullApproved: boolean) {
+    public static setFirstApproval(thingType: `project` | `version` | `asset`, thingName: string, fullApproved: boolean) {
         return {
             header: fullApproved ? `${capitalizeWords(thingType)} Verified` : `${capitalizeWords(thingType)} Unverified`,
             message: `Your ${thingType}, ${thingName}, has had its status set to ${fullApproved ? `verified` : `unverified`}!`,
@@ -215,7 +215,7 @@ export class AlertTemplates {
     public static verifiedRevoked(thingType: `project` | `version` | `asset`, thingName: string, newStatus: string) {
         return {
             header: `${capitalizeWords(thingType)} Verification Revoked`,
-            message: `The verification of your ${thingType}, ${thingName}, has been revoked and the status has been set to ${newStatus}.`,
+            message: `The verification of your ${thingType}, ${thingName}, has been changed and the status has been set to ${newStatus}.`,
         }
     }
 

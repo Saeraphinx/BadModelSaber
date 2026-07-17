@@ -1,6 +1,6 @@
 <script lang="ts">
   import { m } from "$lib/paraglide/messages";
-  import type { ProjectApiV3, VersionApiV3 } from "$lib/scripts/api/DBTypes";
+  import type { ProjectApiV3, VersionApiV3 } from "$lib/scripts/from_backend/DBExtras";
   import { getProjectThumbnailUrl, getVersionDownloadUrl } from "$lib/scripts/utils/api";
   import Button from "$shadcn/components/ui/button/button.svelte";
   import type { HTMLAttributes } from "svelte/elements";

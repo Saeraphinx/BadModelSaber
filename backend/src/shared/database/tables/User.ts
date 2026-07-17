@@ -198,7 +198,7 @@ export class User extends Model<InferAttributes<User>, InferCreationAttributes<U
         }
 
         if (this.checkRoles([UserPermissions.Secret_Features])) {
-            return [Status.Verified, Status.Unverified, Status.Pending];
+            return [Status.Verified, Status.Unverified, Status.Queue, Status.Testing];
         } else {
             return [Status.Verified, Status.Unverified];
         }
@@ -236,6 +236,7 @@ export class User extends Model<InferAttributes<User>, InferCreationAttributes<U
             read: false,
             discordMessageSent: !(user?.shouldDmAlerts ?? false), // if user doesn't want DMs, we consider the alert "sent" for the purposes of not trying to send a DM
         }).then(alert => {
+            Logger.debug(`Created alert ${alert.id} for user ${userId}: '${data.header}'`);
             if (user && user.shouldDmAlerts) {
                 Logger.debug(`Sending DM alert to user ${userId} for alert ${alert.id}`);
                 // send discord DM
@@ -246,7 +247,7 @@ export class User extends Model<InferAttributes<User>, InferCreationAttributes<U
             }
             return alert;
         }).catch(err => {
-            Logger.error(`Failed to create alert for user ${userId}: ${parseErrorMessage(err)}`);
+            Logger.error(`Failed to create alert '${data.header}' for user ${userId}: ${parseErrorMessage(err)}`);
             throw err;
         });
     }

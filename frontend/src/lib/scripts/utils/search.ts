@@ -1,4 +1,4 @@
-import type { AssetApiV3, ElementType, ProjectApiV3, VersionApiV3 } from "../api/DBTypes";
+import type { AssetApiV3, ElementType, ProjectApiV3, VersionApiV3 } from "../from_backend/DBExtras";
 import { Index } from "flexsearch";
 
 export function generateAssetSearchEngine(assets: AssetApiV3[]) {

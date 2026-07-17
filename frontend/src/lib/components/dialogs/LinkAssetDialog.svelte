@@ -1,7 +1,7 @@
 <script lang="ts">
   import { env } from "$env/dynamic/public";
   import { m } from "$lib/paraglide/messages";
-  import { LinkedAssetLinkType } from "$lib/scripts/api/DBTypes";
+  import { LinkedAssetLinkType } from "$lib/scripts/from_backend/DBExtras";
   import { parseErrorMessage, trpc } from "$lib/scripts/utils/api";
   import { Button } from "$shadcn/components/ui/button";
   import * as Dialog from "$shadcn/components/ui/dialog";

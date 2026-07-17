@@ -1,6 +1,6 @@
 <script lang="ts">
   import { m } from "$lib/paraglide/messages";
-  import { AssetFileFormat, type AssetApiV3 } from "$lib/scripts/api/DBTypes";
+  import { AssetFileFormat, type AssetApiV3 } from "$lib/scripts/from_backend/DBExtras";
   import { getAssetDownloadUrl } from "$lib/scripts/utils/api";
   import Button from "$shadcn/components/ui/button/button.svelte";
     

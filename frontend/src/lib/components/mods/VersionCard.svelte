@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { type GameVersionApiV3, type VersionApiV3 } from "$lib/scripts/api/DBTypes";
+  import { type GameVersionApiV3, type VersionApiV3 } from "$lib/scripts/from_backend/DBExtras";
   import { getRelativeTimeString } from "$lib/scripts/utils/stylizer";
   import * as Accordion from "$shadcn/components/ui/accordion/index";
   import { BadgeInfoIcon, FileCodeIcon, FolderIcon, InfoIcon, Link2Icon, LinkIcon, ServerCogIcon } from "@lucide/svelte";
@@ -13,7 +13,7 @@
   import DownloadButton from "../generic/DownloadButton.svelte";
   import * as Select from "$shadcn/components/ui/select";
   import { toast } from "svelte-sonner";
-  import { gvCompareDecending } from "../../scripts/api/sortGV";
+  import { gvCompareDecending } from "../../scripts/from_backend/sortGV";
   import { onMount, tick } from "svelte";
 
   const {

@@ -1,6 +1,6 @@
 <script lang="ts">
   import { m } from "$lib/paraglide/messages";
-  import type { RequestMessage } from "$lib/scripts/api/DBTypes";
+  import type { RequestMessage } from "$lib/scripts/from_backend/DBExtras";
   import { Button } from "$shadcn/components/ui/button";
   import { cn } from "$shadcn/utils";
   import type { ClassValue } from "svelte/elements";

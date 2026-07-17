@@ -23,6 +23,8 @@ import { GameVersion } from "./GameVersion.ts";
 export type ProjectInfer = InferAttributes<Project>;
 export type ProjectAllowedEdit = Partial<Pick<Project, `summary` | `description` | `category` | `gitUrl`  | `collaboratorIds`> & { authorIds: number[] }>;
 export type ProjectWhereOptions = WhereOptions<Project>;
+export type ProjectValidStatuses = Status.Verified | Status.Private | Status.Removed;
+export const ProjectValidStatusesArray = [Status.Verified, Status.Private, Status.Removed] as const;
 
 @Table({
     tableName: `projects`,
@@ -78,7 +80,7 @@ export class Project extends Model<InferAttributes<Project>, InferCreationAttrib
     @AllowNull(false)
     @Default(Status.Private)
     @Column(DataType.STRING)
-    declare status: CreationOptional<Status>; // the current status of the project
+    declare status: CreationOptional<ProjectValidStatuses>; // the current status of the project
 
     @AllowNull(false)
     @Column(DataType.STRING)
@@ -149,7 +151,7 @@ export class Project extends Model<InferAttributes<Project>, InferCreationAttrib
         description: z.string().max(8192),
         gameName: z.string(),
         category: z.string(),
-        status: z.enum(Status),
+        status: z.custom<ProjectValidStatuses>((val) => ProjectValidStatusesArray.includes(val as ProjectValidStatuses)),
         iconFileName: z.string(),
         gitUrl: z.url(),
         lastApprovedById: dbId.nullable(),
@@ -422,35 +424,40 @@ export class Project extends Model<InferAttributes<Project>, InferCreationAttrib
         return await this.save();
     }
 
-    public async setStatus(newStatus: Status, user: User, reason: string, shouldAlert = true, shouldSendWebhook = true): Promise<this> {
+    public async setStatus(newStatus: ProjectValidStatuses, user: User, reason: string, shouldAlert = true, shouldSendWebhook = true): Promise<this> {
         let previousStatus = this.status;
         this.status = newStatus;
-        // this.lastUpdatedById = user.id; // commented out to preserve last updater as the last person to edit mod details, not status
-        if (newStatus === Status.Verified) {
-            this.lastApprovedById = user.id;
-        }
-        let newlyVerified = newStatus === Status.Verified && this.statusHistory.some(entry => entry.status === Status.Verified) === false;
-        let newlyUnverified = newStatus !== Status.Verified && this.statusHistory.some(entry => entry.status === Status.Verified || entry.status === Status.Unverified) === false;
         this.statusHistory = [...this.statusHistory, {
             status: newStatus,
             reason: reason,
             userId: user.id,
             timestamp: new Date().toISOString(),
         }];
-        try {
-            await this.save();
-        } catch (error) {
-            Logger.error(`Failed to save project status change: ${error}`);
-            throw error;
+
+        if (newStatus === Status.Verified) {
+            this.lastApprovedById = user.id;
         }
-        Logger.log(`Project ID ${this.id} status changed from ${previousStatus} to ${newStatus} by user ID ${user.id} for reason: ${reason}`);
+
+        await this.save().then(() => {
+            Logger.info(`Project ID ${this.id} status changed from ${previousStatus} to ${newStatus} by user id ${user.id} for reason: ${reason}`);
+        }).catch((err) => {
+            Logger.error(`Error updating Project status for Project id ${this.id} from ${previousStatus} to ${newStatus} by user id ${user.id} for reason: ${reason}: ${err}`);
+            throw err;
+        });
+
+        let isFirstVerification = newStatus === Status.Verified && this.statusHistory.some(entry => entry.status === Status.Verified) === false;
+        let wasPrivated = previousStatus !== Status.Private && newStatus === Status.Private;
+        let wasRemoved = previousStatus !== Status.Removed && newStatus === Status.Removed;
+
         if (shouldSendWebhook) {
+            let internalEmbedPayload = WebhookPayloadGenerator.generateInternalStatusUpdateEmbedPayload(this, user, previousStatus, newStatus, reason);
+            let externalEmbedPayload = WebhookPayloadGenerator.generateNewlyVerifiedThingEmbedPayload(this, user);
+
             Webhooks.sendWebhookLog(this.gameName, WebhookLogType.Text_StatusUpdate, false, WebhookPayloadGenerator.generateStatusPayload(this, user, previousStatus, newStatus, reason));
-            Webhooks.sendWebhookLog(this.gameName, WebhookLogType.StatusUpdate, false, WebhookPayloadGenerator.generateInternalStatusUpdateEmbedPayload(this, user, previousStatus, newStatus, reason));
-            if (newlyVerified) {
-                Webhooks.sendWebhookLog(this.gameName, WebhookLogType.NewlyVerifiedProject, false, WebhookPayloadGenerator.generateNewlyVerifiedThingEmbedPayload(this, user));
-            } else if (newlyUnverified) {
-                Webhooks.sendWebhookLog(this.gameName, WebhookLogType.NewlyUnverifiedProject, false, WebhookPayloadGenerator.generateNewlyVerifiedThingEmbedPayload(this, user));
+            Webhooks.sendWebhookLog(this.gameName, WebhookLogType.StatusUpdate, false, internalEmbedPayload);
+
+            if (isFirstVerification) {
+                Webhooks.sendWebhookLog(this.gameName, WebhookLogType.FirstVerificationProject, false, externalEmbedPayload);
             }
         }
 
@@ -462,14 +469,23 @@ export class Project extends Model<InferAttributes<Project>, InferCreationAttrib
                 },
             }).then(users => {
                 for (let u of users) {
-                    if (newlyVerified) {
+                    if (wasPrivated) {
                         u.createAlert({
-                            type: AlertType.ThingVerified,
+                            type: AlertType.ThingWarn,
                             projectId: this.id,
-                            header: `Your project "${this.name}" has been verified!`,
-                            message: `Congratulations! Your project "${this.name}" has been verified by ${user.username}. It is now publicly visible.`,
+                            header: `Your project "${this.name}" has been privated.`,
+                            message: `Your project "${this.name}" has been privated by ${user.username}. It is no longer publicly visible.`,
                         }).catch(err => {
-                            Logger.error(`Failed to create verified alert for user ID ${u.id} on project ID ${this.id}: ${err}`);
+                            Logger.error(`Failed to create privated alert for user ID ${u.id} on project ID ${this.id}: ${err}`);
+                        });
+                    } else if (wasRemoved) {
+                        u.createAlert({
+                            type: AlertType.ThingWarn,
+                            projectId: this.id,
+                            header: `Your project "${this.name}" has been removed.`,
+                            message: `Your project "${this.name}" has been removed. It is no longer publicly visible.`,
+                        }).catch(err => {
+                            Logger.error(`Failed to create removed alert for user ID ${u.id} on project ID ${this.id}: ${err}`);
                         });
                     }
                 }
@@ -477,6 +493,7 @@ export class Project extends Model<InferAttributes<Project>, InferCreationAttrib
                 Logger.error(`Failed to find users for project ID ${this.id} when creating status change alerts: ${err}`);
             });
         }
+
         return this;
     }
     // #endregion

@@ -1,4 +1,4 @@
-import { AssetFileFormat, RenderingModes, Status } from '$lib/scripts/api/DBTypes';
+import { AssetFileFormat, RenderingModes, Status } from '$lib/scripts/from_backend/DBExtras';
 import type { PageLoad } from './$types';
 
 export const load = (async (data) => {

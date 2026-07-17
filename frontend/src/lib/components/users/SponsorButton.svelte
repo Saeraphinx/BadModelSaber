@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { PlatformType } from "$lib/scripts/api/DBTypes";
+    import { PlatformType } from "$lib/scripts/from_backend/DBExtras";
     import { Button } from "$shadcn/components/ui/button";
   import type { HTMLAttributes } from "svelte/elements";
 

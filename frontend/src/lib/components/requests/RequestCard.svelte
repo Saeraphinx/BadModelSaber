@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { type ThingRequestApiV3 } from "$lib/scripts/api/DBTypes";
+  import { type ThingRequestApiV3 } from "$lib/scripts/from_backend/DBExtras";
   import { cn } from "$shadcn/utils";
   import { MessageSquareTextIcon } from "@lucide/svelte";
   import type { HTMLAttributes } from "svelte/elements";

@@ -1,9 +1,9 @@
 <script lang="ts">
   import { invalidateAll } from "$app/navigation";
   import { m } from "$lib/paraglide/messages";
-  import { Status } from "$lib/scripts/api/DBTypes";
+  import { Status } from "$lib/scripts/from_backend/DBExtras";
   import { parseErrorMessage, trpc } from "$lib/scripts/utils/api";
-  import { getStatusString } from "$lib/scripts/utils/stylizer";
+  import { getStatusAvailableThings, getStatusString } from "$lib/scripts/utils/stylizer";
   import { Button } from "$shadcn/components/ui/button/index.js";
   import * as Dialog from "$shadcn/components/ui/dialog/index.js";
   import { Input } from "$shadcn/components/ui/input/index.js";
@@ -16,6 +16,7 @@
   let statuses = Object.values(Status).map((status) => ({
     value: status,
     label: getStatusString(status),
+    showFor: getStatusAvailableThings(status)
   }));
 
   let selectedStatus = $state(statuses[0].value);
@@ -23,7 +24,6 @@
 
   let presetReasons = [
     "Inappropriate content",
-    "Pending full review",
     "Version mismatch",
     "Causes crashes or issues with base game",
     "Minor issues reported by users",
@@ -38,7 +38,6 @@
   let id = $state<number>(0);
   let visible = $state<boolean>(false);
   let type = $state<`asset` | `project` | `version`>("asset");
-  let eligbleForVerification = $state<boolean>(true);
 
   export function showDialog(p_id: number, p_name: string, thingType: `asset` | `project` | `version`) {
     reason = "";
@@ -55,24 +54,20 @@
     if (type === `asset`) {
       res = trpc.internal.approval.setStatusAsset.mutate({
         id: id,
-        status: selectedStatus,
+        status: selectedStatus as unknown as any,
         reason: reason,
       });
     } else if (type === `project`) {
       res = trpc.internal.approval.setStatusProject.mutate({
         id: id,
-        status: selectedStatus,
+        status: selectedStatus as unknown as any,
         reason: reason,
       });
     } else {
-      if (selectedStatus === Status.Verified) {
-        eligbleForVerification = false;
-      }
       res = trpc.internal.approval.setStatusVersion.mutate({
         id: id,
         status: selectedStatus,
         reason: reason,
-        eligbleForVerification: eligbleForVerification,
       });
     }
     res
@@ -107,10 +102,12 @@
     <div class="flex flex-row">
       <RadioGroup.Root bind:value={selectedStatus} >
         {#each statuses as status}
-          <div class="flex items-center space-x-2 capitalize">
-            <RadioGroup.Item value={status.value} id={status.value} />
-            <Label for={status.value}>{status.label}</Label>
-          </div>
+          {#if status.showFor.includes(type)}
+            <div class="flex items-center space-x-2 capitalize">
+              <RadioGroup.Item value={status.value} id={status.value} />
+              <Label for={status.value}>{status.label}</Label>
+            </div>
+          {/if}
         {/each}
       </RadioGroup.Root>
       <div class="flex flex-col w-full ml-4">
@@ -129,11 +126,7 @@
         </Select.Root>
       </div>
     </div>
-    <Dialog.Footer>
-      {#if type === `version`}
-        <Label for="sefv" class="ml-2">Is Eligble For Verification</Label>
-        <Switch id="sefv" bind:checked={eligbleForVerification} class="mt-2" />
-      {/if}      
+    <Dialog.Footer>  
       <Button variant="ghost" onclick={() => (visible = false)}>{m["dialogs.cancel"]()}</Button>
       <Button type="submit" onclick={handleSubmit}>{m["dialogs.submit"]()}</Button>
     </Dialog.Footer>

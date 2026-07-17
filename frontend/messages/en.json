@@ -127,9 +127,9 @@
         "title": "This asset has <b>not</b> been verified by the ModelSaber team. <span class=\"text-orange-400\">Use at your own risk!</span>",
         "description": "Unverified assets have not been checked for malware. Be cautious when downloading and using these assets."
       },
-      "pending": {
+      "queue": {
         "title": "This asset is currently pending approval. <span class=\"text-red-600\">Use with caution!</span>",
-        "description": "Pending assets have not been reviewed by the approval team. They may contain malware or be incompatible with the game. Be cautious when downloading and using these asset. <b>You will not receive support for unverified assets.</b>"
+        "description": "Assets in the queue have not been reviewed by the approval team. They may contain malware or be incompatible with the game. Be cautious when downloading and using these asset. <b>You will not receive support for unverified assets.</b>"
       },
       "private": {
         "title": "This asset is private.",
@@ -280,19 +280,23 @@
     "statusHover": {
       "verified": {
         "title": "This mod has been verified by the approval team and <span class=\"text-green-600\">is safe to use!</span>",
-        "description": "Verified mods have been checked for malware and are safe to use. Look for the green badge!"
+        "description": "Verified mods are safe and should not cause issues the game. Look for the green badge!"
       },
       "unverified": {
         "title": "This mod has <b>not</b> been verified by the approval team. <span class=\"text-orange-400\">Use at your own risk!</span>",
-        "description": "Unverified mods have not been fully checked for malware and compatibility. While they may be fine, be cautious when downloading and using these mods. <b>You will not receive support for unverified mods.</b>"
+        "description": "Unverified mods have not been fully checked for issues and compatibility. While they may be fine, be cautious when downloading and using these mods. <b>You will not receive support for non-verified mods.</b>"
       },
-      "pending": {
+      "testing": {
+        "title": "This mod is currently pending approval.",
+        "description": "Mods in the testing phase have been reviewed by the approval team and are currently in testing. It may be incompatible with the game or cause other issues. Be cautious when downloading and using these mods. <b>These mods are not fully verified and you will not receive support for them.</b> That being said, please let the approval team know about any issues you experience using these mods."
+      },
+      "queue": {
         "title": "This mod is currently pending approval. <span class=\"text-red-600\">Use with caution!</span>",
-        "description": "Pending mods have not been reviewed by the approval team. They may contain malware or be incompatible with the game. Be cautious when downloading and using these mods. <b>You will not receive support for unverified mods.</b>"
+        "description": "Mods in the queue have not been fully reviewed by the approval team. They may cause issues or be incompatible with the game. Be cautious when downloading and using these mods. <b>You will not receive support for non-verified mods.</b>"
       },
       "private": {
         "title": "This mod is private.",
-        "description": "Private mods are not visible to the public"
+        "description": "Private mods are not visible to the public."
       },
       "removed": {
         "title": "This mod has been removed.",
@@ -307,7 +311,7 @@
     "initialMessageReport": "{name} would like to report \"{assetName}\".",
     "tableTitle": "{type} Request",
     "requestID": "Request ID: {id}",
-    "Status": "Request Status: {status}",
+    "status": "Request Status: {status}",
     "resolvedBy": "Resolved By: {name}",
     "notResolved": "Not Resolved",
     "createdBy": "Created By: {name}",
@@ -328,8 +332,9 @@
   "enums": {
     "status": {
       "private": "Private",
-      "pending": "Pending",
+      "queue": "In Queue",
       "unverified": "Unverified",
+      "testing": "Testing",
       "verified": "Verified",
       "removed": "Removed"
     },
@@ -451,12 +456,12 @@
       "reasonPlaceholder": "Enter reason for status change (optional)"
     },
     "downloadDialog": {
-      "assetTitle": "Download Unverified Asset?",
-      "assetDescription": "The asset you are trying to download has not been verified by the ModelSaber team. Unverified assets may contain malware or other harmful content. Are you sure you want to proceed with the download?",
-      "unverifiedModTitle": "Download Unverified Mod?",
-      "unverifiedModDescription": "The mod you are trying to download has not been fully verified by the approval team. Unverified mods may be incompatible with the game or cause other issues. <b>You will not receive support in BSMG for unverified mods.</b> Are you sure you want to proceed with the download?",
-      "pendingModTitle": "Download Pending Mod?",
-      "pendingModDescription": "The mod you are trying to download is currently pending approval. Pending mods may contain malware or be incompatible with the game. <b>You will not receive support in BSMG for pending mods.</b> Are you sure you want to proceed with the download?",
+      "assetTitle": "Download Non-Verified Asset?",
+      "assetDescription": "The asset you are trying to download has not been verified by the approval team. Unverified assets may cause issues or contain other harmful content. Are you sure you want to proceed with the download?",
+      "nonVerifiedModTitle": "Download Non-Verified Mod?",
+      "nonVerifiedModDescription": "The mod you are trying to download has not been fully verified by the approval team. Non-verified mods may be incompatible with the game or cause other issues. <b>You will not receive support in BSMG for unverified mods.</b> Are you sure you want to proceed with the download?",
+      "testingModTitle": "Download Non-Verified Mod?",
+      "testingModDescription": "The mod you are trying to download is currently in testing and is awaiting full verification. Non-verified mods may be incompatible with the game or cause other issues. <b>These mods are not fully verified and you will not receive support for them.</b> That being said, please let the approval team know about any issues you experience using these mods. Are you sure you want to proceed with the download?",
       "neverShowAgain": "If you'd like to never see this warning again, please click the \"Don't show again\" button."
     },
     "reportDialog": {

@@ -310,7 +310,7 @@ export class ThingRequest extends Model<InferAttributes<ThingRequest>, InferCrea
                     let thingAlert = refThing instanceof Asset ? refThing.alertUploader : refThing instanceof Version ? refThing.createAlert : refThing.createAlertForAuthors;
                     let thingName = refThing instanceof Version ? `${(await refThing.project)?.name} v${refThing.semver.raw}` : refThing.name;
                     thingAlert({
-                        type: AlertType.ThingRemoval,
+                        type: AlertType.ThingBad,
                         header: `Your ${thingType} ${thingName} has been removed.`,
                         message: `Your ${thingType} has been removed. Please do not re-upload the ${thingType}. If you have any question, please contact the approval team.`,
                     })

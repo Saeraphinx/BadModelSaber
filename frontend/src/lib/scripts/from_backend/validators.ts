@@ -1,5 +1,5 @@
 import z from "zod";
-import { AssetFileFormat, dbId, License, LinkedAssetLinkType, Status, statusHistorySchema, Tags } from "./DBTypes";
+import { AssetFileFormat, dbId, License, LinkedAssetLinkType, RenderingModes, Status, statusHistorySchema, Tags } from "./DBExtras";
 import type { AssetInfer } from "../../../../../backend/src/shared/Database";
 import type { ProjectInfer } from "../../../../../backend/src/shared/Database";
 
@@ -48,6 +48,7 @@ export const zAsset = z.object({
   })),
   tags: z.array(z.enum(Tags)).default([]),
   gameName: z.string().min(1).max(64),
+  renderingMethod: z.enum(RenderingModes).nullable(),
   createdAt: z.date(),
   updatedAt: z.date(),
   deletedAt: z.date().nullable(),

@@ -1,6 +1,6 @@
 import { m } from "$lib/paraglide/messages";
 import { getLocale } from "$lib/paraglide/runtime";
-import { AssetFileFormat, RenderingModes, Status, UserPermissions } from "../api/DBTypes";
+import { AssetFileFormat, RenderingModes, Status, UserPermissions } from "../from_backend/DBExtras";
 
 // export function capitalizeFirstLetter(str: any): string {
 //   if (!str) return ``; // Handle empty strings
@@ -12,6 +12,21 @@ export function getStatusString(status: Status): string {
   return m[`enums.status.${status}`]();
 }
 
+export function getStatusAvailableThings(status: Status): string[] {
+  switch (status) {
+    case Status.Private:
+    case Status.Removed:
+    case Status.Verified:
+      return [`asset`, `project`, `version`];
+    case Status.Queue:
+    case Status.Unverified:
+      return [`asset`, `version`];
+    case Status.Testing:
+      return [`version`];
+  }
+}
+
+
 export function getRenderingMethodString(method: RenderingModes): string {
   return m[`enums.renderingModes.${method}`]();
 }
@@ -21,9 +36,9 @@ export function getRenderingMethodSupportedGV(method: RenderingModes): string {
     case RenderingModes.BIRP_SinglePass:
       return `0.13.2 - 1.29.1`;
     case RenderingModes.BIRP_SinglePassInstanced:
-      return `1.29.4 - 1.43.0`;
+      return `1.29.4 - 1.44.1`;
     case RenderingModes.URP_Unity6:
-      return `1.43.100+ (BETA)`;
+      return `1.44.2+`;
     default:
       return ``;
   }
@@ -254,7 +269,7 @@ export function getRelativeTimeString(date: Date, lang = getLocale()) {
     { unit: "second", ms: 1000 },
   ];
 
-  if (lang === `keys` || lang === `owo`) {
+  if (lang === `qaa` || lang === `qab`) {
     lang = `en`;
   }
 

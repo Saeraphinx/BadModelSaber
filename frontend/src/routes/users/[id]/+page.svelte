@@ -8,7 +8,7 @@
   import { toast } from "svelte-sonner";
   import { parseErrorMessage } from "$lib/scripts/utils/api.js";
   import { navigating } from "$app/state";
-  import { UserPermissions } from "$lib/scripts/api/DBTypes.js";
+  import { UserPermissions } from "$lib/scripts/from_backend/DBExtras.js";
   import { checkRoles } from "$lib/scripts/utils/checkRoles.js";
   import { Button } from "$lib/shadcn/components/ui/button/index.js";
   import ModCard from "$lib/components/mods/ModCard.svelte";

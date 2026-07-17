@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { AssetFileFormat, type Tags } from "$lib/scripts/api/DBTypes";
+  import { AssetFileFormat, type Tags } from "$lib/scripts/from_backend/DBExtras";
   import { getAllTagsData } from "$lib/scripts/utils/tags";
   import { Button } from "$shadcn/components/ui/button";
   import Separator from "$shadcn/components/ui/separator/separator.svelte";

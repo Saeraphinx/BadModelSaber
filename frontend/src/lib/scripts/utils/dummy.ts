@@ -1,4 +1,4 @@
-import { type AssetPublicAPIv3, AssetFileFormat, Status } from "../api/DBTypes";
+import { type AssetPublicAPIv3, AssetFileFormat, Status } from "../from_backend/DBExtras";
 
 // export const dummyAssetData: AssetPublicAPIv3 = {
 //     id: 1,

@@ -1,8 +1,8 @@
 <script lang="ts">
   import DependencySelector from "$lib/components/forms/ProjectSelector.svelte";
   import { m } from "$lib/paraglide/messages.js";
-  import { Status, type GameVersionApiV3 } from "$lib/scripts/api/DBTypes.js";
-  import { getManifestFromFile, getManifestFromZip, type Manifest } from "$lib/scripts/api/modParser.js";
+  import { Status, type GameVersionApiV3 } from "$lib/scripts/from_backend/DBExtras.js";
+  import { getManifestFromFile, getManifestFromZip, type Manifest } from "$lib/scripts/from_backend/modParser.js";
   import { manifestAllDependenciesExist, manifestGameVersionIsLowestSupportedVersion } from "$lib/scripts/utils/checkManifest.js";
   import { Button } from "$shadcn/components/ui/button";
   import * as Command from "$shadcn/components/ui/command/index.js";

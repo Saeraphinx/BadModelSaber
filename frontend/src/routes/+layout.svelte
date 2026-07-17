@@ -13,7 +13,7 @@
   import { Toaster } from "$shadcn/components/ui/sonner";
   import { toast, type ExternalToast } from "svelte-sonner";
   import { env } from "$env/dynamic/public";
-  import { UserPermissions, type AlertApiV3, availableLocales } from "$lib/scripts/api/DBTypes";
+  import { UserPermissions, type AlertApiV3, availableLocales } from "$lib/scripts/from_backend/DBExtras";
   import { Badge } from "$shadcn/components/ui/badge";
   import * as Sheet from "$shadcn/components/ui/sheet";
   import Alert from "$lib/components/generic/Alert.svelte";

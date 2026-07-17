@@ -1,6 +1,6 @@
 <script lang="ts">
   import { m } from "$lib/paraglide/messages";
-  import type { GameVersionApiV3, ProjectApiV3, VersionApiV3 } from "$lib/scripts/api/DBTypes";
+  import type { GameVersionApiV3, ProjectApiV3, VersionApiV3 } from "$lib/scripts/from_backend/DBExtras";
   import { Label } from "$lib/shadcn/components/ui/label";
   import * as Select from "$lib/shadcn/components/ui/select";
   import { onMount } from "svelte";

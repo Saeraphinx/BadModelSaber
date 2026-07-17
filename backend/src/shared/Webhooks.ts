@@ -3,6 +3,7 @@ import { Asset, Game, GameVersion, GameWebhookConfig, Project, Status, ThingRequ
 import { EnvConfig } from "./EnvConfig.ts";
 import { capitalizeWords } from "./Tools.ts";
 import { Translation } from "./database/tables/Translation.ts";
+import { Logger } from "./Logger.ts";
 
 /* 
 
@@ -60,9 +61,10 @@ export class Webhooks {
             if (webhookConfig.types.includes(type) && webhookConfig.isAssetWebhook === isAssetWebhook) {
                 try {
                     let res = await webhookConfig.client.send(await payload);
+                    Logger.info(`Sent webhook log of type ${type} to ${webhookConfig.url} for game ${gameName}`);
                     results.push(res);
                 } catch (error) {
-                    console.error(`Failed to send webhook to ${webhookConfig.url}: ${error}`);
+                    Logger.error(`Failed to send webhook to ${webhookConfig.url}: ${error}`);
                 }
             }
         }
@@ -84,7 +86,8 @@ export class WebhookPayloadGenerator {
             case Status.Removed:
                 color = Colors.Red;
                 break;
-            case Status.Pending:
+            case Status.Testing:
+            case Status.Queue:
                 color = Colors.Yellow;
                 break;
             default:

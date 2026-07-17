@@ -1,9 +1,9 @@
 <script lang="ts">
   import AssetCard from "$lib/components/assets/AssetCard.svelte";
   import RequestMessage from "$lib/components/requests/RequestMessage.svelte";
-  import { RequestType, UserPermissions, type UserApiV3 } from "$lib/scripts/api/DBTypes.js";
+  import { RequestType, UserPermissions, type UserApiV3 } from "$lib/scripts/from_backend/DBExtras.js";
   import { parseErrorMessage } from "$lib/scripts/utils/api.js";
-  import type { RequestMessage as ReqMessage } from "$lib/scripts/api/DBTypes.js";
+  import type { RequestMessage as ReqMessage } from "$lib/scripts/from_backend/DBExtras.js";
   import Textarea from "$shadcn/components/ui/textarea/textarea.svelte";
   import Button from "$shadcn/components/ui/button/button.svelte";
   import { m } from "$lib/paraglide/messages.js";
@@ -159,7 +159,7 @@
     <div class="flex flex-col items-start gap-2 bg-card p-4 rounded-lg shadow-md w-full max-w-2xl">
       <h1 class="text-2xl font-bold">{m["requests.tableTitle"]({ type: m[`enums.requestTypes.${pageData.requestType}`]() })}</h1>
       <p class="text-gray-500">{m["requests.requestID"]({ id: pageData.id })}</p>
-      <p class="text-gray-500">{m["requests.Status"]({ status: pageData.accepted ?? m["enums.status.pending"]() })}</p>
+      <p class="text-gray-500">{m["requests.status"]({ status: pageData.accepted ?? m["requests.notResolved"]() })}</p>
       <p class="text-gray-500">{m["requests.resolvedBy"]({ name: pageData.resolvedBy ?? m["requests.notResolved"]() })}</p>
       <p class="text-gray-500">{m["requests.createdBy"]({ name: users.get(pageData.requesterId)?.displayName || "Unknown User" })}</p>
       <p class="text-gray-500">{m["requests.createdAt"]({ date: new Date(pageData.createdAt).toLocaleDateString() })}</p>

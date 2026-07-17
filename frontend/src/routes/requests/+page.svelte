@@ -1,10 +1,10 @@
 <script lang="ts">
   import RequestCard from "$lib/components/requests/RequestCard.svelte";
-  import { type ThingRequestApiV3 } from "$lib/scripts/api/DBTypes.js";
+  import { type ThingRequestApiV3 } from "$lib/scripts/from_backend/DBExtras.js";
   import Badge from "$shadcn/components/ui/badge/badge.svelte";
   import * as Tabs from "$shadcn/components/ui/tabs/index.js";
   import { onMount } from "svelte";
-  import { UserPermissions } from "$lib/scripts/api/DBTypes";
+  import { UserPermissions } from "$lib/scripts/from_backend/DBExtras.js";
   import Button from "$shadcn/components/ui/button/button.svelte";
   import { RefreshCwIcon } from "@lucide/svelte";
   import { checkRoles } from "$lib/scripts/utils/checkRoles.js";

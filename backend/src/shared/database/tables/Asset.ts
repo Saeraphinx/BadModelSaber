@@ -1,7 +1,7 @@
 import { AfterValidate, AllowNull, BelongsTo, Column, CreatedAt, DataType, Default, DeletedAt, ForeignKey, Model, Sequelize, Table, Unique, UpdatedAt } from "sequelize-typescript";
 import { InferAttributes, InferCreationAttributes, NonAttribute, CreationOptional } from "sequelize";
-import { Alert, ThingRequest, User, UserPermissions } from "../../Database.ts";
-import { AlertType, AssetApiV3, AssetFileFormat, AssetPublicAPIv1, AssetPublicAPIv2, AssetTypesWithRenderingMethod, dbId, License, LinkedAsset, LinkedAssetLinkType, RenderingModes, RequestType, Status, StatusHistory, Tags, UserApiV3, WebhookLogType } from "../DBExtras.ts";
+import { Alert, AlertTemplates, ThingRequest, User, UserPermissions } from "../../Database.ts";
+import { AlertType, AssetApiV3, AssetFileFormat, AssetPublicAPIv1, AssetPublicAPIv2, AssetTypesWithRenderingMethod, dbId, License, LinkedAsset, LinkedAssetLinkType, RenderingModes, RequestType, Status, StatusHistory, statusHistorySchema, Tags, UserApiV3, WebhookLogType } from "../DBExtras.ts";
 import { z } from "zod/v4";
 import { EnvConfig } from "../../EnvConfig.ts";
 import { Logger } from "../../Logger.ts";
@@ -13,6 +13,8 @@ import { parseErrorMessage } from "../../Tools.ts";
 
 export type AssetInfer = InferAttributes<Asset>;
 export type AssetValidatorType = typeof Asset.validator; // for use in frontend
+export type AssetValidStatuses = Status.Verified | Status.Unverified | Status.Queue | Status.Private | Status.Removed;
+export const AssetValidStatusesArray = [Status.Verified, Status.Unverified, Status.Queue, Status.Private, Status.Removed] as const;
 @Table({
     tableName: `assets`,
     modelName: `Asset`,
@@ -104,7 +106,7 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
     @AllowNull(false)
     @Default(Status.Private)
     @Column(DataType.STRING)
-    declare status: CreationOptional<Status>;
+    declare status: CreationOptional<AssetValidStatuses>; // the current status of the asset
 
     @Column({
         type: DataType.JSONB,
@@ -198,13 +200,9 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
         fileHash: z.string().min(1).max(64),
         fileSize: z.number().int().positive(),
         iconNames: z.array(z.string()).max(5),
-        status: z.enum(Status),
-        statusHistory: z.array(z.object({
-            status: z.enum(Status),
-            reason: z.string().max(512),
-            timestamp: z.iso.datetime(),
-            userId: dbId.refine(async (id) => await User.checkIfExists(id)), // User ID of the person who changed the status
-        })),
+        // ensure that status is one of the valid statuses for assets
+        status: z.custom<AssetValidStatuses>((val) => AssetValidStatusesArray.includes(val as AssetValidStatuses)),
+        statusHistory: z.array(statusHistorySchema),
         tags: z.array(z.enum(Tags)).default([]),
         gameName: z.string().min(1).max(64),
         renderingMethod: z.enum(RenderingModes).nullable(),
@@ -350,7 +348,7 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
             return this.setStatus(Status.Unverified, reqBy, `Auto-approved upon submission due to asset type.`, false);
         } else {
             Logger.log(`Asset ${this.id} submitted for approval by user ${reqBy.id}, sending to approval queue.`);
-            return this.setStatus(Status.Pending, reqBy, `Submitted for approval.`, false);
+            return this.setStatus(Status.Queue, reqBy, `Submitted for approval.`, false);
         }
     }
 
@@ -522,72 +520,79 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
         return this;
     }
 
-    public async setStatus(newStatus: Status, userId: number | User, reason: string, sendAlert = true, shouldSendWebhooks = true): Promise<Asset> {
-        let userPreformingAction: User | null = null;
-        let oldStatus = this.status;
-        if (userId instanceof User) {
-            userPreformingAction = userId;
-        } else {
-            userPreformingAction = await User.findByPk(userId);
-            if (!userPreformingAction) {
-                throw new Error(`User not found`);
-            }
-        }
-
-        let newlyVerified = newStatus === Status.Verified && this.statusHistory.some(entry => entry.status === Status.Verified) === false;
-        let newlyUnverified = newStatus !== Status.Verified && this.statusHistory.some(entry => entry.status === Status.Verified || entry.status === Status.Unverified) === false;
+    /**
+     *  Correctly sets the status of the asset, and adds an entry to the status history. Also sends alerts and webhooks if applicable.
+     */
+    public async setStatus(newStatus: AssetValidStatuses, user: User, reason: string, sendAlert: boolean = true, shouldSendWebhooks: boolean = true): Promise<Asset> {
+        let previousStatus = this.status;
+        this.status = newStatus;
         
-
         this.statusHistory = [...this.statusHistory, {
             status: newStatus,
             reason: reason,
+            userId: user.id,
             timestamp: new Date().toISOString(),
-            userId: userPreformingAction.id, // User ID of the person who changed the status
         }];
 
-        if (this.status === newStatus) {
-            // No change in status, nothing to do
-            return this.save();
-        }
+        await this.save().then(() => {
+            Logger.info(`Asset ID ${this.id} status changed from ${previousStatus} to ${newStatus} by user id ${user.id} for reason: ${reason}`);
+        }).catch((err) => {
+            Logger.error(`Error updating asset status for asset id ${this.id} from ${previousStatus} to ${newStatus} by user id ${user.id} for reason: ${reason}: ${err}`);
+            throw err;
+        });
 
-        let alertType = AlertType.Generic
-        switch (newStatus) {
-            case Status.Verified:
-                alertType = AlertType.ThingVerified;
-                break;
-            case Status.Unverified:
-                //Webhooks.sendWebhookLog(this.gameName, WebhookLogType.NewlyUnverified, true, WebhookPayloadGenerator.generateInternalStatusUpdateEmbedPayload(this, userPreformingAction, oldStatus, newStatus));
-                break;
-            case Status.Removed:
-                if (oldStatus == Status.Verified || oldStatus == Status.Unverified) {
-                    alertType = AlertType.ThingRemoval;
-                } else if (oldStatus == Status.Pending) {
-                    alertType = AlertType.ThingRejected;
-                }
-                break;
+        let isFirstVerification = previousStatus !== Status.Verified && newStatus === Status.Verified && this.statusHistory.some(entry => entry.status === Status.Verified) === false;
+        let isFirstUnverification = previousStatus !== Status.Unverified && newStatus === Status.Unverified && this.statusHistory.some(entry => entry.status === Status.Verified || entry.status === Status.Unverified) === false;
+        let wasPlacedInQueue = previousStatus !== Status.Queue && newStatus === Status.Queue;
+        let wasVerificationRemoved = previousStatus === Status.Verified && newStatus !== Status.Verified;
+        let wasRemoved = previousStatus !== Status.Removed && newStatus === Status.Removed;
+
+        if (shouldSendWebhooks) {
+            let internalPayload = WebhookPayloadGenerator.generateInternalStatusUpdateEmbedPayload(this, user, previousStatus, newStatus, reason);
+            let externalPayload = WebhookPayloadGenerator.generateNewlyVerifiedThingEmbedPayload(this, user);
+            Webhooks.sendWebhookLog(this.gameName, WebhookLogType.Text_StatusUpdate, true, WebhookPayloadGenerator.generateStatusPayload(this, user, previousStatus, newStatus, reason));
+            Webhooks.sendWebhookLog(this.gameName, WebhookLogType.StatusUpdate, true, internalPayload);
+            if (isFirstVerification) {
+                Webhooks.sendWebhookLog(this.gameName, WebhookLogType.FirstVerificationAsset, true, externalPayload);
+            } else if (isFirstUnverification) {
+                Webhooks.sendWebhookLog(this.gameName, WebhookLogType.FirstUnverificationAsset, true, externalPayload);
+            } else if (wasPlacedInQueue) {
+                Webhooks.sendWebhookLog(this.gameName, WebhookLogType.AddedToQueueAsset, true, externalPayload);
+            }
         }
 
         if (sendAlert) {
-            this.alertUploader({
-                type: alertType,
-                header: `Asset Status Updated`,
-                message: `The status of your asset ${this.name} has been changed to ${newStatus}${reason ? ` for the following reason: ${reason}` : `.`}`,
-            });
+            let thingName = this.name;
+            if (isFirstVerification) {
+                await this.alertUploader({
+                    type: AlertType.ThingGood,
+                    ...AlertTemplates.setFirstApproval(`asset`, thingName, true),
+                });
+            } else if (isFirstUnverification) {
+                await this.alertUploader({
+                    type: AlertType.ThingGood,
+                    ...AlertTemplates.setFirstApproval(`asset`, thingName, false),
+                });
+            // order is specific here to trigger correct alerts
+            } else if (wasRemoved) {
+                await this.alertUploader({
+                    type: AlertType.ThingBad,
+                    ...AlertTemplates.verifiedRevoked(`asset`, thingName, newStatus),
+                });
+            } else if (wasVerificationRemoved) {
+                await this.alertUploader({
+                    type: AlertType.ThingBad,
+                    ...AlertTemplates.verifiedRevoked(`asset`, thingName, newStatus),
+                });
+            } else {
+                await this.alertUploader({
+                    type: AlertType.ThingInfo,
+                    ...AlertTemplates.statusChange(`asset`, thingName, newStatus),
+                });
+            }
         }
 
-        this.status = newStatus;
-        Logger.log(`Asset ${this.id} status changed to ${newStatus} by user ${userPreformingAction.id} for reason: ${reason}`);
-        return this.save().then(async (updatedAsset) => {
-            if (shouldSendWebhooks) {
-                Webhooks.sendWebhookLog(this.gameName, WebhookLogType.StatusUpdate, true, WebhookPayloadGenerator.generateInternalStatusUpdateEmbedPayload(updatedAsset, userPreformingAction!, oldStatus, newStatus, reason));
-                if (newlyVerified) {
-                    Webhooks.sendWebhookLog(this.gameName, WebhookLogType.NewlyVerifiedAsset, true, WebhookPayloadGenerator.generateInternalStatusUpdateEmbedPayload(updatedAsset, userPreformingAction!, oldStatus, newStatus, reason));
-                } else if (newlyUnverified) {
-                    Webhooks.sendWebhookLog(this.gameName, WebhookLogType.NewlyUnverifiedAsset, true, WebhookPayloadGenerator.generateInternalStatusUpdateEmbedPayload(updatedAsset, userPreformingAction!, oldStatus, newStatus, reason));
-                }
-            }
-            return updatedAsset;
-        });
+        return this;
     }
     // #endregion
     // #region Reports

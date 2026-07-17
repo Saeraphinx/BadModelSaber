@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { AssetFileFormat, Tags } from "$lib/scripts/api/DBTypes";
+  import { AssetFileFormat, Tags } from "$lib/scripts/from_backend/DBExtras";
   import { getTagData } from "$lib/scripts/utils/tags";
   import { Badge } from "$shadcn/components/ui/badge";
   import { cn } from "$shadcn/utils";

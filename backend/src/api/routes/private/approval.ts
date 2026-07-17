@@ -1,4 +1,4 @@
-import { Asset, Project, Status, UserPermissions, Version } from "../../../shared/Database.ts";
+import { Asset, AssetValidStatusesArray, Project, ProjectValidStatusesArray, Status, UserPermissions, Version, VersionValidStatusesArray } from "../../../shared/Database.ts";
 import { parseErrorMessage } from "../../../shared/Tools.ts";
 import { loggedInProcedure, router } from "../../trpc.ts";
 import z from "zod/v4";
@@ -8,7 +8,7 @@ import { Logger } from "../../../shared/Logger.ts";
 export const approvalRouter = router({
     setStatusAsset: loggedInProcedure([UserPermissions.Asset_Approval]).input(z.object({
         id: z.number().int().positive(),
-        status: z.enum(Status),
+        status: z.enum(AssetValidStatusesArray),
         reason: z.string().max(1000).optional()
     })).mutation(async ({input, ctx}) => {
         const asset = await Asset.findByPk(input.id);
@@ -23,7 +23,7 @@ export const approvalRouter = router({
     }),
     setStatusProject: loggedInProcedure().input(z.object({
         id: z.number().int().positive(),
-        status: z.enum(Status),
+        status: z.enum(ProjectValidStatusesArray),
         reason: z.string().max(1000).optional()
     })).mutation(async ({input, ctx}) => {
         const mod = await Project.findByPk(input.id);
@@ -43,9 +43,8 @@ export const approvalRouter = router({
     }),
     setStatusVersion: loggedInProcedure([UserPermissions.Mods_Approval]).input(z.object({
         id: z.number().int().positive(),
-        status: z.enum(Status),
+        status: z.enum(VersionValidStatusesArray),
         reason: z.string().max(1000).optional(),
-        eligbleForVerification: z.boolean().optional(),
     })).mutation(async ({input, ctx}) => {
         const version = await Version.findByPk(input.id);
         if (!version) {
@@ -53,11 +52,6 @@ export const approvalRouter = router({
         }
 
         await version.setStatus(input.status, ctx.user, input.reason ?? `No reason given.`).then(() => {
-            if (input.eligbleForVerification !== version.eligbleForVerification) {
-                Logger.log(`Updating version ${version.id} eligbleForVerification to ${input.eligbleForVerification}`);
-                version.update({ eligbleForVerification: input.eligbleForVerification });
-            }
-
             return version.toApiV3();
         }).catch(err => {
             throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: `Error updating version status: ${parseErrorMessage(err)}` });

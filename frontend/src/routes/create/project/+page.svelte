@@ -1,6 +1,6 @@
 <script lang="ts">
   import { m } from "$lib/paraglide/messages";
-  import { zProject } from "$lib/scripts/api/validators";
+  import { zProject } from "$lib/scripts/from_backend/validators.js";
   import { Button } from "$shadcn/components/ui/button";
   import { Input } from "$shadcn/components/ui/input";
   import { Label } from "$shadcn/components/ui/label";

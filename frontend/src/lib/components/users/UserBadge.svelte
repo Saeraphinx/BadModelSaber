@@ -1,7 +1,7 @@
 <script lang="ts">
   import { Button } from "$shadcn/components/ui/button";
   import { XIcon } from "@lucide/svelte";
-  import { UserPermissions, type UserApiV3 } from "$lib/scripts/api/DBTypes";
+  import { UserPermissions, type UserApiV3 } from "$lib/scripts/from_backend/DBExtras";
   import type { HTMLAttributes } from "svelte/elements";
   import { cn } from "$shadcn/utils";
   import { getRoleData } from "../../scripts/utils/stylizer";
@@ -33,21 +33,23 @@
     if (bsmgStaffRole) return bsmgStaffRole;
     return roleStyles[0];
   });
+
+  let userAvatarUrl = $derived.by(() => {
+    if (user.permissions.sitewide.includes(UserPermissions.C_System)) {
+      return "/system_pfp.svg";
+    } else if (user.avatarUrl.includes("github.com")) {
+      return `/users/pfp/${user.avatarUrl.split("/").pop()}`;
+    } else {
+      return user.avatarUrl;
+    }
+  });
 </script>
 
 <div class={cn(`flex items-center justify-start ${small ? `gap-1` : `gap-2`} ${roleStyle.badgeBorder} border-2 text-white rounded-full  ${onClick ? `` : `${small ? `pr-2` : `pr-3`}`}`, className)} {...restProps}>
   {#if small}
-    {#if user.permissions.sitewide.includes(UserPermissions.C_System)}
-      <img src="/system_pfp.svg" alt={user.displayName} class="w-6 h-6 rounded-full border-2 border-accent" />
-    {:else}
-      <img src={user.avatarUrl} alt={user.displayName} class="w-6 h-6 rounded-full border-2 border-accent" />
-    {/if}
+    <img src={userAvatarUrl} alt={user.displayName} class="w-6 h-6 rounded-full border-2 border-accent" crossorigin="anonymous" />
   {:else}
-   {#if user.permissions.sitewide.includes(UserPermissions.C_System)}
-      <img src="/system_pfp.svg" alt={user.displayName} class="w-8 h-8 rounded-full border-2 border-accent" />
-    {:else}
-      <img src={user.avatarUrl} alt={user.displayName} class="w-8 h-8 rounded-full border-2 border-accent" />
-    {/if}
+    <img src={userAvatarUrl} alt={user.displayName} class="w-8 h-8 rounded-full border-2 border-accent" crossorigin="anonymous" />
   {/if}
   <a href="/users/{user.id}" class="{small ? `text-xs` : `text-sm`}">{user.displayName}</a>
   {#if onClick}

@@ -1,6 +1,6 @@
 import { parse, Range, SemVer } from "semver";
-import type { GameVersionApiV3 } from "../api/DBTypes";
-import type { Manifest } from "../api/modParser";
+import type { GameVersionApiV3 } from "../from_backend/DBExtras";
+import type { Manifest } from "../from_backend/modParser";
 import { m } from "../../paraglide/messages";
 import type { LocalizedString } from "@inlang/paraglide-js";
 

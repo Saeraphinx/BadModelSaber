@@ -1,5 +1,5 @@
 import type { ClassValue } from "svelte/elements";
-import { AssetFileFormat, Tags } from "../api/DBTypes";
+import { AssetFileFormat, Tags } from "../from_backend/DBExtras";
 import { m } from "$lib/paraglide/messages";
 import { getLocale } from "$lib/paraglide/runtime";
 

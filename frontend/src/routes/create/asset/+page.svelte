@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { AssetFileFormat, AssetTypesWithRenderingMethod, RenderingModes, Tags } from "$lib/scripts/api/DBTypes";
+  import { AssetFileFormat, AssetTypesWithRenderingMethod, RenderingModes, Tags } from "$lib/scripts/from_backend/DBExtras";
   import LicenseSelector from "$lib/components/forms/LicenseSelector.svelte";
   import Button from "$shadcn/components/ui/button/button.svelte";
   import Input from "$shadcn/components/ui/input/input.svelte";
@@ -11,7 +11,7 @@
   import TypeSelector from "$lib/components/forms/TypeSelector.svelte";
   import { parseErrorMessage, trpc } from "$lib/scripts/utils/api";
   import { toast } from "svelte-sonner";
-  import { zAsset } from "$lib/scripts/api/validators";
+  import { zAsset } from "$lib/scripts/from_backend/validators";
   import { m } from "$lib/paraglide/messages";
   import * as RadioGroup from "../../../lib/shadcn/components/ui/radio-group";
   import { getRenderingMethodString, getRenderingMethodSupportedGV } from "../../../lib/scripts/utils/stylizer";

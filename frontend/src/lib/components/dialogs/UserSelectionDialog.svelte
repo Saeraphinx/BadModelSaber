@@ -1,6 +1,6 @@
 <script lang="ts">
   import * as Dialog from "$shadcn/components/ui/dialog";
-  import type { UserApiV3 } from "$lib/scripts/api/DBTypes";
+  import type { UserApiV3 } from "$lib/scripts/from_backend/DBExtras";
   import { Button } from "$shadcn/components/ui/button";
   import * as Command from "$shadcn/components/ui/command";
   import debounce from "debounce";

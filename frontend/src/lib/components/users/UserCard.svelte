@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { UserPermissions, type UserApiV3 } from '$lib/scripts/api/DBTypes';
+  import { UserPermissions, type UserApiV3 } from '$lib/scripts/from_backend/DBExtras';
   import { getRoleData } from '$lib/scripts/utils/stylizer.js';
   import { Badge } from '$shadcn/components/ui/badge';
   import { cn } from '$shadcn/utils';

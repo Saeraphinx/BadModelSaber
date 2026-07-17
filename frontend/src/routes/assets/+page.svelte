@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { AssetFileFormat, RenderingModes, Status, UserPermissions, type AssetApiV3 } from "$lib/scripts/api/DBTypes";
+  import { AssetFileFormat, RenderingModes, Status, UserPermissions, type AssetApiV3 } from "$lib/scripts/from_backend/DBExtras.js";
   import AssetCard from "$lib/components/assets/AssetCard.svelte";
   import Separator from "$shadcn/components/ui/separator/separator.svelte";
   import { ChevronRight, FunnelIcon } from "@lucide/svelte";

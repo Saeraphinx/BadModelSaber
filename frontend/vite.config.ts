@@ -18,7 +18,7 @@ export default defineConfig({
       clientFiles: [
         './src/lib/scripts/utils/api.ts',
         './src/lib/scripts/utils/checkRoles.ts',
-        './src/lib/scripts/api/DBTypes.ts',
+        './src/lib/scripts/from_backend/DBExtras.ts',
         './src/lib/shadcn/utils.ts',
         './src/lib/shadcn/components/ui/button/*'
       ]

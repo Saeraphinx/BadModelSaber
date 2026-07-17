@@ -90,8 +90,9 @@ export enum AssetFileFormat {
 // Changes to this enum should be mirrored in translation documents
 export enum Status {
   Private = 'private', // only uploader & collaborators can see
-  Pending = 'pending', // pending review by moderators (default for asset bundles)
+  Queue = 'queue', // pending review by moderators (default for asset bundles)
   Unverified = 'unverified', // approved but not yet verified by mods (default for everything else)
+  Testing = 'testing', // approved but needs to be tested by testers before being verified
   Verified = 'verified', // approved & verified by mods
   Removed = 'removed', // rejected by moderators
 }
@@ -241,9 +242,10 @@ export enum UserPermissions {
 
 export enum AlertType {
   Generic = "generic", // Generic alert type, used for non-specific alerts
-  ThingVerified = "thing_verified", // Alert when a thing is approved
-  ThingRejected = "thing_rejected", // Alert when a thing is rejected
-  ThingRemoval = "thing_removal", // Alert when a thing is removed
+  ThingGood = "thing_good", //
+  ThingInfo = "thing_info", //
+  ThingWarn = "thing_warn", // 
+  ThingBad = "thing_bad", //
   RequestAccepted = "request_accepted", // Alert when a request is accepted
   RequestDeclined = "request_declined", // Alert when a request is declined
 }
@@ -307,7 +309,7 @@ export const statusSchema = z.enum(Status)
 export const licenseSchema = z.enum(License)
 export type StatusHistory = z.infer<typeof statusHistorySchema>;
 export const statusHistorySchema = z.object({
-  status: statusSchema,
+  status: z.string(),
   reason: z.string(),
   timestamp: z.iso.datetime(),
   userId: dbId
@@ -338,12 +340,14 @@ export const linkedAssetSchema = z.object({
 
 // # region Enums
 export enum WebhookLogType {
-  NewlyVerifiedAsset = "newly_verified_asset",
-  NewlyUnverifiedAsset = "newly_unverified_asset",
-  NewlyVerifiedProject = "newly_verified_project",
-  NewlyUnverifiedProject = "newly_unverified_project",
-  NewlyVerifiedVersion = "newly_verified_version",
-  NewlyUnverifiedVersion = "newly_unverified_version",
+  FirstVerificationAsset = "newly_verified_asset",
+  FirstUnverificationAsset = "newly_unverified_asset",
+  FirstVerificationProject = "newly_verified_project",
+  FirstVerificationVersion = "newly_verified_version",
+  FirstUnverificationVersion = "newly_unverified_version",
+  AddedToQueueAsset = "added_to_queue_asset",
+  AddedToQueueVersion = "added_to_queue_version",
+  AddedToTestingVersion = "added_to_testing_version",
   NewThing = "new_thing", // e.g. new asset, new project
   NewSubThing = "new_sub_thing", // e.g. new version of a project
   NewReport = "new_report", // e.g. new report for a project, version, asset, or user

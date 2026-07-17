@@ -1,4 +1,4 @@
-import { type UserApiV3 } from '$lib/scripts/api/DBTypes';
+import { type UserApiV3 } from '$lib/scripts/from_backend/DBExtras';
 import { error, redirect } from '@sveltejs/kit';
 import type { PageLoad } from './$types';
 import { handleTrpcError } from '$lib/scripts/utils/api';

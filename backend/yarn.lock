@@ -54,6 +54,18 @@
   resolved "https://registry.npmjs.org/@discordjs/collection/-/collection-2.1.1.tgz"
   integrity sha512-LiSusze9Tc7qF03sLCujF5iZp7K+vRNEDBZ86FT9aQAv3vxMLihUvKvpsCWiQ2DJq1tVckopKm1rxomgNUc9hg==
 
+"@discordjs/core@^2.6.0":
+  version "2.6.0"
+  resolved "https://registry.npmjs.org/@discordjs/core/-/core-2.6.0.tgz#5a339591d3212decfc70bffbb7b643bdaa3fd8f6"
+  integrity sha512-rQ1Jvn4sMlFhfj3WMbtfQUBqDZ5/QEsH/HIHY+RQ/28rRyK/N95mEf/0Tp72ITKK0zdzoTSGo1AgZI/P5JnLBw==
+  dependencies:
+    "@discordjs/rest" "^2.6.2"
+    "@discordjs/util" "^1.2.0"
+    "@discordjs/ws" "^2.0.4"
+    "@sapphire/snowflake" "^3.5.5"
+    "@vladfrangu/async_event_emitter" "^2.4.6"
+    discord-api-types "^0.38.50"
+
 "@discordjs/formatters@^0.6.2":
   version "0.6.2"
   resolved "https://registry.npmjs.org/@discordjs/formatters/-/formatters-0.6.2.tgz#93c4a213ceb49c9a28e8adb65d50a027579b8c30"
@@ -61,7 +73,7 @@
   dependencies:
     discord-api-types "^0.38.33"
 
-"@discordjs/rest@^2.5.1", "@discordjs/rest@^2.6.2":
+"@discordjs/rest@^2.5.1", "@discordjs/rest@^2.6.0", "@discordjs/rest@^2.6.2":
   version "2.6.2"
   resolved "https://registry.npmjs.org/@discordjs/rest/-/rest-2.6.2.tgz#6ca9736a4164027a5bc9041bc9735d27b5ce8f99"
   integrity sha512-c5HI3hJuRWWrnpyCZAUYfIUTAEv9weX4tE2UfDqtM3ztizdKE9RFEf3G5IWhPyO+kPldUDpGv02XJAQzdUTC9Q==
@@ -76,7 +88,7 @@
     tslib "^2.6.3"
     undici "^6.27.0"
 
-"@discordjs/util@^1.1.0", "@discordjs/util@^1.2.0":
+"@discordjs/util@^1.1.0", "@discordjs/util@^1.1.1", "@discordjs/util@^1.2.0":
   version "1.2.0"
   resolved "https://registry.npmjs.org/@discordjs/util/-/util-1.2.0.tgz"
   integrity sha512-3LKP7F2+atl9vJFhaBjn4nOaSWahZ/yWjOvA4e5pnXkt2qyXRCHLxoBQy81GFtLGCq7K9lPm9R517M1U+/90Qg==
@@ -97,6 +109,21 @@
     discord-api-types "^0.38.1"
     tslib "^2.6.2"
     ws "^8.17.0"
+
+"@discordjs/ws@^2.0.4":
+  version "2.0.4"
+  resolved "https://registry.npmjs.org/@discordjs/ws/-/ws-2.0.4.tgz#c8178881f17c87379fe8bff7d888f671a904e6f9"
+  integrity sha512-ARXnE+qi+D7Y4trd1bKA9uhiUxQvLbOKcdehDa6NLd7FiqmDvvk8N5RGk6Ho9gdT/Wap09dz/IuLv7hNpUzt6g==
+  dependencies:
+    "@discordjs/collection" "^2.1.1"
+    "@discordjs/rest" "^2.6.0"
+    "@discordjs/util" "^1.1.1"
+    "@sapphire/async-queue" "^1.5.3"
+    "@types/ws" "^8.5.12"
+    "@vladfrangu/async_event_emitter" "^2.4.6"
+    discord-api-types "^0.38.32"
+    tslib "^2.6.3"
+    ws "^8.18.0"
 
 "@emnapi/runtime@^1.7.0":
   version "1.9.2"
@@ -1176,7 +1203,7 @@
   resolved "https://registry.npmjs.org/@types/validator/-/validator-13.15.10.tgz"
   integrity sha512-T8L6i7wCuyoK8A/ZeLYt1+q0ty3Zb9+qbSSvrIVitzT3YjZqkTZ40IbRsPanlB4h1QB3JVL1SYCdR6ngtFYcuA==
 
-"@types/ws@^8.5.10":
+"@types/ws@^8.5.10", "@types/ws@^8.5.12":
   version "8.18.1"
   resolved "https://registry.npmjs.org/@types/ws/-/ws-8.18.1.tgz"
   integrity sha512-ThVF6DCVhA8kUGy+aazFQ4kXQ7E1Ty7A3ypFOe0IcJV8O/M511G99AW24irKrW56Wt44yG9+ij8FaqoBGkuBXg==
@@ -1992,7 +2019,7 @@ diff@^9.0.0:
   resolved "https://registry.npmjs.org/diff/-/diff-9.0.0.tgz#297c31cd7c280f13dfe335791ec2063bd4a73a6f"
   integrity sha512-svtcdpS8CgJyqAjEQIXdb3OjhFVVYjzGAPO8WGCmRbrml64SPw/jJD4GoE98aR7r25A0XcgrK3F02yw9R/vhQw==
 
-discord-api-types@^0.38.1, discord-api-types@^0.38.40, discord-api-types@^0.38.49:
+discord-api-types@^0.38.1, discord-api-types@^0.38.32, discord-api-types@^0.38.40, discord-api-types@^0.38.49, discord-api-types@^0.38.50:
   version "0.38.50"
   resolved "https://registry.npmjs.org/discord-api-types/-/discord-api-types-0.38.50.tgz#0a4fbc2903aafab6a92a67a7ec2ad62133c24ab6"
   integrity sha512-J2n/bpIETX3DQ6AJ7/0xbsTLmYiJQtO/LKcXKC1YDbB56OUwtDbdXOFE8Q4g8jVGHBR2VAy1+D4ngaIgkMNV9w==
@@ -4424,7 +4451,7 @@ wrappy@1:
   resolved "https://registry.npmjs.org/wrappy/-/wrappy-1.0.2.tgz"
   integrity sha512-l4Sp/DRseor9wL6EvV2+TuQn63dMkPjZ/sp9XkghTEbV9KlPS1xUsZ3u7/IQO4wxtcFB4bgpQPRcR3QCvezPcQ==
 
-ws@^8.17.0:
+ws@^8.17.0, ws@^8.18.0:
   version "8.21.1"
   resolved "https://registry.npmjs.org/ws/-/ws-8.21.1.tgz#045650cd4b1207809e7547146223c3814a9af586"
   integrity sha512-+0NTnW77fFN/DjQi6k/Sq/Yvk4Sgajw7urW8V+asjXnRgDs9gyGkdb7EzgfhA4goXsRIZKE28fzIXBHEzhuiWw==

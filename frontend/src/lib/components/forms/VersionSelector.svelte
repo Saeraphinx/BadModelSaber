@@ -6,7 +6,7 @@
   import * as Popover from "$shadcn/components/ui/popover/index.js";
   import { buttonVariants } from "$shadcn/components/ui/button/index.js";
   import { cn } from "$shadcn/utils.js";
-  import { AssetFileFormat } from "$lib/scripts/api/DBTypes";
+  import { AssetFileFormat } from "$lib/scripts/from_backend/DBExtras";
   import { getAssetTypeData } from "$lib/scripts/utils/stylizer";
   import type { ClassValue } from "svelte/elements";
 

@@ -5,7 +5,7 @@
   import Markdown from "$lib/components/generic/Markdown.svelte";
   import VersionCard from "$lib/components/mods/VersionCard.svelte";
   import { m } from "$lib/paraglide/messages";
-  import { availableLocales, type UserApiV3, UserPermissions } from "$lib/scripts/api/DBTypes.js";
+  import { availableLocales, type UserApiV3, UserPermissions } from "$lib/scripts/from_backend/DBExtras.js";
   import { checkRoles } from "$lib/scripts/utils/checkRoles.js";
   import { getRelativeTimeString, getStatusString } from "$lib/scripts/utils/stylizer.js";
   import { Separator } from "$shadcn/components/ui/separator";
@@ -19,7 +19,7 @@
   import { PlusIcon, UploadIcon } from "@lucide/svelte";
   import UserBadge from "$lib/components/users/UserBadge.svelte";
   import UserSelectionDialog from "$lib/components/dialogs/UserSelectionDialog.svelte";
-  import { zProject } from "$lib/scripts/api/validators";
+  import { zProject } from "$lib/scripts/from_backend/validators.js";
   import { toast } from "svelte-sonner";
   import { getProjectThumbnailUrl, handleTrpcError, parseErrorMessage, trpc } from "$lib/scripts/utils/api.js";
   import { invalidateAll } from "$app/navigation";
