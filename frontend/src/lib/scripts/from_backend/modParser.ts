@@ -54,12 +54,12 @@ export async function getManifestFromZip(file: File | ArrayBuffer | Buffer<Array
       });
 
       // pull out manifest.json if it exists
-      if (file.name === "manifest.json") {
+      if (file.name === "manifest.json" || file.name.endsWith(".manifest")) {
         manifestJson = getManifestFromString(data, doLogs);
       } else if (file.name.endsWith(".dll")) {
         if (!data.startsWith("MZ")) {
           doLogs ? doLogs.warn(`File ${fileName} in zip archive is not a valid .dll file, skipping manifest extraction from this file.`) : null;
-          return null;
+          continue;
         }
         
         // pull from dll

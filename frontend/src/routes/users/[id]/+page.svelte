@@ -40,7 +40,7 @@
     });
   });
   function onEditSubmit() {
-    trpc.internal.user.updateUser.mutate({
+    trpc.internal.updateThings.user.updateSelfUser.mutate({
       displayName: editDisplayName,
       bio: editBio,
     }).then(() => {
@@ -93,7 +93,7 @@
               {#if pdUser.permissions.sitewide.includes(UserPermissions.C_Banned)}
                 <Button variant="outline" class="w-full" onclick={() => {
                   if (confirm("Are you sure you want to unban this user?")) {
-                    trpc.internal.user.banUser.mutate({ userId: pdUser.id, ban: false}).then(() => {
+                    trpc.internal.admin.user.banUser.mutate({ userId: pdUser.id, ban: false}).then(() => {
                       toast.success("User unbanned.");
                     }).catch((err) => {
                       toast.error(m["toasts.error.generic"](), { description: parseErrorMessage(err) });
@@ -105,7 +105,7 @@
               {:else}
                 <Button variant="destructive" class="w-full" onclick={() => {
                   if (confirm("Are you sure you want to ban this user?")) {
-                    trpc.internal.user.banUser.mutate({ userId: pdUser.id, ban: true}).then(() => {
+                    trpc.internal.admin.user.banUser.mutate({ userId: pdUser.id, ban: true}).then(() => {
                       toast.success("User banned.");
                     }).catch((err) => {
                       toast.error(m["toasts.error.generic"](), { description: parseErrorMessage(err) });

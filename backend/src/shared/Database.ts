@@ -203,6 +203,14 @@ export class DatabaseManager {
                 as: 'authors'
             }]
         })
+
+        let assetCount = Asset.count();
+        let userCount = User.count();
+        let projectCount = Project.count();
+        let versionCount = Version.count();
+        Promise.all([assetCount, userCount, projectCount, versionCount]).then(async () => {
+            Logger.log(`Loading tables complete. Asset count: ${await assetCount}, User count: ${await userCount}, Project count: ${await projectCount}, Version count: ${await versionCount}`);
+        });
     }
 
     public async importFakeData() {

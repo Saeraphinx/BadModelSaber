@@ -80,7 +80,7 @@
           action: {
             label: "Enable",
             onClick: () => {
-              trpc.internal.user.toggleSecretFeatures
+              trpc.internal.updateThings.user.toggleSecretFeatures
                 .mutate({ enabled: true })
                 .then(() => {
                   toast.success(m["toasts.secretFeatures.enabled"](), {
@@ -110,7 +110,7 @@
   });
 
   function removeSecret() {
-    trpc.internal.user.toggleSecretFeatures
+    trpc.internal.updateThings.user.toggleSecretFeatures
       .mutate({ enabled: false })
       .then(() => {
         toast.info(m["toasts.secretFeatures.disabled"](), {

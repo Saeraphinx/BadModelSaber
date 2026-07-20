@@ -24,6 +24,8 @@ export const userRouterV3 = router({
             z.object({
                 githubId: z.string().nullable(),
                 discordId: z.string().nullable(),
+                hideGithubId: z.boolean(),
+                hideDiscordId: z.boolean(),
             })
         ))
         .query(({ctx}) => {
@@ -31,6 +33,8 @@ export const userRouterV3 = router({
             ...ctx.user.toApiV3(),
             githubId: ctx.user.githubId,
             discordId: ctx.user.discordId,
+            hideGithubId: ctx.user.hideGithubId,
+            hideDiscordId: ctx.user.hideDiscordId,
         };
     }),
     getUserById: anyProcedure().input(z.object({

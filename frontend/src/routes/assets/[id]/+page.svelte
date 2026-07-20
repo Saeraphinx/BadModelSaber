@@ -95,9 +95,9 @@
       return;
     }
 
-    trpc.internal.updateThings.updateAsset
+    trpc.internal.updateThings.asset.updateAsset
       .mutate({
-        assetId: pageData.id,
+        id: pageData.id,
         data: {
           name: editName,
           description: editDescription,
@@ -375,8 +375,8 @@
           <Button
             variant="secondary"
             onclick={() => {
-              trpc.internal.updateThings.submitAssetForApproval
-                .mutate({ assetId: pageData.id })
+              trpc.internal.updateThings.asset.submitAssetForApproval
+                .mutate({ id: pageData.id })
                 .then(() => {
                   toast.success(m["toasts.success.assetSubmittedForApproval"]());
                 })
@@ -393,7 +393,7 @@
         <Button
           variant="secondary"
           onclick={() => {
-            approvalDialog?.showDialog(pageData.id, pageData.name, `asset`);
+            approvalDialog?.showDialog(pageData.id, pageData.name, `asset`, pageData.status);
           }}>
           <BadgeAlert />
           {m["common.buttons.approvalDialog"]()}

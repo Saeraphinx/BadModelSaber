@@ -139,9 +139,9 @@
     }
 
     isSaving = true;
-    trpc.internal.updateThings.updateProject
+    trpc.internal.updateThings.project.updateProject
       .mutate({
-        projectId: project.id,
+        id: project.id,
         data: parsed.data,
       })
       .then(() => {
@@ -174,7 +174,7 @@
     isSaving = true;
     trpc.internal.translation.createOrUpdateTranslationForProject
       .mutate({
-        projectId: project.id,
+        id: project.id,
         contentType: type,
         language: translatingLanguage,
         translatedString: stringToUse,
@@ -243,7 +243,12 @@
     <img src={getProjectThumbnailUrl(project)} alt="Project Thumbnail" class="w-32 h-32 object-cover rounded-lg" />
     <!-- <Skeleton class="w-32 h-32 rounded-lg" /> -->
     <div class="flex flex-col ml-4">
-      <h1 class="text-3xl font-bold mb-1">{project.name}</h1>
+      <div class="flex items-center">
+        <h1 class="text-3xl font-bold mb-1">{project.name}</h1>
+        {#if project.name !== project.nameId}
+          <span class="text-gray-500 font-mono ml-2">({project.nameId})</span>
+        {/if}
+      </div>
       <p class="text-gray-600 mb-2">{project.summary}</p>
       <div class="flex items-center not-md:justify-center gap-2 mb-2">
         {#each project.authors as author (author.id)}
@@ -263,7 +268,7 @@
         {/if}
       {/if}
       {#if shouldAllowApproval}
-        <Button variant="outline" class="ml-auto w-full" onclick={() => approvalDialog?.showDialog(project.id, project.name, `project`)}>{m["common.buttons.approvalDialog"]()}</Button>
+        <Button variant="outline" class="ml-auto w-full" onclick={() => approvalDialog?.showDialog(project.id, project.name, `project`, project.status)}>{m["common.buttons.approvalDialog"]()}</Button>
       {/if}
     </div>
   </div>
@@ -272,18 +277,19 @@
     <!-- Version List -->
     <div class="w-md md:max-w-sm not-md:max-w-full not-md:w-full">
       {#if checkRoles(user, [UserPermissions.Mods_UploadAll], project.gameName) || project.authors.some((a) => a.id === user?.id)}
-        <div class="flex flex-row items-center justify-between mb-4 mx-1">
+        <div class="flex flex-row items-center justify-between mx-1">
           <h2 class="text-xl font-bold">{m["mods.uploadNewVersion"]()}</h2>
           <Button variant="outline" href="/create/project/{project.id}"><UploadIcon />{m["mods.upload"]()}</Button>
         </div>
+        <Separator class="my-4" />
       {/if}
-      {#if versions.length > 0}
-        <div class="flex flex-col gap-2">
-          {#each versions as version}
-            <VersionCard {version} approvalDialog={shouldAllowApproval ? approvalDialog : undefined} showStatusHistory={shouldAllowStatusHistory} {codeDialog} isEditable={shouldAllowEdit} {gameVersions} />
-          {/each}
-        </div>
-      {/if}
+      <div class="flex flex-col gap-2">
+        {#each versions as version}
+          <VersionCard {version} approvalDialog={shouldAllowApproval ? approvalDialog : undefined} showStatusHistory={shouldAllowStatusHistory} {codeDialog} isEditable={shouldAllowEdit} {gameVersions} />
+        {:else}
+          <p class="text-center text-gray-500">{m["mods.noVersionsFound"]()}</p>
+        {/each}
+      </div>
     </div>
     <div class="w-full overflow-hidden">
       <!-- Databar -->
@@ -334,7 +340,7 @@
                   let formData = new FormData();
                   formData.append("projectId", project.id.toString());
                   formData.append("icon", editedIconFile[0]);
-                  trpc.internal.updateThings.updateProjectIcon
+                  trpc.internal.updateThings.project.updateProjectIcon
                     .mutate(formData)
                     .then(() => {
                       toast.success(m["toasts.success.iconUpload"]());

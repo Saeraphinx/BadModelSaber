@@ -89,12 +89,12 @@ export enum AssetFileFormat {
 */
 // Changes to this enum should be mirrored in translation documents
 export enum Status {
+  Removed = 'removed', // rejected by moderators
   Private = 'private', // only uploader & collaborators can see
   Queue = 'queue', // pending review by moderators (default for asset bundles)
-  Unverified = 'unverified', // approved but not yet verified by mods (default for everything else)
   Testing = 'testing', // approved but needs to be tested by testers before being verified
+  Unverified = 'unverified', // approved but not yet verified by mods (default for everything else)
   Verified = 'verified', // approved & verified by mods
-  Removed = 'removed', // rejected by moderators
 }
 
 export enum License {
@@ -538,6 +538,8 @@ export type GameVersionApiV3_full = GameVersionApiV3 & {
 export type UserApiV3 = z.infer<typeof userApiV3Schema>;
 export const userApiV3Schema = z.object({
   id: dbId,
+  githubId: z.string().nullable(),
+  discordId: z.string().nullable(),
   username: z.string(),
   displayName: z.string(),
   bio: z.string().nullable(),
@@ -574,8 +576,8 @@ export const projectApiV3Schema = z.object({
   authors: z.array(userApiV3Schema),
   gameName: z.string(),
   status: z.enum(Status),
-  iconFileName: z.string(),
-  gitUrl: z.string(),
+  iconFileUrl: z.url(),
+  gitUrl: z.url(),
   lastApprovedById: dbId.nullable(),
   lastUpdatedById: dbId,
   statusHistory: z.array(statusHistorySchema),
@@ -603,6 +605,7 @@ export const versionApiV3Schema = z.object({
   statusHistory: z.array(statusHistorySchema),
   baseFileName: z.string(),
   downloadUrl: z.url(),
+  testingAutoVerifyTime: z.iso.datetime().nullable(),
   fileSize: z.number(),
   createdAt: z.date(),
   updatedAt: z.date(),

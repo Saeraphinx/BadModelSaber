@@ -43,7 +43,7 @@
   let searchResults: {name: string, id:number, nameId: string}[] = $state([]);
   async function searchProjects(query: string) {
     if (query.length === 0) return searchResults;
-    let res = await trpc.internal.mods.searchProjects.query({ query, gameName: gameName });
+    let res = await trpc.internal.getThings.searchProjects.query({ query, gameName: gameName });
     return res;
   }
 </script>

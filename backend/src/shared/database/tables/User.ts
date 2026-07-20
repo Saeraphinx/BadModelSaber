@@ -1,4 +1,4 @@
-import { AfterValidate, AllowNull, BelongsToMany, Column, CreatedAt, DataType, DeletedAt, Model, Table, Unique, UpdatedAt } from "sequelize-typescript";
+import { AfterValidate, AllowNull, BelongsToMany, Column, CreatedAt, DataType, Default, DeletedAt, Model, Table, Unique, UpdatedAt } from "sequelize-typescript";
 import { CreationAttributes, CreationOptional, InferAttributes, InferCreationAttributes, NonAttribute, Op, Sequelize, WhereOptions } from "sequelize";
 import { AlertType, UserPlatform, UserApiV3, UserPermissions, PlatformType, UserPublicApiV2, dbId, userPermissionsSchema, userPlatformSchema, Status } from "../DBExtras.ts";
 import { Alert } from "./Alert.ts";
@@ -42,57 +42,58 @@ export class User extends Model<InferAttributes<User>, InferCreationAttributes<U
     @Column(DataType.STRING(32))
 
     declare discordId: string | null;
+
     @AllowNull(true)
     @Unique
     @Column(DataType.STRING(32))
     declare githubId: string | null;
 
-    @Column({
-        type: DataType.STRING,
-        allowNull: false,
-    })
+    @AllowNull(false)
+    @Column(DataType.STRING)
     declare username: string;
-    @Column({
-        type: DataType.STRING,
-        allowNull: false,
-        defaultValue: "",
-    })
+
+    @AllowNull(false)
+    @Default("")
+    @Column(DataType.STRING)
     declare displayName: CreationOptional<string>;
-    @Column({
-        type: DataType.TEXT,
-        allowNull: false,
-        defaultValue: "",
-    })
+
+    @AllowNull(false)
+    @Default("")
+    @Column(DataType.TEXT)
     declare bio: CreationOptional<string>;
-    @Column({
-        type: DataType.JSONB,
-        allowNull: true,
-        defaultValue: [],
-    })
+
+    @AllowNull(false)
+    @Default([])
+    @Column(DataType.JSONB)
     declare userPlatforms: CreationOptional<UserPlatform[]>;
-    @Column({
-        type: DataType.STRING,
-        allowNull: false,
-        defaultValue: "https://cdn.discordapp.com/embed/avatars/0.png",
-    })
+
+    @AllowNull(false)
+    @Default("https://cdn.discordapp.com/embed/avatars/0.png")
+    @Column(DataType.STRING)
     declare avatarUrl: CreationOptional<string>;
 
-    @Column({
-        type: DataType.JSONB,
-        allowNull: false,
-        defaultValue: { sitewide: [], perGame: {} },
-    })
+    @AllowNull(false)
+    @Default({ sitewide: [], perGame: {} })
+    @Column(DataType.JSONB)
     declare permissions: CreationOptional<{
         perGame: Record<string, UserPermissions[]>,
         sitewide: UserPermissions[]
     }>;
 
-    @Column({
-        type: DataType.BOOLEAN,
-        allowNull: false,
-        defaultValue: false,
-    })
+    @AllowNull(false)
+    @Default(false)
+    @Column(DataType.BOOLEAN)
     declare shouldDmAlerts: CreationOptional<boolean>;
+
+    @AllowNull(false)
+    @Default(false)
+    @Column(DataType.BOOLEAN)
+    declare hideGithubId: CreationOptional<boolean>;
+
+    @AllowNull(false)
+    @Default(false)
+    @Column(DataType.BOOLEAN)
+    declare hideDiscordId: CreationOptional<boolean>;
 
     @BelongsToMany(() => Project, () => ProjectAuthor)
     declare authoredProjects: NonAttribute<Project[]>;
@@ -120,6 +121,8 @@ export class User extends Model<InferAttributes<User>, InferCreationAttributes<U
             sitewide: z.array(z.enum(UserPermissions))
         }),
         shouldDmAlerts: z.boolean(),
+        hideGithubId: z.boolean(),
+        hideDiscordId: z.boolean(),
         createdAt: z.date(),
         updatedAt: z.date(),
         deletedAt: z.date().nullable()
@@ -136,6 +139,8 @@ export class User extends Model<InferAttributes<User>, InferCreationAttributes<U
         userPlatforms: User.validator.shape.userPlatforms.nullish(),
         permissions: User.validator.shape.permissions.nullish(),
         shouldDmAlerts: User.validator.shape.shouldDmAlerts.nullish(),
+        hideGithubId: User.validator.shape.hideGithubId.nullish(),
+        hideDiscordId: User.validator.shape.hideDiscordId.nullish(),
         createdAt: User.validator.shape.createdAt.nullish(),
         updatedAt: User.validator.shape.updatedAt.nullish(),
         deletedAt: User.validator.shape.deletedAt.nullish(),
@@ -214,10 +219,10 @@ export class User extends Model<InferAttributes<User>, InferCreationAttributes<U
         requestId?: number | null;
         header: string;
         message: string;
-    }): Promise<Alert> {
+    }, shouldDM = true): Promise<Alert> {
         return User.createAlert(this.id, {
             ...data,
-        }, this);
+        }, this, shouldDM);
     }
 
     public static createAlert(userId: number, data: {
@@ -228,7 +233,7 @@ export class User extends Model<InferAttributes<User>, InferCreationAttributes<U
         requestId?: number | null;
         header: string;
         message: string;
-    }, user?: User): Promise<Alert> {
+    }, user?: User, shouldDM = true): Promise<Alert> {
         Logger.debug(`Creating alert for user ${userId}: ${data.header}`);
         return Alert.create({
             ...data,
@@ -237,7 +242,7 @@ export class User extends Model<InferAttributes<User>, InferCreationAttributes<U
             discordMessageSent: !(user?.shouldDmAlerts ?? false), // if user doesn't want DMs, we consider the alert "sent" for the purposes of not trying to send a DM
         }).then(alert => {
             Logger.debug(`Created alert ${alert.id} for user ${userId}: '${data.header}'`);
-            if (user && user.shouldDmAlerts) {
+            if (shouldDM && user && user.shouldDmAlerts) {
                 Logger.debug(`Sending DM alert to user ${userId} for alert ${alert.id}`);
                 // send discord DM
                 // we don't await this, because we don't want to block the main thread if discord is having issues
@@ -387,19 +392,22 @@ export class User extends Model<InferAttributes<User>, InferCreationAttributes<U
     public toApiV3(): UserApiV3 {
         return {
             id: this.id,
+            githubId: this.hideGithubId ? null : this.githubId,
+            discordId: this.hideDiscordId ? null : this.discordId,
             username: this.username,
             userPlatforms: this.userPlatforms,
             displayName: this.displayName ?? this.username,
             permissions: this.permissions,
             bio: this.bio,
-            avatarUrl: this.avatarUrl
+            avatarUrl: this.avatarUrl,
         };
     }
+    
     public toApiV2(): UserPublicApiV2 {
         return {
             id: this.id,
             username: this.username,
-            githubId: null,
+            githubId: this.hideGithubId ? 1 : parseInt(this.githubId ?? `1`),
             sponsorUrl: this.userPlatforms.length > 0 ? this.userPlatforms[0].url : null,
             displayName: this.displayName ?? this.username,
             roles: {

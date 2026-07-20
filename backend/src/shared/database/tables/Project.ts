@@ -21,7 +21,7 @@ import { GameVersion } from "./GameVersion.ts";
 
 
 export type ProjectInfer = InferAttributes<Project>;
-export type ProjectAllowedEdit = Partial<Pick<Project, `summary` | `description` | `category` | `gitUrl`  | `collaboratorIds`> & { authorIds: number[] }>;
+export type ProjectAllowedEdit = Partial<Pick<Project, `summary` | `description` | `category` | `gitUrl` | `collaboratorIds`> & { authorIds: number[] }>;
 export type ProjectWhereOptions = WhereOptions<Project>;
 export type ProjectValidStatuses = Status.Verified | Status.Private | Status.Removed;
 export const ProjectValidStatusesArray = [Status.Verified, Status.Private, Status.Removed] as const;
@@ -133,8 +133,8 @@ export class Project extends Model<InferAttributes<Project>, InferCreationAttrib
         return path.join(EnvConfig.uploadsPath, this.id.toString());
     }
 
-    get iconUrl() : NonAttribute<string> {
-        return `${EnvConfig.server.backendUrl}/${EnvConfig.server.fileRoute}/${this.id}/${this.iconFileName}`;
+    get iconUrl(): NonAttribute<string> {
+        return this.iconFileName.includes(`default`) ? `${EnvConfig.server.backendUrl}${EnvConfig.server.fileRoute}/default-${this.gameName}.png` : `${EnvConfig.server.backendUrl}/${EnvConfig.server.fileRoute}/${this.id}/${this.iconFileName}`;
     }
     // #endregion
     // #region Validatiors
@@ -151,7 +151,7 @@ export class Project extends Model<InferAttributes<Project>, InferCreationAttrib
         description: z.string().max(8192),
         gameName: z.string(),
         category: z.string(),
-        status: z.custom<ProjectValidStatuses>((val) => ProjectValidStatusesArray.includes(val as ProjectValidStatuses)),
+        status: z.enum(ProjectValidStatusesArray),
         iconFileName: z.string(),
         gitUrl: z.url(),
         lastApprovedById: dbId.nullable(),
@@ -362,7 +362,7 @@ export class Project extends Model<InferAttributes<Project>, InferCreationAttrib
         message: string;
         versionId?: number | null;
     }, includeCollaborators = true, additionalIds?: number[]): Promise<void | Promise<Alert>[]> {
-        let userIds =  Array.from(includeCollaborators ? new Set([...(await this.authorIds), ...(this.collaboratorIds || []), ...additionalIds || []]) : new Set([...(await this.authorIds), ...additionalIds || []]));
+        let userIds = Array.from(includeCollaborators ? new Set([...(await this.authorIds), ...(this.collaboratorIds || []), ...additionalIds || []]) : new Set([...(await this.authorIds), ...additionalIds || []]));
         let users = User.findAll({
             where: {
                 id: userIds,
@@ -554,7 +554,7 @@ export class Project extends Model<InferAttributes<Project>, InferCreationAttrib
             category: this.category,
             authors: authors,
             status: this.status,
-            iconFileName: this.iconFileName,
+            iconFileUrl: this.iconUrl,
             gitUrl: this.gitUrl,
             lastApprovedById: this.lastApprovedById,
             lastUpdatedById: this.lastUpdatedById,
@@ -565,7 +565,7 @@ export class Project extends Model<InferAttributes<Project>, InferCreationAttrib
         };
     }
 
-    public async toApiV2(): Promise<ModApiv2> {
+    public async toApiV2(gameVersionId?: number): Promise<ModApiv2> {
         let authors = this.authors ? await Promise.all(this.authors.map(a => a.toApiV2())) : [];
 
         return {

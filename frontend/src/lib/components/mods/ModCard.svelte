@@ -30,8 +30,8 @@
     </div>
     <div class="flex flex-col gap-1">
       <span class="flex flex-row items-end gap-1 ">
-        <a href="/mods/{project.id}" class="text-lg/tight flex flex-row flex-wrap items-end gap-1 max-w-64 overflow-hidden text-ellipsis whitespace-nowrap" title={project.name} aria-hidden="true">
-          {project.name}
+        <a href="/mods/{project.id}" class="flex flex-row flex-wrap items-end gap-1 max-w-64" title={project.name} aria-hidden="true">
+          <p class="text-lg/tight whitespace-nowrap overflow-hidden text-ellipsis">{project.name}</p>
           {#if version}
             <p class="text-xs/normal text-muted-foreground">v{version.semver}</p>
           {/if}

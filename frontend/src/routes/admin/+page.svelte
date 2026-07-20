@@ -32,12 +32,12 @@
   let alertHeader = $state("");
   let alertMessage = $state("");
   function sendAdminAlert() {
-    trpc.internal.admin.createAlert
+    trpc.internal.adminRaw.raw.createAlert
       .mutate({
         userId: parseInt(alertUserId),
         type: alertType,
-        assetId: parseInt(alertAssetId) || undefined,
-        requestId: parseInt(alertRequestId) || undefined,
+        assetId: parseInt(alertAssetId) || null,
+        requestId: parseInt(alertRequestId) || null,
         header: alertHeader,
         message: alertMessage,
       })
@@ -89,11 +89,11 @@
       })
       .catch((err) => {
         console.error(err);
-        toast.error("Failed to load user roles.");
+        toast.error("Failed to load user roles.", { description: parseErrorMessage(err) });
       });
   }
   function sendUserRoles() {
-    trpc.internal.admin.setRoles
+    trpc.internal.admin.user.setRoles
       .mutate({
         userId: parseInt(roleUserId),
         permissions: {
@@ -106,7 +106,7 @@
       })
       .catch((err) => {
         console.error(err);
-        toast.error("Failed to update user roles.");
+        toast.error("Failed to update user roles.", { description: parseErrorMessage(err) });
       });
   }
   // #endregion
@@ -114,7 +114,7 @@
   // #region Admin Logs
   let adminLogs: { timestamp: Date; level: string; message: string }[] = $state([]);
   function fetchAdminLogs() {
-    trpc.internal.admin.getAdminLogs
+    trpc.internal.admin.dev.getAdminLogs
       .query()
       .then((logs) => {
         adminLogs = logs;
@@ -122,7 +122,7 @@
       })
       .catch((err) => {
         console.error(err);
-        toast.error("Failed to fetch admin logs.");
+        toast.error("Failed to fetch admin logs.", { description: parseErrorMessage(err) });
       });
   }
   // #endregion
@@ -136,7 +136,7 @@
       })
       .catch((err) => {
         console.error(err);
-        toast.error("Failed to fetch admin status.");
+        toast.error("Failed to fetch admin status.", { description: parseErrorMessage(err) });
         return undefined;
       });
   }
@@ -150,7 +150,7 @@
       userSearchResults = [];
       return [];
     }
-    return await trpc.internal.user.searchUsers.query({ query: userSearchQuery }).then((res) => {
+    return await trpc.internal.admin.user.searchUsers.query({ query: userSearchQuery }).then((res) => {
       userSearchResults = res;
       return res;
     });
@@ -196,14 +196,14 @@
             })
             .catch((err) => {
               console.error(err);
-              toast.error(`Failed to fetch versions for ${game.displayName}.`);
+              toast.error(`Failed to fetch versions for ${game.displayName}.`, { description: parseErrorMessage(err) });
             });
         }
         return fetchedGames;
       })
       .catch((err) => {
         console.error(err);
-        toast.error("Failed to fetch games.");
+        toast.error("Failed to fetch games.", { description: parseErrorMessage(err) });
         return [];
       });
   }
@@ -235,7 +235,7 @@
       })
       .catch((err) => {
         console.error(err);
-        toast.error("Failed to fetch mods eligible for bulk action.");
+        toast.error("Failed to fetch mods eligible for bulk action.", { description: parseErrorMessage(err) });
         return [];
       });
   }
@@ -254,9 +254,9 @@
         continue;
       }
       promises.push(
-        trpc.internal.updateThings.updateVersion
+        trpc.internal.updateThings.version.updateVersion
           .mutate({
-            versionId: modId,
+            id: modId,
             data: {
               supportedGameVersionIds: [...gameVersionIds, baSelectedGameVersionTo.id],
             },
@@ -276,18 +276,20 @@
     });
   }
   // #endregion
+  
   // #region Approval Queue
   let approvalDialog: ApprovalDialog | null = null;
   let codeDialog: CodeDialog | null = null;
   let aqSelectedGameName = $state("");
   let aqSelectedGame = $derived.by(() => games.find((game) => game.name === aqSelectedGameName));
   let aqModsInApprovalQueue: Awaited<ReturnType<typeof fetchApprovalQueue>> = $state([]);
+  let aqSelectedGameVersionString = $state("All Versions");
   async function fetchApprovalQueue() {
     if (!aqSelectedGameName) {
       toast.error("Please select a game to view its approval queue.");
       return [];
     }
-    return await trpc.internal.mods.approvalQueueVersions
+    return await trpc.internal.getThings.approvalQueueVersions
       .query({ gameName: aqSelectedGameName })
       .then((res) => {
         aqModsInApprovalQueue = res;
@@ -295,7 +297,7 @@
       })
       .catch((err) => {
         console.error(err);
-        toast.error("Failed to fetch approval queue.");
+        toast.error("Failed to fetch approval queue.", { description: parseErrorMessage(err) });
         return [];
       });
   }
@@ -326,10 +328,10 @@
       {#if checkRoles(user, [UserPermissions.Users_EditAll, UserPermissions.Users_Ban, UserPermissions.Users_EditAllRoles])}
         <Tabs.Trigger value="users">User Management</Tabs.Trigger>
       {/if}
-      {#if checkRoles(user, [UserPermissions.Game_Create, UserPermissions.Game_Edit, UserPermissions.Game_EditVersions, UserPermissions.Game_ViewExtras])}
+      {#if checkRoles(user, [UserPermissions.Game_Create, UserPermissions.Game_Edit, UserPermissions.Game_EditVersions, UserPermissions.Game_ViewExtras], `any`)}
         <Tabs.Trigger value="games">Game Management</Tabs.Trigger>
       {/if}
-      {#if checkRoles(user, [UserPermissions.Mods_Approval])}
+      {#if checkRoles(user, [UserPermissions.Mods_Approval], `any`)}
         <Tabs.Trigger value="bulkactions">Bulk Actions (Mods)</Tabs.Trigger>
         <Tabs.Trigger value="approval">Approval Queue (Mods)</Tabs.Trigger>
       {/if}
@@ -500,7 +502,7 @@
           <Button
             class="mt-4 mb-2 w-full"
             onclick={() => {
-              trpc.internal.admin.importOldModelSaberData
+              trpc.internal.admin.dev.importOldModelSaberData
                 .mutate()
                 .then(() => {
                   toast.success("Import started.");
@@ -513,7 +515,7 @@
           <Button
             class="mt-4 mb-2 w-full"
             onclick={() => {
-              trpc.internal.admin.importFromBeatmods
+              trpc.internal.admin.dev.importFromBeatmods
                 .mutate()
                 .then(() => {
                   toast.success("Import started.");
@@ -527,21 +529,7 @@
             variant="destructive"
             class="mt-4 mb-2 w-full"
             onclick={() => {
-              trpc.internal.admin.resetSchema
-                .mutate()
-                .then(() => {
-                  toast.success("Schema reset started.");
-                })
-                .catch((err) => {
-                  console.error(err);
-                  toast.error("Failed to start schema reset.");
-                });
-            }}>Reset Database Schema</Button>
-          <Button
-            variant="destructive"
-            class="mt-4 mb-2 w-full"
-            onclick={() => {
-              trpc.internal.admin.importFakeData
+              trpc.internal.admin.dev.importFakeData
                 .mutate()
                 .then(() => {
                   toast.success("Fake data import started.");
@@ -670,7 +658,7 @@
                         variant={version.defaultVersion ? "default" : "outline"}
                         disabled={version.defaultVersion}
                         onclick={() => {
-                          trpc.internal.games.setDefaultVersion
+                          trpc.internal.admin.game.setDefaultVersion
                             .mutate({ gameName: selectedGame.name, versionId: version.id })
                             .then(() => {
                               toast.success(`Version ${version.version} set as default.`);
@@ -729,7 +717,7 @@
                         variant="destructive"
                         size="icon"
                         onclick={() => {
-                          trpc.internal.games.removeWebhook
+                          trpc.internal.admin.game.removeWebhook
                             .mutate({ gameName: selectedGame.name, webhookId: webhook.id })
                             .then(() => {
                               toast.success("Webhook deleted.");
@@ -845,9 +833,18 @@
             }}><RefreshCwIcon /></Button>
         </div>
         <Button disabled={!aqSelectedGameName} variant="default" onclick={fetchApprovalQueue}>Fetch Approval Queue</Button>
+        <Select.Root type="single" bind:value={aqSelectedGameVersionString}>
+          <Select.Trigger class="w-[180px]">{aqSelectedGameVersionString ?? `Select a version...`}</Select.Trigger>
+          <Select.Content>
+            <Select.Item value="All Versions">All Versions</Select.Item>
+            {#each new Set([...aqModsInApprovalQueue.map(mod => mod.version.supportedGameVersions.map(v => v.version)).flat()]).values() as version}
+              <Select.Item value={version}>{version}</Select.Item>
+            {/each}
+          </Select.Content>
+        </Select.Root>
       </div>
       <div class="mt-4 gap-4 flex flex-row flex-wrap items-center-safe justify-center-safe">
-        {#each aqModsInApprovalQueue as mod}
+        {#each aqSelectedGameVersionString === "All Versions" ? aqModsInApprovalQueue : aqModsInApprovalQueue.filter(mod => mod.version.supportedGameVersions.some(v => v.version === aqSelectedGameVersionString)) as mod}
           <ModCompactCard
             project={mod.project}
             version={mod.version}
@@ -902,7 +899,7 @@
             toast.error("Please fill in all fields.");
             return;
           }
-          return await trpc.internal.games.createGame
+          return await trpc.internal.admin.game.createGame
             .mutate({
               gameName: newGameName,
               displayName: newGameDisplayName,
@@ -935,7 +932,7 @@
             toast.error("Please enter a version string.");
             return;
           }
-          trpc.internal.games.createGameVersion
+          trpc.internal.admin.game.createGameVersion
             .mutate({ gameName: selectedGame?.name ?? "", version: createVersionVersion })
             .then(() => {
               toast.success("Version created.");
@@ -965,7 +962,7 @@
             toast.error("Please enter both source and target version IDs.");
             return;
           }
-          trpc.internal.games.linkVersions
+          trpc.internal.admin.game.linkVersions
             .mutate({ gameName: selectedGame?.name ?? "", versionId1: parseInt(linkVersionSourceId), versionId2: parseInt(linkVersionTargetId) })
             .then(() => {
               toast.success("Versions linked.");
@@ -1012,7 +1009,7 @@
             toast.error("Please select at least one log type.");
             return;
           }
-          trpc.internal.games.addWebhook
+          trpc.internal.admin.game.addWebhook
             .mutate({ gameName: selectedGame?.name ?? "", url: newWebhookUrl, types: newWebhookTypes, isAssetWebhook: newWebhookIsAsset })
             .then(() => {
               toast.success("Webhook created.");

@@ -16,6 +16,7 @@
   import * as RadioGroup from "../../../lib/shadcn/components/ui/radio-group";
   import { getRenderingMethodString, getRenderingMethodSupportedGV } from "../../../lib/scripts/utils/stylizer";
   import { onMount } from "svelte";
+  import { isRedirect, redirect } from "@sveltejs/kit";
 
   let type = $state(AssetFileFormat.Note_Bloq);
   let renderingMethod: string = $state(``);
@@ -44,7 +45,7 @@
     );
   });
 
-  function submitAsset() {
+  async function submitAsset() {
     let formData = new FormData();
     formData.append(
       "data",
@@ -60,18 +61,7 @@
         renderingMethod: renderingMethod && AssetTypesWithRenderingMethod.includes(type) ? renderingMethod : null,
       }),
     );
-    console.log("Submitting asset with data:", {
-      type,
-      name,
-      description,
-      license: license ?? "custom",
-      licenseUrl: !customLicense || customLicense.length == 0 ? null : customLicense,
-      tags,
-      credits,
-      renderingMethod: renderingMethod && AssetTypesWithRenderingMethod.includes(type) ? renderingMethod : null,
-      asset,
-      thumbnails,
-    });
+    console.log("Submitting asset with data:", formData.get("data"));
     if (!asset || !asset[0]) {
       toast.error(m["toasts.error.validationTitle"](), { description: m["toasts.error.validation.invalidFile"]() });
       console.error("No asset file selected.");
@@ -89,19 +79,23 @@
     }
 
     // needs to be awaited since redirect is an error throw
-    let newAsset = trpc.v3.upload.assetUpload
+    let newAsset = await trpc.v3.upload.assetUpload
       .mutate(formData)
       .then((asset) => {
         if (asset) {
           localStorage.removeItem(`createAssetData`);
           toast.success(m["toasts.success.submit"]());
-          window.location.href = `/assets/${asset.id}`; // redirect to new asset page
+          return asset;
         }
       })
       .catch((err) => {
         toast.error(m["toasts.error.generic"](), { description: parseErrorMessage(err) });
         console.error(err);
       });
+
+    if (newAsset) {
+      throw redirect(303, `/assets/${newAsset.id}`);
+    }
   }
 
   function saveDataToLocalStorage() {

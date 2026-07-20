@@ -144,6 +144,11 @@ export class Alert extends Model<InferAttributes<Alert>, InferCreationAttributes
     // #endregion Validators
     private static channelCache: Map<number, APIDMChannel> = new Map();
     public async sendDiscordMessage(user: User) {
+        if (!user.discordId) {
+            Logger.warn(`User ${user.id} does not have a Discord ID, cannot send alert ${this.id}`);
+            User.update({ shouldDmAlerts: false }, { where: { id: user.id } });
+            return;
+        }
         let client = new REST({ version: `10` }).setToken(process.env.DISCORD_TOKEN || ``);
         if (!client) {
             Logger.error(`Failed to create Discord REST client for sending alert ${this.id} to user ${user.id}`);

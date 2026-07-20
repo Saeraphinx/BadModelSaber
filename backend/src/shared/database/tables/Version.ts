@@ -121,13 +121,18 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
 
     @Column({
         type: DataType.STRING,
-        allowNull: false,
+        allowNull: true,
+        defaultValue: null,
         get() {
             const rawValue = this.getDataValue(`testingAutoVerifyTime`);
-            return new Date(rawValue);
+            if (rawValue) {
+                return new Date(rawValue);
+            } else {
+                return null;
+            }
         },
-        set(value: Date) {
-            this.setDataValue(`testingAutoVerifyTime`, value.toISOString());
+        set(value: Date | null) {
+            this.setDataValue(`testingAutoVerifyTime`, value?.toISOString() ?? null);
         }
     })
     declare testingAutoVerifyTime: CreationOptional<Date> | null;
@@ -165,7 +170,7 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
     get downloadUrl(): NonAttribute<string> {
         return `${EnvConfig.server.backendUrl}${EnvConfig.server.fileRoute}/${this.projectId}/${this.id}/${this.zipFileName}`;
     }
-    
+
     get versionFolderPath(): NonAttribute<string> {
         return path.join(EnvConfig.uploadsPath, `${this.projectId}`, `${this.id}`);
     }
@@ -196,12 +201,15 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
     private static validatorTypeTest2: VersionInfer = ({} as z.infer<typeof Version.validator>); // asset has property validator doesn't
     */
 
+    private static readonly invalidFileNameChars = /[<>:"/\\|?*\x00-\x1F]/gi;
+    private static readonly invalidFileNameWin = /^(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(\..*)?$/gi;
+
     public static validator = z.object({
         id: z.number().int().positive(),
         projectId: z.number(),
         uploaderId: z.number(),
         semver: z.instanceof(SemVer),
-        status: z.custom<VersionValidStatuses>((val) => VersionValidStatusesArray.includes(val as VersionValidStatuses)),
+        status: z.enum(VersionValidStatusesArray),
         dependencies: z.array(DependencySchema),
         platform: z.string(),
         zipHash: z.string(),
@@ -210,7 +218,7 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
         lastUpdatedById: z.number(),
         fileSize: z.number(),
         statusHistory: z.array(statusHistorySchema),
-        baseFileName: z.string(),
+        baseFileName: z.string().min(1).max(128).refine(str => !Version.invalidFileNameChars.test(str), `Invalid charecters`).refine(str => !Version.invalidFileNameWin.test(str), "File name is a reserved Windows name"),
         testingAutoVerifyTime: z.date().nullable(),
         createdAt: z.date(),
         updatedAt: z.date(),
@@ -249,8 +257,6 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
             return false;
         }
 
-
-
         if (z.enum(parentGame.platforms).safeParse(obj.platform).success === false) {
             Logger.warn(`Version platform '${obj.platform}' is not valid for game '${parentGame.name}'.`);
             return false;
@@ -276,7 +282,7 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
         if (!version.isNewRecord) {
             return;
         }
-        version.baseFileName = `${(await version.project)?.name}_${version.platform}_v${version.semver.raw}`;
+        version.baseFileName = `${(await version.project)?.name.replaceAll(Version.invalidFileNameChars, ``).replace(Version.invalidFileNameWin, ``)}_${version.platform}_v${version.semver.raw}`;
     }
     // #endregion
 
@@ -392,7 +398,7 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
     }
     // #endregion
     // #region Setters
-    public async setStatus(newStatus: VersionValidStatuses, user: User, reason: string, shouldAlert=true, shouldSendWebhooks = true): Promise<this> {
+    public async setStatus(newStatus: VersionValidStatuses, user: User, reason: string, shouldAlert = true, shouldSendWebhooks = true): Promise<this> {
         let previousStatus = this.status;
         this.status = newStatus;
         this.statusHistory = [...this.statusHistory, {
@@ -431,7 +437,7 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
             let externalEmbedPayload = WebhookPayloadGenerator.generateNewlyVerifiedThingEmbedPayload(this, user);
             Webhooks.sendWebhookLog(gameName, WebhookLogType.Text_StatusUpdate, false, WebhookPayloadGenerator.generateStatusPayload(this, user, previousStatus, newStatus, reason));
             Webhooks.sendWebhookLog(gameName, WebhookLogType.StatusUpdate, false, internalEmbedPayload);
-            
+
             if (isFirstVerification) {
                 Webhooks.sendWebhookLog(gameName, WebhookLogType.FirstVerificationVersion, false, externalEmbedPayload);
             } else if (isFirstUnverification) {
@@ -454,7 +460,7 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
                     type: AlertType.ThingGood,
                     ...AlertTemplates.setFirstApproval(`version`, thingName, false),
                 });
-            // order is specific here to trigger correct alerts
+                // order is specific here to trigger correct alerts
             } else if (wasRemoved) {
                 await this.createAlert({
                     type: AlertType.ThingBad,
@@ -471,7 +477,7 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
                     ...AlertTemplates.statusChange(`version`, thingName, newStatus),
                 });
             }
-        }   
+        }
         return this;
     }
 
@@ -581,12 +587,13 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
             statusHistory: this.statusHistory,
             baseFileName: this.baseFileName,
             downloadUrl: this.downloadUrl,
+            testingAutoVerifyTime: this.testingAutoVerifyTime ? this.testingAutoVerifyTime.toISOString() : null,
             createdAt: this.createdAt,
             updatedAt: this.updatedAt
         };
     }
 
-    public async toApiV2(): Promise<ModVersionsApiv2> {
+    public async toApiV2(dependencies: number[]): Promise<ModVersionsApiv2> {
         if (!this.supportedGameVersions) {
             throw new Error(`Supported game versions not loaded for version id ${this.id}`);
         }
@@ -606,7 +613,6 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
                 translatedStatus = this.status;
         }
 
-
         return {
             id: this.id,
             modId: this.projectId,
@@ -617,7 +623,7 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
             contentHashes: this.contentHashes,
             status: translatedStatus,
             // fix this later
-            dependencies: this.dependencies.map((dep) => dep.pId),
+            dependencies: dependencies,
             supportedGameVersions: this.supportedGameVersions.map((gv) => gv.toApiV2()),
             downloadCount: 0, // to be implemented later
             statusHistory: this.statusHistory.map((entry) => ({

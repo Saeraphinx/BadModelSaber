@@ -1,6 +1,6 @@
 import { initTRPC, TRPCError } from '@trpc/server';
 import { type CreateExpressContextOptions, createExpressMiddleware } from '@trpc/server/adapters/express';
-import { Game, User, UserPermissions } from '../shared/Database.ts';
+import { Asset, Game, GameVersion, Project, User, UserPermissions, Version } from '../shared/Database.ts';
 import { OpenApiMeta } from 'trpc-to-openapi';
 import SuperJSON from 'superjson';
 import { parseErrorMessage } from '../shared/Tools.ts';
@@ -184,6 +184,72 @@ export function gameProcedure(roles?: UserPermissions[] | { hasAllOf?: UserPermi
                 ...ctx,
                 user: user,
                 game: game,
+            }
+        });
+    });
+}
+
+export function loggedInProjectProcedure(roles?: UserPermissions[] | { hasAllOf?: UserPermissions[], hasOneOf?: UserPermissions[], denied?: UserPermissions[] }) {
+    return t.procedure.input(z.object({
+        id: z.number()
+    })).use(async ({ ctx, next, input }) => {
+        let project = await Project.findByPk(input.id);
+        if (!project) {
+            throw new TRPCError({ code: 'NOT_FOUND', message: `Project with ID ${input.id} not found.` });
+        }
+        let user = await roleCheckLogic(ctx, roles, project.gameName);
+        return next({
+            ctx: {
+                ...ctx,
+                user: user,
+                project: project,
+            }
+        });
+    });
+}
+
+export function loggedInVersionProcedure(roles?: UserPermissions[] | { hasAllOf?: UserPermissions[], hasOneOf?: UserPermissions[], denied?: UserPermissions[] }) {
+    return t.procedure.input(z.object({
+        id: z.number()
+    })).use(async ({ ctx, next, input }) => {
+        let version = await Version.findByPk(input.id, {
+            include: [Project, GameVersion, User]
+        });
+        if (!version) {
+            throw new TRPCError({ code: 'NOT_FOUND', message: `Version with ID ${input.id} not found.` });
+        }
+        let project = await version.project;
+        if (!project) {
+            throw new TRPCError({ code: 'NOT_FOUND', message: `Project for version with ID ${input.id} not found.` });
+        }
+        let user = await roleCheckLogic(ctx, roles, project.gameName);
+        return next({
+            ctx: {
+                ...ctx,
+                user: user,
+                project: project,
+                version: version,
+            }
+        });
+    });
+}
+
+export function loggedInAssetProcedure(roles?: UserPermissions[] | { hasAllOf?: UserPermissions[], hasOneOf?: UserPermissions[], denied?: UserPermissions[] }) {
+    return t.procedure.input(z.object({
+        id: z.number()
+    })).use(async ({ ctx, next, input }) => {
+        let asset = await Asset.findByPk(input.id, {
+            include: [User]
+        });
+        if (!asset) {
+            throw new TRPCError({ code: 'NOT_FOUND', message: `Asset with ID ${input.id} not found.` });
+        }
+        let user = await roleCheckLogic(ctx, roles, asset.gameName);
+        return next({
+            ctx: {
+                ...ctx,
+                user: user,
+                asset: asset,
             }
         });
     });

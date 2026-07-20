@@ -35,7 +35,7 @@ export function getOneClickUrl(asset: AssetApiV3): string {
 }
 
 export function getProjectThumbnailUrl(project: ProjectApiV3): string {
-  return `${env.PUBLIC_FILE_URL}/${project.id}/${project.iconFileName}`;
+  return `${project.iconFileUrl}`;
 }
 
 export function getVersionDownloadUrl(version: VersionApiV3): string {
@@ -47,7 +47,7 @@ export function getVersionManifestUrl(version: VersionApiV3): string {
 }
 
 export function getVersionDecompUrl(version: VersionApiV3): string {
-  return `${env.PUBLIC_FILE_URL}/${version.projectId}/${version.id}/decompiled/${version.baseFileName}.decompiled.cs`;
+  return `${env.PUBLIC_FILE_URL}/${version.projectId}/${version.id}/decompiled/${version.baseFileName}.dll.decompiled.cs`;
 }
 
 import { createTRPCClient, httpBatchLink, httpLink, isNonJsonSerializable, isTRPCClientError, splitLink, TRPCClientError } from '@trpc/client';

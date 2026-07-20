@@ -12,6 +12,7 @@
   import * as Select from "$shadcn/components/ui/select";
   import Skeleton from "$shadcn/components/ui/skeleton/skeleton.svelte";
   import { ChevronRightIcon, FunnelIcon } from "@lucide/svelte";
+  import { sortCategoriesPublic } from "$lib/scripts/utils/stylizer";
   import { onMount, tick, untrack } from "svelte";
   import { MediaQuery } from "svelte/reactivity";
   import { Button } from "$lib/shadcn/components/ui/button";
@@ -37,7 +38,7 @@
 
   let isFilterStatusVisible = $state(true);
   let isFilterCategoryVisible = $state(true);
-  let filterMobileDrawerVisible = $state(false);
+  let filterMobileDrawerVisible = $state(false);sortCategoriesPublic
   let searchEngine = $state<ReturnType<typeof generateProjectSearchEngine>>();
   // svelte-ignore state_referenced_locally
   let searchQuery = $state(pageData.query.searchQuery || ``);
@@ -57,7 +58,7 @@
       if (selectedCategories && selectedCategories.length !== 0 && !selectedCategories.some((category) => category == result.project.category)) return false;
       return true;
     });
-    return searchResults;
+    return searchResults.sort((a,b) => sortCategoriesPublic(a.project,b.project));
   });
   let totalSize = $derived(filteredMods.length);
   let availableStatuses: Status[] = $derived.by(() => Array.from(new Set(Array.from(searchEngine?.mods.values() || []).map((result) => result.version.status))));
@@ -246,7 +247,7 @@
     </div>
   {/if}
   <!-- right content area -->
-  <div class="flex-1 gap-4 flex flex-row flex-wrap items-center-safe justify-center-safe">
+  <div class="flex-1 gap-4 flex flex-row flex-wrap items-start justify-center-safe">
     {#if !isLoading}
       {#each filterModsPageView as mod}
         <ModCard project={mod.project} version={mod.version} gameDisplayName={selectedGame?.displayName} />

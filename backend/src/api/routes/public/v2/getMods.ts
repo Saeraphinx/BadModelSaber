@@ -1,8 +1,8 @@
-import { GameVersion, ModApiv2Schema, ModVersionsApiv2Schema, Project, Status, User, Version } from "../../../../shared/Database.ts";
+import { GameVersion, ModApiv2Schema, ModVersionsApiv2Schema, Project, Status, User, UserPermissions, Version } from "../../../../shared/Database.ts";
 import { z } from "zod/v4";
 import { Op, WhereOptions, where } from "sequelize";
 import { anyProcedure, router } from "../../../trpc.ts";
-import { compare } from "semver";
+import { compare, Range } from "semver";
 import sequelize from "sequelize/lib/sequelize";
 
 export const getModsV2Router = router({
@@ -26,6 +26,8 @@ export const getModsV2Router = router({
             }).array(),
         }))
         .query(async ({ input, ctx }) => {
+            let timingString = ``;
+            let startTime = Date.now();
             let gameVersionWhereOptions: WhereOptions<GameVersion> = {
                 gameName: input.gameName,
             };
@@ -58,23 +60,42 @@ export const getModsV2Router = router({
                     model: Project,
                     include: [User],
                 }, {
-                    model: GameVersion,
-                    where: gameVersionWhereOptions,
-                    through: { attributes: [] },
-                    required: true, // inner join
-                }],
+                        model: GameVersion,
+                        where: gameVersionWhereOptions,
+                        through: { attributes: [] },
+                        required: true, // inner join
+                    }],
+            }).then(results => {
+                timingString += `db;dur=${Date.now() - startTime}`;
+                startTime = Date.now();
+                return results;
             });
 
             let output = await Promise.all(versions.sort((a, b) => compare(b.semver, a.semver)) // sort versions in descending order
                 .filter((v, i, arr) => arr.findIndex(other => other.projectId === v.projectId) === i) // filter to unique projects
-                .filter(async v => await v.canView(ctx.user)) // filter to versions the user can view
-                .map(async v => ({
-                    mod: await (await v.project as Project).toApiV2(),
-                    latest: await v.toApiV2(),
-                }))
-            ).then(results => results.filter(o => o.latest.dependencies.every(d => results.some(o2 => o2.latest.id === d)))); // filter to mods that have at least one version with an allowed status
+                .filter(async v => await v.canView(ctx.user)))
+                .then(results => {
+                    timingString += `, filterp1;dur=${Date.now() - startTime}`;
+                    startTime = Date.now();
+                    return results;
+                }) // filter to versions the user can view
 
-            return { mods: output };
+            let newOutput = await Promise.all(output.map(async v => ({
+                mod: await (await v.project as Project).toApiV2(),
+                // find all dependencies that match the current version's dependencies
+                latest: await v.toApiV2(v.dependencies.map(dep => output.find(o => o.projectId === dep.pId && (new Range(dep.sv)).test(o.semver))?.id ?? 0)),
+            }))
+            ).then(results => results.filter(o => o.latest.dependencies.every(d => results.some(o2 => o2.latest.id === d))))
+                .then(results => {
+                    timingString += `, filterp2;dur=${Date.now() - startTime}`;
+                    return results;
+                });
+
+            if (ctx.user && ctx.user.checkRoles({ hasOneOf: [UserPermissions.Administrative_Tasks] })) {
+                ctx.res.setHeader('Server-Timing', timingString);
+            }
+
+            return { mods: newOutput };
         }),
     hashLookup: anyProcedure()
         .meta({
@@ -109,7 +130,7 @@ export const getModsV2Router = router({
                 include: [User]
             });
 
-            let retObjs = await Promise.all(modVersions.map(mv => mv.toApiV2()))
+            let retObjs = await Promise.all(modVersions.map(mv => mv.toApiV2([])))
             return {
                 modVersions: retObjs,
             };
@@ -148,7 +169,7 @@ export const getModsV2Router = router({
 
             let retObj: Record<string, Awaited<ReturnType<Version[`toApiV2`]>>[]> = {};
             await Promise.all(modVersions.map(async mv => {
-                let apiObj = await mv.toApiV2();
+                let apiObj = await mv.toApiV2([]);
                 let allHashes = [mv.zipHash, ...(apiObj.contentHashes.map(ch => ch.hash))];
                 for (let hash of allHashes) {
                     if (input.hashes.includes(hash)) {

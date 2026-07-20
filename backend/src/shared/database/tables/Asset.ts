@@ -201,7 +201,7 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
         fileSize: z.number().int().positive(),
         iconNames: z.array(z.string()).max(5),
         // ensure that status is one of the valid statuses for assets
-        status: z.custom<AssetValidStatuses>((val) => AssetValidStatusesArray.includes(val as AssetValidStatuses)),
+        status: z.enum(AssetValidStatusesArray),
         statusHistory: z.array(statusHistorySchema),
         tags: z.array(z.enum(Tags)).default([]),
         gameName: z.string().min(1).max(64),

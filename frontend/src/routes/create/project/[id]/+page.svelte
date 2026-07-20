@@ -13,7 +13,7 @@
   import { Spinner } from "$shadcn/components/ui/spinner";
   import type { LocalizedString } from "@inlang/paraglide-js";
   import { CheckIcon } from "@lucide/svelte";
-  import { redirect } from "@sveltejs/kit";
+  import { isRedirect, redirect } from "@sveltejs/kit";
   import JSZip from "jszip";
   import { parse, validRange } from "semver";
   import { onMount } from "svelte";
@@ -104,7 +104,7 @@
 
   async function getVersionsForDepCloneDialog() {
     if (!pageData.id) return;
-    return await trpc.internal.mods.getProjectVerisons.query({ projectId: pageData.id });
+    return await trpc.internal.getThings.getProjectVerisons.query({ projectId: pageData.id });
   }
 
   async function loadManifest() {
@@ -156,9 +156,12 @@
       .then(() => {
         toast.success(m["toasts.success.submit"]());
         localStorage.removeItem(`createVersionData-${pageData.id}`);
-        redirect(303, `/mod/${pageData.id}`);
+        throw redirect(303, `/mod/${pageData.id}`);
       })
       .catch((error) => {
+        if (isRedirect(error)) {
+          throw error; // re-throw redirect errors
+        }
         console.error("Error submitting version:", error);
         toast.error(m["toasts.error.generic"](), {
           description: parseErrorMessage(error),
@@ -171,7 +174,7 @@
   async function importDepsFromManifest() {
     if (!allowManifestImport) return;
     // @ts-ignore oh my god i literally check for this right above you
-    trpc.internal.mods.searchProjectsByNameId.query({ nameIds: Object.keys(manifest.dependsOn), gameName: pageData.gameName }).then((res) => {
+    trpc.internal.getThings.searchProjectsByNameId.query({ nameIds: Object.keys(manifest.dependsOn), gameName: pageData.gameName }).then((res) => {
       res.forEach((project) => {
         let manifestDepVersion = manifest?.dependsOn ? manifest.dependsOn[project.nameId] : null;
         webDependencies.push({ pId: project.id, pName: project.name, pNameId: project.nameId, sv: manifestDepVersion });
@@ -381,7 +384,7 @@
             if (versionIdToCloneFrom === -1) return;
             let versionToCloneFrom = versionsToCloneFrom?.find((v) => v.id === versionIdToCloneFrom);
             if (!versionToCloneFrom) return;
-            trpc.internal.mods.getBulkProjects
+            trpc.internal.getThings.getBulkProjects
               .query({ projectIds: versionToCloneFrom.dependencies.map((d) => d.pId) })
               .then((res) => {
                 webDependencies = versionToCloneFrom.dependencies.map((d) => {

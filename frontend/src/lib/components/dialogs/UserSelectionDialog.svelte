@@ -21,12 +21,10 @@
   // only search after the user has stopped typing for 300ms
 
   function searchUsers() {
-    trpc.internal.user.searchUsers.query({query: searchQuery}).then(results => {
+    trpc.internal.admin.user.searchUsers.query({query: searchQuery}).then(results => {
       searchResults = results;
     });
   }
-
-    
 </script>
 
 <Dialog.Root bind:open={open}>

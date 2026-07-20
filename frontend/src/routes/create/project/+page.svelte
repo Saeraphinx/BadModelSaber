@@ -11,7 +11,7 @@
   import { toast } from "svelte-sonner";
   import * as HoverCard from "../../../lib/shadcn/components/ui/hover-card/index.js";
   import { InfoIcon } from "@lucide/svelte";
-  import { redirect } from "@sveltejs/kit";
+  import { isRedirect, redirect } from "@sveltejs/kit";
 
   const { data: _internal } = $props();
   const { trpc } = $derived(_internal);
@@ -59,7 +59,8 @@
     return validTypes.includes(file.type);
   });
   let isAllValid: boolean = $derived(
-    isNameValid &&
+      isNameValid &&
+      isNameIdValid &&
       isSummaryValid &&
       isDescriptionValid &&
       isGitUrlValid &&
@@ -101,13 +102,13 @@
     }
   });
 
-  function submitProject() {
+  async function submitProject() {
     let formData = new FormData();
     formData.append(
       "data",
       JSON.stringify({
         name: projectName,
-        nameId: projectNameId.trim() == `` ? projectNameId : projectName,
+        nameId: projectNameId.trim() == `` ? projectName : projectNameId,
         summary: projectSummary,
         description: projectDescription,
         category: projectCategory,
@@ -118,16 +119,20 @@
     if (projectThumbnail && projectThumbnail.length > 0) {
       formData.append("icon_1", projectThumbnail[0]);
     }
-    trpc.v3.upload.projectCreate.mutate(formData).then((p) => {
+    console.log("Submitting asset with data:", formData.get("data"));
+    let newProject = await trpc.v3.upload.projectCreate.mutate(formData).then((p) => {
       toast.success(m["toasts.success.submit"]());
       localStorage.removeItem(`createProjectData`);
-      throw redirect(303, `/mod/${p.id}`);
+      return p;
     }).catch((error) => {
       console.error("Failed to create project:", error);
       toast.error(m["toasts.error.generic"](), {
         description: parseErrorMessage(error),
       });
     });
+    if (newProject) {
+      throw redirect(303, `/mods/${newProject.id}`);
+    }
   }
 </script>
 

@@ -19,7 +19,7 @@ type modelsaberasset = {
     [key: string]: AssetPublicAPIv2;
 }
 
-const totalBeatmodsMods = 440; // set this to the total number of mods on BeatMods to get accurate progress reporting. Currently set to 0 to avoid accidentally hitting the BeatMods API during testing.
+const totalBeatmodsMods = 450; // set this to the total number of mods on BeatMods to get accurate progress reporting. Currently set to 0 to avoid accidentally hitting the BeatMods API during testing.
 //const doModDownload = false; // set to true to download mod files from BeatMods, useful for testing the import process but not recommended for full imports due to the large number of mods and potential rate limits. Currently set to false to avoid accidentally hitting the BeatMods API during testing.
 const doThumbnailDownload = true;
 const doDecompile = true; // set to true to decompile mod files during import, which can help preserve metadata for mods that don't include a manifest but will significantly increase the time it takes to import each mod. Currently set to false to speed up testing.
@@ -28,7 +28,6 @@ const hashType = `md5`;
 const conversionStorage = `./storage/converts`;
 const doAssetDownload = true; // set to false to skip downloading assets, useful for testing
 const doTumbnailDownload = true; // set to false to skip downloading thumbnails, useful for testing
-
 
 export async function importFromOldModelSaber(sendMessage: (messaage: string, type: `info` | `warn` | `error`) => void): Promise<void> {
     if (!EnvConfig.auth.discord.token) {
@@ -265,7 +264,7 @@ export async function importFromOldModelSaber(sendMessage: (messaage: string, ty
                                 type: AlertType.Generic,
                                 header: `Account Imported`,
                                 message: `Hi ${user.displayName}! Your account has been imported from the old ModelSaber. If you notice any of your assets missing, please contact us and we will try to add them back to your profile.`,
-                            });
+                            }, false);
                             return user;
                         });
                     } else {
@@ -417,6 +416,7 @@ export async function importFromBadBeatMods() {
     let startTime = Date.now();
     let totalStartTime = startTime;
     const importerUser = await User.create({
+        id: 3,
         username: `BeatMods Import`,
         displayName: `BeatMods Importer`,
         avatarUrl: `https://cdn.discordapp.com/embed/avatars/6.png`,
@@ -434,21 +434,57 @@ export async function importFromBadBeatMods() {
     });
     let mods: { mod: ModApiv2, versions: ModVersionsApiv2[] }[] = [];
 
-    for (let modId = 1; modId <= totalBeatmodsMods; modId++) {
-        try {
-            let mod = await fetch(`https://beatmods.com/api/mods/${modId}`).then(res => res.json() as Promise<{ mod: { info: ModApiv2, versions: ModVersionsApiv2[] } }>);
-            mods.push({
-                mod: mod.mod.info,
-                versions: mod.mod.versions,
-            });
-            // timeout for 500ms to avoid hitting rate limits
-            await new Promise(resolve => setTimeout(resolve, 500));
-            Logger.debug(`Fetched mod ${modId}: ${mod.mod.info.name}`);
-            if (modId % 50 === 0 || modId === 1 || modId === totalBeatmodsMods) {
-                Logger.log(`Fetched ${modId}/${totalBeatmodsMods} mods from BeatMods...`);
+    let requestInfo: RequestInit = {
+    };
+
+    if (EnvConfig.auth.github.token && EnvConfig.auth.github.token.length > 0) {
+        let authTest = await fetch(`https://beatmods.com/api/user`, {
+            headers: {
+                Authorization: `Bearer ${EnvConfig.auth.github.token}`
             }
-        } catch (error) {
-            Logger.error(`Failed to fetch mod ${modId}: ${error}`);
+        });
+        if (!authTest.ok) {
+            Logger.error(`Failed to authenticate with BeatMods API using provided GitHub token.`);
+            return;
+        } else {
+            Logger.log(`Successfully authenticated with BeatMods API using provided GitHub token.`);
+        }
+        requestInfo.headers = {
+            Authorization: `Bearer ${EnvConfig.auth.github.token}`
+        };
+    } else {
+        Logger.error(`No GitHub token provided for BeatMods API authentication.`);
+    }
+
+    if (!fs.existsSync(`./storage/import_cache/beatmods`)) {
+        fs.mkdirSync(`./storage/import_cache/beatmods`, { recursive: true });
+    }
+
+    // if the mod already exists in the cache, we will skip fetching it from the API. otherwise, pull it from the api and cache it
+    for (let modId = 1; modId <= totalBeatmodsMods; modId++) {
+        if (fs.existsSync(`./storage/import_cache/beatmods/${modId}.json`)) {
+            Logger.debug(`Mod ${modId} already exists in cache, skipping fetch.`);
+            mods.push(JSON.parse(fs.readFileSync(`./storage/import_cache/beatmods/${modId}.json`, `utf-8`)));
+        } else {
+            try {
+                let mod = await fetch(`https://beatmods.com/api/mods/${modId}`, requestInfo).then(res => res.json() as Promise<{ mod: { info: ModApiv2, versions: ModVersionsApiv2[] } }>);
+                mods.push({
+                    mod: mod.mod.info,
+                    versions: mod.mod.versions,
+                });
+                // timeout for 500ms to avoid hitting rate limits
+                await new Promise(resolve => setTimeout(resolve, 500));
+                Logger.debug(`Fetched mod ${modId}: ${mod.mod.info.name}`);
+                fs.writeFileSync(`./storage/import_cache/beatmods/${modId}.json`, JSON.stringify({
+                    mod: mod.mod.info,
+                    versions: mod.mod.versions,
+                }));
+                if (modId % 50 === 0 || modId === 1 || modId === totalBeatmodsMods) {
+                    Logger.log(`Fetched ${modId}/${totalBeatmodsMods} mods from BeatMods...`);
+                }
+            } catch (error) {
+                Logger.error(`Failed to fetch mod ${modId}: ${error}`);
+            }
         }
     }
     Logger.debug(`Finished fetching mods from BeatMods. Total time: ${Date.now() - startTime}ms`);
@@ -525,7 +561,7 @@ export async function importFromBadBeatMods() {
     for (const { mod, versions } of mods) {
         let idToUse = mod.id;
         if (mod.id === 143 || mod.id === 5 || mod.id === 69 /* for pink */) {
-            let idToUse = specialIdCounter;
+            idToUse = specialIdCounter;
             Logger.debug(`Assigning special ID ${specialIdCounter} to mod ${mod.id} (${mod.name})`);
             specialIdCounter++;
         }
@@ -536,9 +572,6 @@ export async function importFromBadBeatMods() {
         }
 
         let newGameName = mod.gameName.toLowerCase();
-        if (mod.iconFileName === `default.png`) {
-            mod.iconFileName === `default_${newGameName}.png`;
-        }
 
         if (z.url().safeParse(mod.gitUrl).success === false) {
             mod.gitUrl = `https://beatmods.com/mod/${idToUse}`;
@@ -547,14 +580,14 @@ export async function importFromBadBeatMods() {
         promises.push(Project.create({
             id: idToUse,
             name: mod.name,
-            nameId: mod.name, // previously nameid was enforecd to just be the same
+            nameId: mod.name.replaceAll(` `, ``), // previously nameid was enforecd to just be the same
             gameName: newGameName,
             description: mod.description,
             category: translateBeatModsCategory(mod.name, mod.category),
             gitUrl: mod.gitUrl,
             summary: mod.summary,
             lastUpdatedById: importerUser.id,
-            iconFileName: mod.iconFileName,
+            iconFileName: mod.iconFileName == `default.png` ? `default_${newGameName}.png` : mod.iconFileName,
             createdAt: new Date(mod.createdAt),
             updatedAt: new Date(mod.updatedAt),
             statusHistory: mod.statusHistory.map(sh => ({
@@ -586,6 +619,10 @@ export async function importFromBadBeatMods() {
         startTime = Date.now();
         for (let project of newProjects.values()) {
             if (project.iconFileName && project.iconFileName === `default_beatsaber.png` || project.iconFileName === `default_chromapper.png`) {
+                continue;
+            }
+            if (fs.existsSync(path.join(project.folderPath, project.iconFileName))) {
+                Logger.debug(`Icon for project ${project.id} (${project.name}) already exists, skipping download.`);
                 continue;
             }
             await new Promise(resolve => setTimeout(resolve, 300)); // small delay to avoid ratelimit
@@ -668,9 +705,9 @@ export async function importFromBadBeatMods() {
                 lastUpdatedById: importerUser.id,
                 createdAt: new Date(version.createdAt),
                 updatedAt: new Date(version.updatedAt),
-                status: version.status as Status,
+                status: version.status == `pending` ? Status.Queue : version.status as Status,
                 statusHistory: version.statusHistory.map(sh => ({
-                    status: sh.status as Status,
+                    status: version.status == `pending` ? Status.Queue : version.status as Status,
                     reason: sh.reason,
                     timestamp: new Date(sh.setAt).toISOString(),
                     userId: newUsers.get(sh.userId)?.id || importerUser.id,
@@ -691,23 +728,31 @@ export async function importFromBadBeatMods() {
 
         Logger.log(`Starting file processing for versions of mod ${mod.id} (${mod.name})...`);
         let zipParsingPromises: (() => Promise<void>)[] = [];
-        for (const version of awaitedVersions) {
+        for (const version of awaitedVersions.reverse()) {
             Logger.debug(`Downloading and processing files for version ${version.id} of mod ${mod.id} (${mod.name} ${version.semver.raw})...`);
             // download files & process dlls
-            let zipBuffer = await fetch(`https://beatmods.com/cdn/mod/${version.zipHash}.zip`).then(res => {
-                if (!res.ok) {
-                    Logger.error(`Failed to download file for version ${version.id} of mod ${mod.id} (${mod.name}): ${res.statusText}`);
-                    return null;
-                }
-                return res.arrayBuffer();
-            }).then(async arrayBuffer => {
-                if (!arrayBuffer) {
-                    return;
-                }
-                fs.mkdirSync(version.versionFolderPath, { recursive: true });
-                fs.writeFileSync(path.join(version.versionFolderPath, version.zipFileName), Buffer.from(arrayBuffer));
-                return Buffer.from(arrayBuffer);
-            });
+            
+            // check if the zip file already exists locally
+            let zipBuffer: Buffer<ArrayBuffer> | undefined
+            if (fs.existsSync(path.join(version.versionFolderPath, version.zipFileName))) {
+                zipBuffer = fs.readFileSync(path.join(version.versionFolderPath, version.zipFileName));
+                Logger.debug(`Found existing zip file for version ${version.id} of mod ${mod.id} (${mod.name}), using local copy.`);
+            } else {
+                zipBuffer = await fetch(`https://beatmods.com/cdn/mod/${version.zipHash}.zip`).then(res => {
+                    if (!res.ok) {
+                        Logger.error(`Failed to download file for version ${version.id} of mod ${mod.id} (${mod.name}): ${res.statusText}`);
+                        return null;
+                    }
+                    return res.arrayBuffer();
+                }).then(async arrayBuffer => {
+                    if (!arrayBuffer) {
+                        return;
+                    }
+                    fs.mkdirSync(version.versionFolderPath, { recursive: true });
+                    fs.writeFileSync(path.join(version.versionFolderPath, version.zipFileName), Buffer.from(arrayBuffer));
+                    return Buffer.from(arrayBuffer);
+                });
+            }
 
             Logger.debug(`Finished downloading & extracting files for version ${version.id} of mod ${mod.id} (${mod.name} ${version.semver.raw}), starting async zip processing...`);
 
@@ -716,11 +761,21 @@ export async function importFromBadBeatMods() {
                 continue;
             }
 
+            // Ensure the project is loaded before processing the zip
+            let projectInstance = await version.project
+            
             zipParsingPromises.push(async () => {
-                await getManifestFromZip(zipBuffer!, null/*, Logger*/).then(m => {
+                await getManifestFromZip(zipBuffer!, null/*, Logger*/).then(async m => {
                     fs.writeFileSync(path.join(version.versionFolderPath, version.manifestName), JSON.stringify(m));
                     // @ts-expect-error
                     zipBuffer = null; // free up memory
+                    if (m?.id && m?.id.length > 0 && projectInstance && projectInstance.nameId !== m.id && projectInstance?.id !== 1) {
+                        // update the project's nameId based on the manifest ID
+                        Logger.log(`Updating project nameId for project ${projectInstance.id} (${projectInstance.name}) to ${m.id}`);
+                        projectInstance?.update({
+                            nameId: m.id
+                        });
+                    }
                 }).catch(err => {
                     Logger.error(`Failed to extract manifest from zip for version ${version.id} of mod ${mod.id} (${mod.name}): ${err}`);
                 })
@@ -775,9 +830,12 @@ async function getNewUserFromOldUser(user: UserPublicApiV2): Promise<User> {
                 type: AlertType.Generic,
                 header: `BeatMods Account Imported`,
                 message: `Hi ${result[0].displayName}! Your account has been imported from the old BeatMods. If you notice any of your mods missing, please contact us and we will add them back to your profile.`,
-            });
+            }, false);
         }
         return result[0]
+    }).catch(err => {
+        Logger.error(`Failed to create or find user ${user.username}: ${err}`);
+        throw err;
     });
 }
 

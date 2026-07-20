@@ -87,7 +87,7 @@
         <!-- Buttons -->
         <div class="absolute flex bottom-2 right-2 transition-[backdrop-filter] backdrop-blur-none hover:backdrop-blur-md duration-300 bg-gray-800/20 rounded-md text-white">
           {#if props.approvalDialog}
-            <Button variant="ghost" size="icon" title={m["common.hover.openApprovalDialog"]()} onclick={() => props.approvalDialog?.showDialog(props.asset.id, props.asset.name, `asset`)}>
+            <Button variant="ghost" size="icon" title={m["common.hover.openApprovalDialog"]()} onclick={() => props.approvalDialog?.showDialog(props.asset.id, props.asset.name, `asset`, props.asset.status)}>
               <BadgeAlert />
             </Button>
           {/if}

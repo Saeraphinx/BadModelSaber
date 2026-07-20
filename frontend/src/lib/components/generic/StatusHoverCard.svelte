@@ -3,11 +3,12 @@
   import { Status } from "$lib/scripts/from_backend/DBExtras";
   import { getStatusString } from "$lib/scripts/utils/stylizer";
   import { Badge } from "$shadcn/components/ui/badge";
-  import * as HoverCard from "$shadcn/components/ui/hover-card";
+  import * as ToolTip from "$shadcn/components/ui/tooltip";
 
   let props: {
     status: Status;
     type: "mod" | "asset";
+    countdownDate?: Date | number | string | null;
     children?: any;
   } = $props();
 
@@ -99,18 +100,36 @@
       }
     }
   });
+
+  // relative time left until the countdown date string, in days then hours then minutes then seconds but only showing highest value
+  let timeLeft = $derived.by(() => {
+    if (props.countdownDate) {
+      const diff = Math.max(0, Math.floor((new Date(props.countdownDate).getTime() - Date.now()) / 1000));
+      if (diff >= 86400) return `${Math.floor(diff / 86400)}d`;
+      if (diff >= 3600) return `${Math.floor(diff / 3600)}h`;
+      if (diff >= 60) return `${Math.floor(diff / 60)}m`;
+      if (diff > 0) return `${diff}s`;
+    }
+    return 0;
+  });
 </script>
 
-<HoverCard.Root>
-  <HoverCard.Trigger data-sveltekit-preload-data="false">
+<ToolTip.Root>
+  <ToolTip.Trigger>
     {#if props.children}
       {@render props.children()}
     {:else}
-      <Badge variant="outline" class="capitalize {style}">{getStatusString(props.status)}</Badge>
+      <Badge variant="outline" class="capitalize {style}">
+        <p>{getStatusString(props.status)}</p>
+        {#if props.countdownDate && timeLeft !== 0}
+          <!-- Countdown timer-->
+          <p title={new Date(props.countdownDate).toISOString()}>({timeLeft})</p>
+        {/if}
+      </Badge>
     {/if}
-  </HoverCard.Trigger>
-  <HoverCard.Content class="w-64">
-    <p class="text-md">{@html titleString}</p>
-    <p class="text-xs text-gray-500 mt-2">{@html descriptionString}</p>
-  </HoverCard.Content>
-</HoverCard.Root>
+  </ToolTip.Trigger>
+  <ToolTip.Content class="flex flex-col p-4 w-64">
+    <p class="text-base font-semibold">{@html titleString}</p>
+    <p class="text-xs text-gray-500">{@html descriptionString}</p>
+  </ToolTip.Content>
+</ToolTip.Root>

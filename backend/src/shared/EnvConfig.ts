@@ -135,7 +135,7 @@ export class EnvConfig {
                 autoAdminIds: process.env.GITHUB_AUTO_ADMIN_IDS ? process.env.GITHUB_AUTO_ADMIN_IDS.split(`,`) : DEFAULT_CONFIG.auth.github.autoAdminIds,
                 clientId: process.env.GITHUB_CLIENT_ID || DEFAULT_CONFIG.auth.github.clientId,
                 clientSecret: process.env.GITHUB_CLIENT_SECRET || DEFAULT_CONFIG.auth.github.clientSecret,
-                token: null
+                token: process.env.GITHUB_IMPORT_TOKEN || DEFAULT_CONFIG.auth.github.token
             }
         };
 

@@ -44,6 +44,43 @@ export function getRenderingMethodSupportedGV(method: RenderingModes): string {
   }
 }
 
+export function sortCategoriesPublic(a: { category: string }, b: { category: string }) {
+  // put core, essential, leaderboard in that order, then other & libraries at the bottom
+  const topCategories = [`Core`, `Essential`, `Leaderboard`];
+  const bottomCategories = [`Other`, `Library`];
+
+  const aCategory = a.category;
+  const bCategory = b.category;
+
+  const aTopIndex = topCategories.indexOf(aCategory);
+  const bTopIndex = topCategories.indexOf(bCategory);
+  if (aTopIndex !== -1 || bTopIndex !== -1) {
+    if (aTopIndex === -1) return 1;
+    if (bTopIndex === -1) return -1;
+    return aTopIndex - bTopIndex;
+  }
+
+  const aBottomIndex = bottomCategories.indexOf(aCategory);
+  const bBottomIndex = bottomCategories.indexOf(bCategory);
+  if (aBottomIndex !== -1 || bBottomIndex !== -1) {
+    if (aBottomIndex === -1) return -1;
+    if (bBottomIndex === -1) return 1;
+    return aBottomIndex - bBottomIndex;
+  }
+
+  return aCategory.localeCompare(bCategory);
+}
+// const order = [`Core`, `Essential`, `Leaderboard`];
+  // let aIndex = order.indexOf(a.category);
+  // let bIndex = order.indexOf(b.category);
+  // if (aIndex === -1) aIndex = Number.POSITIVE_INFINITY;
+  // if (bIndex === -1) bIndex = Number.POSITIVE_INFINITY;
+  // if (aIndex !== bIndex) {
+  //   return aIndex - bIndex;
+  // } else {
+  //   return a.category.localeCompare(b.category);
+  // }
+
 // export function getAssetTypeString(type: AssetFileFormat): string {
 //   switch (type) {
 //     case AssetFileFormat.Camera2Config_JSON:
@@ -86,7 +123,7 @@ export function getAssetTypeData(format: AssetFileFormat): {
         translatedType: "HitScoreVisualizer",
         combinedString: `HSV (${fileFormat})`,
       };
-    default: 
+    default:
       return {
         rawString: format,
         formatString: fileFormat,
@@ -134,7 +171,7 @@ export function getAssetTypeCategories(): Map<string, ReturnType<typeof getAsset
   if (sabers) {
     categories.delete('saber');
     categories.set(m["enums.assetTypes.plurals.saber"](), sabers);
-  } 
+  }
   let notes = categories.get('note');
   if (notes) {
     categories.delete('note');

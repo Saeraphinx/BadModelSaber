@@ -19,7 +19,7 @@
     showFor: getStatusAvailableThings(status)
   }));
 
-  let selectedStatus = $state(statuses[0].value);
+  let selectedStatus = $state(Status.Private);
   let reason = $state("");
 
   let presetReasons = [
@@ -38,36 +38,39 @@
   let id = $state<number>(0);
   let visible = $state<boolean>(false);
   let type = $state<`asset` | `project` | `version`>("asset");
+  let autosetProject = $state<boolean>(true);
 
-  export function showDialog(p_id: number, p_name: string, thingType: `asset` | `project` | `version`) {
+  export function showDialog(p_id: number, p_name: string, thingType: `asset` | `project` | `version`, currentStatus: Status = Status.Private) {
     reason = "";
-    selectedStatus = statuses[0].value;
+    selectedStatus = currentStatus;
     id = p_id;
     name = p_name;
     type = thingType;
     visible = true;
+    autosetProject = true;
   }
 
   function handleSubmit() {
     console.log(`Updating thing ${id} (${name}) to status ${selectedStatus} with reason: ${reason}`);
     let res;
     if (type === `asset`) {
-      res = trpc.internal.approval.setStatusAsset.mutate({
+      res = trpc.internal.admin.approval.setStatusAsset.mutate({
         id: id,
         status: selectedStatus as unknown as any,
         reason: reason,
       });
     } else if (type === `project`) {
-      res = trpc.internal.approval.setStatusProject.mutate({
+      res = trpc.internal.admin.approval.setStatusProject.mutate({
         id: id,
         status: selectedStatus as unknown as any,
         reason: reason,
       });
     } else {
-      res = trpc.internal.approval.setStatusVersion.mutate({
+      res = trpc.internal.admin.approval.setStatusVersion.mutate({
         id: id,
         status: selectedStatus,
         reason: reason,
+        autosetProject: autosetProject,
       });
     }
     res
@@ -89,8 +92,6 @@
         });
       });
   }
-
-  let statusText = $derived.by(() => {});
 </script>
 
 <Dialog.Root bind:open={visible}>
@@ -113,7 +114,7 @@
       <div class="flex flex-col w-full ml-4">
         <Input type="text" placeholder={m["dialogs.approvalDialog.reasonPlaceholder"]()} class="w-full" bind:value={reason} />
         <p class="text-sm text-muted-foreground mt-1">{m["dialogs.approvalDialog.reasonWillBeVisible"]({ name })}</p>
-        <Label class="mt-4">Preset Reasons</Label>
+        <Label class="mt-4">{m["dialogs.approvalDialog.presetReasons"]()}</Label>
         <Select.Root type="single" >
           <Select.Trigger class="w-full mt-1">
             Select a preset...
@@ -126,7 +127,13 @@
         </Select.Root>
       </div>
     </div>
-    <Dialog.Footer>  
+    <Dialog.Footer>
+      {#if type === `version`}
+        <div class="flex items-center space-x-2">
+          <Switch id="autosetProject" bind:checked={autosetProject} />
+          <Label for="autosetProject">{m["dialogs.approvalDialog.autosetProject"]()}</Label>
+        </div>
+      {/if}
       <Button variant="ghost" onclick={() => (visible = false)}>{m["dialogs.cancel"]()}</Button>
       <Button type="submit" onclick={handleSubmit}>{m["dialogs.submit"]()}</Button>
     </Dialog.Footer>
