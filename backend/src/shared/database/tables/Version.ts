@@ -168,7 +168,7 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
     }
 
     get downloadUrl(): NonAttribute<string> {
-        return `${EnvConfig.server.backendUrl}${EnvConfig.server.fileRoute}/${this.projectId}/${this.id}/${this.zipFileName}`;
+        return new URL(`${EnvConfig.server.fileRoute}/${this.projectId}/${this.id}/${this.zipFileName}`, EnvConfig.server.backendUrl).href;
     }
 
     get versionFolderPath(): NonAttribute<string> {
@@ -413,7 +413,7 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
         }
 
         if (newStatus === Status.Testing) {
-            this.testingAutoVerifyTime = new Date(Date.now() + EnvConfig.server.testingAutoVerifyTime);
+            this.testingAutoVerifyTime = new Date(Date.now() + EnvConfig.gaf.testingAutoVerifyTime);
         }
 
         await this.save().then(() => {

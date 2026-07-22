@@ -172,16 +172,13 @@ export const GetModsV3 = router({
             let versions = await Version.findAll({
                 where: {
                     projectId: project.id,
-                    status: {
-                        [Op.in]: User.getAllowedStatuses(ctx.user, 'mod'),
-                    }
                 },
                 order: [['semver', 'DESC']],
-                include: [GameVersion],
+                include: [GameVersion, Project],
             });
             versions = versions
                 .sort((a, b) => compare(b.semver, a.semver)) // sort versions in descending order
-                //.filter(async v => await v.canView(ctx.user, project)); //i dont think i need this due to the status filter, but leaving it here just in case in the query
+                .filter(async v => await v.canView(ctx.user, project));
             let outputVersions = await Promise.all(versions.map(async v => await v.toApiV3()));
             return {
                 project: await project.toApiV3(input.language) as ProjectApiV3,

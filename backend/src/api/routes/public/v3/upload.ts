@@ -172,6 +172,7 @@ export const uploadStuff = router({
             status: Status.Private,
         }).then(async (project) => {
             await project.$add(`authors`, ctx.user);
+            project.authors = [ctx.user]; // set the authors array to include the current user for the api response
             Logger.log(`Project database entry created for user ${ctx.user?.id} with project ID ${project.id}`);
             fs.mkdirSync(project.folderPath, { recursive: true });
             await iconFile.arrayBuffer().then(async (buffer) => {
@@ -270,10 +271,6 @@ export const uploadStuff = router({
 
         if (!manifestJson) {
             Logger.warn(`No manifest found in uploaded zip file for project ID ${project.id}. Version will be created without manifest data.`);
-        } else {
-            if (manifestJson.id !== project.nameId && EnvConfig.isDevMode) {
-                throw new TRPCError({ code: 'BAD_REQUEST', message: 'Manifest mod ID does not match project nameId.' });
-            }
         }
 
         let retVal = await Version.create({
@@ -292,6 +289,7 @@ export const uploadStuff = router({
             throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Failed to create version. Please contact a site administrator.' });
         }).then(async (version) => {
             version.$set(`supportedGameVersions`, newGameVersions);
+            version.supportedGameVersions = newGameVersions; // ensure the supportedGameVersions property is updated in the version instance for toApi
             Logger.log(`Version database entry created for user ${ctx.user?.id} with version ID ${version.id} for project ID ${project.id}`);
             let versionFolder = path.join(project.folderPath, version.id.toString());
             fs.mkdirSync(versionFolder, { recursive: true });

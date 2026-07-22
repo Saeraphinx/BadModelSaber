@@ -87,7 +87,7 @@
                     description: m["toasts.secretFeatures.enabledDescription"](),
                     closeButton: true,
                   });
-                  invalidateAll(); // Refresh user data to reflect new roles
+                  window.location.reload(); // do a full-on reload due to the role changes potentially breaking stuff
                 })
                 .catch((error) => {
                   toast.error(m["toasts.error.generic"](), {

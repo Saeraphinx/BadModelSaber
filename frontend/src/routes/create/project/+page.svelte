@@ -108,7 +108,7 @@
       "data",
       JSON.stringify({
         name: projectName,
-        nameId: projectNameId.trim() == `` ? projectName : projectNameId,
+        nameId: projectNameId.trim() == `` ? projectName.replaceAll(` `, ``) : projectNameId,
         summary: projectSummary,
         description: projectDescription,
         category: projectCategory,
@@ -160,7 +160,7 @@
             </HoverCard.Content>
           </HoverCard.Root>
         </Label>
-        <Textarea class="min-h-9 max-h-27 h-9" bind:value={projectNameId} aria-invalid={!isNameIdValid} id="summary" placeholder={projectName} />
+        <Input bind:value={projectNameId} aria-invalid={!isNameIdValid} id="summary" placeholder={projectName.replaceAll(` `, ``)} />
       </span>
       <span>
         <Label class="p-1 pb-2" for="game">{m["mods.dataTable.game"]()}</Label>
@@ -214,7 +214,7 @@
     <div class="flex flex-col justify-center w-full max-w-2xl p-4 gap-2 bg-card rounded-lg shadow-md">
       <span>
         <Label class="p-1 pb-2" for="summary">{m["mods.dataTable.summary"]()}</Label>
-        <Textarea class="min-h-9 max-h-27 h-9" bind:value={projectSummary} aria-invalid={!isSummaryValid} id="summary" />
+        <Textarea class="min-h-10 max-h-27 h-10" bind:value={projectSummary} aria-invalid={!isSummaryValid} id="summary" />
       </span>
       <span>
         <Label class="p-1 pb-2" for="description">{m["mods.dataTable.description"]()}</Label>

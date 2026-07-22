@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { type GameVersionApiV3, type VersionApiV3 } from "$lib/scripts/from_backend/DBExtras";
+  import { Status, type GameVersionApiV3, type VersionApiV3 } from "$lib/scripts/from_backend/DBExtras";
   import { getRelativeTimeString } from "$lib/scripts/utils/stylizer";
   import * as Accordion from "$shadcn/components/ui/accordion/index";
   import { BadgeInfoIcon, FileCodeIcon, FolderIcon, InfoIcon, Link2Icon, LinkIcon, ServerCogIcon } from "@lucide/svelte";
@@ -19,6 +19,7 @@
 
   const {
     version,
+    showUserQueueOptions = false,
     showStatusHistory,
     approvalDialog,
     codeDialog,
@@ -27,6 +28,7 @@
     id = version.id.toString()
   }: {
     version: VersionApiV3;
+    showUserQueueOptions?: boolean;
     showStatusHistory?: boolean;
     approvalDialog?: ApprovalDialog;
     codeDialog?: CodeDialog;
@@ -80,6 +82,34 @@
       });
     });
   }
+
+  // #region Approval Actions
+  function submitForApproval() {
+    trpc.internal.updateThings.version.submitForApproval.mutate({
+      id: version.id
+    }).then(() => {
+      toast.success(m["toasts.success.submit"]());
+    }).catch(err => {
+      console.error(err);
+      toast.error(m["toasts.failedTo.submit"](), {
+        description: parseErrorMessage(err),
+      });
+    });
+  }
+
+  function removeFromQueue() {
+    trpc.internal.updateThings.version.removeFromQueue.mutate({
+      id: version.id
+    }).then(() => {
+      toast.success(m["toasts.success.savedChanges"]());
+    }).catch(err => {
+      console.error(err);
+      toast.error(m["toasts.failedTo.submit"](), {
+        description: parseErrorMessage(err),
+      });
+    });
+  }
+  // #endregion Approval Actions
 
   let highlighted = $state(false);
   onMount(async () => {
@@ -213,6 +243,19 @@
               <Button variant="outline" size="sm" onclick={() => approvalDialog?.showDialog(version.id, version.semver, `version`, version.status)}>
                 {m["common.buttons.approvalDialog"]()}
               </Button>
+            {/if}
+            {#if showUserQueueOptions}
+              {#if version.status === Status.Queue || version.status === Status.Testing}
+                <Separator class="my-2" />
+                <Button variant="outline" size="sm" onclick={() => removeFromQueue()}>
+                  {m["common.buttons.removeFromQueue"]()}
+                </Button>
+              {:else if version.status === Status.Private}
+                <Separator class="my-2" />
+                <Button variant="outline" size="sm" onclick={() => submitForApproval()}>
+                  {m["common.buttons.submitForApproval"]()}
+                </Button>
+              {/if}
             {/if}
           </Accordion.Content>
         </Accordion.Item>

@@ -82,6 +82,11 @@
     if (!user) return false;
     return checkRoles(user, { hasOneOf: [UserPermissions.Mods_EditAll, UserPermissions.Mods_TranslateAll] }, project.gameName);
   });
+
+  let isAuthor = $derived.by(() => {
+    if (!user) return false;
+    return project.authors.some((a) => a.id === user.id);
+  });
   // #endregion
   // #region Edit & Translate
   let isEditing = $state(false);
@@ -285,7 +290,7 @@
       {/if}
       <div class="flex flex-col gap-2">
         {#each versions as version}
-          <VersionCard {version} approvalDialog={shouldAllowApproval ? approvalDialog : undefined} showStatusHistory={shouldAllowStatusHistory} {codeDialog} isEditable={shouldAllowEdit} {gameVersions} />
+          <VersionCard {version} approvalDialog={shouldAllowApproval ? approvalDialog : undefined} showStatusHistory={shouldAllowStatusHistory} {codeDialog} isEditable={shouldAllowEdit} {gameVersions} showUserQueueOptions={isAuthor || version.uploaderId == user?.id} />
         {:else}
           <p class="text-center text-gray-500">{m["mods.noVersionsFound"]()}</p>
         {/each}

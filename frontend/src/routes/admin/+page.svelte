@@ -19,11 +19,14 @@
   import ApprovalDialog from "$lib/components/dialogs/ApprovalDialog.svelte";
   import CodeDialog from "$lib/components/dialogs/CodeDialog.svelte";
   import debounce from "debounce";
+  import { invalidateAll } from "$app/navigation";
 
   const { data: _internal } = $props();
   // svelte-ignore state_referenced_locally
   const { user, trpc } = $derived(_internal);
   let currentTab = $state("unpicked");
+  let isDev = $state(import.meta.env.DEV);
+
   // #region Alert
   let alertType = $state(AlertType.Generic);
   let alertUserId = $state("5");
@@ -501,6 +504,7 @@
           <p>One-Shots</p>
           <Button
             class="mt-4 mb-2 w-full"
+            disabled={!isDev}
             onclick={() => {
               trpc.internal.admin.dev.importOldModelSaberData
                 .mutate()
@@ -509,11 +513,12 @@
                 })
                 .catch((err) => {
                   console.error(err);
-                  toast.error("Failed to start import.");
+                  toast.error("Failed to start import.", { description: parseErrorMessage(err) } );
                 });
             }}>Import Old ModelSaber Data</Button>
           <Button
             class="mt-4 mb-2 w-full"
+            disabled={!isDev}
             onclick={() => {
               trpc.internal.admin.dev.importFromBeatmods
                 .mutate()
@@ -522,12 +527,13 @@
                 })
                 .catch((err) => {
                   console.error(err);
-                  toast.error("Failed to start import.");
+                  toast.error("Failed to start import.", { description: parseErrorMessage(err) });
                 });
             }}>Import From BadBeatMods</Button>
           <Button
             variant="destructive"
             class="mt-4 mb-2 w-full"
+            disabled={!isDev}
             onclick={() => {
               trpc.internal.admin.dev.importFakeData
                 .mutate()
@@ -536,9 +542,25 @@
                 })
                 .catch((err) => {
                   console.error(err);
-                  toast.error("Failed to start fake data import.");
+                  toast.error("Failed to start fake data import.", { description: parseErrorMessage(err) });
                 });
             }}>Import Fake Data</Button>
+          <Button
+            variant="destructive"
+            class="mt-4 mb-2 w-full"
+            disabled={!isDev}
+            onclick={() => {
+              trpc.internal.admin.dev.impersonateTestUser
+                .mutate()
+                .then(() => {
+                  toast.success("Impersonated test user successfully.");
+                  invalidateAll();
+                })
+                .catch((err) => {
+                  console.error(err);
+                  toast.error("Failed to impersonate test user.", { description: parseErrorMessage(err) });
+                });
+            }}>Impersonate Test User</Button>
         </div>
       </div>
     </Tabs.Content>

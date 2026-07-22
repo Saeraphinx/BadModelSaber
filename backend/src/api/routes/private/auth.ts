@@ -33,6 +33,8 @@ function prepAuth(ip: string, redirectUrl: string, userId?: number, minsToTimeou
     return state;
 }
 
+export const defaultRoles = [UserPermissions.Asset_Create, UserPermissions.Mods_Create, UserPermissions.Users_EditSelf];
+
 export const authRouter = router({
     // #region Discord Login
     discordAuthInit: notLoggedInProcedure()
@@ -101,7 +103,7 @@ export const authRouter = router({
             let dbUser = await User.findOne({ where: { discordId: userInfo.id } });
             if (!dbUser) {
                 let roles = {
-                    sitewide: [UserPermissions.Asset_Create, UserPermissions.Mods_Create, UserPermissions.Users_EditSelf],
+                    sitewide: defaultRoles,
                     perGame: {},
                 };
                 if (userInfo && EnvConfig.auth.discord.autoAdminIds && EnvConfig.auth.discord.autoAdminIds.includes(userInfo.id)) {
@@ -226,7 +228,7 @@ export const authRouter = router({
             let dbUser = await User.findOne({ where: { githubId: githubUser.id.toString() } });
             if (!dbUser) {
                 let roles = {
-                    sitewide: [UserPermissions.Asset_Create, UserPermissions.Mods_Create, UserPermissions.Users_EditSelf],
+                    sitewide: defaultRoles,
                     perGame: {},
                 };
                 if (githubUser && EnvConfig.auth.github.autoAdminIds && EnvConfig.auth.github.autoAdminIds.includes(githubUser.id.toString())) {

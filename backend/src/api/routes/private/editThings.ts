@@ -187,6 +187,24 @@ export const updateThingsRouter = router({
                 throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: `Error submitting version for approval: ${parseErrorMessage(err)}` });
             });
         }),
+        removeFromQueue: loggedInVersionProcedure().mutation(async ({ ctx }) => {
+            const version = ctx.version;
+            const project = ctx.project;
+
+            if (!(await version.canEdit(ctx.user, project))) {
+                throw new TRPCError({ code: 'FORBIDDEN', message: `You are not allowed to remove this version from the queue` });
+            }
+
+            if (version.status !== Status.Queue) {
+                throw new TRPCError({ code: 'BAD_REQUEST', message: `Only versions in the queue can be removed` });
+            }
+
+            return await version.setStatus(Status.Private, ctx.user, `Removing version from queue by author`).then(async updatedVersion => {
+                return await updatedVersion.toApiV3();
+            }).catch(err => {
+                throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: `Error removing version from queue: ${parseErrorMessage(err)}` });
+            });
+        })  
     },
     user: {
         updateSelfUser: loggedInProcedure([UserPermissions.Users_EditSelf]).input(z.object({

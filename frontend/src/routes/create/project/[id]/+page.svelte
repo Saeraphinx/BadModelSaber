@@ -33,31 +33,49 @@
   let versionIdToCloneFrom = $state(-1);
 
   let manifest: Manifest | null = $state(null);
-  let manifestIssues: { str: LocalizedString; issueType: `warn` | `error` }[] = $derived.by(() => {
+  let manifestIssues: { str: LocalizedString; issueType: `warn` | `error`, majorIssue: boolean }[] = $derived.by(() => {
     if (validGameInfo === null) return [];
-    if (!manifest) return [{ issueType: `error`, str: m["mods.manifestChecks.couldNotReadManifest"]() }];
+    if (!manifest) return [{ issueType: `error`, str: m["mods.manifestChecks.couldNotReadManifest"](), majorIssue: false }];
 
-    let issues: { str: LocalizedString; issueType: `warn` | `error` }[] = [];
+    let issues: { str: LocalizedString; issueType: `warn` | `error`, majorIssue: boolean }[] = [];
     if (!manifestGameVersionIsLowestSupportedVersion(manifest, validGameInfo.gameVersions.filter((gv) => supportedGameVersionIds.includes(gv.id.toString())))) {
       issues.push({
         issueType: `error`,
         str: m["mods.manifestChecks.manifestGameVersionIsntLowest"]({ manifestGameVersion: manifest.gameVersion }),
+        majorIssue: true,
       });
     }
     if (manifest.name !== pageData.name) {
-      issues.push({ issueType: `warn`, str: m["mods.manifestChecks.manifestProjectNameMismatch"]({ manifestName: manifest.name, expectedName: pageData.name }) });
+      issues.push({ issueType: `warn`, str: m["mods.manifestChecks.manifestProjectNameMismatch"]({ manifestName: manifest.name, expectedName: pageData.name }), majorIssue: false });
     }
     if (manifest.id !== pageData.nameId) {
-      issues.push({ issueType: `error`, str: m["mods.manifestChecks.manifestProjectIdMismatch"]({ manifestId: manifest.id ?? ``, expectedManifestId: pageData.nameId }) });
+      issues.push({ issueType: `error`, str: m["mods.manifestChecks.manifestProjectIdMismatch"]({ manifestId: manifest.id ?? ``, expectedManifestId: pageData.nameId }), majorIssue: false });
+    }
+    if (manifest.version !== semverString) {
+      issues.push({ issueType: `error`, str: m["mods.manifestChecks.manifestSemVerDoesntMatch"]({ manifestSemVer: manifest.version, expectedSemVer: semverString }), majorIssue: false });
     }
     //console.log(webDependencies);
     let depIssues = manifestAllDependenciesExist(manifest, webDependencies);
     if (depIssues.length > 0) {
       issues.push(
         ...depIssues.map((issue) => {
-          return { str: issue, issueType: `error` as `error` };
+          return { str: issue, issueType: `error` as `error`, majorIssue: false };
         }),
       );
+    }
+
+    return issues;
+  });
+  let submissionIssues: { str: LocalizedString; issueType: `warn` | `error` }[] = $derived.by(() => {
+    let issues: { str: LocalizedString; issueType: `warn` | `error` }[] = [];
+    // if an id is present twice then flag it
+    let seenIds = new Set<number>();
+    for (let dep of webDependencies) {
+      if (seenIds.has(dep.pId)) {
+        issues.push({ issueType: `warn`, str: m["mods.manifestChecks.duplicateDependency"]({ depName: dep.pName }) });
+      } else {
+        seenIds.add(dep.pId);
+      }
     }
     return issues;
   });
@@ -151,12 +169,12 @@
     );
     formData.append("modZip", file);
     formData.append("immidateSubmit", `on`); // omit to not submit immidately, include to submit immidately
-    await trpc.v3.upload.versionUpload
+    let response = await trpc.v3.upload.versionUpload
       .mutate(formData)
-      .then(() => {
+      .then((res) => {
         toast.success(m["toasts.success.submit"]());
         localStorage.removeItem(`createVersionData-${pageData.id}`);
-        throw redirect(303, `/mod/${pageData.id}`);
+        return res;
       })
       .catch((error) => {
         if (isRedirect(error)) {
@@ -167,6 +185,9 @@
           description: parseErrorMessage(error),
         });
       });
+      if (response) {
+        throw redirect(303, `/mod/${pageData.id}`)
+      };
   }
 
   // @ts-ignore sometimes typescript forgets its not real
@@ -176,6 +197,7 @@
     // @ts-ignore oh my god i literally check for this right above you
     trpc.internal.getThings.searchProjectsByNameId.query({ nameIds: Object.keys(manifest.dependsOn), gameName: pageData.gameName }).then((res) => {
       res.forEach((project) => {
+        console.log(`Found id ${project.id} for project nameId ${project.nameId}`)
         let manifestDepVersion = manifest?.dependsOn ? manifest.dependsOn[project.nameId] : null;
         webDependencies.push({ pId: project.id, pName: project.name, pNameId: project.nameId, sv: manifestDepVersion });
       });
@@ -303,7 +325,7 @@
           </ol>
           {#if manifestIssues.length > 0}
             <div class="flex flex-col gap-2">
-              <ul class="list-disc list-inside text-sm">
+              <ul class="list-disc list-outside text-sm">
                 {#each manifestIssues as issue}
                   {#if issue.issueType === `error`}
                     <li class="text-red-500">{issue.str}</li>
@@ -331,8 +353,23 @@
           webDependencies.some((d) => d.pId === -1 || d.sv.length === 0 || !validRange(d.sv, false)) ||
           !files ||
           files.length === 0 ||
-          files.length > 1}
+          files.length > 1 ||
+          manifestIssues.some((i) => i.majorIssue) ||
+          submissionIssues.length > 0}
         onclick={submit}>{m["dialogs.submit"]()}</Button>
+        {#if submissionIssues.length > 0}
+          <div class="flex flex-col gap-2">
+            <ul class="list-disc list-outside text-sm mt-2">
+              {#each submissionIssues as issue}
+                {#if issue.issueType === `error`}
+                  <li class="text-red-500">{issue.str}</li>
+                {:else if issue.issueType === `warn`}
+                  <li class="text-yellow-500">{issue.str}</li>
+                {/if}
+              {/each}
+            </ul>
+          </div>
+        {/if} 
     </div>
   </div>
 </div>

@@ -8,6 +8,7 @@ import { importFromBadBeatMods, importFromOldModelSaber } from "../../../shared/
 import { TRPCError } from "@trpc/server";
 import { EnvConfig } from "../../../shared/EnvConfig.ts";
 import { Op } from "sequelize";
+import { defaultRoles } from "./auth.ts";
 
 export const AdminRouter = router({
     user: {
@@ -124,8 +125,8 @@ export const AdminRouter = router({
             autosetProject: z.boolean().default(true)
         })).mutation(async ({ input, ctx }) => {
             await ctx.version.setStatus(input.status, ctx.user, input.reason ?? `No reason given.`).then(async version => {
-                if (input.autosetProject && input.status === Status.Verified && ctx.project.status !== Status.Verified) {
-                    await ctx.project.setStatus(Status.Verified, ctx.user, `Automatically setting project verified because a version was verified.`);
+                if (input.autosetProject && input.status === Status.Verified && ctx.project.status !== Status.Public) {
+                    await ctx.project.setStatus(Status.Public, ctx.user, `Automatically setting project verified because a version was verified.`);
                 }
                 return version.toApiV3();
             }).catch(err => {
@@ -257,5 +258,29 @@ export const AdminRouter = router({
                     throw new TRPCError({ code: `INTERNAL_SERVER_ERROR`, message: `Failed to import fake data` });
                 });
             }),
+        impersonateTestUser: loggedInProcedure({ hasAllOf: [UserPermissions.Administrative_Tasks, UserPermissions.Users_EditAll] })
+            .mutation(async ({ ctx }) => {
+                if (!EnvConfig.isDevMode) {
+                    throw new TRPCError({ code: `FORBIDDEN`, message: `Cannot impersonate test user in a non-development environment.` });
+                }
+
+                let testUser = await User.findOrCreate({
+                    where: { id: 9 },
+                    defaults: {
+                        id: 9,
+                        username: `testuser`,
+                        displayName: `Test User`,
+                        bio: `Test user for development purposes.`,
+                        permissions: {
+                            sitewide: [...defaultRoles, UserPermissions.C_System, UserPermissions.C_Developer],
+                            perGame: {},
+                        },
+                    },
+                });
+
+                ctx.req.session.userId = testUser[0].id;
+                ctx.req.session.save();
+                return { message: `Impersonated test user successfully` };
+            })
     }
 });

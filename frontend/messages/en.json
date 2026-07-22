@@ -103,6 +103,7 @@
       "oneClickInstall": "OneClick Install",
       "approvalDialog": "Approval Dialog",
       "submitForApproval": "Submit for Approval",
+      "removeFromQueue": "Remove from Queue",
       "report": "Report",
       "unhide": "Unhide",
       "viewDetails": "View Details"
@@ -272,7 +273,9 @@
         "webDependencyNotFound": "Dependency {depName}@{sv} was not found in the manifest. Please ensure all dependencies listed are included in the manifest file.",
         "manifestDependencyNotFound": "Dependency {depName}@{sv} specified in manifest not found. Please ensure all dependencies listed in your manifest are marked as dependencies on ModelSaber."
       },
-      "manifestGameVersionIsntLowest": "The game version specified in your manifest ({manifestGameVersion}) isn't the lowest game version specified among your supported game versions. Please ensure the 'gameVersion' field in your manifest specifies the lowest game version your mod supports, or update your supported game versions to match the game version specified in your manifest."
+      "manifestGameVersionIsntLowest": "The game version specified in your manifest ({manifestGameVersion}) isn't the lowest game version specified among your supported game versions. Please ensure the 'gameVersion' field in your manifest specifies the lowest game version your mod supports, or update your supported game versions to match the game version specified in your manifest.",
+      "manifestSemVerDoesntMatch": "The semantic version specified in your manifest ({manifestSemVer}) doesn't match the semantic version specified for your mod ({expectedSemVer}). Please ensure the 'semver' field in your manifest matches the version of your mod.",
+      "duplicateDependency": "The dependency {depName} appears more than once. Please ensure each dependency is listed only once."
     },
     "translation": {
       "language": "Language",
@@ -338,6 +341,7 @@
       "unverified": "Unverified",
       "testing": "Testing",
       "verified": "Verified",
+      "public": "Public",
       "removed": "Removed"
     },
     "roles": {

@@ -263,6 +263,8 @@ async function roleCheckLogic(ctx: Context, roles?: UserPermissions[] | { hasAll
     // Fetch user from database
     const user = await User.findByPk(ctx.userId);
     if (!user) {
+        ctx.req.session.userId = undefined;
+        ctx.req.session.save();
         throw new TRPCError({ code: 'UNAUTHORIZED', message: 'User not found.' });
     }
 

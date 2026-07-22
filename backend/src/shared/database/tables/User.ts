@@ -40,7 +40,6 @@ export class User extends Model<InferAttributes<User>, InferCreationAttributes<U
     @AllowNull(true)
     @Unique
     @Column(DataType.STRING(32))
-
     declare discordId: string | null;
 
     @AllowNull(true)
@@ -187,7 +186,7 @@ export class User extends Model<InferAttributes<User>, InferCreationAttributes<U
         if (user) {
             return user.getAllowedStatuses(type, gameName);
         } else {
-            return [Status.Verified, Status.Unverified];
+            return [Status.Public, Status.Verified, Status.Unverified];
         }
     }
 
@@ -203,9 +202,9 @@ export class User extends Model<InferAttributes<User>, InferCreationAttributes<U
         }
 
         if (this.checkRoles([UserPermissions.Secret_Features])) {
-            return [Status.Verified, Status.Unverified, Status.Queue, Status.Testing];
+            return [Status.Public, Status.Verified, Status.Unverified, Status.Queue, Status.Testing];
         } else {
-            return [Status.Verified, Status.Unverified];
+            return [Status.Public, Status.Verified, Status.Unverified];
         }
     }
 

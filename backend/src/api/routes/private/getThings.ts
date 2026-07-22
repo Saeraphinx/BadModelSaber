@@ -107,7 +107,8 @@ export const getThingsInternalRouter = router({
                     nameId: {
                         [Op.in]: input.nameIds
                     },
-                    gameName: input.gameName
+                    gameName: input.gameName,
+                    status: Status.Public
                 },
                 attributes: [`id`, `name`, `gameName`, `nameId`, `status`],
                 include: [{

@@ -1,4 +1,4 @@
-import { AlertType, Asset, AssetFileFormat, AssetPublicAPIv2, DefaultPermissionsObject, Game, GameVersion, License, LinkedAssetLinkType, ModApiv2, ModVersionsApiv2, Project, Status, Tags, User, UserPermissions, UserPublicApiV2, Version } from "./Database.ts";
+import { AlertType, Asset, AssetFileFormat, AssetPublicAPIv2, DefaultPermissionsObject, Game, GameVersion, License, LinkedAssetLinkType, ModApiv2, ModVersionsApiv2, Project, Status, Tags, User, UserPermissions, UserPublicApiV2, Version, VersionValidStatuses } from "./Database.ts";
 import { Logger } from "./Logger.ts";
 import * as fs from "fs";
 import * as crypto from "crypto";
@@ -596,7 +596,7 @@ export async function importFromBadBeatMods() {
                 timestamp: new Date(sh.setAt).toISOString(),
                 userId: newUsers.get(sh.userId)?.id || importerUser.id,
             })),
-            status: mod.status == `verified` || mod.status == `pending` ? Status.Verified : Status.Private,
+            status: mod.status == `verified` || mod.status == `pending` ? Status.Public : Status.Private,
             lastApprovedById: mod.status === Status.Verified ? importerUser.id : undefined,
         }).then(async project => {
             project.$set(`authors`, mod.authors.map(a => newUsers.get(a.id)?.id || importerUser.id)).catch(err => {
@@ -705,7 +705,7 @@ export async function importFromBadBeatMods() {
                 lastUpdatedById: importerUser.id,
                 createdAt: new Date(version.createdAt),
                 updatedAt: new Date(version.updatedAt),
-                status: version.status == `pending` ? Status.Queue : version.status as Status,
+                status: version.status == `pending` ? Status.Queue : version.status as VersionValidStatuses,
                 statusHistory: version.statusHistory.map(sh => ({
                     status: version.status == `pending` ? Status.Queue : version.status as Status,
                     reason: sh.reason,

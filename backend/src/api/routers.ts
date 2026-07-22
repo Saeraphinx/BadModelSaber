@@ -57,7 +57,7 @@ export const loadExpressMiddleware = createExpressMiddleware({
     onError: ({ error, type, path, input, ctx }) => {
         //if (EnvConfig.isDevMode) {
             Logger.error(`tRPC Error on ${type} ${path} (${ctx?.userId || 'unknown'}): ${error.cause ? parseErrorMessage(error.cause) : error.message}`);
-            Logger.debug(`input: ${JSON.stringify(input)}`);
+            Logger.debug(`above input: ${JSON.stringify(input)}`);
         //}
     }
 });

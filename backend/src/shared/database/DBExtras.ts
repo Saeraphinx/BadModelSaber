@@ -95,6 +95,7 @@ export enum Status {
   Testing = 'testing', // approved but needs to be tested by testers before being verified
   Unverified = 'unverified', // approved but not yet verified by mods (default for everything else)
   Verified = 'verified', // approved & verified by mods
+  Public = 'public', // visible to everyone
 }
 
 export enum License {

@@ -34,7 +34,6 @@ export const DEFAULT_CONFIG = {
         sessionCookieSecret: `supersecretkey`, // the secret for the session cookie
         authBypass: -1, // whether to bypass authentication for the API (useful for development. always false in production)
         hideFullQueryInLogs: true, // whether to hide the full query in http logs
-        testingAutoVerifyTime: 1000 * 60 * 60 * 24 * 14, // how long to wait before automatically verifying a version in testing status in milliseconds (default: 14 days)
     },
     storage: {
         uploads: `./storage/uploads`, // the directory where uploads are stored
@@ -43,6 +42,9 @@ export const DEFAULT_CONFIG = {
     database: {
         connectionString: ``, // the connection string for the database
         schema: `public`, // the database schema to use
+    },
+    gaf: {
+        testingAutoVerifyTime: 1000 * 60 * 60 * 24 * 14, // how long to wait before automatically verifying a version in testing status in milliseconds (default: 14 days)
     }
 }
 
@@ -71,10 +73,10 @@ export class EnvConfig {
             sessionCookieSecret: string;
             authBypass: number;
             hideFullQueryInLogs: boolean;
-            testingAutoVerifyTime: number;
         } = DEFAULT_CONFIG.server;
     public static storage: typeof DEFAULT_CONFIG.storage = DEFAULT_CONFIG.storage;
     public static database: typeof DEFAULT_CONFIG.database = DEFAULT_CONFIG.database;
+    public static gaf: typeof DEFAULT_CONFIG.gaf = DEFAULT_CONFIG.gaf;
 
     public static get isProduction(): boolean {
         return process.env.NODE_ENV === `production`;
@@ -155,7 +157,6 @@ export class EnvConfig {
             sessionCookieSecret: process.env.SESSION_SECRET || DEFAULT_CONFIG.server.sessionCookieSecret,
             authBypass: EnvConfig.isDevMode ? parseInt(process.env.AUTH_BYPASS || `-1`) : -1,
             hideFullQueryInLogs: process.env.HIDE_FULL_QUERY_IN_LOGS === `true` || DEFAULT_CONFIG.server.hideFullQueryInLogs,
-            testingAutoVerifyTime: parseInt(process.env.TESTING_AUTO_VERIFY_TIME || `${DEFAULT_CONFIG.server.testingAutoVerifyTime}`),
         };
 
         console.log(`Using CORS Origin: ${EnvConfig.server.corsOrigin}`);

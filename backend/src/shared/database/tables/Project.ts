@@ -23,8 +23,8 @@ import { GameVersion } from "./GameVersion.ts";
 export type ProjectInfer = InferAttributes<Project>;
 export type ProjectAllowedEdit = Partial<Pick<Project, `summary` | `description` | `category` | `gitUrl` | `collaboratorIds`> & { authorIds: number[] }>;
 export type ProjectWhereOptions = WhereOptions<Project>;
-export type ProjectValidStatuses = Status.Verified | Status.Private | Status.Removed;
-export const ProjectValidStatusesArray = [Status.Verified, Status.Private, Status.Removed] as const;
+export type ProjectValidStatuses = Status.Public | Status.Private | Status.Removed;
+export const ProjectValidStatusesArray = [Status.Public, Status.Private, Status.Removed] as const;
 
 @Table({
     tableName: `projects`,
@@ -134,7 +134,8 @@ export class Project extends Model<InferAttributes<Project>, InferCreationAttrib
     }
 
     get iconUrl(): NonAttribute<string> {
-        return this.iconFileName.includes(`default`) ? `${EnvConfig.server.backendUrl}${EnvConfig.server.fileRoute}/default-${this.gameName}.png` : `${EnvConfig.server.backendUrl}/${EnvConfig.server.fileRoute}/${this.id}/${this.iconFileName}`;
+        let imgPath = this.iconFileName.includes(`default`) ? `${EnvConfig.server.fileRoute}/default-${this.gameName}.png` : `${EnvConfig.server.fileRoute}/${this.id}/${this.iconFileName}`;
+        return new URL(imgPath, EnvConfig.server.backendUrl).href;
     }
     // #endregion
     // #region Validatiors
@@ -434,7 +435,7 @@ export class Project extends Model<InferAttributes<Project>, InferCreationAttrib
             timestamp: new Date().toISOString(),
         }];
 
-        if (newStatus === Status.Verified) {
+        if (newStatus === Status.Public) {
             this.lastApprovedById = user.id;
         }
 
@@ -445,7 +446,7 @@ export class Project extends Model<InferAttributes<Project>, InferCreationAttrib
             throw err;
         });
 
-        let isFirstVerification = newStatus === Status.Verified && this.statusHistory.some(entry => entry.status === Status.Verified) === false;
+        let isFirstVerification = newStatus === Status.Public && this.statusHistory.some(entry => entry.status === Status.Verified) === false;
         let wasPrivated = previousStatus !== Status.Private && newStatus === Status.Private;
         let wasRemoved = previousStatus !== Status.Removed && newStatus === Status.Removed;
 
@@ -576,7 +577,7 @@ export class Project extends Model<InferAttributes<Project>, InferCreationAttrib
             gameName: this.gameName,
             category: this.category,
             authors: authors, // to be filled in later
-            status: this.status,
+            status: this.status == Status.Public ? `verified` : this.status,
             iconFileName: this.iconFileName,
             gitUrl: this.gitUrl,
             lastApprovedById: this.lastApprovedById,
