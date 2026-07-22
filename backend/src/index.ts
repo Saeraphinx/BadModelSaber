@@ -2,23 +2,22 @@ import { DatabaseManager } from "./shared/Database.ts";
 import { EnvConfig } from "./shared/EnvConfig.ts";
 import express from "express";
 import session, { SessionOptions } from 'express-session';
+import { WebSocketServer } from "ws";
 import SequelizeStore from 'connect-session-sequelize'
 import cors from "cors";
 import { Logger, LogLevel } from "./shared/Logger.ts";
 import { FileRoutes } from "./api/routes/files/files.ts";
 import { Sequelize } from "sequelize";
-import { importFromOldModelSaber } from "./shared/Importer.ts";
-import { createCaller, generateOpenAPIDoc, loadExpressMiddleware, loadOpenApiMiddleware } from "./api/routers.ts";
+import { applyWebSocketHandler, createCaller, generateOpenAPIDoc, loadExpressMiddleware, loadOpenApiMiddleware } from "./api/routers.ts";
 import swaggerUi from "swagger-ui-express";
-import { file } from "jszip";
 import { OpenAPIUploadDocs } from "./api/routes/public/v3/upload.ts";
 
-    // eslint-disable-next-line quotes
-    declare module 'express-serve-static-core' {
-        interface Request {
-            database: DatabaseManager;
-        }
+// eslint-disable-next-line quotes
+declare module 'express-serve-static-core' {
+    interface Request {
+        database: DatabaseManager;
     }
+}
 
 export async function init(overrideDbName?: string) {
     console.log(`Initializing BadModelSaber...`);
@@ -129,6 +128,7 @@ export async function init(overrideDbName?: string) {
             return next();
         }
 
+        // handle public v3 upload routes that are a bit scuffed because of openapi and tRPC not playing nice with multipart/form-data. 
         let caller: Promise<any> | null = null;
         if (req.url.startsWith(`/v3/asset/upload`) && req.method === 'POST') {
             caller = createCaller({
@@ -161,21 +161,21 @@ export async function init(overrideDbName?: string) {
     FileRoutes.loadRoutes(fileRouter);
 
     apiRouter.use((req, res, next) => {
-        res.status(404).send({message: `Unknown route.`});
+        res.status(404).send({ message: `Unknown route.` });
     });
 
     app.use(`${EnvConfig.server.apiRoute}`, apiRouter);
     app.use(`${EnvConfig.server.fileRoute}`, fileRouter);
 
     // catch all unknown routes and return a 404
-    app.use((err:any, req:any, res:any, next:any) => {
+    app.use((err: any, req: any, res: any, next: any) => {
         if (err.message === `Cannot set headers after they are sent to the client`) {
             Logger.debug(`Attempted to send headers after response was already sent. Likely caused by authentication.`);
             return;
         }
         Logger.error(err.stack);
         if (!res.headersSent) {
-            res.status(500).send({message: `Server error`});
+            res.status(500).send({ message: `Server error` });
         }
     });
     // #endregion
@@ -184,6 +184,26 @@ export async function init(overrideDbName?: string) {
         Logger.log(`Server is running on ${EnvConfig.server.backendUrl}`);
         console.log(`http://localhost:6001/api/users/me`);
         console.log(`http://localhost:6001/api/auth/discord`);
+    });
+
+    // #region WebSocket handling
+    const wss = new WebSocketServer({ noServer: true });
+
+    // 5. Intercept HTTP Upgrade requests on the Express server
+    server.on('upgrade', (request, socket, head) => {
+        console.log('Parsing session from WebSocket upgrade request...');
+        session(sessionOptions)(request as any, {} as any, () => {
+            if (!request.session) {
+                socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
+                socket.destroy();
+                return;
+            }
+
+            // 6. Handle the WebSocket connection
+            wss.handleUpgrade(request, socket, head, (ws) => {
+                wss.emit('connection', ws, request);
+            });
+        });
     });
 
     return {

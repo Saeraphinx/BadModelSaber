@@ -20,6 +20,9 @@ import { getModsV2Router } from './routes/public/v2/getMods.ts';
 import { getEditTranslationsRouter } from './routes/private/translations.ts';
 import { getModsV1Router } from './routes/public/v1/getMods.ts';
 import { AdminGetEditRouter } from './routes/private/adminRaw.ts';
+import { Server } from 'http';
+import { applyWSSHandler } from '@trpc/server/adapters/ws';
+import { WebSocketServer } from 'ws';
 
 const appRouter = router({
     internal: {
@@ -51,6 +54,21 @@ const appRouter = router({
 
 export const createCaller = createCallerFactory(appRouter);
 export type AppRouter = typeof appRouter;
+
+export const applyWebSocketHandler = (wss: WebSocketServer) => applyWSSHandler({
+  wss,
+  router: appRouter,
+  createContext,
+  // Enable heartbeat messages to keep connection open (disabled by default)
+  keepAlive: {
+    enabled: true,
+    // server ping message interval in milliseconds
+    pingMs: 60000,
+    // connection is terminated if pong message is not received in this many milliseconds
+    pongWaitMs: 10000,
+  },
+});
+
 export const loadExpressMiddleware = createExpressMiddleware({
     router: appRouter,
     createContext,

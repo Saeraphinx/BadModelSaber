@@ -3,12 +3,14 @@ import { Validator } from "../../../shared/Validator.ts";
 import z from "zod/v4";
 import { dedupeArray, handleCatch, parseErrorMessage } from "../../../shared/Tools.ts";
 import { gameProcedure, loggedInAssetProcedure, loggedInProcedure, loggedInProjectProcedure, loggedInVersionProcedure, router } from "../../trpc.ts";
-import { Logger } from "../../../shared/Logger.ts";
-import { importFromBadBeatMods, importFromOldModelSaber } from "../../../shared/Importer.ts";
+import { Logger, LogLevel } from "../../../shared/Logger.ts";
+import { importFromBadBeatMods, importFromOldModelSaber, importFromZip } from "../../../shared/Importer.ts";
 import { TRPCError } from "@trpc/server";
 import { EnvConfig } from "../../../shared/EnvConfig.ts";
 import { Op } from "sequelize";
 import { defaultRoles } from "./auth.ts";
+import { on } from "events";
+import { LogEntry } from "winston";
 
 export const AdminRouter = router({
     user: {
@@ -235,22 +237,43 @@ export const AdminRouter = router({
     dev: {
         importOldModelSaberData: loggedInProcedure([UserPermissions.Administrative_Tasks])
             .mutation(async ({ input, ctx }) => {
-                importFromOldModelSaber((message, level) => { });
+                importFromOldModelSaber();
             }),
         importFromBeatmods: loggedInProcedure([UserPermissions.Administrative_Tasks])
             .mutation(async ({ input, ctx }) => {
                 importFromBadBeatMods();
             }),
+        importFromZip: loggedInProcedure([UserPermissions.Administrative_Tasks])
+            .input(z.object({
+                useUrl: z.boolean().default(false),
+            }))
+            .mutation(async ({ input, ctx }) => {
+                importFromZip(ctx.db, input.useUrl);
+            }),
         getAdminLogs: loggedInProcedure([UserPermissions.Administrative_Tasks])
             .query(async ({ input, ctx }) => {
                 return Logger.getLogs(new Date(Date.now() - 1000 * 60 * 5)); // last 5 minutes
+            }),
+        subscribeAdminLogs: loggedInProcedure([UserPermissions.Administrative_Tasks])
+            .input(z.object({
+                logLevel: z.enum(LogLevel)
+            }))
+            .subscription(async function* (opts) {
+
+                for await (const [data] of on(Logger.instance, 'logged', {
+                    // Passing the AbortSignal from the request automatically cancels the event emitter when the request is aborted
+                    signal: opts.signal,
+                })) {
+                    const entry = data as LogEntry;
+                    yield entry;
+                }
             }),
         importFakeData: loggedInProcedure([UserPermissions.Administrative_Tasks])
             .mutation(async ({ ctx }) => {
                 if (!EnvConfig.isDevMode) {
                     throw new TRPCError({ code: `FORBIDDEN`, message: `Cannot import fake data in a non-development environment.` });
                 }
-                ctx.db.importFakeData().then(() => {
+                ctx.db.importFromFile().then(() => {
                     Logger.log(`Fake data imported by admin user ${ctx.userId}`);
                     return { message: `Fake data imported successfully` };
                 }).catch((e) => {

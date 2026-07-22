@@ -1,10 +1,12 @@
 import { initTRPC, TRPCError } from '@trpc/server';
 import { type CreateExpressContextOptions, createExpressMiddleware } from '@trpc/server/adapters/express';
-import { Asset, Game, GameVersion, Project, User, UserPermissions, Version } from '../shared/Database.ts';
+import type { CreateWSSContextFnOptions } from '@trpc/server/adapters/ws';
+import { Asset, DatabaseManager, Game, GameVersion, Project, User, UserPermissions, Version } from '../shared/Database.ts';
 import { OpenApiMeta } from 'trpc-to-openapi';
 import SuperJSON from 'superjson';
 import { parseErrorMessage } from '../shared/Tools.ts';
 import z, { ZodError } from 'zod/v4';
+import { Session, SessionData } from 'express-session';
 
 
 // eslint-disable-next-line quotes
@@ -14,11 +16,19 @@ declare module 'express-session' {
     }
 }
 
+// inherits from express request obj
+declare module 'http' {
+  interface IncomingMessage {
+    session: Session & Partial<SessionData>;
+    database: DatabaseManager;
+  }
+}
+
 /**
  * Creates context for an incoming request
  * @see https://trpc.io/docs/v11/context
  */
-export function createContext(opts: CreateExpressContextOptions) {
+export function createContext(opts: CreateExpressContextOptions | CreateWSSContextFnOptions) {
     let userId = undefined;
     if (opts.req.session?.userId) {
         userId = opts.req.session.userId;

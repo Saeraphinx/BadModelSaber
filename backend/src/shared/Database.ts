@@ -213,12 +213,18 @@ export class DatabaseManager {
         });
     }
 
-    public async importFakeData() {
-        Logger.log(`Importing database...`);
-        let data = JSON.parse(fs.readFileSync(`./storage/fakeData.json`, `utf-8`));
+    public async importFromFile(path: string = `./storage/fakeData.json`) {
+        Logger.log(`Importing database from file...`);
+        let data = JSON.parse(fs.readFileSync(path, `utf-8`));
         if (!data || typeof data !== `object`) {
             throw new Error(`Invalid fake data format`);
         }
+
+        await this.import(data);
+    }
+
+    public async import(data: any) {
+        Logger.log(`Importing database...`);
 
         let totalRows = 0;
         for (const model in data) {

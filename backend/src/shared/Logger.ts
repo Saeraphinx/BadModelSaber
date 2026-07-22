@@ -5,6 +5,13 @@ import fs from "fs";
 export class Logger {
     private static winston: Winston.Logger | undefined;
 
+    public static get instance(): Winston.Logger {
+        if (!Logger.winston) {
+            throw new Error(`Logger not initialized`);
+        }
+        return Logger.winston;
+    }
+
     public static init() {
         let transports: Winston.transport[] = [];
 
@@ -31,6 +38,7 @@ export class Logger {
                 })
             )
         }));
+
         transports.push(new Winston.transports.File({
             filename: `storage/logs/bms.log`,
             //filename: `storage/logs/${new Date(Date.now()).toLocaleDateString(`en-US`, { year: `numeric`, month: `numeric`, day: `numeric`}).replaceAll(`/`, `-`)}.log`,
@@ -44,6 +52,8 @@ export class Logger {
                 Winston.format.json()
             )
         }));
+
+        transports.push(new Winston.transports.
 
         this.winston = Winston.createLogger({
             level: `info`,
