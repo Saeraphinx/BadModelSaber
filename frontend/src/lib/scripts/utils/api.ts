@@ -50,7 +50,7 @@ export function getVersionDecompUrl(version: VersionApiV3): string {
   return `${env.PUBLIC_FILE_URL}/${version.projectId}/${version.id}/decompiled/${version.baseFileName}.dll.decompiled.cs`;
 }
 
-import { createTRPCClient, httpBatchLink, httpLink, isNonJsonSerializable, isTRPCClientError, splitLink, TRPCClientError } from '@trpc/client';
+import { createTRPCClient, httpBatchLink, httpSubscriptionLink, isTRPCClientError, splitLink, TRPCClientError } from '@trpc/client';
 import type { AppRouter } from '../../../../../backend/src/api/routers';
 import SuperJSON from "superjson";
 import { error } from "@sveltejs/kit";
@@ -62,8 +62,9 @@ export function createTRPC(svelteFetch: typeof fetch = fetch) {
   //let svelteFetch = svelteFetcht;
 
   // this is to both make sure that the cookies are included in the request if required and that readablestream doesn't get locked
+  let shouldSendCreds = !env.PUBLIC_API_URL.startsWith(env.PUBLIC_BASE_URL);
   const safeFetch = async (input: RequestInfo | URL, init?: RequestInit) => {
-    if (!env.PUBLIC_API_URL.startsWith(env.PUBLIC_BASE_URL)) {
+    if (shouldSendCreds) {
       init = {
         ...init,
         credentials: 'include' 
@@ -76,22 +77,21 @@ export function createTRPC(svelteFetch: typeof fetch = fetch) {
   return createTRPCClient<AppRouter>({
     links: [
       splitLink({
-        condition: (op) => isNonJsonSerializable(op.input),
-        true: httpLink({ // this section is needed for file uploads
+        condition: (op) => op.type === 'subscription',
+        true: httpSubscriptionLink({
           url: `${env.PUBLIC_API_URL}/trpc`,
-          fetch: safeFetch,
-          transformer: {
-            serialize: (data) => data,
-            deserialize: SuperJSON.deserialize,
+          transformer: SuperJSON,
+          eventSourceOptions: {
+            withCredentials: shouldSendCreds,
           },
         }),
-        false: httpBatchLink({
+        false: httpBatchLink<AppRouter>({
           url: `${env.PUBLIC_API_URL}/trpc`,
           fetch: safeFetch,
           transformer: SuperJSON,
-        }),
+        })
       }),
-    ],
+    ]
   });
 }
 

@@ -20,6 +20,7 @@
   import CodeDialog from "$lib/components/dialogs/CodeDialog.svelte";
   import debounce from "debounce";
   import { invalidateAll } from "$app/navigation";
+  import { Separator } from "$shadcn/components/ui/separator";
 
   const { data: _internal } = $props();
   // svelte-ignore state_referenced_locally
@@ -116,6 +117,9 @@
 
   // #region Admin Logs
   let adminLogs: { timestamp: Date; level: string; message: string }[] = $state([]);
+  let ALselectedLogLevel = $state("");
+  let ALisConnected = $state(false);
+  let ALcurrentSubscription: ReturnType<typeof trpc.internal.admin.dev.subscribeAdminLogs.subscribe> | null = null;
   function fetchAdminLogs() {
     trpc.internal.admin.dev.getAdminLogs
       .query()
@@ -127,6 +131,32 @@
         console.error(err);
         toast.error("Failed to fetch admin logs.", { description: parseErrorMessage(err) });
       });
+  }
+
+  function subscribeAdminLogs() {
+    ALcurrentSubscription = trpc.internal.admin.dev.subscribeAdminLogs.subscribe(undefined, {
+      onData(log) {
+        adminLogs = [{ timestamp: new Date(), level: log.level, message: log.message }, ...adminLogs];
+      },
+      onError(err) {
+        console.error(err);
+        toast.error("Failed to subscribe to admin logs.", { description: parseErrorMessage(err) })
+      },
+      onStarted() {
+        ALisConnected = true;
+      },
+      onStopped() {
+        ALisConnected = false;
+      }
+    });
+  }
+
+  function unsubscribeAdminLogs() {
+    if (ALcurrentSubscription) {
+      ALcurrentSubscription.unsubscribe();
+      ALcurrentSubscription = null;
+      ALisConnected = false;
+    }
   }
   // #endregion
 
@@ -344,11 +374,14 @@
       <div class="flex flex-col items-center p-4 bg-accent rounded-lg">
         <div class="flex flex-row gap-2">
           <p class="text-2xl">Admin Logs</p>
-          <Button variant="outline" size="icon" onclick={fetchAdminLogs}>
-            <RefreshCwIcon />
+          <Button variant="outline" onclick={fetchAdminLogs} disabled={ALisConnected}>
+            Get Last 5 Minutes
+          </Button>
+          <Button onclick={ALisConnected ? unsubscribeAdminLogs : subscribeAdminLogs}>
+            {ALisConnected ? "Unsubscribe" : "Subscribe"}
           </Button>
         </div>
-        <div class="h-[400px] w-full overflow-y-scroll bg-background-secondary rounded-lg p-2">
+        <div class="h-[400px] w-full overflow-y-scroll overflow-x-hidden text-wrap wrap-anywhere bg-background-secondary rounded-lg p-2">
           {#if adminLogs.length >= 1}
             {#each adminLogs as log}
               <div class="flex flex-row mb-2">
@@ -363,7 +396,11 @@
             {/each}
           {:else}
             <div class="flex flex-col items-center justify-center h-full">
-              <p>No logs to display. Click the refresh button to load logs.</p>
+              {#if ALisConnected}
+                <p>Waiting for new logs...</p>
+              {:else}
+                <p>No logs to display. Click the refresh button to load logs.</p>
+              {/if}
             </div>
           {/if}
         </div>

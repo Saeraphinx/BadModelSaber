@@ -68,6 +68,7 @@ export const AdminRouter = router({
                     }
                 }
                 targetUser.save();
+                Logger.log(`User ${ctx.userId} ${input.ban ? `banned` : `unbanned`} user ${targetUser.id}`);
             }),
         searchUsers: loggedInProcedure([UserPermissions.Users_EditAll, UserPermissions.Users_Ban, UserPermissions.Users_EditAllRoles]).input(z.object({
             query: z.string().min(1).max(16)
@@ -140,7 +141,7 @@ export const AdminRouter = router({
         createGame: loggedInProcedure([UserPermissions.Game_Create]).input(z.object({
             gameName: z.string(),
             displayName: z.string(),
-        })).mutation(async ({ input }) => {
+        })).mutation(async ({ ctx, input }) => {
             let existingGame = await Game.findByPk(input.gameName);
             if (existingGame) {
                 throw new TRPCError({ code: "CONFLICT", message: `Game with name ${input.gameName} already exists.` });
@@ -152,6 +153,7 @@ export const AdminRouter = router({
                 default: false,
                 webhookConfig: [],
             }).catch(handleCatch(`creating game`));
+            Logger.log(`New game ${newGame.name} created by admin user ${ctx.userId}`);
 
             return newGame.toApiV3();
         }),
@@ -171,6 +173,8 @@ export const AdminRouter = router({
 
             await game.save().catch(handleCatch(`editing game`));
 
+            Logger.log(`Game ${game.name} edited by admin user ${ctx.userId}`);
+
             return game.toApiV3();
         }),
         addWebhook: gameProcedure([UserPermissions.Game_Edit]).input(z.object({
@@ -184,6 +188,7 @@ export const AdminRouter = router({
                 isAssetWebhook: input.isAssetWebhook,
             }).catch(handleCatch(`adding webhook`));
 
+            Logger.log(`Webhook added to game ${ctx.game.name} by admin user ${ctx.userId}`);
             return ctx.game.getAPIWebhooks();
         }),
         removeWebhook: gameProcedure([UserPermissions.Game_Edit]).input(z.object({
@@ -191,6 +196,7 @@ export const AdminRouter = router({
         })).mutation(async ({ ctx, input }) => {
             await ctx.game.removeWebhook(input.webhookId).catch(handleCatch(`removing webhook`));
 
+            Logger.log(`Webhook removed from game ${ctx.game.name} by admin user ${ctx.userId}`);
             return ctx.game.getAPIWebhooks();
         }),
         createGameVersion: gameProcedure([UserPermissions.Game_EditVersions]).input(z.object({
@@ -211,6 +217,7 @@ export const AdminRouter = router({
                 defaultVersion: false,
                 linkedVersionIds: [],
             }).catch(handleCatch(`creating game version`));
+            Logger.log(`New version ${newVersion.version} created for game ${ctx.game.name} by admin user ${ctx.userId}`);
             return newVersion.toApiV3();
         }),
         setDefaultVersion: gameProcedure([UserPermissions.Game_EditVersions]).input(z.object({
@@ -220,6 +227,7 @@ export const AdminRouter = router({
             if (!version || version.gameName !== ctx.game.name) {
                 throw new TRPCError({ code: "NOT_FOUND", message: `Version with id ${input.versionId} not found for game ${ctx.game.name}.` });
             }
+            Logger.log(`Setting version ${version.version} as default for game ${ctx.game.name} by admin user ${ctx.userId}`);
             version.setDefault().catch(handleCatch(`setting default version`));
             return version.toApiV3();
         }),
@@ -228,6 +236,7 @@ export const AdminRouter = router({
             versionId2: z.number(),
         })).mutation(async ({ ctx, input }) => {
             let { gv1, gv2 } = await GameVersion.linkedVersionIdsUpdate(input.versionId1, input.versionId2).catch(handleCatch(`linking versions`));
+            Logger.log(`Linked versions ${gv1.version} and ${gv2.version} for game ${ctx.game.name} by admin user ${ctx.userId}`);
             return {
                 version1: gv1.toApiV3(),
                 version2: gv2.toApiV3(),
@@ -237,10 +246,12 @@ export const AdminRouter = router({
     dev: {
         importOldModelSaberData: loggedInProcedure([UserPermissions.Administrative_Tasks])
             .mutation(async ({ input, ctx }) => {
+                Logger.log(`Starting import of old ModelSaber data by admin user ${ctx.userId}`);
                 importFromOldModelSaber();
             }),
         importFromBeatmods: loggedInProcedure([UserPermissions.Administrative_Tasks])
             .mutation(async ({ input, ctx }) => {
+                Logger.log(`Starting import from Beatmods by admin user ${ctx.userId}`);
                 importFromBadBeatMods();
             }),
         importFromZip: loggedInProcedure([UserPermissions.Administrative_Tasks])
@@ -248,19 +259,26 @@ export const AdminRouter = router({
                 useUrl: z.boolean().default(false),
             }))
             .mutation(async ({ input, ctx }) => {
+                Logger.log(`Starting import from zip by admin user ${ctx.userId}`);
                 importFromZip(ctx.db, input.useUrl);
             }),
         getAdminLogs: loggedInProcedure([UserPermissions.Administrative_Tasks])
             .query(async ({ input, ctx }) => {
+                Logger.log(`User ${ctx.userId} fetching admin logs for the last 5 minutes`);
                 return Logger.getLogs(new Date(Date.now() - 1000 * 60 * 5)); // last 5 minutes
             }),
         subscribeAdminLogs: loggedInProcedure([UserPermissions.Administrative_Tasks])
-            .input(z.object({
-                logLevel: z.enum(LogLevel)
-            }))
+            // .input(z.object({
+            //     logLevel: z.enum(LogLevel)
+            // }))
             .subscription(async function* (opts) {
+                Logger.log(`User ${opts.ctx.userId} subscribed to admin logs`);  
 
-                for await (const [data] of on(Logger.instance, 'logged', {
+                opts.signal?.addEventListener('abort', () => {
+                    Logger.log(`User ${opts.ctx.userId} unsubscribed from admin logs`);
+                });
+
+                for await (const [data] of on(Logger.stream, 'log', {
                     // Passing the AbortSignal from the request automatically cancels the event emitter when the request is aborted
                     signal: opts.signal,
                 })) {
@@ -273,6 +291,7 @@ export const AdminRouter = router({
                 if (!EnvConfig.isDevMode) {
                     throw new TRPCError({ code: `FORBIDDEN`, message: `Cannot import fake data in a non-development environment.` });
                 }
+                Logger.log(`Starting import of fake data by admin user ${ctx.userId}`);
                 ctx.db.importFromFile().then(() => {
                     Logger.log(`Fake data imported by admin user ${ctx.userId}`);
                     return { message: `Fake data imported successfully` };
@@ -286,6 +305,7 @@ export const AdminRouter = router({
                 if (!EnvConfig.isDevMode) {
                     throw new TRPCError({ code: `FORBIDDEN`, message: `Cannot impersonate test user in a non-development environment.` });
                 }
+                Logger.log(`Impersonating test user by admin user ${ctx.userId}`);
 
                 let testUser = await User.findOrCreate({
                     where: { id: 9 },

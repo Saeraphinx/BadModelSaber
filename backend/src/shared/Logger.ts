@@ -1,6 +1,7 @@
 import * as Winston from "winston";
 import { EnvConfig } from "./EnvConfig.ts";
 import fs from "fs";
+import { Writable } from "stream"
 
 export class Logger {
     private static winston: Winston.Logger | undefined;
@@ -10,6 +11,14 @@ export class Logger {
             throw new Error(`Logger not initialized`);
         }
         return Logger.winston;
+    }
+
+    private static streamInstance: Writable | undefined;
+    public static get stream(): Writable {
+        if (!Logger.winston || !Logger.streamInstance) {
+            throw new Error(`Logger not initialized`);
+        }
+        return Logger.streamInstance!;
     }
 
     public static init() {
@@ -53,7 +62,15 @@ export class Logger {
             )
         }));
 
-        transports.push(new Winston.transports.
+        transports.push(new Winston.transports.Stream({
+            stream: Logger.streamInstance = new Writable({
+                objectMode: true,
+                write(log, encoding, callback) {
+                    Logger.streamInstance!.emit(`log`, log);
+                    callback();
+                }
+            })
+        }));
 
         this.winston = Winston.createLogger({
             level: `info`,

@@ -2,13 +2,12 @@ import { DatabaseManager } from "./shared/Database.ts";
 import { EnvConfig } from "./shared/EnvConfig.ts";
 import express from "express";
 import session, { SessionOptions } from 'express-session';
-import { WebSocketServer } from "ws";
 import SequelizeStore from 'connect-session-sequelize'
 import cors from "cors";
 import { Logger, LogLevel } from "./shared/Logger.ts";
 import { FileRoutes } from "./api/routes/files/files.ts";
 import { Sequelize } from "sequelize";
-import { applyWebSocketHandler, createCaller, generateOpenAPIDoc, loadExpressMiddleware, loadOpenApiMiddleware } from "./api/routers.ts";
+import { createCaller, generateOpenAPIDoc, loadExpressMiddleware, loadOpenApiMiddleware } from "./api/routers.ts";
 import swaggerUi from "swagger-ui-express";
 import { OpenAPIUploadDocs } from "./api/routes/public/v3/upload.ts";
 
@@ -184,26 +183,6 @@ export async function init(overrideDbName?: string) {
         Logger.log(`Server is running on ${EnvConfig.server.backendUrl}`);
         console.log(`http://localhost:6001/api/users/me`);
         console.log(`http://localhost:6001/api/auth/discord`);
-    });
-
-    // #region WebSocket handling
-    const wss = new WebSocketServer({ noServer: true });
-
-    // 5. Intercept HTTP Upgrade requests on the Express server
-    server.on('upgrade', (request, socket, head) => {
-        console.log('Parsing session from WebSocket upgrade request...');
-        session(sessionOptions)(request as any, {} as any, () => {
-            if (!request.session) {
-                socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
-                socket.destroy();
-                return;
-            }
-
-            // 6. Handle the WebSocket connection
-            wss.handleUpgrade(request, socket, head, (ws) => {
-                wss.emit('connection', ws, request);
-            });
-        });
     });
 
     return {

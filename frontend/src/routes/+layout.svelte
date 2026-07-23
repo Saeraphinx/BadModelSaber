@@ -6,7 +6,7 @@
   import { onMount } from "svelte";
   import { buttonVariants } from "$shadcn/components/ui/button";
   import * as Avatar from "$shadcn/components/ui/avatar";
-  import { BellIcon, LogInIcon, LogOutIcon, Menu, MessageCircleQuestionIcon, PlusIcon, Settings, TrafficConeIcon, UserIcon, SettingsIcon, LanguagesIcon, FolderGit2Icon, FileAxis3DIcon } from "@lucide/svelte";
+  import { BellIcon, LogInIcon, LogOutIcon, Menu, MessageCircleQuestionIcon, PlusIcon, Settings, TrafficConeIcon, UserIcon, SettingsIcon, LanguagesIcon, FolderGit2Icon, FileAxis3DIcon, Server } from "@lucide/svelte";
   import { MediaQuery } from "svelte/reactivity";
   import * as Popover from "$shadcn/components/ui/popover";
   import { page } from "$app/state";
@@ -42,7 +42,7 @@
     const handleKeydown = (event: KeyboardEvent) => {
       // Skip if user is banned or not logged in
       if (!isLoggedIn && checkRoles(user, [UserPermissions.C_Banned])) return;
-      
+
       if (event.repeat) return; // Ignore repeated key presses
       if (!konamiCode.includes(event.key)) {
         inputSequence = []; // Reset if an invalid key is pressed
@@ -137,16 +137,20 @@
   let hasUnreadAlerts = $derived(unreadAlertCount > 0);
   async function updateAlerts() {
     isLoadingAlerts = true;
-    await trpc.internal.alerts.getAlerts.query({ read: `all` }).then((data) => {
-      allAlerts = data;
-      return data;
-    }).catch((err) => {
-      toast.error(m["toasts.error.generic"](), { description: parseErrorMessage(err) });
-      return [];
-    }).finally(() => {
-      isLoadingAlerts = false;
-    });
-  } 
+    await trpc.internal.alerts.getAlerts
+      .query({ read: `all` })
+      .then((data) => {
+        allAlerts = data;
+        return data;
+      })
+      .catch((err) => {
+        toast.error(m["toasts.error.generic"](), { description: parseErrorMessage(err) });
+        return [];
+      })
+      .finally(() => {
+        isLoadingAlerts = false;
+      });
+  }
   async function openAlertsSidebar() {
     openAlerts = true;
     await updateAlerts();
@@ -189,6 +193,48 @@
   });
   // #endregion Toasts
 
+  // #region Debug Logging
+  let isLoggerConnected = $state(false);
+  let loggerSubscription: any;
+  function handleLoggerConnection(connect: boolean) {
+    if (connect) {
+      loggerSubscription = trpc.internal.admin.dev.subscribeAdminLogs.subscribe(undefined, {
+          onData(log) {
+            let title = `[${log.level.toUpperCase()}] ${new Date().toISOString()}`
+            switch (log.level) {
+              case "warn":
+                toast.warning(title, { description: log.message, position: "bottom-right", duration: 15000 });
+                break;
+              case "error":
+                toast.error(title, { description: log.message, position: "bottom-right", duration: 30000 });
+                break;
+              default:
+                toast.info(title, { description: log.message, position: "bottom-right", duration: 10000 });
+            }
+          },
+          onError(err) {
+            console.error(err);
+            toast.error("Failed to subscribe to admin logs.", { description: parseErrorMessage(err), position: "bottom-right" });
+          },
+          onStarted() {
+            isLoggerConnected = true;
+            toast.success("Successfully subscribed to admin logs.", { description: "", position: "bottom-right" });
+          },
+          onStopped() {
+            isLoggerConnected = false;
+            toast.info("Unsubscribed from admin logs.", { description: "", position: "bottom-right", duration: 30000 });
+          },
+        },
+      );
+    } else {
+      if (loggerSubscription) {
+        loggerSubscription.unsubscribe();
+        loggerSubscription = null;
+        isLoggerConnected = false;
+      }
+    }
+  }
+  // #endregion Debug Logging
   onMount(() => {
     document.documentElement.classList.remove("unrendered");
   });
@@ -378,6 +424,14 @@
                 </DropdownMenu.Item>
               </a>
             {/if}
+            {#if checkRoles(user, [UserPermissions.Administrative_Tasks])}
+              <button onclick={() => handleLoggerConnection(!isLoggerConnected)}>
+                <DropdownMenu.Item>
+                  <Server />
+                  {isLoggerConnected ? `Disconnect Logger` : `Connect Logger`}
+                </DropdownMenu.Item>
+              </button>
+            {/if}
             {#if checkRoles(user, [UserPermissions.Secret_Features])}
               <button onclick={removeSecret}>
                 <DropdownMenu.Item>
@@ -522,8 +576,11 @@
     <ScrollArea class="mx-4 min-h-0 transition-all duration-500">
       {#if showRead}
         {#each allAlerts as alert}
-          <Alert {alert} class="mb-2" deleteFromArray={() => { 
-            allAlerts = allAlerts.filter(a => a.id !== alert.id && a.createdAt !== alert.createdAt)
+          <Alert
+            {alert}
+            class="mb-2"
+            deleteFromArray={() => {
+              allAlerts = allAlerts.filter((a) => a.id !== alert.id && a.createdAt !== alert.createdAt);
             }} />
         {:else}
           <div class="flex justify-center items-center gap-2">
@@ -531,10 +588,13 @@
           </div>
         {/each}
       {:else}
-        {#each allAlerts.filter(a => !a.read) as alert}
-          <Alert {alert} class="mb-2" deleteFromArray={() => {
-            allAlerts = allAlerts.filter(a => a.id !== alert.id && a.createdAt !== alert.createdAt)
-          }}/>
+        {#each allAlerts.filter((a) => !a.read) as alert}
+          <Alert
+            {alert}
+            class="mb-2"
+            deleteFromArray={() => {
+              allAlerts = allAlerts.filter((a) => a.id !== alert.id && a.createdAt !== alert.createdAt);
+            }} />
         {:else}
           <div class="flex justify-center items-center gap-2">
             <p class="text-gray-500">{m["layout.alertSidebar.noUnreadAlerts"]()}</p>
