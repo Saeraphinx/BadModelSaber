@@ -217,6 +217,7 @@ export const updateThingsRouter = router({
             if (input.bio !== undefined) {
                 ctx.user.bio = input.bio;
             }
+            Logger.info(`User ${ctx.user.id} (${ctx.user.username}) has updated their profile.`);
             await ctx.user.save();
             return ctx.user.toApiV3();
         }),

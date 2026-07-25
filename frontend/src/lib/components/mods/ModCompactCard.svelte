@@ -35,7 +35,7 @@
   <div class="flex flex-row gap-2 items-center">
     <div class="flex flex-col gap-1 items-center">
       <img class="h-16 w-16 rounded-md" alt="icon for {project.name}" src={getProjectThumbnailUrl(project)} />
-      <StatusHoverCard status={version?.status || project.status} type="mod" />
+      <StatusHoverCard status={version?.status || project.status} type="mod" countdownDate={version?.nextStatusChangeTime} />
     </div>
     <div class="flex flex-col">
       <span class="flex flex-row items-end gap-1 ">
@@ -65,19 +65,19 @@
   <div class="flex-1 flex flex-col justify-between">
     <div class="flex flex-row justify-end items-end gap-2">
       {#if showFileDialog}
-        <Button variant="secondary" size="icon" onclick={showFileDialog} class=""><FolderKanbanIcon /></Button>
+        <Button variant="secondary" size="icon" onclick={showFileDialog} class="" title="Show File Dialog"><FolderKanbanIcon /></Button>
       {/if}
       {#if showManifestDialog}
-        <Button variant="secondary" size="icon" onclick={showManifestDialog} class=""><FileBracesCornerIcon /></Button>
+        <Button variant="secondary" size="icon" onclick={showManifestDialog} class="" title="Show Manifest Dialog"><FileBracesCornerIcon /></Button>
       {/if}
       {#if showCodeDialog}
-        <Button variant="secondary" size="icon" onclick={showCodeDialog} class=""><Code2Icon /></Button>
+        <Button variant="secondary" size="icon" onclick={showCodeDialog} class="" title="Show Code Dialog"><Code2Icon /></Button>
       {/if}
-      <Button variant="secondary" size="icon" href="/mods/{project.id}" class=""><InfoIcon /></Button>
+      <Button variant="secondary" size="icon" href="/mods/{project.id}" class="" title="More Info"><InfoIcon /></Button>
       {#if showApprovalDialog}
-        <Button variant="destructive" size="icon" onclick={showApprovalDialog} class=""><BadgeAlertIcon /></Button>
+        <Button variant="destructive" size="icon" onclick={showApprovalDialog} class="" title="Show Approval Dialog"><BadgeAlertIcon /></Button>
       {/if}
-      <DownloadButton variant="default" size="icon" downloadType="mod" status={version.status} href={getVersionDownloadUrl(version)} class=""><DownloadIcon /></DownloadButton>
+      <DownloadButton variant="default" size="icon" downloadType="mod" status={version.status} href={getVersionDownloadUrl(version)} class="" title="Download Mod"><DownloadIcon /></DownloadButton>
     </div>
   </div>
 </div>

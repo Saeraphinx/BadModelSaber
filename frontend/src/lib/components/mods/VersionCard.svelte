@@ -2,9 +2,10 @@
   import { Status, type GameVersionApiV3, type VersionApiV3 } from "$lib/scripts/from_backend/DBExtras";
   import { getRelativeTimeString } from "$lib/scripts/utils/stylizer";
   import * as Accordion from "$shadcn/components/ui/accordion/index";
-  import { BadgeInfoIcon, FileCodeIcon, FolderIcon, InfoIcon, Link2Icon, LinkIcon, ServerCogIcon } from "@lucide/svelte";
+  import { BadgeInfoIcon, DownloadIcon, FileCodeIcon, FolderIcon, InfoIcon, Link2Icon, LinkIcon, MegaphoneIcon, ServerCogIcon, SquarePenIcon } from "@lucide/svelte";
   import ApprovalDialog from "../dialogs/ApprovalDialog.svelte";
   import CodeDialog from "../dialogs/CodeDialog.svelte";
+  import ReportDialog from "../dialogs/ReportDialog.svelte";
   import StatusHoverCard from "../generic/StatusHoverCard.svelte";
   import { getVersionDecompUrl, getVersionDownloadUrl, getVersionManifestUrl, parseErrorMessage, trpc } from "$lib/scripts/utils/api";
   import Spinner from "$shadcn/components/ui/spinner/spinner.svelte";
@@ -22,6 +23,7 @@
     showUserQueueOptions = false,
     showStatusHistory,
     approvalDialog,
+    reportDialog,
     codeDialog,
     isEditable = false,
     gameVersions = $bindable([]),
@@ -32,6 +34,7 @@
     showStatusHistory?: boolean;
     approvalDialog?: ApprovalDialog;
     codeDialog?: CodeDialog;
+    reportDialog?: ReportDialog;
     isEditable?: boolean;
     gameVersions?: GameVersionApiV3[];
     id?: string;
@@ -46,15 +49,17 @@
     });
   }
 
-  async function showCode(type: "code" | "manifest") {
+  async function showCode(type: "code" | "manifest" | "files") {
     let data = `No data available.`;
     if (codeDialog) {
       if (type === "code")
         data = await fetch(getVersionDecompUrl(version)).then(res => res.ok ? res.text() : `Failed to fetch code: ${res.statusText}`);
       else if (type === "manifest")
         data = await fetch(getVersionManifestUrl(version)).then(res => res.ok ? res.text() : `Failed to fetch manifest: ${res.statusText}`);
+      else if (type === "files")
+        data = JSON.stringify(version.contentHashes);
       if (data === "null" || data.trim() === "") data = `No data available.`;
-      codeDialog.showDialog(data, type === "code" ? `cs` : `json`, Boolean(approvalDialog),  type === "code" ? getVersionDecompUrl(version) : getVersionManifestUrl(version));
+      codeDialog.showDialog(data, type === "code" ? `cs` : `json`, Boolean(approvalDialog),  type === "code" ? getVersionDecompUrl(version) : getVersionManifestUrl(version), approvalDialog && type === "code" ? version.id : undefined);
     }
   }
 
@@ -133,7 +138,7 @@
     <span class="flex flex-row items-center gap-1">
       <!-- <Button variant="ghost" size="sm" href="/mods/{version.projectId}#{version.id}" class="has-[>svg]:px-1 h-6"><Link2Icon class="text-gray-400"/></Button> -->
       <p title={new Date(version.createdAt).toISOString()} class="text-sm text-gray-500">{getRelativeTimeString(new Date(version.createdAt))}</p>
-      <StatusHoverCard status={version.status} type="mod" countdownDate={version.testingAutoVerifyTime} />
+      <StatusHoverCard status={version.status} type="mod" countdownDate={version.nextStatusChangeTime} />
     </span>
   </div>
   <div class="flex flex-col items-center">
@@ -142,7 +147,7 @@
         <Accordion.Trigger class="text-sm font-normal p-0.5">
           <span class="flex flex-row items-center gap-1">
             <ServerCogIcon class="h-4 w-4" />
-            {m["mods.dataTable.supportedGameVersions"]()}
+            {m["common.dataTable.supportedGameVersions"]()}
           </span>
         </Accordion.Trigger>
         <Accordion.Content class="p-2">
@@ -172,7 +177,7 @@
         <Accordion.Trigger class="text-sm font-normal p-0.5">
           <span class="flex flex-row items-center gap-1">
             <FolderIcon class="h-4 w-4" />
-            {m["mods.dataTable.dependencies"]()}
+            {m["common.dataTable.dependencies"]()}
           </span>
         </Accordion.Trigger>
         <Accordion.Content class="p-2">
@@ -193,7 +198,7 @@
                 {/each}
               {/await}
             {:else}
-              <p class="text-sm text-gray-500">{m[`mods.dataTable.noDependencies`]()}</p>
+              <p class="text-sm text-gray-500">{m[`common.dataTable.noDependencies`]()}</p>
             {/if}
           </div>
         </Accordion.Content>
@@ -203,16 +208,19 @@
           <Accordion.Trigger class="text-sm font-normal p-0.5">
             <span class="flex flex-row items-center gap-1">
               <FileCodeIcon class="h-4 w-4" />
-              {m["mods.dataTable.filesAndManifest"]()}
+              {m["common.dataTable.filesAndManifest"]()}
             </span>
           </Accordion.Trigger>
           <Accordion.Content class="p-2">
             <div class="flex flex-row flex-wrap gap-2 justify-center">
               <Button variant="outline" size="sm" onclick={() => showCode("code")}>
-                {m[`mods.dataTable.viewCode`]()}
+                {m[`common.dataTable.viewCode`]()}
               </Button>
               <Button variant="outline" size="sm" onclick={() => showCode("manifest")}>
-                {m[`mods.dataTable.viewManifest`]()}
+                {m[`common.dataTable.viewManifest`]()}
+              </Button>
+              <Button variant="outline" size="sm" onclick={() => showCode("files")}>
+                {m[`common.dataTable.viewFiles`]()}
               </Button>
             </div>
           </Accordion.Content>
@@ -223,7 +231,7 @@
           <Accordion.Trigger class="text-sm font-normal p-0.5">
             <span class="flex flex-row items-center gap-1">
               <BadgeInfoIcon class="h-4 w-4" />
-              {m[`mods.dataTable.approvalHistory`]()}
+              {m[`common.dataTable.approvalHistory`]()}
             </span>
           </Accordion.Trigger>
           <Accordion.Content class="flex flex-col justify-center p-2">
@@ -264,17 +272,18 @@
         <Accordion.Trigger class="text-sm font-normal p-0.5">
           <span class="flex flex-row items-center gap-1">
             <InfoIcon class="h-4 w-4" />
-            {m[`mods.dataTable.details`]()}
+            {m[`common.dataTable.details`]()}
           </span>
         </Accordion.Trigger>
         <Accordion.Content class="p-2">
           <div class="flex flex-row flex-wrap gap-1">
             {#each [
-              {title: m["mods.dataTable.id"]()  , content: `${version.id}`},
-              {title: m["mods.dataTable.uploadedBy"](), content: `${version.uploaderId}`},
-              {title: m["mods.dataTable.fileCount"](), content: `${version.contentHashes.length}`},
-              {title: m["mods.dataTable.platform"](), content: `${version.platform}`},
-              {title: m["mods.dataTable.lastUpdated"](), content: `${new Date(version.updatedAt).toLocaleDateString()}`, tooltip: `${new Date(version.updatedAt).toLocaleString()}`}
+              {title: m["common.dataTable.id"]()  , content: `${version.id}`},
+              {title: m["common.dataTable.fileSize"](), content: `${version.fileSize > (1024 * 1024) ? `${(version.fileSize / (1024 * 1024)).toFixed(2)} MB` : `${(version.fileSize / 1024).toFixed(2)} KB`}`},
+              {title: m["common.dataTable.fileCount"](), content: `${version.contentHashes.length}`},
+              {title: m["common.dataTable.uploadedBy"](), content: `${version.uploaderId}`},
+              {title: m["common.dataTable.platform"](), content: `${version.platform}`},
+              {title: m["common.dataTable.lastUpdated"](), content: `${new Date(version.updatedAt).toLocaleDateString()}`, tooltip: `${new Date(version.updatedAt).toLocaleString()}`}
               ] as item}
               <div class="flex flex-row text-sm bg-accent p-0.5 px-1 gap-0.5 rounded-md">
                 <p class="text-sm text-muted-foreground">{item.title}:</p>
@@ -296,13 +305,23 @@
            </Button>
         {:else}
           <Button variant="outline" size="sm" onclick={() => isEditing = !isEditing}>
+            <SquarePenIcon class="h-4 w-4" />
             {m[`dialogs.edit`]()}
           </Button>
         {/if}
       {/if}
-      <DownloadButton variant="outline" size="sm" downloadType="mod" status={version.status} href={getVersionDownloadUrl(version)}>
-        {m[`common.buttons.download`]()} ({version.fileSize > (1024 * 1024) ? `${(version.fileSize / (1024 * 1024)).toFixed(2)} MB` : `${(version.fileSize / 1024).toFixed(2)} KB`})
-      </DownloadButton>
+      {#if !isEditing}
+        {#if reportDialog && !isEditable}
+          <Button variant="outline" size="sm" onclick={() => reportDialog?.showDialog(version.id, version.semver, `version`)}>
+            <MegaphoneIcon class="h-4 w-4" />
+            {m[`common.buttons.report`]()}
+          </Button>
+        {/if}
+        <DownloadButton variant="outline" size="sm" downloadType="mod" status={version.status} href={getVersionDownloadUrl(version)}>
+          <DownloadIcon class="h-4 w-4" />
+          {m[`common.buttons.download`]()}
+        </DownloadButton>
+      {/if}
     </div>
   </div>
 </div>

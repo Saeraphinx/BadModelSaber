@@ -7,11 +7,22 @@ import type { PageLoad } from "./$types.js";
 export const load: PageLoad = async ({ parent }) => {
   let parentData = await parent();
   if (!parentData.user) {
-    return error(401, {message: 'You must be logged in to view this page', redirectToHome: true});
+    return error(401, { message: 'You must be logged in to view this page', redirectToHome: true });
   }
 
-  if (!checkRoles(parentData.user, [UserPermissions.Administrative_Tasks, UserPermissions.Users_EditAllRoles])) {
-    return error(403, {message: 'You do not have permission to view this page'});
+  if (!checkRoles(parentData.user, {
+    hasOneOf: [
+      UserPermissions.Administrative_Tasks,
+      UserPermissions.Mods_Approval,
+      UserPermissions.Game_Create,
+      UserPermissions.Game_Edit,
+      UserPermissions.Game_EditVersions,
+      UserPermissions.Game_ViewExtras,
+      UserPermissions.Users_Ban,
+      UserPermissions.Users_EditAllRoles
+    ]
+  }, `any`)) {
+    return error(403, { message: 'You do not have permission to view this page' });
   }
 
   return {

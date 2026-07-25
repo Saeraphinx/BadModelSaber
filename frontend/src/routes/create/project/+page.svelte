@@ -11,7 +11,7 @@
   import { toast } from "svelte-sonner";
   import * as HoverCard from "../../../lib/shadcn/components/ui/hover-card/index.js";
   import { InfoIcon } from "@lucide/svelte";
-  import { isRedirect, redirect } from "@sveltejs/kit";
+  import { goto } from "$app/navigation";
 
   const { data: _internal } = $props();
   const { trpc } = $derived(_internal);
@@ -131,7 +131,7 @@
       });
     });
     if (newProject) {
-      throw redirect(303, `/mods/${newProject.id}`);
+      goto(`/mods/${newProject.id}`);
     }
   }
 </script>
@@ -145,12 +145,12 @@
     <!-- left side -->
     <div class="flex flex-col justify-center w-full max-w-md p-4 gap-2 bg-card rounded-lg shadow-md">
       <span>
-        <Label class="p-1 pb-2" for="name">{m["mods.dataTable.name"]()}</Label>
+        <Label class="p-1 pb-2" for="name">{m["common.dataTable.name"]()}</Label>
         <Input bind:value={projectName} aria-invalid={!isNameValid} id="name" />
       </span>
       <span>
         <Label class="p-1 pb-2" for="summary">
-          {m["mods.dataTable.nameId"]()}
+          {m["common.dataTable.nameId"]()}
           <HoverCard.Root>
             <HoverCard.Trigger class="">
               <InfoIcon class="h-4 w-4 text-gray-500" />
@@ -163,7 +163,7 @@
         <Input bind:value={projectNameId} aria-invalid={!isNameIdValid} id="summary" placeholder={projectName.replaceAll(` `, ``)} />
       </span>
       <span>
-        <Label class="p-1 pb-2" for="game">{m["mods.dataTable.game"]()}</Label>
+        <Label class="p-1 pb-2" for="game">{m["common.dataTable.game"]()}</Label>
         <Select.Root type="single" bind:value={projectGameName}>
           <Select.Trigger class="w-full">
             {selectedGame ? selectedGame.displayName : ""}
@@ -176,7 +176,7 @@
         </Select.Root>
       </span>
       <span>
-        <Label class="p-1 pb-2" for="category">{m["mods.dataTable.category"]()}</Label>
+        <Label class="p-1 pb-2" for="category">{m["common.dataTable.category"]()}</Label>
         <Select.Root type="single" bind:value={projectCategory}>
           <Select.Trigger class="w-full">
             {projectCategory}
@@ -189,7 +189,7 @@
         </Select.Root>
       </span>
       <span>
-        <Label class="p-1 pb-2" for="gitUrl">{m["mods.dataTable.sourceUrl"]()}</Label>
+        <Label class="p-1 pb-2" for="gitUrl">{m["common.dataTable.sourceUrl"]()}</Label>
         <Input bind:value={projectGitUrl} aria-invalid={!isGitUrlValid} id="gitUrl" />
       </span>
     </div>
@@ -204,7 +204,7 @@
     </div>
     <div class="flex flex-col justify-center w-full max-w-md p-4 bg-card rounded-lg shadow-md mt-4">
       <!-- value is the first file in the files array -->
-      <Label class="p-1 pb-2" for="thumbnail">{m["mods.dataTable.icon"]()}</Label>
+      <Label class="p-1 pb-2" for="thumbnail">{m["common.dataTable.icon"]()}</Label>
       <Input id="thumbnail" aria-invalid={!isThumbnailValid} type="file" bind:files={projectThumbnail} accept=".png,.jpeg,.webp,.gif" />
       <p class="text-sm text-muted-foreground mt-2 pl-1">{m["mods.createProject.thumbnailFooter"]()}</p>
     </div>
@@ -213,11 +213,11 @@
     <!-- right side -->
     <div class="flex flex-col justify-center w-full max-w-2xl p-4 gap-2 bg-card rounded-lg shadow-md">
       <span>
-        <Label class="p-1 pb-2" for="summary">{m["mods.dataTable.summary"]()}</Label>
+        <Label class="p-1 pb-2" for="summary">{m["common.dataTable.summary"]()}</Label>
         <Textarea class="min-h-10 max-h-27 h-10" bind:value={projectSummary} aria-invalid={!isSummaryValid} id="summary" />
       </span>
       <span>
-        <Label class="p-1 pb-2" for="description">{m["mods.dataTable.description"]()}</Label>
+        <Label class="p-1 pb-2" for="description">{m["common.dataTable.description"]()}</Label>
         <Textarea class="min-h-64" bind:value={projectDescription} aria-invalid={!isDescriptionValid} id="description" />
       </span>
     </div>

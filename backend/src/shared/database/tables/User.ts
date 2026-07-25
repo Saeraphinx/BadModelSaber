@@ -1,6 +1,6 @@
 import { AfterValidate, AllowNull, BelongsToMany, Column, CreatedAt, DataType, Default, DeletedAt, Model, Table, Unique, UpdatedAt } from "sequelize-typescript";
 import { CreationAttributes, CreationOptional, InferAttributes, InferCreationAttributes, NonAttribute, Op, Sequelize, WhereOptions } from "sequelize";
-import { AlertType, UserPlatform, UserApiV3, UserPermissions, PlatformType, UserPublicApiV2, dbId, userPermissionsSchema, userPlatformSchema, Status } from "../DBExtras.ts";
+import { AlertType, UserPlatform, UserApiV3, UserPermissions, PlatformType, UserPublicApiV2, dbId, userPermissionsSchema, userPlatformSchema, Status, RequestType, WebhookLogType } from "../DBExtras.ts";
 import { Alert } from "./Alert.ts";
 import { Logger } from "../../Logger.ts";
 import z from "zod";
@@ -13,6 +13,8 @@ import { Translation } from "./Translation.ts";
 import { Project } from "./Project.ts";
 import { ProjectAuthor } from "./Junctions.ts";
 import sequelize from "sequelize/lib/sequelize";
+import { WebhookPayloadGenerator, Webhooks } from "../../Webhooks.ts";
+import { Game } from "./Game.ts";
 
 export const DefaultPermissions = [UserPermissions.Asset_Create, UserPermissions.Mods_Create, UserPermissions.Users_EditSelf];
 export const DefaultPermissionsObject = {
@@ -387,6 +389,42 @@ export class User extends Model<InferAttributes<User>, InferCreationAttributes<U
 
         await Promise.all(migrationPromises);
     }
+
+    // #region Reports
+    public async report(reportedBy: User, reason: string): Promise<ThingRequest> {
+        let existingRequests = await ThingRequest.findAll({
+            where: {
+                requestResponseBy: null,
+                refrencedId: this.id,
+                requestType: RequestType.User_Report
+            }
+        });
+
+        if (existingRequests.length > 0) {
+            Logger.log(`User ${reportedBy.id} attempted to report user ${this.id} but a report already exists.`);
+            return existingRequests[0];
+        }
+
+        Logger.log(`Creating report request for user ${this.id} by user ${reportedBy.id} for reason: ${reason}`);
+        return await ThingRequest.create({
+            refrencedId: this.id,
+            requesterId: reportedBy.id,
+            requestType: RequestType.User_Report,
+            requestResponseBy: null,
+            messages: [{
+                userId: reportedBy.id,
+                message: reason,
+                timestamp: new Date().toISOString(),
+            }],
+        }).then(async (request) => {
+            Webhooks.sendWebhookLog((await Game.defaultGame).name, WebhookLogType.NewReport, false, WebhookPayloadGenerator.generateNewReportEmbedPayload(request, this, reportedBy, reason));
+            return request;
+        }).catch(err => {
+            Logger.error(`Failed to create report request for user ${this.id} by user ${reportedBy.id}: ${err}`);
+            throw err;
+        });
+    }
+    // #endregion
 
     public toApiV3(): UserApiV3 {
         return {

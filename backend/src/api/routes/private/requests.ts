@@ -1,5 +1,5 @@
 
-import { Asset, ThingRequest,  RequestType, UserPermissions, dbId, ThingRequestInfer } from "../../../shared/Database.ts";
+import { Asset, ThingRequest,  RequestType, UserPermissions, dbId, ThingRequestInfer, Version, Project, User } from "../../../shared/Database.ts";
 import { z } from "zod/v4";
 import { Op, WhereOptions } from "sequelize";
 import { loggedInProcedure, router } from "../../trpc.ts";
@@ -104,17 +104,34 @@ export const RequestRouter = router({
         }
         throw new TRPCError({ code: `BAD_REQUEST`, message: `Invalid action` });
     }),
-    reportAsset: loggedInProcedure().input(z.object({
-        assetId: dbId,
+    reportThing: loggedInProcedure({ denied: [UserPermissions.C_Banned]}).input(z.object({
+        thingId: dbId,
+        thingType: z.enum([`asset`, `version`, `project`, `user`]),
         reason: z.string().min(3).max(1000),
     })).mutation(async ({ input, ctx }) => {
-        let asset = await Asset.findByPk(input.assetId);
-        if (!asset) {
-            throw new TRPCError({ code: `NOT_FOUND`, message: `Asset not found` });
+        let thing: Asset | Version | Project | User | null = null;
+        switch (input.thingType) {
+            case `asset`:
+                thing = await Asset.findByPk(input.thingId);
+                break;
+            case `version`:
+                thing = await Version.findByPk(input.thingId);
+                break;
+            case `project`:
+                thing = await Project.findByPk(input.thingId);
+                break;
+            case `user`:
+                thing = await User.findByPk(input.thingId);
+                break;
+            default:
+                throw new TRPCError({ code: `BAD_REQUEST`, message: `Invalid thing type` });
+        }
+        if (!thing) {
+            throw new TRPCError({ code: `NOT_FOUND`, message: `${input.thingType} not found` });
         }
 
-        let assetReq = await asset.report(ctx.user, input.reason).catch(handleCatch());
-        return await assetReq.toApiV3().catch(handleCatch());;
+        let thingReq = await thing.report(ctx.user, input.reason).catch(handleCatch());
+        return await thingReq.toApiV3().catch(handleCatch());
     })
 });
 

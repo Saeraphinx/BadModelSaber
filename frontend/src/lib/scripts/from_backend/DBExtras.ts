@@ -92,6 +92,7 @@ export enum Status {
   Removed = 'removed', // rejected by moderators
   Private = 'private', // only uploader & collaborators can see
   Queue = 'queue', // pending review by moderators (default for asset bundles)
+  NonDefault_Testing = 'non_default_testing', // a version that is in testing status but for a non-default configuration
   Testing = 'testing', // approved but needs to be tested by testers before being verified
   Unverified = 'unverified', // approved but not yet verified by mods (default for everything else)
   Verified = 'verified', // approved & verified by mods
@@ -227,6 +228,7 @@ export enum UserPermissions {
   Game_EditVersions = "game_edit_versions", // User can create/edit game versions
 
   Administrative_Tasks = "administrative_tasks", // User can perform high-level admin tasks
+  Advanced_Admin_Tasks = "advanced_admin_tasks", // User can perform advanced/dangerous admin tasks
 
   Secret_Features = "secret_features", // User can access secret features that enabled by inputting a specific code.
 
@@ -606,7 +608,7 @@ export const versionApiV3Schema = z.object({
   statusHistory: z.array(statusHistorySchema),
   baseFileName: z.string(),
   downloadUrl: z.url(),
-  testingAutoVerifyTime: z.iso.datetime().nullable(),
+  nextStatusChangeTime: z.iso.datetime().nullable(),
   fileSize: z.number(),
   createdAt: z.date(),
   updatedAt: z.date(),

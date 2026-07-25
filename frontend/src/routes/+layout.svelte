@@ -130,9 +130,10 @@
   let openAlerts = $state(false);
   let showRead = $state(false);
   let allAlerts = $state<AlertApiV3[]>([]);
+  let hasGottenAlerts = $state(false);
   let isLoadingAlerts = $state(false);
   let unreadAlertCount = $derived.by(() => {
-    return allAlerts.filter((alert) => !alert.read).length;
+    return hasGottenAlerts ? allAlerts.filter((alert) => !alert.read).length : alertCount;
   });
   let hasUnreadAlerts = $derived(unreadAlertCount > 0);
   async function updateAlerts() {
@@ -153,6 +154,7 @@
   }
   async function openAlertsSidebar() {
     openAlerts = true;
+    hasGottenAlerts = true;
     await updateAlerts();
   }
   // #endregion Alerts
@@ -249,8 +251,8 @@
       target: undefined,
       children: [
         { href: "/mods", label: m["layout.navbar.mods.browseMods"]() },
-        { href: "https://bsmg.wiki/mods/getting-started", label: m["layout.navbar.mods.beatsaberBeginngersGuide"](), target: "_blank" },
-        { href: "https://bsmg.wiki/mods/creating-mods", label: m["layout.navbar.mods.moddersGuide"](), target: "_blank" },
+        { href: "https://bsmg.wiki/beginners-guide.html", label: m["layout.navbar.mods.beatsaberBeginngersGuide"](), target: "_blank" },
+        { href: "https://bsmg.wiki/modding", label: m["layout.navbar.mods.moddersGuide"](), target: "_blank" },
         { href: "https://github.com/Saeraphinx/BadModelSaber/blob/main/mod-approval-guidelines.md", label: m["layout.navbar.mods.pcApprovalGuide"](), target: "_blank" },
         { href: "/mods/compare", label: m["layout.navbar.mods.compareVersions"]() },
       ],
@@ -416,7 +418,16 @@
                 {m["layout.userMenu.requests"]()}
               </DropdownMenu.Item>
             </a>
-            {#if checkRoles(user, [UserPermissions.Administrative_Tasks], `any`)}
+            {#if checkRoles(user, { hasOneOf: [
+              UserPermissions.Administrative_Tasks, 
+              UserPermissions.Mods_Approval, 
+              UserPermissions.Game_Create, 
+              UserPermissions.Game_Edit,
+              UserPermissions.Game_EditVersions,
+              UserPermissions.Game_ViewExtras,
+              UserPermissions.Users_Ban,
+              UserPermissions.Users_EditAllRoles
+              ]}, `any`)}
               <a href="/admin">
                 <DropdownMenu.Item>
                   <Settings />

@@ -44,7 +44,14 @@ export const DEFAULT_CONFIG = {
         schema: `public`, // the database schema to use
     },
     gaf: {
-        testingAutoVerifyTime: 1000 * 60 * 60 * 24 * 14, // how long to wait before automatically verifying a version in testing status in milliseconds (default: 14 days)
+        howOftenToRunStatusCheck: 1000 * 5,
+        verifiedTestingAutomaticTime: 1000 * 60,
+        nonDefaultQueueToTestingAutomaticTime: 1000 * 60 * 2,
+        oldTestingToVerifiedAutomaticTime: 1000 * 60 * 3,
+        // howOftenToRunStatusCheck: 1000 * 60 * 60, // every hour
+        // verifiedTestingAutomaticTime: 1000 * 60 * 60 * 24 * 14, // how long to wait before automatically verifying a version in testing status in milliseconds
+        // nonDefaultQueueToTestingAutomaticTime: 1000 * 60 * 60 * 24 * 7, // how long to wait before moving an older version from the queue to testing status in milliseconds
+        // oldTestingToVerifiedAutomaticTime: 1000 * 60 * 60 * 24 * 14, // how long to wait before moving an older version from testing to verified status in milliseconds
     }
 }
 

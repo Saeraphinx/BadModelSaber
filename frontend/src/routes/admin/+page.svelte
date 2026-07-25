@@ -21,6 +21,7 @@
   import debounce from "debounce";
   import { invalidateAll } from "$app/navigation";
   import { Separator } from "$shadcn/components/ui/separator";
+  import { SemVer } from "semver";
 
   const { data: _internal } = $props();
   // svelte-ignore state_referenced_locally
@@ -344,7 +345,7 @@
       <p class="text-sm text-muted-foreground">Loading Admin Data...</p>
     {:then adminStatus}
       {#if adminStatus}
-        <p class="text-sm text-muted-foreground">DB Status: {adminStatus.dbConnectionOK ?? `Unknown`} | BE Version: {adminStatus.version} | Signed in as {adminStatus.discordTokenUser?.username}#{adminStatus.discordTokenUser?.discriminator}</p>
+        <p class="text-sm text-muted-foreground">Database Status: {adminStatus.dbConnectionOK ?? `Unknown`} | Hash: <a target="_blank" href="https://github.com/Saeraphinx/BadModelSaber/commit/{adminStatus.version}">{adminStatus.version}</a> | Signed in as {adminStatus.discordTokenUser?.username}#{adminStatus.discordTokenUser?.discriminator}</p>
       {:else}
         <p class="text-sm text-red-500">Unable to fetch admin status.</p>
       {/if}
@@ -537,11 +538,11 @@
             </Tabs.Content>
           </Tabs.Root>
         </div>
-        <div class="flex flex-col items-center p-4 bg-accent rounded-lg w-[300px]">
+        <div class="flex flex-col items-center p-4 gap-4 bg-accent rounded-lg w-[300px]">
           <p>One-Shots</p>
           <Button
-            class="mt-4 mb-2 w-full"
             disabled={!isDev}
+            variant="destructive"
             onclick={() => {
               trpc.internal.admin.dev.importOldModelSaberData
                 .mutate()
@@ -554,8 +555,8 @@
                 });
             }}>Import Old ModelSaber Data</Button>
           <Button
-            class="mt-4 mb-2 w-full"
             disabled={!isDev}
+            variant="destructive"
             onclick={() => {
               trpc.internal.admin.dev.importFromBeatmods
                 .mutate()
@@ -569,7 +570,6 @@
             }}>Import From BadBeatMods</Button>
           <Button
             variant="destructive"
-            class="mt-4 mb-2 w-full"
             disabled={!isDev}
             onclick={() => {
               trpc.internal.admin.dev.importFakeData
@@ -583,8 +583,7 @@
                 });
             }}>Import Fake Data</Button>
           <Button
-            variant="destructive"
-            class="mt-4 mb-2 w-full"
+            variant="outline"
             disabled={!isDev}
             onclick={() => {
               trpc.internal.admin.dev.impersonateTestUser
@@ -598,6 +597,20 @@
                   toast.error("Failed to impersonate test user.", { description: parseErrorMessage(err) });
                 });
             }}>Impersonate Test User</Button>
+          <Button
+            variant="destructive"
+            disabled={!isDev}
+            onclick={() => {
+              trpc.internal.admin.dev.recalcAutomaticStatusChangeTimes
+                .mutate()
+                .then(() => {
+                  toast.success("Automatic status change times recalculated successfully.");
+                })
+                .catch((err) => {
+                  console.error(err);
+                  toast.error("Failed to recalculate automatic status change times.", { description: parseErrorMessage(err) });
+                });
+            }}>Recalc Automatic Status Change Times</Button>
         </div>
       </div>
     </Tabs.Content>
@@ -896,7 +909,7 @@
           <Select.Trigger class="w-[180px]">{aqSelectedGameVersionString ?? `Select a version...`}</Select.Trigger>
           <Select.Content>
             <Select.Item value="All Versions">All Versions</Select.Item>
-            {#each new Set([...aqModsInApprovalQueue.map(mod => mod.version.supportedGameVersions.map(v => v.version)).flat()]).values() as version}
+            {#each Array.from(new Set([...aqModsInApprovalQueue.map(mod => mod.version.supportedGameVersions.map(v => v.version)).flat()])).sort((a, b) => new SemVer(a).compare(b)) as version}
               <Select.Item value={version}>{version}</Select.Item>
             {/each}
           </Select.Content>
@@ -908,12 +921,12 @@
             project={mod.project}
             version={mod.version}
             showNonAuthorWarning
-            showApprovalDialog={() => approvalDialog?.showDialog(mod.version.id, mod.project.name, `version`)}
+            showApprovalDialog={() => approvalDialog?.showDialog(mod.version.id, mod.project.name, `version`, mod.version.status)}
             showCodeDialog={() => {
               fetch(getVersionDecompUrl(mod.version))
                 .then((res) => res.text())
                 .then((code) => {
-                  codeDialog?.showDialog(code, `cs`, true, getVersionDecompUrl(mod.version));
+                  codeDialog?.showDialog(code, `cs`, true, getVersionDecompUrl(mod.version), mod.version.id);
                 })
                 .catch((err) => {
                   console.error(err);

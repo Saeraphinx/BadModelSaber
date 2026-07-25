@@ -13,11 +13,9 @@
     // Determine preview type based on asset type
     switch (props.asset.type) {
       case AssetFileFormat.Banner_Png:
-        isPreviewLoaded = true;
         return "image";
       case AssetFileFormat.Sound_Mp3:
       case AssetFileFormat.Sound_Ogg:
-        isPreviewLoaded = true;
         return "audio";
       case AssetFileFormat.HSVConfig_JSON:
         return "hsv";
@@ -39,6 +37,9 @@
           isPreviewLoaded = true;
           return data;
         });
+    } else {
+      isPreviewLoaded = true;
+      return null;
     }
   }
 </script>

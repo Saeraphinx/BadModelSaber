@@ -136,6 +136,9 @@ export const AdminRouter = router({
                 throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: `Error updating version status: ${parseErrorMessage(err)}` });
             });
         }),
+        startDecompileVersion: loggedInVersionProcedure({ hasOneOf: [UserPermissions.Mods_Approval] }).mutation(async ({ input, ctx }) => {
+            await ctx.version.dotnetDecompile().catch(handleCatch(`starting decompile for version`));
+        }),
     },
     game: {
         createGame: loggedInProcedure([UserPermissions.Game_Create]).input(z.object({
@@ -244,12 +247,12 @@ export const AdminRouter = router({
         }),
     },
     dev: {
-        importOldModelSaberData: loggedInProcedure([UserPermissions.Administrative_Tasks])
+        importOldModelSaberData: loggedInProcedure([UserPermissions.Advanced_Admin_Tasks])
             .mutation(async ({ input, ctx }) => {
                 Logger.log(`Starting import of old ModelSaber data by admin user ${ctx.userId}`);
                 importFromOldModelSaber();
             }),
-        importFromBeatmods: loggedInProcedure([UserPermissions.Administrative_Tasks])
+        importFromBeatmods: loggedInProcedure([UserPermissions.Advanced_Admin_Tasks])
             .mutation(async ({ input, ctx }) => {
                 Logger.log(`Starting import from Beatmods by admin user ${ctx.userId}`);
                 importFromBadBeatMods();
@@ -286,7 +289,7 @@ export const AdminRouter = router({
                     yield entry;
                 }
             }),
-        importFakeData: loggedInProcedure([UserPermissions.Administrative_Tasks])
+        importFakeData: loggedInProcedure([UserPermissions.Advanced_Admin_Tasks])
             .mutation(async ({ ctx }) => {
                 if (!EnvConfig.isDevMode) {
                     throw new TRPCError({ code: `FORBIDDEN`, message: `Cannot import fake data in a non-development environment.` });
@@ -324,6 +327,34 @@ export const AdminRouter = router({
                 ctx.req.session.userId = testUser[0].id;
                 ctx.req.session.save();
                 return { message: `Impersonated test user successfully` };
-            })
+            }),
+        recalcAutomaticStatusChangeTimes: loggedInProcedure([UserPermissions.Administrative_Tasks]).mutation(async ({ ctx }) => {
+            Logger.log(`Recalculating automatic status change times by admin user ${ctx.userId}`);
+            Version.findAll({
+                where: {
+                    status: [Status.NonDefault_Testing, Status.Testing, Status.Queue]
+                },
+                include: [GameVersion]
+            }).then(versions => {
+                for (const version of versions) {
+                    let hasDefaultGameVersion = version.supportedGameVersions.some(gv => gv.defaultVersion);
+                    if (version.status === Status.Queue) {
+                        if (!hasDefaultGameVersion) {
+                            Logger.debug(`Version ${version.id} is in the queue but has no default game version. Setting next status change time.`);
+                            version.nextStatusChangeTime = new Date(new Date().getTime() + EnvConfig.gaf.nonDefaultQueueToTestingAutomaticTime);
+                        }
+                    } else if (version.status === Status.Testing) {
+                        Logger.debug(`Version ${version.id} is in testing. Setting next status change time.`);
+                        version.nextStatusChangeTime = new Date(new Date().getTime() + EnvConfig.gaf.verifiedTestingAutomaticTime);
+                    } else if (version.status === Status.NonDefault_Testing) {
+                        Logger.debug(`Version ${version.id} is in non-default testing. Setting next status change time.`);
+                        version.nextStatusChangeTime = new Date(new Date().getTime() + EnvConfig.gaf.oldTestingToVerifiedAutomaticTime);
+                    }
+                    version.save();
+                }
+            }).catch(handleCatch(`fetching versions for recalculation`));
+
+            return { message: `Recalculated automatic status change times successfully` };
+        })
     }
 });

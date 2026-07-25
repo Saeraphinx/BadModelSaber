@@ -14,14 +14,17 @@ export function getStatusString(status: Status): string {
 
 export function getStatusAvailableThings(status: Status): string[] {
   switch (status) {
+    case Status.Public:
+      return [`project`];
     case Status.Private:
     case Status.Removed:
-    case Status.Verified:
       return [`asset`, `project`, `version`];
+    case Status.Verified:
     case Status.Queue:
     case Status.Unverified:
       return [`asset`, `version`];
     case Status.Testing:
+    case Status.NonDefault_Testing:
       return [`version`];
   }
 }

@@ -1,4 +1,4 @@
-import { DatabaseManager } from "./shared/Database.ts";
+import { DatabaseManager, Version } from "./shared/Database.ts";
 import { EnvConfig } from "./shared/EnvConfig.ts";
 import express from "express";
 import session, { SessionOptions } from 'express-session';
@@ -185,6 +185,15 @@ export async function init(overrideDbName?: string) {
         console.log(`http://localhost:6001/api/auth/discord`);
     });
 
+    // set up automatic status check for versions
+    setInterval(async () => {
+        try {
+            Version.handleAllStatusUpdates();
+        } catch (err) {
+            Logger.error(`Error running automatic status check: ${err}`);
+        }
+    }, EnvConfig.gaf.howOftenToRunStatusCheck);
+    
     return {
         app, server, db, stop: async () => {
             if (server.listening) {

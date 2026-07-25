@@ -16,7 +16,7 @@
   import * as Tabs from "$shadcn/components/ui/tabs/index.js";
   import Textarea from "$shadcn/components/ui/textarea/textarea.svelte";
   import * as Select from "$shadcn/components/ui/select";
-  import { PlusIcon, UploadIcon } from "@lucide/svelte";
+  import { SquarePenIcon, LanguagesIcon, PlusIcon, UploadIcon, BadgeInfoIcon } from "@lucide/svelte";
   import UserBadge from "$lib/components/users/UserBadge.svelte";
   import UserSelectionDialog from "$lib/components/dialogs/UserSelectionDialog.svelte";
   import { zProject } from "$lib/scripts/from_backend/validators.js";
@@ -264,16 +264,25 @@
     <div class="grid grid-cols-1 not-md:grid-cols-2 not-md:w-full gap-2 ml-auto">
       {#if shouldAllowEdit}
         {#if !isEditing && !isTranslating}
-          <Button variant="outline" class="ml-auto w-full" onclick={() => (isEditing = true)}>{m[`dialogs.edit`]()}</Button>
+          <Button variant="outline" class="ml-auto w-full" onclick={() => (isEditing = true)}>
+            <SquarePenIcon />
+            {m[`dialogs.edit`]()}
+          </Button>
         {/if}
       {/if}
       {#if shouldAllowTranslation}
         {#if !isTranslating && !isEditing}
-          <Button variant="outline" class="ml-auto w-full" onclick={() => (isTranslating = true)}>{m[`dialogs.translate`]()}</Button>
+          <Button variant="outline" class="ml-auto w-full" onclick={() => (isTranslating = true)}>
+            <LanguagesIcon />
+            {m[`dialogs.translate`]()}
+          </Button>
         {/if}
       {/if}
       {#if shouldAllowApproval}
-        <Button variant="outline" class="ml-auto w-full" onclick={() => approvalDialog?.showDialog(project.id, project.name, `project`, project.status)}>{m["common.buttons.approvalDialog"]()}</Button>
+        <Button variant="outline" class="ml-auto w-full" onclick={() => approvalDialog?.showDialog(project.id, project.name, `project`, project.status)}>
+          <BadgeInfoIcon />
+          {m["common.buttons.approvalDialog"]()}
+        </Button>
       {/if}
     </div>
   </div>
@@ -300,23 +309,23 @@
       <!-- Databar -->
       <div class="flex justify-evenly bg-card rounded-md p-4 mb-4">
         <div class="flex flex-col items-center text-center justify-center">
-          <p class="text-sm text-gray-500">{m["mods.dataTable.status"]()}</p>
+          <p class="text-sm text-gray-500">{m["common.dataTable.status"]()}</p>
           <p class="text-base font-bold">{getStatusString(project.status)}</p>
         </div>
         <div class="flex flex-col items-center text-center justify-center">
-          <p class="text-sm text-gray-500">{m["mods.dataTable.game"]()}</p>
+          <p class="text-sm text-gray-500">{m["common.dataTable.game"]()}</p>
           <p class="text-base font-bold">{game.displayName}</p>
         </div>
         <div class="flex flex-col items-center text-center justify-center">
-          <p class="text-sm text-gray-500">{m["mods.dataTable.category"]()}</p>
+          <p class="text-sm text-gray-500">{m["common.dataTable.category"]()}</p>
           <p class="text-base font-bold">{project.category}</p>
         </div>
         <div class="flex flex-col items-center text-center justify-center">
-          <p class="text-sm text-gray-500">{m["mods.dataTable.moreInfo"]()}</p>
-          <a class="text-base font-bold hover:text-blue-400 transition-colors" href={project.gitUrl}>{m["mods.dataTable.sourceUrl"]()}</a>
+          <p class="text-sm text-gray-500">{m["common.dataTable.moreInfo"]()}</p>
+          <a class="text-base font-bold hover:text-blue-400 transition-colors" href={project.gitUrl} target="_blank" rel="noopener noreferrer">{project.gitUrl.startsWith("https://github.com") ? m["common.dataTable.sourceUrl"]() : m["common.dataTable.websiteUrl"]()}</a>
         </div>
         <div class="flex flex-col items-center text-center justify-center">
-          <p class="text-sm text-gray-500">{m["mods.dataTable.created"]()}</p>
+          <p class="text-sm text-gray-500">{m["common.dataTable.created"]()}</p>
           <Tooltip.Root>
             <Tooltip.Trigger class="text-base font-bold">
               {getRelativeTimeString(new Date(project.createdAt))}
@@ -331,7 +340,7 @@
       {#if isEditing}
         <div class="flex flex-col gap-4 mx-2">
           <div class="grid grid-cols-[1fr_6fr] gap-2">
-            <Label for="icon">{m[`mods.dataTable.icon`]()}</Label>
+            <Label for="icon">{m[`common.dataTable.icon`]()}</Label>
             <div class="flex flex-row items-center gap-2">
               <Input id="icon" type="file" accept="image/*" bind:files={editedIconFile} />
               <Button
@@ -361,11 +370,11 @@
                 {m["mods.uploadAndSaveIcon"]()} 
               </Button>
             </div>
-            <Label for="summary">{m["mods.dataTable.summary"]()}</Label>
+            <Label for="summary">{m["common.dataTable.summary"]()}</Label>
             <Input id="summary" bind:value={editedSummary} />
-            <Label for="sourceurl">{m["mods.dataTable.sourceUrl"]()}</Label>
+            <Label for="sourceurl">{m["common.dataTable.sourceUrl"]()}</Label>
             <Input id="sourceurl" bind:value={editedGitUrl} />
-            <Label for="category">{m["mods.dataTable.category"]()}</Label>
+            <Label for="category">{m["common.dataTable.category"]()}</Label>
             <Select.Root type="single" bind:value={editedCategory}>
               <Select.Trigger class="w-full" id="category">
                 {editedCategory}
@@ -382,7 +391,7 @@
                 {/each}
               </Select.Content>
             </Select.Root>
-            <Label for="authors">{m["mods.dataTable.authors"]()}</Label>
+            <Label for="authors">{m["common.dataTable.authors"]()}</Label>
             <div class="flex flex-row justify-start items-center gap-2" id="authors">
               {#each editedAuthors as author, index (author.id)}
                 <UserBadge user={author} onClick={() => (editedAuthors = editedAuthors.filter((_, i) => i !== index))} />
@@ -458,7 +467,7 @@
                 </Select.Content>
               </Select.Root>
             </div>
-            <Label for="name">{m[`mods.dataTable.name`]()}</Label>
+            <Label for="name">{m[`common.dataTable.name`]()}</Label>
             <div class="flex flex-row items-center gap-2">
               <Input id="name" bind:value={translationName} />
               <Button disabled={!translatingLanguage || translatingLanguage.trim() === "" || isSaving} onclick={() => onSaveChangesTranslating(`name`)}>
@@ -469,7 +478,7 @@
                 {/if}
               </Button>
             </div>
-            <Label for="summary">{m["mods.dataTable.summary"]()}</Label>
+            <Label for="summary">{m["common.dataTable.summary"]()}</Label>
             <div class="flex flex-row items-center gap-2">
               <Input id="summary" bind:value={translationSummary} />
               <Button disabled={!translatingLanguage || translatingLanguage.trim() === "" || isSaving} onclick={() => onSaveChangesTranslating(`summary`)}>
@@ -511,7 +520,7 @@
                 {#if isSaving}
                   {m["dialogs.saving"]()}
                 {:else}
-                  {m["dialogs.save"]()} ({m["mods.dataTable.description"]()})
+                  {m["dialogs.save"]()} ({m["common.dataTable.description"]()})
                 {/if}
               </Button>
             </div>

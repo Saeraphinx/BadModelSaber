@@ -17,6 +17,7 @@
   import { getRenderingMethodString, getRenderingMethodSupportedGV } from "../../../lib/scripts/utils/stylizer";
   import { onMount } from "svelte";
   import { isRedirect, redirect } from "@sveltejs/kit";
+  import { goto } from "$app/navigation";
 
   let type = $state(AssetFileFormat.Note_Bloq);
   let renderingMethod: string = $state(``);
@@ -94,7 +95,7 @@
       });
 
     if (newAsset) {
-      throw redirect(303, `/assets/${newAsset.id}`);
+      goto(`/assets/${newAsset.id}`);
     }
   }
 
@@ -141,16 +142,16 @@
     <!-- left side -->
     <div class="flex flex-col justify-center w-full max-w-xl p-4 gap-2 bg-card rounded-lg shadow-md" oninput={saveDataToLocalStorage}>
       <span>
-        <Label class="p-1 pb-2" for="name">{m["assets.dataTable.name"]()}</Label>
+        <Label class="p-1 pb-2" for="name">{m["common.dataTable.name"]()}</Label>
         <Input bind:value={name} aria-invalid={!zAsset.shape.name.safeParse(name).success} id="name" />
       </span>
       <span>
-        <Label class="p-1 pb-2" for="type">{m["assets.dataTable.type"]()}</Label>
+        <Label class="p-1 pb-2" for="type">{m["common.dataTable.type"]()}</Label>
         <TypeSelector bind:value={type} id="type" class="w-full" />
       </span>
       {#if AssetTypesWithRenderingMethod.includes(type)}
         <span>
-          <Label class="p-1 pb-2" for="renderingMethod">{m["assets.dataTable.renderingMethod"]()}</Label>
+          <Label class="p-1 pb-2" for="renderingMethod">{m["common.dataTable.renderingMethod"]()}</Label>
           <RadioGroup.Root bind:value={renderingMethod} class="flex flex-row flex-wrap">
             {#each Object.entries(RenderingModes) as mode}
               {#if mode[1] !== RenderingModes.Unknown}
@@ -169,27 +170,27 @@
         </span>
       {/if}
       <span>
-        <Label class="p-1 pb-2" for="description">{m["assets.dataTable.description"]()}</Label>
+        <Label class="p-1 pb-2" for="description">{m["common.dataTable.description"]()}</Label>
         <Textarea class="min-h-32" bind:value={description} aria-invalid={!zAsset.shape.description.safeParse(description).success} id="description" />
       </span>
       <span>
-        <Label class="p-1 pb-2" for="license">{m["assets.dataTable.license"]()}</Label>
+        <Label class="p-1 pb-2" for="license">{m["common.dataTable.license"]()}</Label>
         <LicenseSelector bind:value={license} id="license" />
       </span>
       {#if license === "custom"}
         <span>
-          <Label class="p-1 pb-2" for="custom-license">{m["assets.dataTable.customLicense"]()}</Label>
+          <Label class="p-1 pb-2" for="custom-license">{m["common.dataTable.customLicense"]()}</Label>
           <Input bind:value={customLicense} aria-invalid={!zAsset.shape.licenseUrl.safeParse(customLicense).success} id="custom-license" />
         </span>
       {/if}
       <span>
-        <Label class="p-1 pb-2" for="tags">{m["assets.dataTable.tags"]()}</Label>
+        <Label class="p-1 pb-2" for="tags">{m["common.dataTable.tags"]()}</Label>
         <div class="flex flex-row items-center justify-between">
           <div class="flex flex-wrap gap-2 pl-1">
             {#each tags as tag}
               <TagBadge {tag} />
             {:else}
-              <span class="text-muted-foreground">{m["assets.dataTable.noTags"]()}</span>
+              <span class="text-muted-foreground">{m["common.dataTable.noTags"]()}</span>
             {/each}
           </div>
           <Button variant="secondary" onclick={() => (openTagPicker = true)}>

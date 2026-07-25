@@ -10,8 +10,10 @@
   let name = $state<string>("");
   let id = $state<number>(0);
   let visible = $state<boolean>(false);
+  let type = $state<`project` | `version` | `user` | `asset`>(`asset`);
 
-  export function showDialog(p_id: number, p_name: string) {
+  export function showDialog(p_id: number, p_name: string, p_type: `project` | `version` | `user` | `asset`) {
+    type = p_type;
     reason = "";
     id = p_id;
     name = p_name;
@@ -19,18 +21,19 @@
   }
 
   function handleSubmit() {
-    console.log(`Reporting asset ${id} with reason: ${reason}`);
-    let res = trpc.internal.requests.reportAsset.mutate({
-        assetId: id,
-        reason: reason,
-      }).then((res) => {
-        console.log(`Successfully reported asset ${id}`);
-        toast.success(m["toasts.success.reportSubmitted"](), {
-          dismissable: true,
-        });
-        visible = false;
-      }).catch((err) => {
-      console.error(`Error reporting asset ${id}:`, err);
+    console.log(`Reporting thing ${id} with reason: ${reason}`);
+    let res = trpc.internal.requests.reportThing.mutate({
+      thingId: id,
+      thingType: type,
+      reason: reason,
+    }).then((res) => {
+      console.log(`Successfully reported ${type} ${id}`);
+      toast.success(m["toasts.success.reportSubmitted"](), {
+        dismissable: true,
+      });
+      visible = false;
+    }).catch((err) => {
+      console.error(`Error reporting ${type} ${id}:`, err);
       toast.error(m["toasts.error.generic"](), {
         description: parseErrorMessage(err),
         dismissable: true,

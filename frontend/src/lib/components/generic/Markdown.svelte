@@ -56,11 +56,42 @@
   );
 
   $effect(() => {
+    DOMPurify.addHook("afterSanitizeAttributes", function (node) {
+      if (node.tagName === "A" && node.hasAttribute("href")) {
+        const href = node.getAttribute("href");
+        if (!href) {
+          node.removeAttribute("href");
+          return;
+        }
+        // If it doesn't start with https://, remove it
+        if (!/^https:\/\//i.test(href)) {
+          node.removeAttribute("href");
+        }
+      }
+
+      // Check <img> tags for relative src
+      if (node.tagName === "IMG" && node.hasAttribute("src")) {
+        const src = node.getAttribute("src");
+        if (!src) {
+          node.removeAttribute("src");
+          return;
+        }
+        // If it doesn't start with https://, remove it
+        if (!/^https:\/\//i.test(src)) {
+          node.removeAttribute("src");
+        }
+      }
+    });
+
     (async () => {
       renderedHtml = DOMPurify.sanitize(await marked.parse(markdown ?? ``), {
         USE_PROFILES: { html: true, svg: true },
       });
     })();
+
+    return () => {
+      DOMPurify.removeAllHooks();
+    };
   });
 </script>
 
@@ -79,7 +110,7 @@
     `[&_.markdown-alert-important]:bg-purple-800/50 [&_.markdown-alert-important]:border-purple-500/50 [&_.markdown-alert-important]:text-purple-100`,
     `[&_.markdown-alert-warning]:bg-orange-800 [&_.markdown-alert-warning]:border-yellow-500 [&_.markdown-alert-warning]:text-yellow-100`,
     `[&_.markdown-alert-caution]:bg-red-800 [&_.markdown-alert-caution]:border-red-500 [&_.markdown-alert-caution]:text-red-100`,
-    enableCodeBg ? `` : `[&_.hljs]:bg-transparent!`,
+    enableCodeBg ? `` : `[&_.hljs]:bg-transparent! prose-pre:bg-black/0! [&_.hljs]:overflow-x-visible! [&_.hljs]:p-0! prose-pre:overflow-x-visible! prose-pre:w-full!`,
     className,
   )}
   {...restProps}>

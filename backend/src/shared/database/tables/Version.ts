@@ -1,6 +1,6 @@
 import { CreationOptional, InferAttributes, InferCreationAttributes, NonAttribute, Op, WhereOptions } from "sequelize";
 import { AfterCreate, AfterUpdate, AfterValidate, AllowNull, BeforeCreate, BeforeValidate, BelongsTo, BelongsToMany, Column, CreatedAt, DataType, Default, DeletedAt, ForeignKey, Model, Sequelize, Table, UpdatedAt } from "sequelize-typescript";
-import { AlertType, ContentHash, ContentHashSchema, Dependency, DependencySchema, ModApiV1, ModVersionsApiv2, Status, StatusHistory, statusHistorySchema, UserPermissions, VersionApiV3, WebhookLogType } from "../DBExtras.ts";
+import { AlertType, ContentHash, ContentHashSchema, Dependency, DependencySchema, ModApiV1, ModVersionsApiv2, RequestType, Status, StatusHistory, statusHistorySchema, UserPermissions, VersionApiV3, WebhookLogType } from "../DBExtras.ts";
 import { SemVer, parse } from "semver";
 import { Project } from "./Project.ts";
 import { User } from "./User.ts";
@@ -16,14 +16,15 @@ import fs from "fs";
 import { decompile } from "@umbranoxio/difflux";
 import { WebhookPayloadGenerator, Webhooks } from "../../Webhooks.ts";
 import { Alert, AlertInfer, AlertTemplates } from "./Alert.ts";
+import { ThingRequest } from "./ThingRequest.ts";
 
 export type VersionInfer = InferAttributes<Version>;
 export type VersionAllowedEdit = Partial<Pick<Version, `semver` | `dependencies`>> & {
     supportedGameVersionIds?: number[];
 };
 export type VersionWhereOptions = WhereOptions<Version>;
-export type VersionValidStatuses = Status.Verified | Status.Unverified | Status.Queue | Status.Testing | Status.Private | Status.Removed;
-export const VersionValidStatusesArray = [Status.Verified, Status.Unverified, Status.Queue, Status.Testing, Status.Private, Status.Removed] as const;
+export type VersionValidStatuses = Status.Verified | Status.Unverified | Status.Queue | Status.Testing | Status.NonDefault_Testing | Status.Private | Status.Removed;
+export const VersionValidStatusesArray = [Status.Verified, Status.Unverified, Status.Queue, Status.Testing, Status.NonDefault_Testing, Status.Private, Status.Removed] as const;
 
 @Table({
     tableName: `versions`,
@@ -124,7 +125,7 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
         allowNull: true,
         defaultValue: null,
         get() {
-            const rawValue = this.getDataValue(`testingAutoVerifyTime`);
+            const rawValue = this.getDataValue(`nextStatusChangeTime`);
             if (rawValue) {
                 return new Date(rawValue);
             } else {
@@ -132,10 +133,10 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
             }
         },
         set(value: Date | null) {
-            this.setDataValue(`testingAutoVerifyTime`, value?.toISOString() ?? null);
+            this.setDataValue(`nextStatusChangeTime`, value?.toISOString() ?? null);
         }
     })
-    declare testingAutoVerifyTime: CreationOptional<Date> | null;
+    declare nextStatusChangeTime: CreationOptional<Date> | null;
 
     @CreatedAt
     declare readonly createdAt: CreationOptional<Date>;
@@ -219,7 +220,7 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
         fileSize: z.number(),
         statusHistory: z.array(statusHistorySchema),
         baseFileName: z.string().min(1).max(128).refine(str => !Version.invalidFileNameChars.test(str), `Invalid charecters`).refine(str => !Version.invalidFileNameWin.test(str), "File name is a reserved Windows name"),
-        testingAutoVerifyTime: z.date().nullable(),
+        nextStatusChangeTime: z.date().nullable(),
         createdAt: z.date(),
         updatedAt: z.date(),
         deletedAt: z.date().nullable(),
@@ -232,7 +233,7 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
         status: Version.validator.shape.status.nullish(),
         statusHistory: Version.validator.shape.statusHistory.nullish(),
         baseFileName: Version.validator.shape.baseFileName.nullish(),
-        testingAutoVerifyTime: Version.validator.shape.testingAutoVerifyTime.nullish(),
+        nextStatusChangeTime: Version.validator.shape.nextStatusChangeTime.nullish(),
         createdAt: Version.validator.shape.createdAt.nullish(),
         updatedAt: Version.validator.shape.updatedAt.nullish(),
         deletedAt: Version.validator.shape.deletedAt.nullish(),
@@ -372,6 +373,7 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
             }, true, [this.uploaderId]);
         })
     }
+    // #endregion
     // #region Getters
     public async getDependencies(gameVersionId?: number): Promise<Version[]> {
         const resolvedGameVersionId = gameVersionId ?? this.supportedGameVersions[0].id;
@@ -412,8 +414,17 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
             this.lastApprovedById = user.id;
         }
 
+        // set next status change time for verified status
         if (newStatus === Status.Testing) {
-            this.testingAutoVerifyTime = new Date(Date.now() + EnvConfig.gaf.testingAutoVerifyTime);
+            this.nextStatusChangeTime = new Date(new Date(Date.now() + EnvConfig.gaf.verifiedTestingAutomaticTime).setHours(0, 0, 0, 0));
+        }
+        // set next status change time for testing status
+        if (newStatus === Status.NonDefault_Testing) {
+            this.nextStatusChangeTime = new Date(new Date(Date.now() + EnvConfig.gaf.oldTestingToVerifiedAutomaticTime).setHours(0, 0, 0, 0));
+        }
+        // set next status change time for queue if no default game version is present
+        if (newStatus === Status.Queue && !this.supportedGameVersions.some(v => v.defaultVersion)) {
+            this.nextStatusChangeTime = new Date(new Date(Date.now() + EnvConfig.gaf.nonDefaultQueueToTestingAutomaticTime).setHours(0, 0, 0, 0));
         }
 
         await this.save().then(() => {
@@ -516,6 +527,11 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
         if (data.dependencies) {
             this.dependencies = data.dependencies;
         }
+        if (this.status === Status.Queue && !this.supportedGameVersions.some(v => v.defaultVersion)) {
+            this.nextStatusChangeTime = new Date(new Date(Date.now() + EnvConfig.gaf.nonDefaultQueueToTestingAutomaticTime).setHours(0, 0, 0, 0));
+        } else {
+            this.nextStatusChangeTime = null;
+        }
         this.lastUpdatedById = user.id;
         await this.save();
         Webhooks.sendWebhookLog((await this.project)?.gameName || `unknown`, WebhookLogType.Text_Edited, false, WebhookPayloadGenerator.generateEditedThingPayload(this, user, this.projectId));
@@ -565,6 +581,86 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
         Logger.info(`Decompilation completed for version id ${this.id}. Decompiled files saved to ${path.join(this.versionFolderPath, `decompiled`)}. Total Time: ${(Date.now() - startTime) / 1000}s`);
     }
     // #endregion
+    // #region Reports
+    public async report(reportedBy: User, reason: string): Promise<ThingRequest> {
+        let project = await this.project;
+        if (!project) {
+            throw new Error(`Project not found for version id ${this.id}`);
+        }
+        let existingRequests = await ThingRequest.findAll({
+            where: {
+                requestResponseBy: this.lastUpdatedById,
+                refrencedId: this.id,
+                requestType: RequestType.Version_Report
+            }
+        });
+
+        if (existingRequests.length > 0) {
+            Logger.log(`User ${reportedBy.id} attempted to report version ${this.id} but a report already exists.`);
+            return existingRequests[0];
+        }
+
+        Logger.log(`Creating report request for version ${this.id} by user ${reportedBy.id} for reason: ${reason}`);
+        return await ThingRequest.create({
+            refrencedId: this.id,
+            requesterId: reportedBy.id,
+            requestType: RequestType.Version_Report,
+            requestResponseBy: null,
+            messages: [{
+                userId: reportedBy.id,
+                message: reason,
+                timestamp: new Date().toISOString(),
+            }],
+        }).then(async (request) => {
+            Webhooks.sendWebhookLog(project.gameName, WebhookLogType.NewReport, false, WebhookPayloadGenerator.generateNewReportEmbedPayload(request, this, reportedBy, reason));
+            return request;
+        }).catch(err => {
+            Logger.error(`Failed to create report request for version ${this.id} by user ${reportedBy.id}: ${err}`);
+            throw err;
+        });
+    }
+    // #endregion
+    // #region Automatic Status Change
+    public static async handleAllStatusUpdates(): Promise<void> {
+        let systemUser = await User.findByPk(5);
+        if (!systemUser) {
+            throw new Error(`System user not found for automatic status updates.`);
+        }
+        Version.findAll({
+            where: {
+                status: [Status.Queue, Status.Testing, Status.NonDefault_Testing]
+            },
+            include: [GameVersion]
+        }).then(async (versions) => {
+            for (const version of versions) {
+                if (version.nextStatusChangeTime && version.nextStatusChangeTime <= new Date()) {
+                    await version.handleStatusUpdate(systemUser);
+                }
+            }
+        });
+    }
+
+    private async handleStatusUpdate(systemUser: User): Promise<void> {
+        let hasDefaultGameVersion = this.supportedGameVersions.some((gv) => gv.defaultVersion);
+        let newStatus = Status.Queue;
+
+        if (this.status == Status.Queue) {
+            if (hasDefaultGameVersion) {
+                return;
+            } else {
+                newStatus = Status.NonDefault_Testing;
+            }
+        } else if (this.status == Status.NonDefault_Testing) {
+            newStatus = Status.Unverified;
+        } else if (this.status == Status.Testing) {
+            newStatus = Status.Verified;
+        }
+
+        if (newStatus !== this.status) {
+            await this.setStatus(newStatus, systemUser, `Automatic Status Change`);
+        }
+    }
+    // #endregion
     // #region ToAPI
     public async toApiV3(): Promise<VersionApiV3> {
         if (!this.supportedGameVersions) {
@@ -587,7 +683,7 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
             statusHistory: this.statusHistory,
             baseFileName: this.baseFileName,
             downloadUrl: this.downloadUrl,
-            testingAutoVerifyTime: this.testingAutoVerifyTime ? this.testingAutoVerifyTime.toISOString() : null,
+            nextStatusChangeTime: this.nextStatusChangeTime ? this.nextStatusChangeTime.toISOString() : null,
             createdAt: this.createdAt,
             updatedAt: this.updatedAt
         };
@@ -607,6 +703,7 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
         switch (this.status) {
             case Status.Queue:
             case Status.Testing:
+            case Status.NonDefault_Testing:
                 translatedStatus = `pending`;
                 break;
             default:

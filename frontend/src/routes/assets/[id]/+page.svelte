@@ -182,17 +182,17 @@
   <div class="mt-4 w-full bg-card rounded-lg border border-border p-4">
     <div class="flex flex-col gap-3 overflow-hidden">
       <div class="flex justify-between items-center">
-        <span class="text-muted-foreground">{m["assets.dataTable.uploadedBy"]()}</span>
+        <span class="text-muted-foreground">{m["common.dataTable.uploadedBy"]()}</span>
         <a href="/users/{pageData.uploaderId}" class="font-medium text-primary hover:underline">{pageData.uploader?.displayName}</a>
       </div>
       <div class="flex justify-between items-center">
-        <span class="text-muted-foreground">{m["assets.dataTable.tags"]()}</span>
+        <span class="text-muted-foreground">{m["common.dataTable.tags"]()}</span>
         <div class="flex flex-wrap gap-1 max-w-[70%] justify-end">
           {#if !isEditing}
             {#each pageData.tags as tag}
               <TagBadge tag={tag as Tags} />
             {:else}
-              <span class="text-muted-foreground">{m["assets.dataTable.noTags"]()}</span>
+              <span class="text-muted-foreground">{m["common.dataTable.noTags"]()}</span>
             {/each}
           {:else}
             {#each editTags as tag}
@@ -209,15 +209,15 @@
           {/if}
         </div>
       </div>
-      {@render dT_Regular(m["assets.dataTable.type"](), typeData.combinedString)}
+      {@render dT_Regular(m["common.dataTable.type"](), typeData.combinedString)}
       {#if pageData.fileSize > 1024 * 1024}
-        {@render dT_Regular(m["assets.dataTable.fileSize"](), `${(pageData.fileSize / (1024 * 1024)).toFixed(2)} MB`)}
+        {@render dT_Regular(m["common.dataTable.fileSize"](), `${(pageData.fileSize / (1024 * 1024)).toFixed(2)} MB`)}
       {:else}
-        {@render dT_Regular(m["assets.dataTable.fileSize"](), `${(pageData.fileSize / 1024).toFixed(2)} KB`)}
+        {@render dT_Regular(m["common.dataTable.fileSize"](), `${(pageData.fileSize / 1024).toFixed(2)} KB`)}
       {/if}
       {#if pageData.renderingMethod}
         <div class="flex justify-between items-center">
-          <span class="text-muted-foreground pr-1">{m["assets.dataTable.renderingMethod"]()}</span>
+          <span class="text-muted-foreground pr-1">{m["common.dataTable.renderingMethod"]()}</span>
           <span class="font-medium text-right text-primary">
             {getRenderingMethodString(pageData.renderingMethod)}
             <p class="text-xs text-muted-foreground">{getRenderingMethodSupportedGV(pageData.renderingMethod)}</p>
@@ -225,16 +225,16 @@
         </div>
       {/if}
       <div class="flex justify-between items-center">
-        <span class="text-muted-foreground pr-2">{m["assets.dataTable.status"]()}</span>
+        <span class="text-muted-foreground pr-2">{m["common.dataTable.status"]()}</span>
         <StatusHoverCard status={pageData.status} type="asset">
           <Badge variant={pageData.status ? `outline` : `default`} class="capitalize">{getStatusString(pageData.status)}</Badge>
         </StatusHoverCard>
       </div>
       {#if pageData.license}
         <div class="flex justify-between items-center">
-          <span class="text-muted-foreground">{m["assets.dataTable.license"]()}</span>
+          <span class="text-muted-foreground">{m["common.dataTable.license"]()}</span>
           {#if pageData.licenseUrl}
-            <a href={pageData.licenseUrl} target="_blank" rel="noopener noreferrer" class="font-medium text-primary hover:underline">{m["assets.dataTable.customLicense"]()}</a>
+            <a href={pageData.licenseUrl} target="_blank" rel="noopener noreferrer" class="font-medium text-primary hover:underline">{m["common.dataTable.customLicense"]()}</a>
           {:else}
             <span class="font-medium">{pageData.license.toLocaleUpperCase()}</span>
           {/if}
@@ -242,14 +242,14 @@
       {/if}
       {#if pageData.sourceUrl}
         <div class="flex justify-between items-center">
-          <span class="text-muted-foreground">{m["assets.dataTable.source"]()}</span>
-          <a href={pageData.sourceUrl} target="_blank" rel="noopener noreferrer" class="font-medium text-primary hover:underline">{m["assets.dataTable.viewSource"]()}</a>
+          <span class="text-muted-foreground">{m["common.dataTable.source"]()}</span>
+          <a href={pageData.sourceUrl} target="_blank" rel="noopener noreferrer" class="font-medium text-primary hover:underline">{m["common.dataTable.viewSource"]()}</a>
         </div>
       {/if}
-      {@render dT_Regular(m["assets.dataTable.uploadAt"](), new Date(pageData.createdAt).toLocaleString())}
-      {@render dT_Regular(m["assets.dataTable.lastUpdated"](), new Date(pageData.updatedAt).toLocaleString())}
+      {@render dT_Regular(m["common.dataTable.uploadAt"](), new Date(pageData.createdAt).toLocaleString())}
+      {@render dT_Regular(m["common.dataTable.lastUpdated"](), new Date(pageData.updatedAt).toLocaleString())}
       <div class="flex justify-between items-center overflow-ellipsis">
-        <span class="text-muted-foreground">{m["assets.dataTable.fileHash"]()}</span>
+        <span class="text-muted-foreground">{m["common.dataTable.fileHash"]()}</span>
         <div class="flex flex-row items-center gap-2 justify-end max-w-[70%]">
           <div class="block overflow-ellipsis overflow-hidden whitespace-nowrap max-w-full">
             <span class="font-mono w-full" title={pageData.fileHash}>{pageData.fileHash}</span>
@@ -350,6 +350,7 @@
   </div>
 {/snippet}
 <!-- #endregion -->
+
 <!-- #region Buttons -->
 {#snippet buttons(center = mobileView.current)}
   <div class={cn("flex flex-row gap-2 flex-wrap items-center", center ? "justify-center" : "justify-start")}>
@@ -358,13 +359,13 @@
         <DownloadIcon />
         {m["common.buttons.download"]()}
       </DownloadButton>
-      <DownloadButton downloadType="asset" status={pageData.status} variant="outline" href={getOneClickUrl(pageData)}>
+      <DownloadButton downloadType="asset" status={pageData.status} variant="secondary" href={getOneClickUrl(pageData)}>
         <CloudDownloadIcon />
         {m["common.buttons.oneClickInstall"]()}
       </DownloadButton>
       {#if allowedToReport}
         <Button variant="destructive" onclick={() => {
-          reportDialog?.showDialog(pageData.id, pageData.name);
+          reportDialog?.showDialog(pageData.id, pageData.name, `asset`);
         }}>
           <MegaphoneIcon />
           {m["common.buttons.report"]()}

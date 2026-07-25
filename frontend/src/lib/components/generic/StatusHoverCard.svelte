@@ -14,12 +14,14 @@
 
   let style = $derived.by(() => {
     switch (props.status) {
+      case Status.Public:
       case Status.Verified:
         return "border-green-600 text-green-200";
       case Status.Unverified:
         return "border-yellow-600 text-yellow-200";
       case Status.Queue:
       case Status.Testing:
+      case Status.NonDefault_Testing:
         return "border-orange-600 text-orange-200";
       case Status.Private:
           return "border-blue-600 text-blue-200";
@@ -36,6 +38,7 @@
         case Status.Unverified:
           return m["assets.statusHover.unverified.title"]();
         case Status.Queue:
+          return m["mods.statusHover.queue.title"]();
         case Status.Testing:
           return m["assets.statusHover.queue.title"]();
         case Status.Private:

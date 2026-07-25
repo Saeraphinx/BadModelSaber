@@ -53,22 +53,22 @@ There are two types of code on BeatMods: **Plugins** and **Libraries**.
 
 **Examples:**
 - Projects such as [BeatSaverSharp](https://beatmods.com/mods/101), [FFmpeg](https://beatmods.com/mods/196) and [Heck](https://beatmods.com/mods/338) are all considered Libraries.  
-- [ScoreSaber](https://beatmods.com/mods/281) & [BeatLeader](https://beatmods.com/mods/268) are considered Plugins.  
+- [ScoreSaber](https://beatmods.com/mods/281) & [BeatLeader](https://beatmods.com/mods/268) are considered Plugins.  
 
-## Verified vs Unverified
-### Verified
-Verified mods have been looked over by the BeatMods team and meet everything in these guidelines. They're safe, compatible with other verified mods, and are supported.
 
-### Unverified
-Unverified mods are still on the platform, but haven't been confirmed to meet the full standard. This could be because they haven't been fully reviewed yet, or because something about them fell short without being bad enough to remove.
+## Status Explanation
+| Status | Description |
+|--------|-------------|
+| Verified | Verified mods have been looked over by the approval team and meet everything in these guidelines. They're safe, compatible with other verified mods, and are supported by the BSMG. |
+| Unverified | Mods that are available but haven't been fully reviewed or don't meet all the guidelines. |
+| Testing | Testing mods are those that are still in development or are being evaluated for stability and compatibility. They may not yet meet all the guidelines for verification and are pending further review. |
+| Queue | Mods in the queue are awaiting review by the BeatMods team. They have been submitted but have not yet been evaluated for compliance with the guidelines. |
 
 **If your mod ends up unverified, it's likely for one of these reasons:**
-- It's waiting to be fully reviewed.  
 - It works, but has rough edges or bugs that keep it out of being verified.  
 - It has a joke or meme element that can't be turned off, but otherwise is a real mod.  
 - It has unmarked compatibility issues with other mods.
-
-**Unverified isn't a rejection\!** Your mod is still up, available and can still be used by people. Although, it'll be clearly labelled as unverified and no support will be given. Any mod, verified or not, that crashes the game or breaks things significantly will be taken down.  
+- It has been submitted for review but wasn't reviewed because it was for a non-supported version of the game.
 
 
 [^1]: A score tracker that doesn't save scores, or a mod that causes a full game crash on certain map types are examples of mods that would get removed.

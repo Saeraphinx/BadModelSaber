@@ -13,12 +13,12 @@
   import { Spinner } from "$shadcn/components/ui/spinner";
   import type { LocalizedString } from "@inlang/paraglide-js";
   import { CheckIcon } from "@lucide/svelte";
-  import { isRedirect, redirect } from "@sveltejs/kit";
   import JSZip from "jszip";
   import { parse, validRange } from "semver";
   import { onMount } from "svelte";
   import { toast } from "svelte-sonner";
   import { parseErrorMessage } from "../../../../lib/scripts/utils/api.js";
+  import { goto } from "$app/navigation";
 
   const { data: _internal } = $props();
   const { trpc, pageData } = $derived(_internal);
@@ -177,16 +177,13 @@
         return res;
       })
       .catch((error) => {
-        if (isRedirect(error)) {
-          throw error; // re-throw redirect errors
-        }
         console.error("Error submitting version:", error);
         toast.error(m["toasts.error.generic"](), {
           description: parseErrorMessage(error),
         });
       });
       if (response) {
-        throw redirect(303, `/mod/${pageData.id}`)
+        goto(`/mods/${pageData.id}`)
       };
   }
 
@@ -196,6 +193,7 @@
     if (!allowManifestImport) return;
     // @ts-ignore oh my god i literally check for this right above you
     trpc.internal.getThings.searchProjectsByNameId.query({ nameIds: Object.keys(manifest.dependsOn), gameName: pageData.gameName }).then((res) => {
+      webDependencies = [];
       res.forEach((project) => {
         console.log(`Found id ${project.id} for project nameId ${project.nameId}`)
         let manifestDepVersion = manifest?.dependsOn ? manifest.dependsOn[project.nameId] : null;
@@ -231,16 +229,16 @@
         </p>
       {:else}
         <span>
-          <Label class="p-1 pb-2" for="semver">{m["mods.dataTable.semver"]()}</Label>
+          <Label class="p-1 pb-2" for="semver">{m["common.dataTable.semver"]()}</Label>
           <Input bind:value={semverString} aria-invalid={!parse(semverString)} id="semver" />
           <p class="text-sm text-muted-foreground mt-2 pl-1">{m["mods.createVersion.semverShouldMatchManifest"]()}</p>
         </span>
         <span>
-          <Label class="p-1 pb-2" for="platform">{m["mods.dataTable.platform"]()}</Label>
+          <Label class="p-1 pb-2" for="platform">{m["common.dataTable.platform"]()}</Label>
           <Select.Root type="single" bind:value={platform}>
             <Select.Trigger class="w-full capitalize">
               {#if platform === ""}
-                {m["mods.dataTable.platform"]()}
+                {m["common.dataTable.platform"]()}
               {:else}
                 {platform}
               {/if}
@@ -255,11 +253,11 @@
           </Select.Root>
         </span>
         <span>
-          <Label class="p-1 pb-2" for="supportedGameVersions">{m["mods.dataTable.supportedGameVersions"]()}</Label>
+          <Label class="p-1 pb-2" for="supportedGameVersions">{m["common.dataTable.supportedGameVersions"]()}</Label>
           <Select.Root type="multiple" bind:value={supportedGameVersionIds}>
             <Select.Trigger class="w-full text-wrap" aria-invalid={supportedGameVersionIds.length === 0}>
               {#if supportedGameVersionIds.length === 0}
-                {m["mods.dataTable.supportedGameVersions"]()}
+                {m["common.dataTable.supportedGameVersions"]()}
               {:else}
                 {supportedGameVersionIds.map((id) => validGameInfo?.gameVersions.find((gv) => gv.id === parseInt(id))?.version).join(", ")}
               {/if}
@@ -284,7 +282,7 @@
           {m["loading"]()}
         </p>
       {:else}
-        <Label class="p-1 pb-2" for="dependencies">{m["mods.dataTable.dependencies"]()}</Label>
+        <Label class="p-1 pb-2" for="dependencies">{m["common.dataTable.dependencies"]()}</Label>
         <div id="dependencies" class="grid grid-cols-[2fr_1fr_0.4fr] col-gap-1 gap-2 items-center">
           {#each webDependencies as dep, i}
             <DependencySelector gameName={pageData.gameName} bind:selectedProjectId={webDependencies[i].pId} bind:selectedProjectName={webDependencies[i].pName} bind:selectedProjectNameId={webDependencies[i].pNameId} />

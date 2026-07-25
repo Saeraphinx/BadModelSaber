@@ -138,7 +138,7 @@
   <Collapsible.Root bind:open={filterFileFormatVisible}>
     <div class="flex flex-col bg-card rounded-2xl min-w-62 w-full py-2 px-4">
       <Collapsible.Trigger class="flex items-center justify-between w-full">
-        <span class="text-lg font-semibold">{m["assets.dataTable.type"]()}</span>
+        <span class="text-lg font-semibold">{m["common.dataTable.type"]()}</span>
         <ChevronRight class="h-4 w-4 transition-transform {filterFileFormatVisible ? `rotate-90` : ``}" />
       </Collapsible.Trigger>
       <Collapsible.Content class="my-2">
@@ -176,7 +176,7 @@
   <Collapsible.Root bind:open={filterRenderingMethodVisible} class="mt-4">
     <div class="flex flex-col bg-card rounded-2xl min-w-62 w-full py-2 px-4">
       <Collapsible.Trigger class="flex items-center justify-between w-full">
-        <span class="text-lg font-semibold">{m["assets.dataTable.renderingMethod"]()}</span>
+        <span class="text-lg font-semibold">{m["common.dataTable.renderingMethod"]()}</span>
         <ChevronRight class="h-4 w-4 transition-transform {filterRenderingMethodVisible ? `rotate-90` : ``}" />
       </Collapsible.Trigger>
       <Collapsible.Content class="my-2">
@@ -209,7 +209,7 @@
     <Collapsible.Root bind:open={filterStatusVisible} class="mt-4">
       <div class="flex flex-col bg-card rounded-2xl min-w-62 w-full py-2 px-4">
         <Collapsible.Trigger class="flex items-center justify-between w-full">
-          <span class="text-lg font-semibold">{m["assets.dataTable.status"]()}</span>
+          <span class="text-lg font-semibold">{m["common.dataTable.status"]()}</span>
           <ChevronRight class="h-4 w-4 transition-transform {filterStatusVisible ? `rotate-90` : ``}" />
         </Collapsible.Trigger>
         <Collapsible.Content class="my-2">

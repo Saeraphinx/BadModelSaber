@@ -175,7 +175,7 @@
   <Collapsible.Root bind:open={isFilterStatusVisible}>
     <div class="flex flex-col bg-card rounded-md min-w-62 w-full py-2 px-4">
       <Collapsible.Trigger class="flex items-center justify-between w-full">
-        <span class="text-lg font-semibold">{m["mods.dataTable.status"]()}</span>
+        <span class="text-lg font-semibold">{m["common.dataTable.status"]()}</span>
         <ChevronRightIcon class="h-4 w-4 transition-transform {isFilterStatusVisible ? `rotate-90` : ``}" />
       </Collapsible.Trigger>
       <Collapsible.Content class="my-2">
@@ -205,7 +205,7 @@
   <Collapsible.Root bind:open={isFilterCategoryVisible}>
     <div class="flex flex-col bg-card rounded-md min-w-62 w-full py-2 px-4">
       <Collapsible.Trigger class="flex items-center justify-between w-full">
-        <span class="text-lg font-semibold">{m["mods.dataTable.category"]()}</span>
+        <span class="text-lg font-semibold">{m["common.dataTable.category"]()}</span>
         <ChevronRightIcon class="h-4 w-4 transition-transform {isFilterCategoryVisible ? `rotate-90` : ``}" />
       </Collapsible.Trigger>
       <Collapsible.Content class="my-2">

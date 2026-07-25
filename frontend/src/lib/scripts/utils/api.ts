@@ -50,7 +50,7 @@ export function getVersionDecompUrl(version: VersionApiV3): string {
   return `${env.PUBLIC_FILE_URL}/${version.projectId}/${version.id}/decompiled/${version.baseFileName}.dll.decompiled.cs`;
 }
 
-import { createTRPCClient, httpBatchLink, httpSubscriptionLink, isTRPCClientError, splitLink, TRPCClientError } from '@trpc/client';
+import { createTRPCClient, httpBatchLink, httpLink, httpSubscriptionLink, isNonJsonSerializable, isTRPCClientError, splitLink, TRPCClientError } from '@trpc/client';
 import type { AppRouter } from '../../../../../backend/src/api/routers';
 import SuperJSON from "superjson";
 import { error } from "@sveltejs/kit";
@@ -67,7 +67,7 @@ export function createTRPC(svelteFetch: typeof fetch = fetch) {
     if (shouldSendCreds) {
       init = {
         ...init,
-        credentials: 'include' 
+        credentials: 'include'
       }
     }
     const response = await svelteFetch(input, init);
@@ -85,11 +85,22 @@ export function createTRPC(svelteFetch: typeof fetch = fetch) {
             withCredentials: shouldSendCreds,
           },
         }),
-        false: httpBatchLink<AppRouter>({
-          url: `${env.PUBLIC_API_URL}/trpc`,
-          fetch: safeFetch,
-          transformer: SuperJSON,
-        })
+        false: splitLink({
+          condition: (op) => isNonJsonSerializable(op.input),
+          true: httpLink({ // this section is needed for file uploads
+            url: `${env.PUBLIC_API_URL}/trpc`,
+            fetch: safeFetch,
+            transformer: {
+              serialize: (data) => data,
+              deserialize: SuperJSON.deserialize,
+            },
+          }),
+          false: httpBatchLink({
+            url: `${env.PUBLIC_API_URL}/trpc`,
+            fetch: safeFetch,
+            transformer: SuperJSON,
+          }),
+        }),
       }),
     ]
   });

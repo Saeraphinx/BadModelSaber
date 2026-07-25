@@ -68,7 +68,7 @@
     } else {
       res = trpc.internal.admin.approval.setStatusVersion.mutate({
         id: id,
-        status: selectedStatus,
+        status: selectedStatus as unknown as any,
         reason: reason,
         autosetProject: autosetProject,
       });
