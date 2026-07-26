@@ -289,6 +289,25 @@ export class User extends Model<InferAttributes<User>, InferCreationAttributes<U
         }
     }
     // #endregion
+    // #region Get Valid Reports Types for User
+    public getValidReportTypes(gameName?: string): RequestType[] {
+        let allowedReportTypes: RequestType[] = [];
+        if (this.checkRoles([UserPermissions.Requests_ViewAssets, UserPermissions.Requests_ViewAll], gameName)) {
+            allowedReportTypes.push(RequestType.Asset_Credit, RequestType.Asset_Link, RequestType.Asset_Report);
+        }
+        if (this.checkRoles([UserPermissions.Requests_ViewUsers, UserPermissions.Requests_ViewAll], gameName)) {
+            allowedReportTypes.push(RequestType.User_Report);
+        }
+        if (this.checkRoles([UserPermissions.Requests_ViewMods, UserPermissions.Requests_ViewAll], gameName)) {
+            allowedReportTypes.push(RequestType.Project_Report, RequestType.Version_Report);
+        }
+        if (this.checkRoles([UserPermissions.Requests_ViewUsers, UserPermissions.Requests_ViewAll])) {
+            allowedReportTypes.push(RequestType.User_Report);
+        }
+        return allowedReportTypes;
+    }
+
+    // #endregion
     public static async checkIfExists(id: number): Promise<boolean> {
         return await User.findByPk(id, { attributes: ['id'] }) ? true : false;
     }

@@ -2,6 +2,8 @@ import { error } from "@sveltejs/kit";
 import type { PageLoad } from "./$types";
 import { handleTrpcError } from "$lib/scripts/utils/api";
 import { getProjectThumbnailUrl } from "$lib/scripts/utils/api";
+import { availableLocales } from "../../../lib/scripts/from_backend/DBExtras";
+import { getLocale } from "../../../lib/paraglide/runtime";
 
 //export const ssr = false;
 export const load: PageLoad = async ({ parent, params }) => {
@@ -13,7 +15,12 @@ export const load: PageLoad = async ({ parent, params }) => {
 
   const { user, trpc } = await parent();
 
-  let pnv = await trpc.v3.mods.getProjectAndVersions.query({ projectId }).catch(handleTrpcError());
+  let lang: string | undefined = getLocale();
+  if (!availableLocales.find((l) => l.code == lang)?.backend) {
+    lang = undefined;
+  }
+
+  let pnv = await trpc.v3.mods.getProjectAndVersions.query({ projectId, language: lang }).catch(handleTrpcError());
   let games = await trpc.v3.games.getGameVersions.query({ gameName: pnv.project.gameName }).catch(handleTrpcError());
 
   return {

@@ -519,6 +519,7 @@ export class Project extends Model<InferAttributes<Project>, InferCreationAttrib
             requesterId: reportedBy.id,
             requestType: RequestType.Project_Report,
             requestResponseBy: null,
+            refrencedGameName: this.gameName,
             messages: [{
                 userId: reportedBy.id,
                 message: reason,

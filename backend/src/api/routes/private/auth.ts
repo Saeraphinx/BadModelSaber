@@ -147,6 +147,7 @@ export const authRouter = router({
                 }
             });
             if (ctx.res) {
+                Logger.info(`User ${dbUser.username} (${dbUser.id}) logged in successfully.`);
                 ctx.res.send(`<head><meta http-equiv="refresh" content="0; url=${stateObj.redirectUrl.href}" /></head><body style="background-color: black;"><a style="color:white;" href="${stateObj.redirectUrl.href}">Click here if you are not redirected...</a></body>`);
             }
             return;
@@ -263,6 +264,7 @@ export const authRouter = router({
                 }
             });
             if (ctx.res) {
+                Logger.info(`User ${dbUser.username} (${dbUser.id}) logged in successfully.`);
                 ctx.res.send(`<head><meta http-equiv="refresh" content="0; url=${stateObj.redirectUrl.href}" /></head><body style="background-color: black;"><a style="color:white;" href="${stateObj.redirectUrl.href}">Click here if you are not redirected...</a></body>`);
             }
             return;

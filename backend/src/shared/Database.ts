@@ -130,7 +130,7 @@ export class DatabaseManager {
                 discordId: null,
                 username: `system`,
                 displayName: `System User`,
-                bio: `hi :3\n\nThis user account is used for system operations and is not meant to be used by anyone.\n\nBadModelSaber is developed by [Saeraphinx](https://saeraphinx.dev) and the [Beat Saber Modding Group](https://bsmg.wiki). If you need to contact us, you can find links to our support channels on our Wiki: https://bsmg.wiki/contact-us`,
+                bio: `hi :3\n\n`,
                 permissions: {
                     sitewide: [...Object.values(UserPermissions).filter(r => !r.startsWith(`cos_`)), UserPermissions.C_System],
                     perGame: {}
@@ -203,6 +203,13 @@ export class DatabaseManager {
                 as: 'authors'
             }]
         })
+
+        Version.addScope(`defaultScope`, {
+            include: [{
+                model: GameVersion,
+                as: 'supportedGameVersions'
+            }]
+        });
 
         let assetCount = Asset.count();
         let userCount = User.count();

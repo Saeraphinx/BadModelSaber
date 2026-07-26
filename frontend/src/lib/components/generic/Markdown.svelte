@@ -67,6 +67,8 @@
         if (!/^https:\/\//i.test(href)) {
           node.removeAttribute("href");
         }
+        node.setAttribute("rel", "noopener noreferrer");
+        node.setAttribute("target", "_blank");
       }
 
       // Check <img> tags for relative src

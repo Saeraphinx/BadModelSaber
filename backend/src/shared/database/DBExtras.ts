@@ -11,6 +11,10 @@ export enum PlatformType {
   Patreon = "Patreon",
 }
 
+/**
+ * Available locales for translations.
+ * WHEN UPDATING: make sure to update inlang settings on the frontend as well.
+ */
 export const availableLocales: {
   code: string;
   name: string;
@@ -31,6 +35,13 @@ export const availableLocales: {
     secret: false,
     backend: true,
     frontend: false,
+  },
+  {
+    code: "cn",
+    name: "Chinese",
+    secret: false,
+    frontend: true,
+    backend: true,
   },
   {
     code: "qab",
@@ -208,10 +219,10 @@ export enum UserPermissions {
   Asset_Approval = "asset_approval", // User can approve/reject pending assets 
   Asset_InternalTags = "asset_internal_tags", // User can add/remove internal tags (e.g. featured)
 
-  Requests_ViewAssets = "requests_view_assets", // User can view asset requests
-  Requests_ViewMods = "requests_view_mods", // User can view mod requests
-  Requests_ViewUsers = "requests_view_users", // User can view user requests
-  Requests_ViewAll = "requests_view_all", // User can view all requests
+  Requests_ViewAssets = "requests_view_assets", // User can view asset requests & reports
+  Requests_ViewMods = "requests_view_mods", // User can view mod requests & reports
+  Requests_ViewUsers = "requests_view_users", // User can view user requests & reports
+  Requests_ViewAll = "requests_view_all", // User can view all requests & reports
   Requests_ManageAssets = "requests_manage_assets", // User can manage (accept/decline) asset requests
   Requests_ManageMods = "requests_manage_mods", // User can manage (accept/decline) mod requests
   Requests_ManageUsers = "requests_manage_users", // User can manage (accept/decline) user requests
@@ -647,6 +658,7 @@ export const thingRequestApiV3Schema = z.object({
   id: dbId,
   refrencedThingId: dbId,
   refrencedThing: z.union([assetApiV3Schema, userApiV3Schema, projectApiV3Schema, versionApiV3Schema]).nullable(),
+  refrencedThingName: z.string(),
   refrencedGameName: z.string().nullable(),
   requesterId: dbId,
   requester: userApiV3Schema.nullable(),

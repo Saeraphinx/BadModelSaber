@@ -172,6 +172,7 @@ export const GetModsV3 = router({
             let versions = await Version.findAll({
                 where: {
                     projectId: project.id,
+                    status: User.getAllowedStatuses(ctx.user, `mod`, project.gameName)
                 },
                 order: [['semver', 'DESC']],
                 include: [GameVersion, Project],

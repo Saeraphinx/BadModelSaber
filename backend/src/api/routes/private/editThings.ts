@@ -1,6 +1,6 @@
 import z from "zod/v4";
 import { Asset, ThingRequest, LinkedAssetLinkType, User, dbId, Project, DependencySchema, Version, UserPermissions, Status } from "../../../shared/Database.ts";
-import { dedupeArray, getHashFromFile, parseErrorMessage } from "../../../shared/Tools.ts";
+import { dedupeArray, getHashFromFile, handleCatch, parseErrorMessage } from "../../../shared/Tools.ts";
 import { loggedInAssetProcedure, loggedInProcedure, loggedInProjectProcedure, loggedInVersionProcedure, router } from "../../trpc.ts";
 import { TRPCError } from "@trpc/server";
 import { SemVer } from "semver";
@@ -207,9 +207,11 @@ export const updateThingsRouter = router({
         })  
     },
     user: {
-        updateSelfUser: loggedInProcedure([UserPermissions.Users_EditSelf]).input(z.object({
+        updateUser: loggedInProcedure([UserPermissions.Users_EditSelf]).input(z.object({
             displayName: User.validator.shape.displayName.optional(),
-            bio: User.validator.shape.bio.optional()
+            bio: User.validator.shape.bio.optional(),
+            hideDiscordId: User.validator.shape.hideDiscordId.optional(),
+            hideGithubId: User.validator.shape.hideGithubId.optional(),
         })).mutation(async ({ input, ctx }) => {
             if (input.displayName !== undefined) {
                 ctx.user.displayName = input.displayName;
@@ -217,8 +219,14 @@ export const updateThingsRouter = router({
             if (input.bio !== undefined) {
                 ctx.user.bio = input.bio;
             }
+            if (input.hideDiscordId !== undefined) {
+                ctx.user.hideDiscordId = input.hideDiscordId;
+            }
+            if (input.hideGithubId !== undefined) {
+                ctx.user.hideGithubId = input.hideGithubId;
+            }
+            await ctx.user.save().catch(handleCatch(`Error saving user ${ctx.user.id} (${ctx.user.username})`));
             Logger.info(`User ${ctx.user.id} (${ctx.user.username}) has updated their profile.`);
-            await ctx.user.save();
             return ctx.user.toApiV3();
         }),
         toggleSecretFeatures: loggedInProcedure({ denied: [UserPermissions.C_Banned] }).input(z.object({
@@ -237,7 +245,7 @@ export const updateThingsRouter = router({
                 };
                 Logger.info(`User ${ctx.user.id} (${ctx.user.username}) has enabled secret features.`);
             }
-            await ctx.user.save();
+            await ctx.user.save().catch(handleCatch(`Error toggling secret features for user ${ctx.user.id} (${ctx.user.username})`));
         })
     }
 

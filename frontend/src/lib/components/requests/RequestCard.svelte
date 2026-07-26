@@ -19,7 +19,7 @@
 
 <div class={cn("p-4 border rounded-md shadow-sm hover:shadow-md transition-shadow", className)}>
   <a href={`/requests/${request.id}`} class="text-blue-600 hover:underline">
-    <p>{requestTypeTitleString}: {request.refrencedThing?.name ?? `???`}</p>
+    <p>{requestTypeTitleString}: {request.refrencedThingName}</p>
   </a>
   <div class="relative">
     <a href="/users/{request.requesterId}" class="text-sm text-gray-500 mt-1">{m["requests.createdBy"]({name: request.requester?.displayName ?? ``})}</a>

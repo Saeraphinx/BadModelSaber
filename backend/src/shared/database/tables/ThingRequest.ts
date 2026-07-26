@@ -147,7 +147,6 @@ export class ThingRequest extends Model<InferAttributes<ThingRequest>, InferCrea
     public static validatorCreation = z.object({
         ...ThingRequest.validator.shape,
         id: ThingRequest.validator.shape.id.nullish(), // id is optional when creating a new request
-        refrencedGameName: ThingRequest.validator.shape.refrencedGameName.nullish(),
         accepted: ThingRequest.validator.shape.accepted.nullish(),
         resolvedBy: ThingRequest.validator.shape.resolvedBy.nullish(),
         messages: ThingRequest.validator.shape.messages.nullish(),
@@ -367,10 +366,22 @@ export class ThingRequest extends Model<InferAttributes<ThingRequest>, InferCrea
             requesterApi = await requester.toApiV3();
         }
 
+        let thingName = `???`;
+        if (refrencedThing == null) {
+            thingName = `???`;
+        } else if (`name` in refrencedThing) {
+            thingName = refrencedThing.name;
+        } else if (`username` in refrencedThing) {
+            thingName = refrencedThing.username;
+        } else {
+            thingName = `${(await refrencedThing.project)?.name} v${refrencedThing.semver.raw}`;
+        }
+
         return {
             id: this.id,
             refrencedThingId: this.refrencedId,
             refrencedThing: refThingApi,
+            refrencedThingName: thingName,
             refrencedGameName: this.refrencedGameName,
             requesterId: this.requesterId,
             requester: requesterApi,

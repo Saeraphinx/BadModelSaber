@@ -23,6 +23,9 @@
   import { toast } from "svelte-sonner";
   import { getProjectThumbnailUrl, handleTrpcError, parseErrorMessage, trpc } from "$lib/scripts/utils/api.js";
   import { invalidateAll } from "$app/navigation";
+  import ReportDialog from "../../../lib/components/dialogs/ReportDialog.svelte";
+  import { getLocale, type Locale } from "../../../lib/paraglide/runtime";
+  import type { inferProcedureOutput } from "@trpc/server";
 
   const { data: _internal } = $props();
   const {
@@ -39,6 +42,8 @@
   let codeDialog = $state<CodeDialog>();
   // svelte-ignore non_reactive_update
   let userSelectionDialog = $state<UserSelectionDialog>();
+  // svelte-ignore non_reactive_update
+  let reportDialog = $state<ReportDialog>();
 
   // #region Permissions
   let shouldAllowApproval = $derived.by(() => {
@@ -185,11 +190,15 @@
         translatedString: stringToUse,
       })
       .then(() => {
-        toast.success(m["toasts.success.savedChanges"]());
-        invalidateAll().then(() => {
-          isTranslating = false;
-          isSaving = false;
+        toast.success(m["toasts.success.savedChanges"](), {
+          action: {
+            label: m["dialogs.reload"](),
+            onClick: () => {
+              invalidateAll();
+            }
+          }
         });
+        isSaving = false;
       })
       .catch((e) => {
         let error = handleTrpcError(false, `full`)(e);
@@ -198,6 +207,21 @@
         });
         isSaving = false;
       });
+  }
+
+  let allTranslations: Awaited<ReturnType<typeof trpc.internal.translation.getTranslationsForProject.query>> = [];
+  async function getCurrentTranslation(forceRefresh = false) {
+    if (forceRefresh || allTranslations.length === 0) {
+      await trpc.internal.translation.getTranslationsForProject.query({
+        id: project.id,
+      }).then((translations) => {
+        allTranslations = translations;
+      });
+    }
+
+    translationName = allTranslations.find((t) => t.language === translatingLanguage && t.contentType === `name`)?.translatedString || ``;
+    translationSummary = allTranslations.find((t) => t.language === translatingLanguage && t.contentType === `summary`)?.translatedString || ``;
+    translationDescription = allTranslations.find((t) => t.language === translatingLanguage && t.contentType === `description`)?.translatedString || ``;
   }
 
   function fetchGithubReadme() {
@@ -249,12 +273,12 @@
     <!-- <Skeleton class="w-32 h-32 rounded-lg" /> -->
     <div class="flex flex-col ml-4">
       <div class="flex items-center">
-        <h1 class="text-3xl font-bold mb-1">{project.name}</h1>
+        <h1 class="text-3xl font-bold mb-1">{project.translation && project.translation.name ? `${project.translation.name} | ` : ``}{project.name}</h1>
         {#if project.name !== project.nameId}
           <span class="text-gray-500 font-mono ml-2">({project.nameId})</span>
         {/if}
       </div>
-      <p class="text-gray-600 mb-2">{project.summary}</p>
+      <p class="text-gray-600 mb-2">{project.translation && project.translation.summary ? project.translation.summary : project.summary}</p>
       <div class="flex items-center not-md:justify-center gap-2 mb-2">
         {#each project.authors as author (author.id)}
           <UserBadge user={author} />
@@ -299,7 +323,7 @@
       {/if}
       <div class="flex flex-col gap-2">
         {#each versions as version}
-          <VersionCard {version} approvalDialog={shouldAllowApproval ? approvalDialog : undefined} showStatusHistory={shouldAllowStatusHistory} {codeDialog} isEditable={shouldAllowEdit} {gameVersions} showUserQueueOptions={isAuthor || version.uploaderId == user?.id} />
+          <VersionCard {version} approvalDialog={shouldAllowApproval ? approvalDialog : undefined} showStatusHistory={shouldAllowStatusHistory} {codeDialog} isEditable={shouldAllowEdit} {gameVersions} showUserQueueOptions={isAuthor || version.uploaderId == user?.id} reportDialog={reportDialog} />
         {:else}
           <p class="text-center text-gray-500">{m["mods.noVersionsFound"]()}</p>
         {/each}
@@ -456,7 +480,7 @@
           <div class="grid grid-cols-[1fr_6fr] gap-2">
             <Label for="language">{m["mods.translation.language"]()}</Label>
             <div class="flex flex-row items-center gap-2">
-              <Select.Root type="single" bind:value={translatingLanguage}>
+              <Select.Root type="single" bind:value={translatingLanguage} onValueChange={() => getCurrentTranslation(false)}>
                 <Select.Trigger class="w-full" id="language">
                   {availableLocales.find((l) => l.code == translatingLanguage)?.name || m["mods.translation.language"]()}
                 </Select.Trigger>
@@ -466,6 +490,7 @@
                   {/each}
                 </Select.Content>
               </Select.Root>
+              <Button variant="outline" size="sm" onclick={() => getCurrentTranslation(true)}>{m["dialogs.reload"]()}</Button>
             </div>
             <Label for="name">{m[`common.dataTable.name`]()}</Label>
             <div class="flex flex-row items-center gap-2">
@@ -527,7 +552,20 @@
           </div>
         </div>
       {:else}
-        <Markdown class="p-4 rounded-md bg-card" markdown={project.description} />
+        <Tabs.Root value={getLocale() !== "en" && project.translation?.description ? "translation" : "original"}>
+          {#if getLocale() != "en"}
+            <Tabs.List class="mb-2">
+              <Tabs.Trigger disabled={!project.translation?.description} value="translation">{availableLocales.find((l) => l.code == getLocale())?.name || getLocale()}</Tabs.Trigger>
+              <Tabs.Trigger value="original">Original</Tabs.Trigger>
+            </Tabs.List>
+          {/if}
+          <Tabs.Content value="translation">
+            <Markdown class="p-4 rounded-md bg-card" markdown={project.translation?.description || ""} />
+          </Tabs.Content>
+          <Tabs.Content value="original">
+            <Markdown class="p-4 rounded-md bg-card" markdown={project.description} />
+          </Tabs.Content>
+        </Tabs.Root>
       {/if}
     </div>
   </div>
@@ -536,3 +574,4 @@
 <ApprovalDialog bind:this={approvalDialog} />
 <CodeDialog bind:this={codeDialog} />
 <UserSelectionDialog bind:this={userSelectionDialog} />
+<ReportDialog bind:this={reportDialog} />

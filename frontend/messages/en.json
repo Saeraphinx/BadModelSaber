@@ -322,6 +322,8 @@
   "users": {
     "linkToGithub": "Link to GitHub",
     "linkToDiscord": "Link to Discord",
+    "hideGithubId": "Hide GitHub Publicly",
+    "hideDiscordId": "Hide Discord Publicly",
     "username": "Username",
     "displayName": "Display Name",
     "bio": "Bio",
@@ -450,6 +452,7 @@
     "close": "Close",
     "remove": "Remove",
     "preview": "Preview",
+    "reload": "Reload",
     "approvalDialog": {
       "title": "Update Status for {name}",
       "description": "Select the new status for \"{name}\". Click save to apply the changes.",

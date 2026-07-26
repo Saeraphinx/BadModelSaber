@@ -42,6 +42,36 @@ export const RequestRouter = router({
             outgoing: await Promise.all(outgoingRequests.map(req => req.toApiV3())),
         };
     }),
+    getAllRequests: loggedInProcedure({ hasOneOf: [
+        UserPermissions.Requests_ViewAssets, 
+        UserPermissions.Requests_ViewMods, 
+        UserPermissions.Requests_ViewUsers, 
+        UserPermissions.Requests_ViewAll
+    ] }).input(z.object({
+        gameName: z.string().optional(),
+        includeActioned: z.boolean().optional().default(false),
+        includeSpecificResponseBy: z.boolean().optional().default(false),
+        requestType: z.enum(RequestType).optional()
+    })).query(async ({ input, ctx }) => {
+        let whereOptions: WhereOptions<ThingRequestInfer> = {};
+        if (!input.includeActioned) {
+            whereOptions.accepted = null;
+        }
+        if (!input.includeSpecificResponseBy) {
+            whereOptions.requestResponseBy = null;
+        }
+        if (input.gameName) {
+            whereOptions.refrencedGameName = input.gameName;
+        }
+        if (input.requestType) {
+            whereOptions.requestType = input.requestType;
+        }
+        
+        let reports = await ThingRequest.findAll({
+            where: whereOptions
+        }).then(async requests => await Promise.all(requests.filter(req => req.canView(ctx.user)).map(req => req.toApiV3())));
+        return reports;
+    }),
     requestCounts: loggedInProcedure().query(async ({ ctx }) => {
         let incoming = await ThingRequest.count({
             where: {

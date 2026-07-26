@@ -323,10 +323,12 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
         }
 
         let prjView = await prj.canView(user);
-        if (prjView && user) { // this has to be done because a project can be viewable but the version can still be private
+        if (prjView && user) { 
+            // this has to be done because a project can be viewable but the version can still be private
             if (user.getAllowedStatuses(`mod`, prj.gameName).includes(this.status)) {
                 return true;
             } else {
+                // allow all authors of the project to view the version even if they don't have the required status
                 if (prj.authors === undefined || prj.authors.length === 0) {
                     return await prj.$get(`authors`).then(authors => {
                         return (authors ?? []).some(author => author.id === user.id);
@@ -606,6 +608,7 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
             requesterId: reportedBy.id,
             requestType: RequestType.Version_Report,
             requestResponseBy: null,
+            refrencedGameName: project.gameName,
             messages: [{
                 userId: reportedBy.id,
                 message: reason,

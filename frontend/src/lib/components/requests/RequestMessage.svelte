@@ -13,21 +13,32 @@
       id: -1,
       displayName: "Unknown User",
       avatarUrl: "/default-avatar.png",
+      useSystemAvatar: false,
     },
     class: className = "",
   } : {
     accept: Function,
     reject: Function,
     message: RequestMessage & { initMessage?: boolean };
-    user?: { id:number, displayName: string; avatarUrl: string };
+    user?: { id:number, displayName: string; avatarUrl: string; useSystemAvatar: boolean } ;
     class?: ClassValue;
   } = $props();
+
+  let userAvatarUrl = $derived.by(() => {
+    if (user.useSystemAvatar) {
+      return "/system_pfp.svg";
+    } else if (user.avatarUrl.includes("github.com")) {
+      return `/users/pfp/${user.avatarUrl.split("/").pop()}`;
+    } else {
+      return user.avatarUrl;
+    }
+  });
 </script>
 
 <div class={cn(`p-4 bg-card rounded-lg shadow`, className)}>
   <div class="flex items-center mb-2 justify-between">
     <a href="/users/{user.id}" class="flex flex-row items-center">
-      <img src={user.avatarUrl} alt={user.displayName} class="w-8 h-8 rounded-full mr-2"/>
+      <img src={userAvatarUrl} alt={user.displayName} class="w-8 h-8 rounded-full mr-2"/>
       <span class="font-semibold">{user.displayName}</span>
     </a>
     <span class="text-sm text-gray-500 ml-2">{new Date(message.timestamp).toLocaleString()}</span>

@@ -39,31 +39,6 @@ export const getThingsInternalRouter = router({
             return await Promise.all(projects.map(async p => await p.toApiV3() as ProjectApiV3));
         }),
     // #endregion
-    // #region getProjectVersions
-    getProjectVerisons: anyProcedure()
-        .input(z.object({
-            projectId: z.number()
-        }))
-        .output(z.array(versionApiV3Schema))
-        .query(async ({ ctx, input }) => {
-            let project = await Project.findByPk(input.projectId);
-            if (!project) {
-                throw new TRPCError({ code: 'NOT_FOUND', message: 'Project not found.' });
-            }
-            if (!(await project.canView(ctx.user))) {
-                throw new TRPCError({ code: 'FORBIDDEN', message: 'You do not have permission to view this project.' });
-            }
-            let versions = await Version.findAll({
-                where: {
-                    projectId: project.id
-                },
-                include: [GameVersion],
-            });
-            versions = versions.filter(async v => await v.canView(ctx.user, project));
-            let output = await Promise.all(versions.map(async v => await v.toApiV3()));
-            return output;
-        }),
-    // #endregion
     // #region searchProjects
     searchProjects: anyProcedure()
         .input(z.object({
@@ -200,4 +175,5 @@ export const getThingsInternalRouter = router({
             let diff = diffLines(code1, code2);
             return diff;
         }),
+    // #endregion
 })

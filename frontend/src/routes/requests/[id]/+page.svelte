@@ -11,6 +11,8 @@
   import Spinner from "$shadcn/components/ui/spinner/spinner.svelte";
   import { toast } from "svelte-sonner";
   import { checkRoles } from "$lib/scripts/utils/checkRoles.js";
+  import ModCard from "../../../lib/components/mods/ModCard.svelte";
+  import VersionCard from "../../../lib/components/mods/VersionCard.svelte";
 
   const { data: _internal } = $props();
   const { trpc, user, pageData } = $derived(_internal);
@@ -27,14 +29,14 @@
   });
 
   // Message Content
-  let users = $state<Map<number, { id: number; displayName: string; avatarUrl: string }>>(new Map());
+  let users = $state<Map<number, { id: number; displayName: string; avatarUrl: string; useSystemAvatar: boolean }>>(new Map());
   let messages: (ReqMessage & { initMessage?: boolean })[] = $state([]);
   onMount(() => {
     let initialString = "";
     if (pageData.requestType === RequestType.Asset_Credit) {
       initialString = m["requests.initialMessageCredit"]({
         name: pageData?.requester?.displayName || "Unknown User",
-        assetName: (pageData.refrencedThing && typeInfo.nameProp in pageData.refrencedThing ? pageData.refrencedThing[typeInfo.nameProp as keyof typeof pageData.refrencedThing] : null) ?? "Unknown Asset",
+        assetName: pageData.refrencedThingName ?? "Unknown Asset",
       });
     } else if (pageData.requestType === RequestType.Asset_Link) {
       initialString = m["requests.initialMessageLink"]({
@@ -45,7 +47,7 @@
     } else {
       initialString = m["requests.initialMessageReport"]({
         name: pageData.requester?.displayName || "Unknown User",
-        assetName: (pageData.refrencedThing && typeInfo.nameProp in pageData.refrencedThing ? pageData.refrencedThing[typeInfo.nameProp as keyof typeof pageData.refrencedThing] : null) ?? "Unknown Asset",
+        assetName: pageData.refrencedThingName,
       });
     }
     let initMessage = false;
@@ -68,18 +70,18 @@
   });
   async function populateUsers() {
     let userIds = new Set<number>();
-    userIds.add(5); // system user
+    users.set(5, { id: 5, displayName: `System User`, avatarUrl: "/system_pfp.svg", useSystemAvatar: true });; // system user
     pageData.messages.forEach((message) => {
       if (message.userId && !users.has(message.userId) && message.userId !== user.id) {
         userIds.add(message.userId);
       }
     });
-    users.set(user.id, user);
+    users.set(user.id, {...user, useSystemAvatar: false});
     if (pageData.refrencedThing && `uploader` in pageData.refrencedThing && !users.has(pageData.refrencedThing.uploader!.id)) {
-      users.set(pageData.refrencedThing.uploader!.id, pageData.refrencedThing.uploader!);
+      users.set(pageData.refrencedThing.uploader!.id, {...pageData.refrencedThing.uploader!, useSystemAvatar: false});
     }
     if (pageData.requesterId && !users.has(pageData.requesterId)) {
-      users.set(pageData.requester!.id, pageData.requester!);
+      users.set(pageData.requester!.id, {...pageData.requester!, useSystemAvatar: false});
     }
     let promises = [];
     if (userIds.size > 0) {
@@ -88,10 +90,10 @@
         promises.push(
           trpc.v3.user.getUserById
             .query({ id: userId })
-            .then((res) => users.set(userId, res))
+            .then((res) => users.set(userId, {...res, useSystemAvatar: false}))
             .catch((err) => {
               console.error(`Failed to fetch user ${userId}:`, err);
-              users.set(userId, { id: userId, displayName: `Unknown User ${userId}`, avatarUrl: "/default-avatar.png" });
+              users.set(userId, { id: userId, displayName: `Unknown User ${userId}`, avatarUrl: "/default-avatar.png", useSystemAvatar: true });
             }),
         );
       }
@@ -152,11 +154,18 @@
 </script>
 
 <div class="flex flex-row items-start justify-center gap-4" data-sveltekit-preload-code="false">
-  <div class="flex flex-col gap-2">
+  <div class="flex flex-col gap-2 w-sm max-w-sm">
     {#if pageData.refrencedThing && `oldId` in pageData.refrencedThing}
       <AssetCard asset={pageData.refrencedThing} size="large" alwaysShowHover />
+    {:else if pageData.refrencedThing && `summary` in pageData.refrencedThing}
+      <ModCard project={pageData.refrencedThing} />
+    {:else if pageData.refrencedThing && `supportedGameVersions` in pageData.refrencedThing}
+      {#await trpc.internal.getThings.getProject.query({ projectId: pageData.refrencedThing.projectId }) then project}
+        <ModCard project={project} version={pageData.refrencedThing} gameDisplayName={project.gameName} class="w-sm max-w-sm"/>
+      {/await}
+      <VersionCard version={pageData.refrencedThing} />
     {/if}
-    <div class="flex flex-col items-start gap-2 bg-card p-4 rounded-lg shadow-md w-full max-w-2xl">
+    <div class="flex flex-col items-start gap-2 bg-card p-4 rounded-lg shadow-md w-full">
       <h1 class="text-2xl font-bold">{m["requests.tableTitle"]({ type: m[`enums.requestTypes.${pageData.requestType}`]() })}</h1>
       <p class="text-gray-500">{m["requests.requestID"]({ id: pageData.id })}</p>
       <p class="text-gray-500">{m["requests.status"]({ status: pageData.accepted ?? m["requests.notResolved"]() })}</p>
@@ -171,7 +180,7 @@
     {:then}
       {#key messages}
         {#each messages as message}
-          <RequestMessage accept={() => {handleRequest(true)}} reject={() => {handleRequest(false)}} {message} user={users.get(message.userId) || { id: -1, displayName: "Unknown User", avatarUrl: "" }} class="w-full max-w-2xl mb-4" />
+          <RequestMessage accept={() => {handleRequest(true)}} reject={() => {handleRequest(false)}} {message} user={users.get(message.userId) || { id: -1, displayName: "Unknown User", avatarUrl: "", useSystemAvatar: true }} class="w-full max-w-2xl mb-4" />
         {:else}
           <p class="text-muted-foreground">{m["requests.noMessagesFound"]}</p>
         {/each}

@@ -57,6 +57,9 @@ export const loadExpressMiddleware = createExpressMiddleware({
     createContext,
     onError: ({ error, type, path, input, ctx }) => {
         //if (EnvConfig.isDevMode) {
+            if (path == `v3.user.getMe` && ctx?.userId == undefined && error.code === `UNAUTHORIZED`) {
+                return; // Skip logging for this specific case
+            }
             Logger.error(`tRPC Error on ${type} ${path} (${ctx?.userId || 'unknown'}): ${error.cause ? parseErrorMessage(error.cause) : error.message}`);
             Logger.debug(`above input: ${JSON.stringify(input)}`);
         //}
