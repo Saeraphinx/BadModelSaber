@@ -835,8 +835,9 @@ export async function importFromZip(database: DatabaseManager, useUrl: boolean =
             return;
         }
 
-        await zip.files[`database.json`].async(`string`).then(jsonString => {
-            database.import(JSON.parse(jsonString));
+        await zip.files[`database.json`].async(`string`).then(async jsonString => {
+            await database.dropSchema();
+            await database.import(JSON.parse(jsonString));
         });
 
         zip.forEach((relativePath, zipEntry) => {
