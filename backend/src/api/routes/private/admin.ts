@@ -269,9 +269,9 @@ export const AdminRouter = router({
                 Logger.log(`Starting import from zip by admin user ${ctx.userId}`);
                 if (fs.existsSync(`./storage/database.json`)) {
                     try {
-                        ctx.db.sequelize.dropSchema(ctx.db.schemaName, {});
-                        ctx.db.createSchema(ctx.db.schemaName);
-                        ctx.db.migrate();
+                        await ctx.db.sequelize.dropSchema(ctx.db.schemaName, {});
+                        await ctx.db.createSchema(ctx.db.schemaName);
+                        await ctx.db.migrate();
                         ctx.db.loadTables();
                     } catch (err) {
                         Logger.error(`Error resetting database schema: ${err}`);
