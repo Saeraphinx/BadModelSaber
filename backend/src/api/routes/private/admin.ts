@@ -4,7 +4,7 @@ import z from "zod/v4";
 import { dedupeArray, handleCatch, parseErrorMessage } from "../../../shared/Tools.ts";
 import { gameProcedure, loggedInAssetProcedure, loggedInProcedure, loggedInProjectProcedure, loggedInVersionProcedure, router } from "../../trpc.ts";
 import { Logger, LogLevel } from "../../../shared/Logger.ts";
-import { importFromBadBeatMods, importFromOldModelSaber, importFromZip } from "../../../shared/Importer.ts";
+import { importFromBadBeatMods, importFromOldModelSaber } from "../../../shared/Importer.ts";
 import { TRPCError } from "@trpc/server";
 import { EnvConfig } from "../../../shared/EnvConfig.ts";
 import { Op } from "sequelize";
@@ -264,13 +264,18 @@ export const AdminRouter = router({
                 Logger.log(`Starting import from Beatmods by admin user ${ctx.userId}`);
                 importFromBadBeatMods();
             }),
-        importFromZip: loggedInProcedure([UserPermissions.Administrative_Tasks])
-            .input(z.object({
-                useUrl: z.boolean().default(false),
-            }))
+        importFromJson: loggedInProcedure([UserPermissions.Administrative_Tasks])
             .mutation(async ({ input, ctx }) => {
                 Logger.log(`Starting import from zip by admin user ${ctx.userId}`);
-                importFromZip(ctx.db, input.useUrl);
+                if (fs.existsSync(`./storage/database.json`)) {
+                    ctx.db.dropSchema();
+                    ctx.db.importFromFile(`./storage/database.json`);
+                    Logger.log(`Imported database.json by admin user ${ctx.userId}`);
+                    fs.renameSync(`./storage/database.json`, `./storage/database-imported.json`);
+                    return { message: `Imported database.json successfully` };
+                } else {
+                    throw new TRPCError({ code: `NOT_FOUND`, message: `database.json not found.` });
+                }
             }),
         exportDB: loggedInProcedure([UserPermissions.Advanced_Admin_Tasks]).mutation(async ({ ctx }) => {
                 Logger.log(`Starting export of the database by admin user ${ctx.userId}`);
