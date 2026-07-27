@@ -11,6 +11,7 @@ import { Op } from "sequelize";
 import { defaultRoles } from "./auth.ts";
 import { on } from "events";
 import { LogEntry } from "winston";
+import * as fs from "fs";
 
 export const AdminRouter = router({
     user: {
@@ -249,11 +250,17 @@ export const AdminRouter = router({
     dev: {
         importOldModelSaberData: loggedInProcedure([UserPermissions.Advanced_Admin_Tasks])
             .mutation(async ({ input, ctx }) => {
+                if (!EnvConfig.isDevMode) {
+                    throw new TRPCError({ code: `FORBIDDEN`, message: `Cannot import old ModelSaber data in a non-development environment.` });
+                }
                 Logger.log(`Starting import of old ModelSaber data by admin user ${ctx.userId}`);
                 importFromOldModelSaber();
             }),
         importFromBeatmods: loggedInProcedure([UserPermissions.Advanced_Admin_Tasks])
             .mutation(async ({ input, ctx }) => {
+                if (!EnvConfig.isDevMode) {
+                    throw new TRPCError({ code: `FORBIDDEN`, message: `Cannot import from Beatmods in a non-development environment.` });
+                }
                 Logger.log(`Starting import from Beatmods by admin user ${ctx.userId}`);
                 importFromBadBeatMods();
             }),
@@ -264,6 +271,11 @@ export const AdminRouter = router({
             .mutation(async ({ input, ctx }) => {
                 Logger.log(`Starting import from zip by admin user ${ctx.userId}`);
                 importFromZip(ctx.db, input.useUrl);
+            }),
+        exportDB: loggedInProcedure([UserPermissions.Advanced_Admin_Tasks]).mutation(async ({ ctx }) => {
+                Logger.log(`Starting export of the database by admin user ${ctx.userId}`);
+                let data = await ctx.db.export();
+                fs.writeFileSync(`./storage/database.json`, JSON.stringify(data));
             }),
         getAdminLogs: loggedInProcedure([UserPermissions.Administrative_Tasks])
             .query(async ({ input, ctx }) => {

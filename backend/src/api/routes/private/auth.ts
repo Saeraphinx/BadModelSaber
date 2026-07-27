@@ -109,6 +109,7 @@ export const authRouter = router({
                 if (userInfo && EnvConfig.auth.discord.autoAdminIds && EnvConfig.auth.discord.autoAdminIds.includes(userInfo.id)) {
                     Logger.info(`Auto-assigning administrative permissions to user ${userInfo.username} (${userInfo.id})`);
                     roles.sitewide.push(UserPermissions.C_Admin);
+                    roles.sitewide.push(UserPermissions.Advanced_Admin_Tasks);
                     roles.sitewide.push(UserPermissions.Administrative_Tasks);
                     roles.sitewide.push(UserPermissions.Users_EditAllRoles);
                 }

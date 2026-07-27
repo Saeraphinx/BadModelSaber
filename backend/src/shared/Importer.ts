@@ -1,4 +1,4 @@
-import { AlertType, Asset, AssetFileFormat, AssetPublicAPIv2, DatabaseManager, DefaultPermissionsObject, Game, GameVersion, License, LinkedAssetLinkType, ModApiv2, ModVersionsApiv2, Project, Status, Tags, User, UserPermissions, UserPublicApiV2, Version, VersionValidStatuses } from "./Database.ts";
+import { AlertType, Asset, AssetFileFormat, AssetPublicAPIv2, DatabaseManager, DefaultPermissionsObject, Game, GameVersion, License, LinkedAssetLinkType, ModApiv2, ModVersionsApiv2, Project, Status, Tags, User, UserPermissions, UserPublicApiV2, Version, VersionValidStatuses, RenderingModes } from "./Database.ts";
 import { Logger } from "./Logger.ts";
 import * as fs from "fs";
 import * as crypto from "crypto";
@@ -342,6 +342,7 @@ export async function importFromOldModelSaber(): Promise<void> {
                 uploaderId: user.id || 6,
                 status: Status.Verified,
                 tags: tags as Tags[],
+                renderingMethod: RenderingModes.BIRP_SinglePass,
                 gameName: (await Game.defaultGame).name,
                 createdAt: new Date(asset.date),
             }).then((record) => {
@@ -709,7 +710,8 @@ export async function importFromBadBeatMods() {
             
             // check if the zip file already exists locally
             let zipBuffer: Buffer<ArrayBuffer> | undefined
-            if (fs.existsSync(path.join(version.versionFolderPath, version.zipFileName))) {
+            let alreadyExists = fs.existsSync(path.join(version.versionFolderPath, version.zipFileName));
+            if (alreadyExists) {
                 zipBuffer = fs.readFileSync(path.join(version.versionFolderPath, version.zipFileName));
                 Logger.debug(`Found existing zip file for version ${version.id} of mod ${mod.id} (${mod.name}), using local copy.`);
             } else {
@@ -771,7 +773,9 @@ export async function importFromBadBeatMods() {
                 });
                 zipParsingPromises = [];
             }
-            await new Promise(resolve => setTimeout(resolve, 400)); // wait a bit for ratelimits
+            if (!alreadyExists) {
+                await new Promise(resolve => setTimeout(resolve, 400)); // wait a bit for ratelimits
+            }
         }
         Logger.debug(`File processing started for all versions of mod ${mod.id} (${mod.name}), (time: ${Date.now() - startTime}ms)`);
         await limitConcurrency(zipParsingPromises, availableParallelism()).then(() => {

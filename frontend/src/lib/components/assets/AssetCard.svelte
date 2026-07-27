@@ -57,7 +57,7 @@
   <a href="/assets/{props.asset.id}">
     <div class="overflow-hidden rounded-2xl mb-4">
       <img
-        src={getThumbnailUrl(props.asset.id, props.asset.icons[0])}
+        src={props.asset.iconUrls[0]}
         alt={`Icon for ${props.asset.name}`}
         class="{sizeClasses.size} rounded-2xl {props.asset.tags.includes(Tags.NSFW) ? `blur-xl` : ``}"
         role="presentation"

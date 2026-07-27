@@ -340,11 +340,16 @@ export class Project extends Model<InferAttributes<Project>, InferCreationAttrib
             if (translation.originalString) {
                 let currentValue = (this as any)[translation.contentType];
                 if (currentValue !== translation.originalString) {
-                    Logger.warn(`Translation for project ID ${this.id} content type ${translation.contentType} may be outdated and in need of review.`);
+                    Logger.log(`Translation for project ID ${this.id} content type ${translation.contentType} may be outdated and in need of review.`);
                     translation.markOutOfDate(this).catch(err => {
                         Logger.error(`Failed to mark translation as out of date for project ID ${this.id}: ${err}`);
                     });
                     translationMap[translation.contentType] = null;
+                } else if (translation.outOfDate) {
+                    Logger.log(`Translation for project ID ${this.id} content type ${translation.contentType} is up to date again.`);
+                    translation.update({ outOfDate: false }).catch(err => {
+                        Logger.error(`Failed to mark translation as up to date for project ID ${this.id}: ${err}`);
+                    });
                 }
             }
         }
@@ -421,6 +426,7 @@ export class Project extends Model<InferAttributes<Project>, InferCreationAttrib
             await this.$set(`authors`, data.authorIds);
         }
         this.lastUpdatedById = user.id;
+        Logger.log(`Project ID ${this.id} updated by user ID ${user.id}`);
         Webhooks.sendWebhookLog(this.gameName, WebhookLogType.Text_Edited, false, WebhookPayloadGenerator.generateEditedThingPayload(this, user));
         return await this.save();
     }

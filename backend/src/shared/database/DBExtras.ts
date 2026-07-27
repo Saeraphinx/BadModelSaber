@@ -34,11 +34,11 @@ export const availableLocales: {
     name: "日本語", // Japanese
     secret: false,
     backend: true,
-    frontend: false,
+    frontend: true,
   },
   {
     code: "cn",
-    name: "Chinese",
+    name: "中文", // Chinese (Written)
     secret: false,
     frontend: true,
     backend: true,
@@ -636,7 +636,7 @@ export const assetApiV3Schema = z.object({
   renderingMethod: z.enum(RenderingModes).nullable(),
   uploaderId: dbId,
   uploader: userApiV3Schema.nullable(),
-  icons: z.array(z.string()),
+  iconUrls: z.array(z.string()),
   name: z.string(),
   description: z.string(),
   license: z.string(),

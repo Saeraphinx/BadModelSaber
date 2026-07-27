@@ -6,6 +6,7 @@ import { Asset } from "./Asset.ts";
 import { WebhookMessageCreateOptions } from "discord.js";
 import { EnvConfig } from "../../EnvConfig.ts";
 import { WebhookLogType } from "../DBExtras.ts";
+import { Logger } from "../../Logger.ts";
 
 @Table({
     tableName: `translations`,
@@ -51,6 +52,7 @@ export class Translation extends Model<InferAttributes<Translation>, InferCreati
         if (!this.outOfDate) {
             this.outOfDate = true;
             await this.save();
+            Logger.log(`Translation for id ${this.parentId} marked as out of date: ${this.contentType} (${this.language})`);
             if (thing instanceof Asset) {
                 Webhooks.sendWebhookLog(thing.gameName, WebhookLogType.Text_TranslationOutOfDate, true, WebhookPayloadGenerator.generateTranslationOutOfDateWebhookPayload(this, thing));
             } else {

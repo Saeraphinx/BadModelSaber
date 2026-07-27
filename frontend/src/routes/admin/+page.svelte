@@ -611,6 +611,20 @@
                   toast.error("Failed to recalculate automatic status change times.", { description: parseErrorMessage(err) });
                 });
             }}>Recalc Automatic Status Change Times</Button>
+          <Button
+            variant="outline"
+            disabled={!isDev}
+            onclick={() => {
+              trpc.internal.admin.dev.exportDB
+                .mutate()
+                .then(() => {
+                  toast.success("Database export started.");
+                })
+                .catch((err) => {
+                  console.error(err);
+                  toast.error("Failed to start database export.", { description: parseErrorMessage(err) });
+                });
+              }}>Export Database</Button>
         </div>
       </div>
     </Tabs.Content>

@@ -169,8 +169,15 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
         if (this.iconNames.length > 0) {
             return `${EnvConfig.server.backendUrl}${EnvConfig.server.fileRoute}/${this.id}/${this.iconNames[0]}`;
         } else {
-            return `${EnvConfig.server.backendUrl}${EnvConfig.server.fileRoute}/${this.gameName}_default`; // default icon if no icons are uploaded
+            return `${EnvConfig.server.backendUrl}${EnvConfig.server.fileRoute}/default-${this.gameName}`; // default icon if no icons are uploaded
         }
+    }
+
+    get iconUrls(): NonAttribute<string[]> {
+        if (this.iconNames.length === 0) {
+            return [`${EnvConfig.server.backendUrl}${EnvConfig.server.fileRoute}/default-${this.gameName}`];
+        }
+        return this.iconNames.map(iconName => `${EnvConfig.server.backendUrl}${EnvConfig.server.fileRoute}/${this.id}/${iconName}`);
     }
     // #endregion
 
@@ -689,7 +696,7 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
             license: this.license,
             licenseUrl: this.licenseUrl,
             sourceUrl: this.sourceUrl,
-            icons: this.iconNames,
+            iconUrls: this.iconUrls,
             fileHash: this.fileHash,
             fileSize: this.fileSize,
             //fileroute has the / inlcuded, so no need to add another /
