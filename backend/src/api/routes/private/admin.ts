@@ -364,7 +364,9 @@ export const AdminRouter = router({
                 for (const version of versions) {
                     let hasDefaultGameVersion = version.supportedGameVersions.some(gv => gv.defaultVersion);
                     if (version.status === Status.Queue) {
-                        if (!hasDefaultGameVersion) {
+                        if (hasDefaultGameVersion) {
+                            version.nextStatusChangeTime = null;
+                        } else {
                             Logger.debug(`Version ${version.id} is in the queue but has no default game version. Setting next status change time.`);
                             version.nextStatusChangeTime = new Date(new Date().getTime() + EnvConfig.gaf.nonDefaultQueueToTestingAutomaticTime);
                         }
