@@ -268,7 +268,15 @@ export const AdminRouter = router({
             .mutation(async ({ input, ctx }) => {
                 Logger.log(`Starting import from zip by admin user ${ctx.userId}`);
                 if (fs.existsSync(`./storage/database.json`)) {
-                    ctx.db.dropSchema();
+                    try {
+                        ctx.db.sequelize.dropSchema(ctx.db.schemaName, {});
+                        ctx.db.createSchema(ctx.db.schemaName);
+                        ctx.db.migrate();
+                        ctx.db.loadTables();
+                    } catch (err) {
+                        Logger.error(`Error resetting database schema: ${err}`);
+                        throw new TRPCError({ code: `INTERNAL_SERVER_ERROR`, message: `Failed to reset database schema` });
+                    }
                     ctx.db.importFromFile(`./storage/database.json`);
                     Logger.log(`Imported database.json by admin user ${ctx.userId}`);
                     fs.renameSync(`./storage/database.json`, `./storage/database-imported.json`);

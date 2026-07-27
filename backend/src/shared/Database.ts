@@ -107,7 +107,7 @@ export class DatabaseManager {
 
         // initialize everything for usage. should resolve once the database is ready.
         await this.connect();
-        await this.sequelize.query(`CREATE SCHEMA IF NOT EXISTS "${this.schemaName}"`);
+        await this.createSchema(this.schemaName);
         await this.migrate();
         this.loadTables();
         try {
