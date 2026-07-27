@@ -599,7 +599,6 @@
             }}>Impersonate Test User</Button>
           <Button
             variant="destructive"
-            disabled={!isDev}
             onclick={() => {
               trpc.internal.admin.dev.recalcAutomaticStatusChangeTimes
                 .mutate()
@@ -613,7 +612,6 @@
             }}>Recalc Automatic Status Change Times</Button>
           <Button
             variant="outline"
-            disabled={!isDev}
             onclick={() => {
               trpc.internal.admin.dev.exportDB
                 .mutate()
