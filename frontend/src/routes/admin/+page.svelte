@@ -216,6 +216,10 @@
   let newWebhookTypes: WebhookLogType[] = $state([]);
   let newWebhookIsAsset = $state(false);
 
+  let setGroupNameDialogOpen = $state(false);
+  let setGroupNameVersionId = $state(-1);
+  let setGroupNameValue = $state("");
+
   async function fetchGames() {
     let showExtra = checkRoles(user, [UserPermissions.Game_ViewExtras]);
     return await trpc.v3.games.getGames
@@ -728,6 +732,7 @@
                   <th>Version</th>
                   <th>Default</th>
                   <th>Linked Versions</th>
+                  <th>Group</th>
                   <th>Created At</th>
                   <th>Updated At</th>
                 </tr>
@@ -770,6 +775,13 @@
                         <PencilLine />
                       </Button>
                     </td>
+                    <td><div class="flex flex-row items-center">
+                      {version.groupName ?? "N/A"}<Button size="icon" class="ml-2" variant="outline" onclick={() => {
+                        setGroupNameVersionId = version.id;
+                        setGroupNameValue = version.groupName ?? "";
+                        setGroupNameDialogOpen = true;
+                      }}><PencilLine /></Button>
+                    </div></td>
                     <td>{`${new Date(version.createdAt).toLocaleString()}`}</td>
                     <td>{`${new Date(version.updatedAt).toLocaleString()}`}</td>
                   </tr>
@@ -1108,6 +1120,36 @@
               toast.error("Failed to create webhook.", { description: parseErrorMessage(err) });
             });
         }}>Create Webhook</Button>
+    </div>
+  </DialogContent>
+</Dialog>
+
+<Dialog bind:open={setGroupNameDialogOpen}>
+  <DialogContent>
+    <div class="flex flex-col items-center rounded-lg justify-center">
+      <p class="p-2 text-2xl">Set Group Name for {selectedGame?.displayName}</p>
+      <Input placeholder="Group Name" class="w-full mb-2" bind:value={setGroupNameValue} />
+      <Button
+        class="w-full"
+        onclick={() => {
+          if (!setGroupNameValue || setGroupNameValue.trim() === "") {
+            toast.error("Please enter a group name.");
+            return;
+          }
+          trpc.internal.admin.game.setGroupName
+            .mutate({ gameName: selectedGame?.name ?? "", versionId: setGroupNameVersionId, groupName: setGroupNameValue.trim() == "" ? null : setGroupNameValue.trim() })
+            .then(() => {
+              toast.success("Group name set.");
+              setGroupNameValue = "";
+              setGroupNameDialogOpen = false;
+              setGroupNameVersionId = -1;
+              fetchGames();
+            })
+            .catch((err) => {
+              console.error(err);
+              toast.error("Failed to set group name.", { description: parseErrorMessage(err) });
+            });
+        }}>Set Group Name</Button>
     </div>
   </DialogContent>
 </Dialog>

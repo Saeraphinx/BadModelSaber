@@ -222,7 +222,7 @@ export const AdminRouter = router({
                 linkedVersionIds: [],
             }).catch(handleCatch(`creating game version`));
             Logger.log(`New version ${newVersion.version} created for game ${ctx.game.name} by admin user ${ctx.userId}`);
-            return newVersion.toApiV3();
+            return newVersion.toApiV3_full();
         }),
         setDefaultVersion: gameProcedure([UserPermissions.Game_EditVersions]).input(z.object({
             versionId: z.number(),
@@ -233,7 +233,7 @@ export const AdminRouter = router({
             }
             Logger.log(`Setting version ${version.version} as default for game ${ctx.game.name} by admin user ${ctx.userId}`);
             version.setDefault().catch(handleCatch(`setting default version`));
-            return version.toApiV3();
+            return version.toApiV3_full();
         }),
         linkVersions: gameProcedure([UserPermissions.Game_EditVersions]).input(z.object({
             versionId1: z.number(),
@@ -242,9 +242,22 @@ export const AdminRouter = router({
             let { gv1, gv2 } = await GameVersion.linkedVersionIdsUpdate(input.versionId1, input.versionId2).catch(handleCatch(`linking versions`));
             Logger.log(`Linked versions ${gv1.version} and ${gv2.version} for game ${ctx.game.name} by admin user ${ctx.userId}`);
             return {
-                version1: gv1.toApiV3(),
-                version2: gv2.toApiV3(),
+                version1: gv1.toApiV3_full(),
+                version2: gv2.toApiV3_full(),
             };
+        }),
+        setGroupName: gameProcedure([UserPermissions.Game_EditVersions]).input(z.object({
+            versionId: z.number(),
+            groupName: z.string().max(100).nullable(),
+        })).mutation(async ({ ctx, input }) => {
+            let version = await GameVersion.findByPk(input.versionId);
+            if (!version || version.gameName !== ctx.game.name) {
+                throw new TRPCError({ code: "NOT_FOUND", message: `Version with id ${input.versionId} not found for game ${ctx.game.name}.` });
+            }
+            version.groupName = input.groupName;
+            await version.save().catch(handleCatch(`setting group name`));
+            Logger.log(`Set group name for version ${version.version} to ${input.groupName} for game ${ctx.game.name} by admin user ${ctx.userId}`);
+            return version.toApiV3_full();
         }),
     },
     dev: {

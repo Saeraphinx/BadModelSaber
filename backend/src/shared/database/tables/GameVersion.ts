@@ -41,6 +41,11 @@ export class GameVersion extends Model<InferAttributes<GameVersion>, InferCreati
     @Column(DataType.ARRAY(DataType.INTEGER))
     declare linkedVersionIds: CreationOptional<number[]>;
 
+    @AllowNull(true)
+    @Default(null)
+    @Column(DataType.STRING)
+    declare groupName: CreationOptional<string | null>;
+
     @BelongsToMany(() => Version, () => VersionGameVersion)
     declare versions: NonAttribute<Version[]>;
 
@@ -162,6 +167,7 @@ export class GameVersion extends Model<InferAttributes<GameVersion>, InferCreati
             version: this.version,
             defaultVersion: this.defaultVersion,
             linkedVersionIds: this.linkedVersionIds || [],
+            groupName: this.groupName || null,
             createdAt: this.createdAt,
             updatedAt: this.updatedAt,
         };

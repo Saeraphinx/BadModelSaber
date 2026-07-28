@@ -14,19 +14,27 @@ export const load = (async ({ fetch, params, parent }) => {
     throw error(401, `You must be logged in to view this page`);
   }
 
-  let project = await trpc.internal.getThings.getProject.query({
+  let pnv = await trpc.v3.mods.getProjectAndVersions.query({
     projectId: id
   }).catch(handleTrpcError());
+  let gameAndVersions = await trpc.v3.games.getGameVersions.query({
+    gameName: pnv.project.gameName ?? ``,
+    includeExtras: true,
+  }).catch(handleTrpcError());
+
 
   
-  if (!checkRoles(user, [UserPermissions.Mods_Create], project.gameName)) {
+  if (!checkRoles(user, [UserPermissions.Mods_Create], pnv.project.gameName)) {
     return error(403, { message: 'You do not have permission to view this page' });
   }
 
   return {
     pageMetadata: {
-      title: `Upload ${project.name || `Error`}`,
+      title: `Upload ${pnv.project.name || `Error`}`,
     },
-    pageData: project,
+    pageData: {
+      pnv: pnv,
+      gav: gameAndVersions,
+    },
   };
 }) satisfies PageLoad;

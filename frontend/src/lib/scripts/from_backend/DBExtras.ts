@@ -545,6 +545,7 @@ export type GameVersionApiV3 = z.infer<typeof GameVersionApiV3Schema>;
 export type GameVersionApiV3_full = GameVersionApiV3 & {
   defaultVersion: boolean,
   linkedVersionIds: number[],
+  groupName: string | null,
   createdAt: Date,
   updatedAt: Date,
 }

@@ -248,5 +248,4 @@ export const updateThingsRouter = router({
             await ctx.user.save().catch(handleCatch(`Error toggling secret features for user ${ctx.user.id} (${ctx.user.username})`));
         })
     }
-
 })

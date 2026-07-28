@@ -1,7 +1,8 @@
 <script lang="ts">
   import DependencySelector from "$lib/components/forms/ProjectSelector.svelte";
+  import GameVersionSelector from "$lib/components/forms/GameVersionSelector.svelte";
   import { m } from "$lib/paraglide/messages.js";
-  import { Status, type GameVersionApiV3 } from "$lib/scripts/from_backend/DBExtras.js";
+  import { Status, type GameVersionApiV3, type GameVersionApiV3_full } from "$lib/scripts/from_backend/DBExtras.js";
   import { getManifestFromFile, getManifestFromZip, type Manifest } from "$lib/scripts/from_backend/modParser.js";
   import { manifestAllDependenciesExist, manifestGameVersionIsLowestSupportedVersion } from "$lib/scripts/utils/checkManifest.js";
   import { Button } from "$shadcn/components/ui/button";
@@ -17,15 +18,22 @@
   import { parse, validRange } from "semver";
   import { onMount } from "svelte";
   import { toast } from "svelte-sonner";
-  import { parseErrorMessage } from "../../../../lib/scripts/utils/api.js";
+  import { parseErrorMessage } from "$lib/scripts/utils/api.js";
   import { goto } from "$app/navigation";
 
   const { data: _internal } = $props();
-  const { trpc, pageData } = $derived(_internal);
+  const {
+    trpc,
+    pageData: {
+      pnv: { project, versions },
+      gav: { game, gameVersions: _gv },
+    },
+  } = $derived(_internal);
+  const gameVersions = _gv as GameVersionApiV3_full[];
 
   let semverString = $state("");
   let platform = $state("universal");
-  let supportedGameVersionIds = $state<string[]>([]);
+  let supportedGameVersionIds = $state<number[]>([]);
   let webDependencies = $state<{ pId: number; pName: string; pNameId: string; sv: string }[]>([]);
   let files: FileList | undefined = $state();
 
@@ -33,23 +41,28 @@
   let versionIdToCloneFrom = $state(-1);
 
   let manifest: Manifest | null = $state(null);
-  let manifestIssues: { str: LocalizedString; issueType: `warn` | `error`, majorIssue: boolean }[] = $derived.by(() => {
-    if (validGameInfo === null) return [];
+  let manifestIssues: { str: LocalizedString; issueType: `warn` | `error`; majorIssue: boolean }[] = $derived.by(() => {
+    if (gameVersions === null) return [];
     if (!manifest) return [{ issueType: `error`, str: m["mods.manifestChecks.couldNotReadManifest"](), majorIssue: false }];
 
-    let issues: { str: LocalizedString; issueType: `warn` | `error`, majorIssue: boolean }[] = [];
-    if (!manifestGameVersionIsLowestSupportedVersion(manifest, validGameInfo.gameVersions.filter((gv) => supportedGameVersionIds.includes(gv.id.toString())))) {
+    let issues: { str: LocalizedString; issueType: `warn` | `error`; majorIssue: boolean }[] = [];
+    if (
+      !manifestGameVersionIsLowestSupportedVersion(
+        manifest,
+        gameVersions.filter((gv) => supportedGameVersionIds.includes(gv.id)),
+      )
+    ) {
       issues.push({
         issueType: `error`,
         str: m["mods.manifestChecks.manifestGameVersionIsntLowest"]({ manifestGameVersion: manifest.gameVersion }),
         majorIssue: true,
       });
     }
-    if (manifest.name !== pageData.name) {
-      issues.push({ issueType: `warn`, str: m["mods.manifestChecks.manifestProjectNameMismatch"]({ manifestName: manifest.name, expectedName: pageData.name }), majorIssue: false });
+    if (manifest.name !== project.name) {
+      issues.push({ issueType: `warn`, str: m["mods.manifestChecks.manifestProjectNameMismatch"]({ manifestName: manifest.name, expectedName: project.name }), majorIssue: false });
     }
-    if (manifest.id !== pageData.nameId) {
-      issues.push({ issueType: `error`, str: m["mods.manifestChecks.manifestProjectIdMismatch"]({ manifestId: manifest.id ?? ``, expectedManifestId: pageData.nameId }), majorIssue: false });
+    if (manifest.id !== project.nameId) {
+      issues.push({ issueType: `error`, str: m["mods.manifestChecks.manifestProjectIdMismatch"]({ manifestId: manifest.id ?? ``, expectedManifestId: project.nameId }), majorIssue: false });
     }
     if (manifest.version !== semverString) {
       issues.push({ issueType: `error`, str: m["mods.manifestChecks.manifestSemVerDoesntMatch"]({ manifestSemVer: manifest.version, expectedSemVer: semverString }), majorIssue: false });
@@ -80,26 +93,11 @@
     return issues;
   });
 
-  let validGameInfo = $state<{ platforms: string[]; gameVersions: GameVersionApiV3[]; gameDisplayName: string } | null>(null);
-
-  async function getGameInfo() {
-    return await trpc.v3.games.getGameVersions.query({ gameName: pageData.gameName }).then((res) => {
-      return {
-        platforms: res.game.platforms,
-        gameVersions: res.gameVersions,
-        gameDisplayName: res.game.displayName,
-      };
-    });
-  }
-
   function saveDataToLocalStorage() {
-    localStorage.setItem(`createVersionData-${pageData.id}`, JSON.stringify({ semverString, platform, supportedGameVersionIds, webDependencies }));
+    localStorage.setItem(`createVersionData-${project.id}`, JSON.stringify({ semverString, platform, supportedGameVersionIds, webDependencies }));
   }
   onMount(() => {
-    getGameInfo().then((info) => {
-      validGameInfo = info;
-    });
-    let savedData = localStorage.getItem(`createVersionData-${pageData.id}`);
+    let savedData = localStorage.getItem(`createVersionData-${project.id}`);
     if (savedData) {
       try {
         let { semverString: savedSemverString, platform: savedPlatform, supportedGameVersionIds: savedSupportedGameVersionIds, webDependencies: savedWebDependencies } = JSON.parse(savedData);
@@ -119,11 +117,6 @@
     webDependencies;
     saveDataToLocalStorage();
   });
-
-  async function getVersionsForDepCloneDialog() {
-    if (!pageData.id) return;
-    return await trpc.internal.getThings.getProjectVerisons.query({ projectId: pageData.id });
-  }
 
   async function loadManifest() {
     if (!files || files.length === 0) return null;
@@ -155,13 +148,13 @@
     }
 
     let formData = new FormData();
-    formData.append("id", pageData.id.toString());
+    formData.append("id", project.id.toString());
     formData.append(
       "data",
       JSON.stringify({
         semver: semverString,
         platform,
-        supportedGameVersionIds: supportedGameVersionIds.map((id) => parseInt(id)),
+        supportedGameVersionIds: supportedGameVersionIds,
         dependencies: webDependencies.map((d) => {
           return { pId: d.pId, sv: d.sv };
         }),
@@ -173,7 +166,7 @@
       .mutate(formData)
       .then((res) => {
         toast.success(m["toasts.success.submit"]());
-        localStorage.removeItem(`createVersionData-${pageData.id}`);
+        localStorage.removeItem(`createVersionData-${project.id}`);
         return res;
       })
       .catch((error) => {
@@ -182,123 +175,96 @@
           description: parseErrorMessage(error),
         });
       });
-      if (response) {
-        goto(`/mods/${pageData.id}`)
-      };
+    if (response) {
+      goto(`/mods/${project.id}`);
+    }
   }
 
   // @ts-ignore sometimes typescript forgets its not real
-  let allowManifestImport = $derived(manifest && manifest.dependsOn && Object.keys(manifest.dependsOn).length > 0)
+  let allowManifestImport = $derived(manifest && manifest.dependsOn && Object.keys(manifest.dependsOn).length > 0);
   async function importDepsFromManifest() {
     if (!allowManifestImport) return;
     // @ts-ignore oh my god i literally check for this right above you
-    trpc.internal.getThings.searchProjectsByNameId.query({ nameIds: Object.keys(manifest.dependsOn), gameName: pageData.gameName }).then((res) => {
-      webDependencies = [];
-      res.forEach((project) => {
-        console.log(`Found id ${project.id} for project nameId ${project.nameId}`)
-        let manifestDepVersion = manifest?.dependsOn ? manifest.dependsOn[project.nameId] : null;
-        webDependencies.push({ pId: project.id, pName: project.name, pNameId: project.nameId, sv: manifestDepVersion });
+    trpc.internal.getThings.searchProjectsByNameId
+      .query({ nameIds: Object.keys(manifest?.dependsOn ?? []), gameName: project.gameName })
+      .then((res) => {
+        webDependencies = [];
+        res.forEach((project) => {
+          console.log(`Found id ${project.id} for project nameId ${project.nameId}`);
+          let manifestDepVersion = manifest?.dependsOn ? manifest.dependsOn[project.nameId] : null;
+          webDependencies.push({ pId: project.id, pName: project.name, pNameId: project.nameId, sv: manifestDepVersion });
+        });
+      })
+      .catch(() => {
+        toast.error(m["toasts.error.generic"]());
       });
-    }).catch(() => {
-      toast.error(m["toasts.error.generic"]());
-    });
   }
   async function importAllFromManifest() {
     if (!allowManifestImport) return;
     importDepsFromManifest();
     semverString = manifest?.version || "";
-    let manGv = validGameInfo?.gameVersions.find((gv) => gv.version === manifest?.gameVersion);
-    supportedGameVersionIds = manGv ? [manGv.id.toString()] : [];
+    let manGv = gameVersions.find((gv) => gv.version === manifest?.gameVersion);
+    supportedGameVersionIds = manGv ? [manGv.id] : [];
     platform = `universal`;
   }
 </script>
 
 <div class="flex flex-col text-center w-full p-4">
-  <h1 class="text-2xl font-bold mb-4">{m["mods.createVersion.title"]({ projectName: pageData.name })}</h1>
-  <p class="text-base mb-4">{m["mods.createVersion.subtitle"]({ projectName: pageData.name })}</p>
+  <h1 class="text-2xl font-bold mb-4">{m["mods.createVersion.title"]({ projectName: project.name })}</h1>
+  <p class="text-base mb-4">{m["mods.createVersion.subtitle"]({ projectName: project.name })}</p>
 </div>
 
 <div class="flex flex-row flex-wrap justify-center p-4 gap-4">
   <div class="flex flex-col w-full max-w-md">
     <!-- left side -->
     <div class="flex flex-col justify-center w-full max-w-md p-4 gap-2 bg-card rounded-lg shadow-md">
-      {#if validGameInfo === null}
-        <p class="flex flex-row items-center gap-2">
-          <Spinner />
-          {m["loading"]()}
-        </p>
-      {:else}
-        <span>
-          <Label class="p-1 pb-2" for="semver">{m["common.dataTable.semver"]()}</Label>
-          <Input bind:value={semverString} aria-invalid={!parse(semverString)} id="semver" />
-          <p class="text-sm text-muted-foreground mt-2 pl-1">{m["mods.createVersion.semverShouldMatchManifest"]()}</p>
-        </span>
-        <span>
-          <Label class="p-1 pb-2" for="platform">{m["common.dataTable.platform"]()}</Label>
-          <Select.Root type="single" bind:value={platform}>
-            <Select.Trigger class="w-full capitalize">
-              {#if platform === ""}
-                {m["common.dataTable.platform"]()}
-              {:else}
-                {platform}
-              {/if}
-            </Select.Trigger>
-            <Select.Content class="w-full">
-              {#each validGameInfo.platforms as p}
-                <Select.Item class="capitalize" value={p}>
-                  {p}
-                </Select.Item>
-              {/each}
-            </Select.Content>
-          </Select.Root>
-        </span>
-        <span>
-          <Label class="p-1 pb-2" for="supportedGameVersions">{m["common.dataTable.supportedGameVersions"]()}</Label>
-          <Select.Root type="multiple" bind:value={supportedGameVersionIds}>
-            <Select.Trigger class="w-full text-wrap" aria-invalid={supportedGameVersionIds.length === 0}>
-              {#if supportedGameVersionIds.length === 0}
-                {m["common.dataTable.supportedGameVersions"]()}
-              {:else}
-                {supportedGameVersionIds.map((id) => validGameInfo?.gameVersions.find((gv) => gv.id === parseInt(id))?.version).join(", ")}
-              {/if}
-            </Select.Trigger>
-            <Select.Content class="w-full max-h-64">
-              {#each validGameInfo.gameVersions as gv}
-                <Select.Item value={gv.id.toString()}>
-                  {validGameInfo.gameDisplayName}
-                  {gv.version}
-                </Select.Item>
-              {/each}
-            </Select.Content>
-          </Select.Root>
-        </span>
-      {/if}
+      <span>
+        <Label class="p-1 pb-2" for="semver">{m["common.dataTable.semver"]()}</Label>
+        <Input bind:value={semverString} aria-invalid={!parse(semverString)} id="semver" />
+        <p class="text-sm text-muted-foreground mt-2 pl-1">{m["mods.createVersion.semverShouldMatchManifest"]()}</p>
+      </span>
+      <span>
+        <Label class="p-1 pb-2" for="platform">{m["common.dataTable.platform"]()}</Label>
+        <Select.Root type="single" bind:value={platform}>
+          <Select.Trigger class="w-full capitalize">
+            {#if platform === ""}
+              {m["common.dataTable.platform"]()}
+            {:else}
+              {platform}
+            {/if}
+          </Select.Trigger>
+          <Select.Content class="w-full">
+            {#each game.platforms as p}
+              <Select.Item class="capitalize" value={p}>
+                {p}
+              </Select.Item>
+            {/each}
+          </Select.Content>
+        </Select.Root>
+      </span>
+      <span>
+        <Label class="p-1 pb-2" for="supportedGameVersions">{m["common.dataTable.supportedGameVersions"]()}</Label>
+        <GameVersionSelector bind:selectedGameVersionIds={supportedGameVersionIds} {gameVersions} />
+      </span>
     </div>
     <!-- dependencies -->
     <div class="flex flex-col justify-center w-full max-w-md p-4 bg-card rounded-lg shadow-md gap-2 mt-4">
-      {#if validGameInfo === null}
-        <p class="flex flex-row items-center gap-2">
-          <Spinner />
-          {m["loading"]()}
-        </p>
-      {:else}
-        <Label class="p-1 pb-2" for="dependencies">{m["common.dataTable.dependencies"]()}</Label>
-        <div id="dependencies" class="grid grid-cols-[2fr_1fr_0.4fr] col-gap-1 gap-2 items-center">
-          {#each webDependencies as dep, i}
-            <DependencySelector gameName={pageData.gameName} bind:selectedProjectId={webDependencies[i].pId} bind:selectedProjectName={webDependencies[i].pName} bind:selectedProjectNameId={webDependencies[i].pNameId} />
-            <Input bind:value={webDependencies[i].sv} placeholder={`SemVer`} aria-invalid={validRange(dep.sv, false) ? false : true} />
-            <Button variant="destructive" onclick={() => (webDependencies = webDependencies.filter((_, _i) => _i !== i))}>
-              {m["dialogs.remove"]()}
-            </Button>
-          {/each}
-        </div>
-        <Button variant="outline" class="mt-2" onclick={() => (webDependencies = [...webDependencies, { pId: -1, pName: ``, pNameId: ``, sv: "" }])}>
-          {m["mods.createVersion.addDependency"]()}
-        </Button>
-        <Button variant="ghost" class="w-full" onclick={() => (openDepCloneDialog = true)}>{m["mods.createVersion.importFromOtherVersion"]()}</Button>
-        <Button variant="ghost" class="w-full" onclick={importDepsFromManifest} disabled={!allowManifestImport}>{m["mods.createVersion.importDepsFromManifest"]()}</Button>
-        <Button variant="ghost" class="w-full" onclick={importAllFromManifest} disabled={!allowManifestImport}>{m["mods.createVersion.importAllFromManifest"]()}</Button>
-      {/if}
+      <Label class="p-1 pb-2" for="dependencies">{m["common.dataTable.dependencies"]()}</Label>
+      <div id="dependencies" class="grid grid-cols-[2fr_1fr_0.4fr] col-gap-1 gap-2 items-center">
+        {#each webDependencies as dep, i}
+          <DependencySelector gameName={project.gameName} bind:selectedProjectId={webDependencies[i].pId} bind:selectedProjectName={webDependencies[i].pName} bind:selectedProjectNameId={webDependencies[i].pNameId} />
+          <Input bind:value={webDependencies[i].sv} placeholder={`SemVer`} aria-invalid={validRange(dep.sv, false) ? false : true} />
+          <Button variant="destructive" onclick={() => (webDependencies = webDependencies.filter((_, _i) => _i !== i))}>
+            {m["dialogs.remove"]()}
+          </Button>
+        {/each}
+      </div>
+      <Button variant="outline" class="mt-2" onclick={() => (webDependencies = [...webDependencies, { pId: -1, pName: ``, pNameId: ``, sv: "" }])}>
+        {m["mods.createVersion.addDependency"]()}
+      </Button>
+      <Button variant="ghost" class="w-full" onclick={() => (openDepCloneDialog = true)}>{m["mods.createVersion.importFromOtherVersion"]()}</Button>
+      <Button variant="ghost" class="w-full" onclick={importDepsFromManifest} disabled={!allowManifestImport}>{m["mods.createVersion.importDepsFromManifest"]()}</Button>
+      <Button variant="ghost" class="w-full" onclick={importAllFromManifest} disabled={!allowManifestImport}>{m["mods.createVersion.importAllFromManifest"]()}</Button>
     </div>
   </div>
   <div class="flex flex-col w-full max-w-md">
@@ -355,19 +321,19 @@
           manifestIssues.some((i) => i.majorIssue) ||
           submissionIssues.length > 0}
         onclick={submit}>{m["dialogs.submit"]()}</Button>
-        {#if submissionIssues.length > 0}
-          <div class="flex flex-col gap-2">
-            <ul class="list-disc list-outside text-sm mt-2">
-              {#each submissionIssues as issue}
-                {#if issue.issueType === `error`}
-                  <li class="text-red-500">{issue.str}</li>
-                {:else if issue.issueType === `warn`}
-                  <li class="text-yellow-500">{issue.str}</li>
-                {/if}
-              {/each}
-            </ul>
-          </div>
-        {/if} 
+      {#if submissionIssues.length > 0}
+        <div class="flex flex-col gap-2">
+          <ul class="list-disc list-outside text-sm mt-2">
+            {#each submissionIssues as issue}
+              {#if issue.issueType === `error`}
+                <li class="text-red-500">{issue.str}</li>
+              {:else if issue.issueType === `warn`}
+                <li class="text-yellow-500">{issue.str}</li>
+              {/if}
+            {/each}
+          </ul>
+        </div>
+      {/if}
     </div>
   </div>
 </div>
@@ -375,66 +341,59 @@
 <Dialog bind:open={openDepCloneDialog}>
   <DialogContent class="sm:max-w-[425px]">
     <DialogHeader>
-      <DialogTitle>{m["mods.createVersion.importFromOtherVersionDialogTitle"]({ projectName: pageData.name })}</DialogTitle>
-      <DialogDescription>{m["mods.createVersion.importFromOtherVersionDialogDescription"]({ projectName: pageData.name })}</DialogDescription>
+      <DialogTitle>{m["mods.createVersion.importFromOtherVersionDialogTitle"]({ projectName: project.name })}</DialogTitle>
+      <DialogDescription>{m["mods.createVersion.importFromOtherVersionDialogDescription"]({ projectName: project.name })}</DialogDescription>
     </DialogHeader>
-    {#await getVersionsForDepCloneDialog()}
-      <div class="flex flex-col items-center justify-center gap-4 py-4">
-        <Spinner />
-        <p class="text-base">{m["loading"]()}</p>
-      </div>
-    {:then versionsToCloneFrom}
-      <div class="flex flex-row gap-4">
-        <Command.Root>
-          <Command.Input placeholder={m["mods.createVersion.searchVersion"]()} />
-          <Command.List>
-            <Command.Empty>{m["mods.noVersionsFound"]()}</Command.Empty>
-            {#if versionsToCloneFrom?.length !== 0}
-              {#each Object.values(Status).filter((s) => {
-                return versionsToCloneFrom?.some((v) => v.status === s);
-              }) as status}
-                <Command.Group heading={m[`enums.status.${status}`]()}>
-                  {#each versionsToCloneFrom?.filter((v) => v.status === status) as version}
-                    <Command.Item
-                      value={version.id.toString()}
-                      onSelect={() => {
-                        versionIdToCloneFrom = version.id;
-                      }}>
-                      {version.semver}
-                      {#if versionIdToCloneFrom == version.id}
-                        <CheckIcon />
-                      {/if}
-                    </Command.Item>
-                  {/each}
-                </Command.Group>
-              {/each}
-            {/if}
-          </Command.List>
-        </Command.Root>
-      </div>
-      <DialogFooter>
-        <Button variant="outline" onclick={() => (openDepCloneDialog = false)}>{m["dialogs.cancel"]()}</Button>
-        <Button
-          onclick={() => {
-            if (versionIdToCloneFrom === -1) return;
-            let versionToCloneFrom = versionsToCloneFrom?.find((v) => v.id === versionIdToCloneFrom);
-            if (!versionToCloneFrom) return;
-            trpc.internal.getThings.getBulkProjects
-              .query({ projectIds: versionToCloneFrom.dependencies.map((d) => d.pId) })
-              .then((res) => {
-                webDependencies = versionToCloneFrom.dependencies.map((d) => {
-                  let project = res.find((p) => p.id === d.pId);
-                  return { pId: d.pId, pName: project ? project.name : `Project ${d.pId}`, pNameId: project ? project.nameId : `p${d.pId}`, sv: d.sv };
-                });
-                openDepCloneDialog = false;
-              })
-              .catch(() => {
-                toast.error(m["toasts.error.generic"]());
+    <div class="flex flex-row gap-4">
+      <Command.Root>
+        <Command.Input placeholder={m["mods.createVersion.searchVersion"]()} />
+        <Command.List>
+          <Command.Empty>{m["mods.noVersionsFound"]()}</Command.Empty>
+          {#if versions.length !== 0}
+            {#each Object.values(Status).filter((s) => {
+              return versions.some((v) => v.status === s);
+            }) as status}
+              <Command.Group heading={m[`enums.status.${status}`]()}>
+                {#each versions.filter((v) => v.status === status) as version}
+                  <Command.Item
+                    value={version.id.toString()}
+                    onSelect={() => {
+                      versionIdToCloneFrom = version.id;
+                    }}>
+                    {version.semver}
+                    {#if versionIdToCloneFrom == version.id}
+                      <CheckIcon />
+                    {/if}
+                  </Command.Item>
+                {/each}
+              </Command.Group>
+            {/each}
+          {/if}
+        </Command.List>
+      </Command.Root>
+    </div>
+    <DialogFooter>
+      <Button variant="outline" onclick={() => (openDepCloneDialog = false)}>{m["dialogs.cancel"]()}</Button>
+      <Button
+        onclick={() => {
+          if (versionIdToCloneFrom === -1) return;
+          let versionToCloneFrom = versions.find((v) => v.id === versionIdToCloneFrom);
+          if (!versionToCloneFrom) return;
+          trpc.internal.getThings.getBulkProjects
+            .query({ projectIds: versionToCloneFrom.dependencies.map((d) => d.pId) })
+            .then((res) => {
+              webDependencies = versionToCloneFrom.dependencies.map((d) => {
+                let project = res.find((p) => p.id === d.pId);
+                return { pId: d.pId, pName: project ? project.name : `Project ${d.pId}`, pNameId: project ? project.nameId : `p${d.pId}`, sv: d.sv };
               });
-          }}>
-          {m["dialogs.submit"]()}</Button>
-      </DialogFooter>
-    {/await}
+              openDepCloneDialog = false;
+            })
+            .catch(() => {
+              toast.error(m["toasts.error.generic"]());
+            });
+        }}>
+        {m["dialogs.submit"]()}</Button>
+    </DialogFooter>
   </DialogContent>
 </Dialog>
 
