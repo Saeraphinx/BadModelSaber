@@ -2,7 +2,7 @@ import { Alert, Asset, AssetValidStatusesArray, dbId, Game, GameVersion, Project
 import { Validator } from "../../../shared/Validator.ts";
 import z from "zod/v4";
 import { dedupeArray, handleCatch, parseErrorMessage } from "../../../shared/Tools.ts";
-import { gameProcedure, loggedInAssetProcedure, loggedInProcedure, loggedInProjectProcedure, loggedInVersionProcedure, router } from "../../trpc.ts";
+import { gameProcedure, loggedInAssetProcedure, loggedInGameVersionProcedure, loggedInProcedure, loggedInProjectProcedure, loggedInVersionProcedure, router } from "../../trpc.ts";
 import { Logger, LogLevel } from "../../../shared/Logger.ts";
 import { importFromBadBeatMods, importFromOldModelSaber } from "../../../shared/Importer.ts";
 import { TRPCError } from "@trpc/server";
@@ -246,18 +246,12 @@ export const AdminRouter = router({
                 version2: gv2.toApiV3_full(),
             };
         }),
-        setGroupName: gameProcedure([UserPermissions.Game_EditVersions]).input(z.object({
-            versionId: z.number(),
+        setGroupName: loggedInGameVersionProcedure([UserPermissions.Game_EditVersions]).input(z.object({
             groupName: z.string().max(100).nullable(),
         })).mutation(async ({ ctx, input }) => {
-            let version = await GameVersion.findByPk(input.versionId);
-            if (!version || version.gameName !== ctx.game.name) {
-                throw new TRPCError({ code: "NOT_FOUND", message: `Version with id ${input.versionId} not found for game ${ctx.game.name}.` });
-            }
-            version.groupName = input.groupName;
-            await version.save().catch(handleCatch(`setting group name`));
-            Logger.log(`Set group name for version ${version.version} to ${input.groupName} for game ${ctx.game.name} by admin user ${ctx.userId}`);
-            return version.toApiV3_full();
+            await ctx.gameVersion.setGroupName(input.groupName).catch(handleCatch(`setting group name`));
+            Logger.log(`Set group name for version ${ctx.gameVersion.version} to ${input.groupName} for game ${ctx.gameVersion.gameName} by admin user ${ctx.userId}`);
+            return ctx.gameVersion.toApiV3_full();
         }),
     },
     dev: {

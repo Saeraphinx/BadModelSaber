@@ -141,14 +141,14 @@
       },
       onError(err) {
         console.error(err);
-        toast.error("Failed to subscribe to admin logs.", { description: parseErrorMessage(err) })
+        toast.error("Failed to subscribe to admin logs.", { description: parseErrorMessage(err) });
       },
       onStarted() {
         ALisConnected = true;
       },
       onStopped() {
         ALisConnected = false;
-      }
+      },
     });
   }
 
@@ -314,7 +314,7 @@
     });
   }
   // #endregion
-  
+
   // #region Approval Queue
   let approvalDialog: ApprovalDialog | null = null;
   let codeDialog: CodeDialog | null = null;
@@ -349,7 +349,10 @@
       <p class="text-sm text-muted-foreground">Loading Admin Data...</p>
     {:then adminStatus}
       {#if adminStatus}
-        <p class="text-sm text-muted-foreground">Database Status: {adminStatus.dbConnectionOK ?? `Unknown`} | Hash: <a target="_blank" href="https://github.com/Saeraphinx/BadModelSaber/commit/{adminStatus.version}">{adminStatus.version}</a> | Signed in as {adminStatus.discordTokenUser?.username}#{adminStatus.discordTokenUser?.discriminator}</p>
+        <p class="text-sm text-muted-foreground">
+          Database Status: {adminStatus.dbConnectionOK ?? `Unknown`} | Hash: <a target="_blank" href="https://github.com/Saeraphinx/BadModelSaber/commit/{adminStatus.version}">{adminStatus.version}</a> | Signed in as {adminStatus
+            .discordTokenUser?.username}#{adminStatus.discordTokenUser?.discriminator}
+        </p>
       {:else}
         <p class="text-sm text-red-500">Unable to fetch admin status.</p>
       {/if}
@@ -379,9 +382,7 @@
       <div class="flex flex-col items-center p-4 bg-accent rounded-lg">
         <div class="flex flex-row gap-2">
           <p class="text-2xl">Admin Logs</p>
-          <Button variant="outline" onclick={fetchAdminLogs} disabled={ALisConnected}>
-            Get Last 5 Minutes
-          </Button>
+          <Button variant="outline" onclick={fetchAdminLogs} disabled={ALisConnected}>Get Last 5 Minutes</Button>
           <Button onclick={ALisConnected ? unsubscribeAdminLogs : subscribeAdminLogs}>
             {ALisConnected ? "Unsubscribe" : "Subscribe"}
           </Button>
@@ -555,7 +556,7 @@
                 })
                 .catch((err) => {
                   console.error(err);
-                  toast.error("Failed to start import.", { description: parseErrorMessage(err) } );
+                  toast.error("Failed to start import.", { description: parseErrorMessage(err) });
                 });
             }}>Import Old ModelSaber Data</Button>
           <Button
@@ -626,52 +627,52 @@
                   console.error(err);
                   toast.error("Failed to start database export.", { description: parseErrorMessage(err) });
                 });
-              }}>Export Database</Button>
+            }}>Export Database</Button>
         </div>
       </div>
     </Tabs.Content>
     <Tabs.Content value="users">
       <div class="flex flex-col m-auto w-full items-center gap-4 p-4">
-        <div class="flex flex-col items-center p-4 bg-accent rounded-lg justify-center w-sm ">
-          <Input placeholder="Search by username or ID..." bind:value={userSearchQuery} class="" oninput={ debounce(searchUsers, 500, { immediate: true })} />
+        <div class="flex flex-col items-center p-4 bg-accent rounded-lg justify-center w-sm">
+          <Input placeholder="Search by username or ID..." bind:value={userSearchQuery} class="" oninput={debounce(searchUsers, 500, { immediate: true })} />
         </div>
-          <table class="table-auto w-full">
-            <thead>
+        <table class="table-auto w-full">
+          <thead>
+            <tr>
+              <th></th>
+              <th>User ID</th>
+              <th>Username</th>
+              <th>Display Name</th>
+              <th>Github ID</th>
+              <th>Discord ID</th>
+              <th>Roles</th>
+            </tr>
+          </thead>
+          <tbody>
+            {#each userSearchResults as user}
               <tr>
-                <th></th>
-                <th>User ID</th>
-                <th>Username</th>
-                <th>Display Name</th>
-                <th>Github ID</th>
-                <th>Discord ID</th>
-                <th>Roles</th>
+                <td class="w-12"><img src={user.avatarUrl} alt="Avatar" class="w-8 h-8 rounded-full" /></td>
+                <td>{user.id}</td>
+                <td>{user.username}</td>
+                <td>{user.displayName}</td>
+                <td>{user.githubId ?? "N/A"}</td>
+                <td>{user.discordId ?? "N/A"}</td>
+                <td>
+                  <div class="flex flex-row flex-wrap overflow-scroll gap-1">
+                    {#each user.permissions.sitewide as perm}
+                      <span class="px-2 py-1 bg-secondary rounded">{perm}</span>
+                    {/each}
+                    {#each Object.entries(user.permissions.perGame) as [game, perms]}
+                      {#each perms as perm}
+                        <span class="px-2 py-1 bg-secondary rounded">{game}: {perm}</span>
+                      {/each}
+                    {/each}
+                  </div>
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              {#each userSearchResults as user}
-                <tr>
-                  <td class="w-12"><img src={user.avatarUrl} alt="Avatar" class="w-8 h-8 rounded-full" /></td>
-                  <td>{user.id}</td>
-                  <td>{user.username}</td>
-                  <td>{user.displayName}</td>
-                  <td>{user.githubId ?? "N/A"}</td>
-                  <td>{user.discordId ?? "N/A"}</td>
-                  <td>
-                    <div class="flex flex-row flex-wrap overflow-scroll gap-1">
-                      {#each user.permissions.sitewide as perm}
-                        <span class="px-2 py-1 bg-secondary rounded">{perm}</span>
-                      {/each}
-                      {#each Object.entries(user.permissions.perGame) as [game, perms]}
-                        {#each perms as perm}
-                          <span class="px-2 py-1 bg-secondary rounded">{game}: {perm}</span>
-                        {/each}
-                      {/each}
-                    </div>
-                  </td>
-                </tr>
-              {/each}
-            </tbody>
-          </table>
+            {/each}
+          </tbody>
+        </table>
       </div>
     </Tabs.Content>
     <Tabs.Content value="games">
@@ -762,26 +763,33 @@
                       </Button>
                     </td>
                     <td>
-                      {version.linkedVersionIds.length > 0 ? `Linked to: ${version.linkedVersionIds.join(", ")}` : "No linked versions"}
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        class="ml-2"
-                        onclick={() => {
-                          linkVersionSourceId = version.id.toString();
-                          linkVersionTargetId = "";
-                          linkVersionDialogOpen = true;
-                        }}>
-                        <PencilLine />
-                      </Button>
+                      <div class="flex flex-row items-center">
+                        {version.linkedVersionIds.length > 0 ? `Linked to: ${version.linkedVersionIds.join(", ")}` : "No linked versions"}
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          class="ml-2"
+                          onclick={() => {
+                            linkVersionSourceId = version.id.toString();
+                            linkVersionTargetId = "";
+                            linkVersionDialogOpen = true;
+                          }}>
+                          <PencilLine />
+                        </Button>
+                      </div>
                     </td>
-                    <td><div class="flex flex-row items-center">
-                      {version.groupName ?? "N/A"}<Button size="icon" class="ml-2" variant="outline" onclick={() => {
-                        setGroupNameVersionId = version.id;
-                        setGroupNameValue = version.groupName ?? "";
-                        setGroupNameDialogOpen = true;
-                      }}><PencilLine /></Button>
-                    </div></td>
+                    <td
+                      ><div class="flex flex-row items-center">
+                        {version.groupName ?? "N/A"}<Button
+                          size="icon"
+                          class="ml-2"
+                          variant="outline"
+                          onclick={() => {
+                            setGroupNameVersionId = version.id;
+                            setGroupNameValue = version.groupName ?? "";
+                            setGroupNameDialogOpen = true;
+                          }}><PencilLine /></Button>
+                      </div></td>
                     <td>{`${new Date(version.createdAt).toLocaleString()}`}</td>
                     <td>{`${new Date(version.updatedAt).toLocaleString()}`}</td>
                   </tr>
@@ -933,14 +941,14 @@
           <Select.Trigger class="w-[180px]">{aqSelectedGameVersionString ?? `Select a version...`}</Select.Trigger>
           <Select.Content>
             <Select.Item value="All Versions">All Versions</Select.Item>
-            {#each Array.from(new Set([...aqModsInApprovalQueue.map(mod => mod.version.supportedGameVersions.map(v => v.version)).flat()])).sort((a, b) => new SemVer(a).compare(b)) as version}
+            {#each Array.from(new Set([...aqModsInApprovalQueue.map((mod) => mod.version.supportedGameVersions.map((v) => v.version)).flat()])).sort((a, b) => new SemVer(a).compare(b)) as version}
               <Select.Item value={version}>{version}</Select.Item>
             {/each}
           </Select.Content>
         </Select.Root>
       </div>
       <div class="mt-4 gap-4 flex flex-row flex-wrap items-center-safe justify-center-safe">
-        {#each aqSelectedGameVersionString === "All Versions" ? aqModsInApprovalQueue : aqModsInApprovalQueue.filter(mod => mod.version.supportedGameVersions.some(v => v.version === aqSelectedGameVersionString)) as mod}
+        {#each aqSelectedGameVersionString === "All Versions" ? aqModsInApprovalQueue : aqModsInApprovalQueue.filter((mod) => mod.version.supportedGameVersions.some((v) => v.version === aqSelectedGameVersionString)) as mod}
           <ModCompactCard
             project={mod.project}
             version={mod.version}
@@ -975,9 +983,9 @@
       </div>
     </Tabs.Content>
     <Tabs.Content value="unpicked">
-        <div class="flex flex-col m-auto items-center p-4 max-w-md w-full bg-accent rounded-lg">
-          <p>Select a tab above.</p>
-        </div>
+      <div class="flex flex-col m-auto items-center p-4 max-w-md w-full bg-accent rounded-lg">
+        <p>Select a tab above.</p>
+      </div>
     </Tabs.Content>
   </Tabs.Root>
 </div>
@@ -1137,7 +1145,7 @@
             return;
           }
           trpc.internal.admin.game.setGroupName
-            .mutate({ gameName: selectedGame?.name ?? "", versionId: setGroupNameVersionId, groupName: setGroupNameValue.trim() == "" ? null : setGroupNameValue.trim() })
+            .mutate({ id: setGroupNameVersionId, groupName: setGroupNameValue.trim() == "" ? null : setGroupNameValue.trim() })
             .then(() => {
               toast.success("Group name set.");
               setGroupNameValue = "";

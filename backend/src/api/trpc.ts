@@ -265,6 +265,25 @@ export function loggedInAssetProcedure(roles?: UserPermissions[] | { hasAllOf?: 
     });
 }
 
+export function loggedInGameVersionProcedure(roles?: UserPermissions[] | { hasAllOf?: UserPermissions[], hasOneOf?: UserPermissions[], denied?: UserPermissions[] }) {
+    return t.procedure.input(z.object({
+        id: z.number()
+    })).use(async ({ ctx, next, input }) => {
+        let gameVersion = await GameVersion.findByPk(input.id);
+        if (!gameVersion) {
+            throw new TRPCError({ code: 'NOT_FOUND', message: `GameVersion with ID ${input.id} not found.` });
+        }
+        let user = await roleCheckLogic(ctx, roles, gameVersion.gameName);
+        return next({
+            ctx: {
+                ...ctx,
+                user: user,
+                gameVersion: gameVersion,
+            }
+        });
+    });
+}
+
 async function roleCheckLogic(ctx: Context, roles?: UserPermissions[] | { hasAllOf?: UserPermissions[], hasOneOf?: UserPermissions[], denied?: UserPermissions[] }, gameName?:string): Promise<User> {
     if (!ctx.userId) {
         throw new TRPCError({ code: 'UNAUTHORIZED', message: 'You are not logged in.' });

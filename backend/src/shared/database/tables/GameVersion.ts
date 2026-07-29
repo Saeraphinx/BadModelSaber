@@ -3,7 +3,6 @@ import { AllowNull, BelongsToMany, Column, CreatedAt, DataType, Default, Deleted
 import { GameVersionApiV2, GameVersionApiV3, GameVersionApiV3_full } from "../DBExtras.ts";
 import { Version } from "./Version.ts";
 import { VersionGameVersion } from "./Junctions.ts";
-import { parseErrorMessage } from "../../Tools.ts";
 import { coerce } from "semver";
 
 export type GameVersionInfer = InferAttributes<GameVersion>;
@@ -63,50 +62,41 @@ export class GameVersion extends Model<InferAttributes<GameVersion>, InferCreati
             throw new Error('One or both GameVersions not found');
         }
 
-        // make sure that the ids are actually linked
-        if (!gv1.linkedVersionIds?.includes(gv2.id)) {
-            gv1.linkedVersionIds = [...(gv1.linkedVersionIds || []), gv2.id];
-            await gv1.save();
-        }
-        if (!gv2.linkedVersionIds?.includes(gv1.id)) {
-            gv2.linkedVersionIds = [...(gv2.linkedVersionIds || []), gv1.id];
-            await gv2.save();
-        }
+        // find gv1 and gv2, and all game versions that are linked to gv1 or gv2 & update their linkedVersionIds
+        let editedGameVersions = await GameVersion.findAll({
+            where: {
+                id: [...(gv1.linkedVersionIds || []), ...(gv2.linkedVersionIds || []), gv1.id, gv2.id],
+            },
+        }).then(async (linkedVersions) => {
+            let allIds = linkedVersions.map(lv => lv.id);
+            let output: Promise<GameVersion>[] = []
+            for (const gv of linkedVersions) {
+                gv.linkedVersionIds = allIds.filter(id => id !== gv.id);
+                output.push(gv.save());
+            }
+            return await Promise.all(output)
+        });
 
-        // find all versions that have gv1 id or gv2 id in their supportedGameVersionIds
-        let gv1Versions = await Version.findAll({
+        // find all versions that have gv1 id or gv2 id in their supportedGameVersionIds & update their associations
+        await Version.findAll({
             include: [{
                 model: GameVersion,
-                where: { id: gv1.id },
+                where: { id: editedGameVersions.map(gv => gv.id) },
                 through: { attributes: [] },
                 required: true, // inner join
             }],
-        });
-
-        let gv2Versions = await Version.findAll({
-            include: [{
-                model: GameVersion,
-                where: { id: gv2.id },
-                through: { attributes: [] },
-                required: true, // inner join
-            }],
-        });
-
-        // add gv2 id to all versions that have gv1 id, and vice versa
-        for (let version of gv1Versions) {
-            if (!version.$has(`supportedGameVersions`, gv2)) {
-                version.$add(`supportedGameVersions`, gv2);
+        }).then(async (versions) => {
+            for (const version of versions) {
+                for (const gv of editedGameVersions) {
+                    if (!version.$has(`supportedGameVersions`, gv)) {
+                        version.$add(`supportedGameVersions`, gv);
+                    }
+                }
                 await version.save();
             }
-        }
+        });
 
-        for (let version of gv2Versions) {
-            if (!version.$has(`supportedGameVersions`, gv1)) {
-                version.$add(`supportedGameVersions`, gv1);
-                await version.save();
-            }
-        }
-        return { gv1, gv2 };
+        return { gv1: await gv1.reload(), gv2: await gv2.reload() };
     }
 
     public async setDefault() {
@@ -123,6 +113,19 @@ export class GameVersion extends Model<InferAttributes<GameVersion>, InferCreati
         });
     }
 
+    public async setGroupName(groupName: string | null) {
+        this.groupName = groupName;
+        if (this.linkedVersionIds && this.linkedVersionIds.length > 0) {
+            GameVersion.update({
+                groupName: groupName
+            }, {
+                where: {
+                    id: this.linkedVersionIds || [],
+                },
+            });
+        }
+        return await this.save();
+    }
 
     public static compare(a: GameVersion, b: GameVersion): number {
         if (a.gameName < b.gameName) {
