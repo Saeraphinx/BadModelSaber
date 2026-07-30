@@ -35,11 +35,6 @@ export class GameVersion extends Model<InferAttributes<GameVersion>, InferCreati
     @Column(DataType.BOOLEAN)
     declare defaultVersion: CreationOptional<boolean>;
 
-    @AllowNull(false)
-    @Default([])
-    @Column(DataType.ARRAY(DataType.INTEGER))
-    declare linkedVersionIds: CreationOptional<number[]>;
-
     @AllowNull(true)
     @Default(null)
     @Column(DataType.STRING)
@@ -54,50 +49,6 @@ export class GameVersion extends Model<InferAttributes<GameVersion>, InferCreati
     declare readonly updatedAt: CreationOptional<Date>;
     @DeletedAt
     declare readonly deletedAt: CreationOptional<Date> | null;
-
-    public static async linkedVersionIdsUpdate(id1: number, id2: number) {
-        const gv1 = await GameVersion.findByPk(id1);
-        const gv2 = await GameVersion.findByPk(id2);
-        if (!gv1 || !gv2) {
-            throw new Error('One or both GameVersions not found');
-        }
-
-        // find gv1 and gv2, and all game versions that are linked to gv1 or gv2 & update their linkedVersionIds
-        let editedGameVersions = await GameVersion.findAll({
-            where: {
-                id: [...(gv1.linkedVersionIds || []), ...(gv2.linkedVersionIds || []), gv1.id, gv2.id],
-            },
-        }).then(async (linkedVersions) => {
-            let allIds = linkedVersions.map(lv => lv.id);
-            let output: Promise<GameVersion>[] = []
-            for (const gv of linkedVersions) {
-                gv.linkedVersionIds = allIds.filter(id => id !== gv.id);
-                output.push(gv.save());
-            }
-            return await Promise.all(output)
-        });
-
-        // find all versions that have gv1 id or gv2 id in their supportedGameVersionIds & update their associations
-        await Version.findAll({
-            include: [{
-                model: GameVersion,
-                where: { id: editedGameVersions.map(gv => gv.id) },
-                through: { attributes: [] },
-                required: true, // inner join
-            }],
-        }).then(async (versions) => {
-            for (const version of versions) {
-                for (const gv of editedGameVersions) {
-                    if (!version.$has(`supportedGameVersions`, gv)) {
-                        version.$add(`supportedGameVersions`, gv);
-                    }
-                }
-                await version.save();
-            }
-        });
-
-        return { gv1: await gv1.reload(), gv2: await gv2.reload() };
-    }
 
     public async setDefault() {
         await GameVersion.update({ defaultVersion: false }, {
@@ -115,15 +66,6 @@ export class GameVersion extends Model<InferAttributes<GameVersion>, InferCreati
 
     public async setGroupName(groupName: string | null) {
         this.groupName = groupName;
-        if (this.linkedVersionIds && this.linkedVersionIds.length > 0) {
-            GameVersion.update({
-                groupName: groupName
-            }, {
-                where: {
-                    id: this.linkedVersionIds || [],
-                },
-            });
-        }
         return await this.save();
     }
 
@@ -169,7 +111,6 @@ export class GameVersion extends Model<InferAttributes<GameVersion>, InferCreati
             gameName: this.gameName,
             version: this.version,
             defaultVersion: this.defaultVersion,
-            linkedVersionIds: this.linkedVersionIds || [],
             groupName: this.groupName || null,
             createdAt: this.createdAt,
             updatedAt: this.updatedAt,

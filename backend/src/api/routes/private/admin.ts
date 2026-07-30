@@ -219,7 +219,6 @@ export const AdminRouter = router({
                 gameName: ctx.game.name,
                 version: input.version,
                 defaultVersion: false,
-                linkedVersionIds: [],
             }).catch(handleCatch(`creating game version`));
             Logger.log(`New version ${newVersion.version} created for game ${ctx.game.name} by admin user ${ctx.userId}`);
             return newVersion.toApiV3_full();
@@ -234,17 +233,6 @@ export const AdminRouter = router({
             Logger.log(`Setting version ${version.version} as default for game ${ctx.game.name} by admin user ${ctx.userId}`);
             version.setDefault().catch(handleCatch(`setting default version`));
             return version.toApiV3_full();
-        }),
-        linkVersions: gameProcedure([UserPermissions.Game_EditVersions]).input(z.object({
-            versionId1: z.number(),
-            versionId2: z.number(),
-        })).mutation(async ({ ctx, input }) => {
-            let { gv1, gv2 } = await GameVersion.linkedVersionIdsUpdate(input.versionId1, input.versionId2).catch(handleCatch(`linking versions`));
-            Logger.log(`Linked versions ${gv1.version} and ${gv2.version} for game ${ctx.game.name} by admin user ${ctx.userId}`);
-            return {
-                version1: gv1.toApiV3_full(),
-                version2: gv2.toApiV3_full(),
-            };
         }),
         setGroupName: loggedInGameVersionProcedure([UserPermissions.Game_EditVersions]).input(z.object({
             groupName: z.string().max(100).nullable(),

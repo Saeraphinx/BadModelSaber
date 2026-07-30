@@ -764,22 +764,6 @@
                     </td>
                     <td>
                       <div class="flex flex-row items-center">
-                        {version.linkedVersionIds.length > 0 ? `Linked to: ${version.linkedVersionIds.join(", ")}` : "No linked versions"}
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          class="ml-2"
-                          onclick={() => {
-                            linkVersionSourceId = version.id.toString();
-                            linkVersionTargetId = "";
-                            linkVersionDialogOpen = true;
-                          }}>
-                          <PencilLine />
-                        </Button>
-                      </div>
-                    </td>
-                    <td
-                      ><div class="flex flex-row items-center">
                         {version.groupName ?? "N/A"}<Button
                           size="icon"
                           class="ml-2"
@@ -1049,37 +1033,6 @@
               toast.error("Failed to create version.");
             });
         }}>Create Version</Button>
-    </div>
-  </DialogContent>
-</Dialog>
-
-<Dialog bind:open={linkVersionDialogOpen}>
-  <DialogContent>
-    <div class="flex flex-col items-center rounded-lg justify-center">
-      <p class="p-2 text-2xl">Link Versions for {selectedGame?.displayName}</p>
-      <Input placeholder="Version ID #1" class="w-full mb-2" bind:value={linkVersionSourceId} />
-      <Input placeholder="Version ID #2" class="w-full mb-2" bind:value={linkVersionTargetId} />
-      <Button
-        class="w-full"
-        onclick={() => {
-          if (!linkVersionSourceId || !linkVersionTargetId) {
-            toast.error("Please enter both source and target version IDs.");
-            return;
-          }
-          trpc.internal.admin.game.linkVersions
-            .mutate({ gameName: selectedGame?.name ?? "", versionId1: parseInt(linkVersionSourceId), versionId2: parseInt(linkVersionTargetId) })
-            .then(() => {
-              toast.success("Versions linked.");
-              linkVersionSourceId = "";
-              linkVersionTargetId = "";
-              linkVersionDialogOpen = false;
-              fetchGames();
-            })
-            .catch((err) => {
-              console.error(err);
-              toast.error("Failed to link versions.");
-            });
-        }}>Link Versions</Button>
     </div>
   </DialogContent>
 </Dialog>

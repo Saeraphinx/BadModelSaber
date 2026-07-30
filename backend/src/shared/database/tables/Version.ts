@@ -512,19 +512,6 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
                 throw new Error(`Invalid supportedGameVersion Ids provied. Some GameVersions not found.`);
             }
             await this.$set(`supportedGameVersions`, desiredGameVersions);
-
-            // find all of the new game versions that aren't in the old game versions, and add any of their linked versions
-            let newGameVersions = desiredGameVersions.filter(dGv => currentVersionGameVersions.every(current => current.id !== dGv.id));
-            for (let newGameVersion of newGameVersions) {
-                if (newGameVersion.linkedVersionIds && newGameVersion.linkedVersionIds.length > 0) {
-                    for (let linkedVersionId of newGameVersion.linkedVersionIds) {
-                        // if the linked version isn't already supported by this version and the new game version wasn't already supported, add the linked version to the supported versions
-                        if (currentVersionGameVersions.every(current => current.id !== linkedVersionId) && desiredGameVersions.every(desired => desired.id !== linkedVersionId)) {
-                            this.$add(`supportedGameVersions`, linkedVersionId);
-                        }
-                    }
-                }
-            }
         }
         if (data.dependencies) {
             this.dependencies = data.dependencies;
