@@ -218,7 +218,7 @@ export const AdminRouter = router({
             let newVersion = await GameVersion.create({
                 gameName: ctx.game.name,
                 version: input.version,
-                defaultVersion: false,
+                isDefault: false,
             }).catch(handleCatch(`creating game version`));
             Logger.log(`New version ${newVersion.version} created for game ${ctx.game.name} by admin user ${ctx.userId}`);
             return newVersion.toApiV3_full();
@@ -232,6 +232,19 @@ export const AdminRouter = router({
             }
             Logger.log(`Setting version ${version.version} as default for game ${ctx.game.name} by admin user ${ctx.userId}`);
             version.setDefault().catch(handleCatch(`setting default version`));
+            return version.toApiV3_full();
+        }),
+        setVersionDeprecated: gameProcedure([UserPermissions.Game_EditVersions]).input(z.object({
+            versionId: z.number(),
+            isDeprecated: z.boolean(),
+        })).mutation(async ({ ctx, input }) => {
+            let version = await GameVersion.findByPk(input.versionId);
+            if (!version || version.gameName !== ctx.game.name) {
+                throw new TRPCError({ code: "NOT_FOUND", message: `Version with id ${input.versionId} not found for game ${ctx.game.name}.` });
+            }
+            version.isDeprecated = input.isDeprecated;
+            await version.save().catch(handleCatch(`setting version deprecated`));
+            Logger.log(`Set version ${version.version} deprecated status to ${input.isDeprecated} for game ${ctx.game.name} by admin user ${ctx.userId}`);
             return version.toApiV3_full();
         }),
         setGroupName: loggedInGameVersionProcedure([UserPermissions.Game_EditVersions]).input(z.object({
@@ -357,9 +370,9 @@ export const AdminRouter = router({
                 include: [GameVersion]
             }).then(versions => {
                 for (const version of versions) {
-                    let hasDefaultGameVersion = version.supportedGameVersions.some(gv => gv.defaultVersion);
+                    let hasNonDeprecated = version.supportedGameVersions.some(gv => !gv.isDeprecated);
                     if (version.status === Status.Queue) {
-                        if (hasDefaultGameVersion) {
+                        if (hasNonDeprecated) {
                             version.nextStatusChangeTime = null;
                         } else {
                             Logger.debug(`Version ${version.id} is in the queue but has no default game version. Setting next status change time.`);

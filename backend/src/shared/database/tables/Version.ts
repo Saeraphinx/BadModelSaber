@@ -425,7 +425,7 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
             this.nextStatusChangeTime = new Date(new Date(Date.now() + EnvConfig.gaf.oldTestingToVerifiedAutomaticTime).setHours(0, 0, 0, 0));
         }
         // set next status change time for queue if no default game version is present
-        if (newStatus === Status.Queue && !this.supportedGameVersions.some(v => v.defaultVersion)) {
+        if (newStatus === Status.Queue && this.supportedGameVersions.every(v => v.isDeprecated)) {
             this.nextStatusChangeTime = new Date(new Date(Date.now() + EnvConfig.gaf.nonDefaultQueueToTestingAutomaticTime).setHours(0, 0, 0, 0));
         }
 
@@ -516,7 +516,7 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
         if (data.dependencies) {
             this.dependencies = data.dependencies;
         }
-        if (this.status === Status.Queue && !this.supportedGameVersions.some(v => v.defaultVersion)) {
+        if (this.status === Status.Queue && this.supportedGameVersions.every(v => v.isDeprecated)) {
             this.nextStatusChangeTime = new Date(new Date(Date.now() + EnvConfig.gaf.nonDefaultQueueToTestingAutomaticTime).setHours(0, 0, 0, 0));
         } else {
             this.nextStatusChangeTime = null;
@@ -631,14 +631,14 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
     }
 
     private async handleStatusUpdate(systemUser: User): Promise<void> {
-        let hasDefaultGameVersion = this.supportedGameVersions.some((gv) => gv.defaultVersion);
+        let hasDeprecatedVersion = this.supportedGameVersions.some((gv) => gv.isDeprecated);
         let newStatus = Status.Queue;
 
         if (this.status == Status.Queue) {
-            if (hasDefaultGameVersion) {
-                return;
-            } else {
+            if (hasDeprecatedVersion) {
                 newStatus = Status.NonDefault_Testing;
+            } else {
+                return;
             }
         } else if (this.status == Status.NonDefault_Testing) {
             newStatus = Status.Unverified;

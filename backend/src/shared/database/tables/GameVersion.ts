@@ -33,7 +33,12 @@ export class GameVersion extends Model<InferAttributes<GameVersion>, InferCreati
     @AllowNull(false)
     @Default(false)
     @Column(DataType.BOOLEAN)
-    declare defaultVersion: CreationOptional<boolean>;
+    declare isDefault: CreationOptional<boolean>;
+
+    @AllowNull(false)
+    @Default(false)
+    @Column(DataType.BOOLEAN)
+    declare isDeprecated: CreationOptional<boolean>;
 
     @AllowNull(true)
     @Default(null)
@@ -51,7 +56,7 @@ export class GameVersion extends Model<InferAttributes<GameVersion>, InferCreati
     declare readonly deletedAt: CreationOptional<Date> | null;
 
     public async setDefault() {
-        await GameVersion.update({ defaultVersion: false }, {
+        await GameVersion.update({ isDefault: false }, {
             where: {
                 gameName: this.gameName,
                 id: {
@@ -59,7 +64,7 @@ export class GameVersion extends Model<InferAttributes<GameVersion>, InferCreati
                 },
             },
         }).then(async () => {
-            this.defaultVersion = true;
+            this.isDefault = true;
             return await this.save();
         });
     }
@@ -110,7 +115,8 @@ export class GameVersion extends Model<InferAttributes<GameVersion>, InferCreati
             id: this.id as number,
             gameName: this.gameName,
             version: this.version,
-            defaultVersion: this.defaultVersion,
+            isDefault: this.isDefault,
+            isDeprecated: this.isDeprecated,
             groupName: this.groupName || null,
             createdAt: this.createdAt,
             updatedAt: this.updatedAt,
@@ -122,7 +128,7 @@ export class GameVersion extends Model<InferAttributes<GameVersion>, InferCreati
             id: this.id,
             gameName: this.gameName,
             version: this.version,
-            defaultVersion: this.defaultVersion,
+            defaultVersion: this.isDefault,
             createdAt: this.createdAt,
             updatedAt: this.updatedAt,
         };

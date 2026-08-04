@@ -543,7 +543,8 @@ let GameVersionApiV3Schema = z.object({
 });
 export type GameVersionApiV3 = z.infer<typeof GameVersionApiV3Schema>;
 export type GameVersionApiV3_full = GameVersionApiV3 & {
-  defaultVersion: boolean,
+  isDefault: boolean,
+  isDeprecated: boolean,
   groupName: string | null,
   createdAt: Date,
   updatedAt: Date,

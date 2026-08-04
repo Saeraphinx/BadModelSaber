@@ -220,8 +220,7 @@ export const uploadStuff = router({
         let newGameVersions = await GameVersion.findAll({
             where: {
                 [Op.or]: [
-                    { id: input.data.supportedGameVersionIds },
-                    { linkedVersionIds: { [Op.overlap]: input.data.supportedGameVersionIds } } // also include game versions that have linkedVersionIds that overlap with the provided supportedGameVersionIds,
+                    { id: input.data.supportedGameVersionIds }
                 ]
             }
         }).catch((err) => {
