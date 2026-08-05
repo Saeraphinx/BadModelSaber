@@ -1,4 +1,4 @@
-import { Status, UserPermissions } from "$lib/scripts/from_backend/DBExtras";
+import { Status, UserPermissions, type GameVersionApiV3_full } from "$lib/scripts/from_backend/DBExtras";
 import { error } from "@sveltejs/kit";
 import type { PageLoad } from "./$types";
 import { checkRoles } from "$lib/scripts/utils/checkRoles.js";
@@ -19,11 +19,11 @@ export const load: PageLoad = async ({ fetch, url }) => {
   }
 
   let games = await trpc.v3.games.getGames.query().catch(handleTrpcError());
-  let gameToQuery = game && games.some(g => g.name === game) ? game : games.find(g => g.default)?.name || games[0]?.name;
+  let gameToQuery = game && games.some(g => g.name === game) ? game : games.find(g => g.isDefault)?.name || games[0]?.name;
   let selectedGame = await trpc.v3.games.getGameVersions.query({
     gameName: gameToQuery,
     includeExtras: true,
-  })
+  });
   // @ts-expect-error trust me
   let selectedGameVersionId: string = gameVersion && selectedGame.gameVersions.some(v => v.id.toString() === gameVersion) ? gameVersion : selectedGame.gameVersions.find(v => v.defaultVersion)?.id.toString() || selectedGame.gameVersions[0]?.id.toString();
 

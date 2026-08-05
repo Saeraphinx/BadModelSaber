@@ -74,7 +74,7 @@
                 }}
               >
                 {version.version}
-                {#if version.defaultVersion}
+                {#if version.isDefault}
                   <span class="text-sm text-green-500">(Default)</span>
                 {/if}
               </Button>

@@ -98,10 +98,21 @@ export class Project extends Model<InferAttributes<Project>, InferCreationAttrib
     @Column(DataType.INTEGER)
     declare lastUpdatedById: number;
 
+    /**
+     * A history of the status changes for this project - used for moderation and auditing purposes
+     */
     @AllowNull(false)
     @Default([])
     @Column(DataType.ARRAY(DataType.JSONB))
     declare statusHistory: CreationOptional<StatusHistory[]>;
+
+    /**
+     * Should be featured on the front page of the site - this is a manual setting that can be set by mods/admins
+     */
+    @AllowNull(false)
+    @Default(false)
+    @Column(DataType.BOOLEAN)
+    declare isFeatured: CreationOptional<boolean>; 
 
     @CreatedAt
     declare readonly createdAt: CreationOptional<Date>;
@@ -159,6 +170,7 @@ export class Project extends Model<InferAttributes<Project>, InferCreationAttrib
         lastUpdatedById: dbId,
         collaboratorIds: z.array(dbId),
         statusHistory: z.array(statusHistorySchema),
+        isFeatured: z.boolean(),
         createdAt: z.date(),
         updatedAt: z.date(),
         deletedAt: z.date().nullable(),
@@ -170,6 +182,7 @@ export class Project extends Model<InferAttributes<Project>, InferCreationAttrib
         collaboratorIds: Project.validator.shape.collaboratorIds.nullish(),
         status: Project.validator.shape.status.nullish(),
         statusHistory: Project.validator.shape.statusHistory.nullish(),
+        isFeatured: Project.validator.shape.isFeatured.nullish(),
         lastApprovedById: Project.validator.shape.lastApprovedById.nullish(),
         deletedAt: Project.validator.shape.deletedAt.nullish(),
     });

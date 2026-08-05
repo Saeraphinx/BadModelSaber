@@ -229,6 +229,8 @@
     "upload": "Upload",
     "uploadAndSaveIcon": "Upload & Save Icon",
     "nameIdExplanation": "The Manifest ID is a unique identifier for this project that is used in the manifest (e.g. the \"id\" field in a BSIPA manifest) of all of your versions. It is typically the same as the name. This cannot be changed after the project is created.",
+    "deprecatedVersionWarning": "Your selected game version is no longer supported.",
+    "deprecatedVersionWarningDescription": "You will not receive support for this versions within the BSMG Discord server. Please update consider updating your game to a more recent or supported version.",
     "createProject": {
       "title": "Create Project",
       "subtitle": "Please fill out the form below to create a new project.",

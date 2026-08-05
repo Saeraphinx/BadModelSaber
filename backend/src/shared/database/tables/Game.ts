@@ -245,7 +245,7 @@ export class Game extends Model<InferAttributes<Game>, InferCreationAttributes<G
             categories: this.categories as string[],
             platforms: this.platforms as string[],
             webhooks: includeWebhooks ? this.getAPIWebhooks() : null,
-            default: this.default,
+            isDefault: this.default,
         };
     }
 }

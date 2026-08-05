@@ -4,7 +4,6 @@ import { anyGameProcedure, anyProcedure, gameProcedure, router } from "../../../
 import z from "zod/v4";
 import { TRPCError } from "@trpc/server";
 import { Op, WhereOptions } from "sequelize";
-import sequelize from "sequelize/lib/sequelize";
 import { compare } from "semver";
 
 export const GetModsV3 = router({

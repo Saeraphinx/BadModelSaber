@@ -2,7 +2,7 @@
   import MiniPagination from "$lib/components/generic/MiniPagination.svelte";
   import ModCard from "$lib/components/mods/ModCard.svelte";
   import { m } from "$lib/paraglide/messages.js";
-  import { Status, UserPermissions, type GameVersionApiV3 } from "$lib/scripts/from_backend/DBExtras";
+  import { Status, UserPermissions, type GameVersionApiV3, type GameVersionApiV3_full } from "$lib/scripts/from_backend/DBExtras";
   import { generateProjectSearchEngine } from "$lib/scripts/utils/search.js";
   import { getStatusString } from "$lib/scripts/utils/stylizer";
   import Checkbox from "$shadcn/components/ui/checkbox/checkbox.svelte";
@@ -11,7 +11,7 @@
   import Label from "$shadcn/components/ui/label/label.svelte";
   import * as Select from "$shadcn/components/ui/select";
   import Skeleton from "$shadcn/components/ui/skeleton/skeleton.svelte";
-  import { ChevronRightIcon, FunnelIcon } from "@lucide/svelte";
+  import { ChevronRightIcon, FunnelIcon, TriangleAlertIcon } from "@lucide/svelte";
   import { sortCategoriesPublic } from "$lib/scripts/utils/stylizer";
   import { onMount, tick, untrack } from "svelte";
   import { MediaQuery } from "svelte/reactivity";
@@ -19,6 +19,7 @@
   import { checkRoles } from "$lib/scripts/utils/checkRoles";
   import * as Drawer from "../../lib/shadcn/components/ui/drawer";
   import { replaceState } from "$app/navigation";
+  import { page } from "$app/state";
 
   const { data: _internal } = $props();
   const { pageData, trpc, user } = $derived(_internal);
@@ -31,7 +32,7 @@
   // svelte-ignore state_referenced_locally
   let selectedGame = $derived.by(() => games?.find((g) => g.name === selectedGameName));
   // svelte-ignore state_referenced_locally
-  let gameVersions: GameVersionApiV3[] = $state(pageData.startingGame.gameVersions || []);
+  let gameVersions: GameVersionApiV3_full[] = $state((pageData.startingGame.gameVersions as GameVersionApiV3_full[]) || []);
   // svelte-ignore state_referenced_locally
   let selectedGameVersionId = $state<string>(pageData.query.gameVersionId || ``);
   let selectedGameVersion = $derived.by(() => gameVersions.find((v) => v.id === parseInt(selectedGameVersionId)));
@@ -81,8 +82,8 @@
       statusLookup.push(Status.Unverified);
     }
     if (gameVersions.some((v) => v.gameName !== selectedGame.name)) {
-      await trpc.v3.games.getGameVersions.query({ gameName: selectedGame.name }).then((versions) => {
-        gameVersions = versions.gameVersions;
+      await trpc.v3.games.getGameVersions.query({ gameName: selectedGame.name, includeExtras: true }).then((versions) => {
+        gameVersions = versions.gameVersions as GameVersionApiV3_full[];
         selectedGameVersionId = gameVersions.find((v: any) => v.defaultVersion)?.id.toString() || ``;
       });
     }
@@ -119,7 +120,7 @@
     if (selectedCategories.length > 0) searchParams.set("category", selectedCategories.join(","));
     if (searchQuery.trim() !== "") searchParams.set("search", searchQuery);
     if (selectedStatuses.length > 0 && selectedStatuses.every(s => s !== Status.Verified)) searchParams.set("status", selectedStatuses.join(","));
-    untrack(() => tick().then(() => replaceState("", `${location.pathname}${searchParams.size > 0 ? `?${searchParams.toString()}` : ""}`)));
+    untrack(() => tick().then(() =>replaceState(`${location.pathname}${searchParams.size > 0 ? `?${searchParams.toString()}` : ""}`, page.state)));
   });
 </script>
 
@@ -167,6 +168,15 @@
           </Select.Content>
         </Select.Root>
       </span>
+    {/if}
+    {#if selectedGameVersion?.isDeprecated || true}
+      <div class="flex flex-col gap-2 bg-orange-800/20 px-4 py-2 rounded-md">
+        <div class="flex flex-row items-center gap-2">
+          <TriangleAlertIcon class="h-16 w-16 text-amber-500 mx-1" />
+          <span class="text-base/tight text-amber-500">{m["mods.deprecatedVersionWarning"]()}</span>
+        </div>
+        <span class="text-xs text-orange-300">{m["mods.deprecatedVersionWarningDescription"]()}</span>
+      </div>
     {/if}
   </div>
 {/snippet}

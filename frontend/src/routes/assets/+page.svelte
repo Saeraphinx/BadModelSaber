@@ -12,7 +12,7 @@
   import { MediaQuery } from "svelte/reactivity";
   import * as Collapsible from "$shadcn/components/ui/collapsible";
   import { generateAssetSearchEngine } from "$lib/scripts/utils/search.js";
-  import { onMount, untrack } from "svelte";
+  import { onMount, tick, untrack } from "svelte";
   import ApprovalPopup from "$lib/components/dialogs/ApprovalDialog.svelte";
   import { toast } from "svelte-sonner";
   import { getAssetTypeCategories, getRenderingMethodString, getRenderingMethodSupportedGV, getStatusString } from "$lib/scripts/utils/stylizer.js";
@@ -23,7 +23,8 @@
   import * as Drawer from "$shadcn/components/ui/drawer";
   import { parseErrorMessage } from "../../lib/scripts/utils/api.js";
   import * as RadioGroup from "../../lib/shadcn/components/ui/radio-group";
-  import { navigating } from "$app/state";
+  import { navigating, page } from "$app/state";
+  import { replaceState } from "$app/navigation";
 
   const { data: _internal } = $props();
   // svelte-ignore state_referenced_locally
@@ -116,20 +117,20 @@
   $effect(() => {
     //update url based on filters
 
-    let params = new URLSearchParams();
+    let searchParams = new URLSearchParams();
     if (selectedFileFormats.length > 0) {
-      params.set("type", selectedFileFormats.join(","));
+      searchParams.set("type", selectedFileFormats.join(","));
     }
     if (selectedRenderingMethod !== `all`) {
-      params.set("renderingMethod", selectedRenderingMethod);
+      searchParams.set("renderingMethod", selectedRenderingMethod);
     }
     if (selectedStatuses.length > 0 && !(selectedStatuses.length === 1 && selectedStatuses[0] === Status.Verified)) {
-      params.set("status", selectedStatuses[0]);
+      searchParams.set("status", selectedStatuses[0]);
     }
     if (searchQuery.length > 0) {
-      params.set("search", searchQuery);
+      searchParams.set("search", searchQuery);
     }
-    untrack(() => history.replaceState(null, "", `${location.pathname}${params.size > 0 ? `?${params.toString()}` : ""}`));
+    untrack(() => tick().then(() =>replaceState(`${location.pathname}${searchParams.size > 0 ? `?${searchParams.toString()}` : ""}`, page.state)));
   });
 </script>
 

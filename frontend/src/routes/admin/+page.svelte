@@ -12,22 +12,42 @@
   import { RefreshCwIcon, PlusIcon, PencilLine, TrashIcon } from "@lucide/svelte";
   import { Dialog, DialogContent } from "$shadcn/components/ui/dialog/index.js";
   import { checkRoles } from "$lib/scripts/utils/checkRoles.js";
-  import { onMount } from "svelte";
+  import { onMount, tick, untrack } from "svelte";
   import { getVersionDecompUrl, getVersionManifestUrl, parseErrorMessage } from "$lib/scripts/utils/api.js";
   import ModCard from "$lib/components/mods/ModCard.svelte";
   import ModCompactCard from "$lib/components/mods/ModCompactCard.svelte";
   import ApprovalDialog from "$lib/components/dialogs/ApprovalDialog.svelte";
   import CodeDialog from "$lib/components/dialogs/CodeDialog.svelte";
   import debounce from "debounce";
-  import { invalidateAll } from "$app/navigation";
+  import { invalidateAll, replaceState } from "$app/navigation";
+  import { page } from "$app/state";
   import { Separator } from "$shadcn/components/ui/separator";
   import { SemVer } from "semver";
+  import RolesEditor from "../../lib/components/users/RolesEditor.svelte";
 
   const { data: _internal } = $props();
   // svelte-ignore state_referenced_locally
   const { user, trpc } = $derived(_internal);
   let currentTab = $state("unpicked");
   let isDev = $state(import.meta.env.DEV);
+
+  onMount(() => {
+    const urlParams = new URLSearchParams(location.search);
+    const tabParam = urlParams.get("tab");
+    if (tabParam) {
+      currentTab = tabParam;
+    }
+  })
+
+  $effect(() => {
+    if (currentTab === "unpicked") {
+      return;
+    }
+    let searchParams = new URLSearchParams();
+    searchParams.set("tab", currentTab);
+    //console.log(`Updating URL to reflect current tab: ${currentTab}`);
+    untrack(() => tick().then(() =>replaceState(`${location.pathname}${searchParams.size > 0 ? `?${searchParams.toString()}` : ""}`, page.state)));
+  })
 
   // #region Alert
   let alertType = $state(AlertType.Generic);
@@ -52,66 +72,6 @@
       .catch((err) => {
         console.error(err);
         toast.error(`Failed to send alert.`, { description: parseErrorMessage(err) });
-      });
-  }
-  // #endregion
-
-  // #region Roles (depends on Game Management)
-  // svelte-ignore state_referenced_locally
-  let roleUserId = $state(`${user.id}`);
-  let sitewidePermissions = $state<UserPermissions[]>([]);
-  let perGamePermissions = $state<Record<string, UserPermissions[]>>({});
-  let hasBeenLoaded = $state(false);
-  let roleAddGameDialogOpen = $state(false);
-  function clearRoleSelections() {
-    const checkboxes = document.querySelectorAll("input[type=checkbox]");
-    checkboxes.forEach((checkbox) => {
-      (checkbox as HTMLInputElement).checked = false;
-    });
-  }
-  function addGameToPerGamePermissions(gameName: string) {
-    if (!perGamePermissions[gameName]) {
-      perGamePermissions = {
-        ...perGamePermissions,
-        [gameName]: [],
-      };
-    }
-  }
-  function loadUserRoles() {
-    trpc.v3.user.getUserById
-      .query({ id: parseInt(roleUserId) })
-      .then((user) => {
-        sitewidePermissions = user.permissions.sitewide;
-        perGamePermissions = user.permissions.perGame;
-        for (const perm of sitewidePermissions) {
-          let checkbox = document.getElementById(`sw_${perm}`) as HTMLInputElement;
-          if (checkbox) {
-            checkbox.checked = true;
-          }
-        }
-        toast.success("User roles loaded.");
-        hasBeenLoaded = true;
-      })
-      .catch((err) => {
-        console.error(err);
-        toast.error("Failed to load user roles.", { description: parseErrorMessage(err) });
-      });
-  }
-  function sendUserRoles() {
-    trpc.internal.admin.user.setRoles
-      .mutate({
-        userId: parseInt(roleUserId),
-        permissions: {
-          sitewide: sitewidePermissions,
-          perGame: perGamePermissions,
-        },
-      })
-      .then(() => {
-        toast.success("User roles updated.");
-      })
-      .catch((err) => {
-        console.error(err);
-        toast.error("Failed to update user roles.", { description: parseErrorMessage(err) });
       });
   }
   // #endregion
@@ -189,6 +149,9 @@
       return res;
     });
   }
+
+  let userSelectedId = $state(-1);
+  let userShowRolesDialog = $state(false);
   // #endregion
 
   // #region Game Management
@@ -248,7 +211,7 @@
 
   onMount(async () => {
     await fetchGames();
-    selectedGameName = games.find((game) => game.default)?.name ?? "";
+    selectedGameName = games.find((game) => game.isDefault)?.name ?? "";
   });
   // #endregion
 
@@ -420,9 +383,6 @@
           <Tabs.Root value="roles" class="w-full">
             <Tabs.List class="m-auto">
               <Tabs.Trigger value="alerts">Alerts</Tabs.Trigger>
-              {#if checkRoles(user, [UserPermissions.Users_EditAllRoles])}
-                <Tabs.Trigger value="roles">Roles</Tabs.Trigger>
-              {/if}
               <Tabs.Trigger value="requests">Requests</Tabs.Trigger>
             </Tabs.List>
             <Tabs.Content value="alerts">
@@ -460,91 +420,10 @@
               <Textarea bind:value={alertMessage} placeholder="This is a test message from the admins." />
               <Button onclick={sendAdminAlert} class="mt-4 mb-2 w-full">Send Alert</Button>
             </Tabs.Content>
-            <Tabs.Content value="roles">
-              <!-- Role Panel -->
-              <Label class="mt-4 mb-2">Target User</Label>
-              <div class="flex flex-row">
-                <Input
-                  bind:value={roleUserId}
-                  class="w-3/4 mr-1"
-                  placeholder="User ID"
-                  oninput={() => {
-                    hasBeenLoaded = false;
-                    clearRoleSelections();
-                  }} />
-                <Button onclick={loadUserRoles} class="w-1/4">Fetch</Button>
-              </div>
-              <div class="flex flex-row justify-end items-center mt-2">
-                <Button size="sm" variant="ghost" onclick={() => (roleAddGameDialogOpen = true)}>Add Game</Button>
-              </div>
-              <Accordion.Root type="single" class="w-full">
-                <Accordion.Item value="sitewide" class="border rounded-md mb-2">
-                  <Accordion.Trigger class="bg-secondary p-2 rounded-t-md w-full text-left">Sitewide Permissions</Accordion.Trigger>
-                  <Accordion.Content class="p-2">
-                    <div class="flex flex-row flex-wrap gap-2 m-2">
-                      {#each Object.values(UserPermissions) as item}
-                        <div class="flex flex-row items-center gap-1">
-                          <Checkbox
-                            bind:checked={
-                              () => {
-                                return sitewidePermissions.includes(item);
-                              },
-                              (val) => {
-                                if (val) {
-                                  sitewidePermissions = [...sitewidePermissions, item];
-                                } else {
-                                  sitewidePermissions = sitewidePermissions.filter((perm) => perm !== item);
-                                }
-                              }
-                            }
-                            id={`sw_${item}`} />
-                          <Label for={`sw_${item}`}>{item}</Label>
-                        </div>
-                      {/each}
-                    </div>
-                  </Accordion.Content>
-                </Accordion.Item>
-                {#each Object.keys(perGamePermissions) as game}
-                  <Accordion.Item value={game} class="border rounded-md mb-2">
-                    <Accordion.Trigger class="bg-secondary p-2 rounded-t-md w-full text-left">{game} Permissions</Accordion.Trigger>
-                    <Accordion.Content class="p-2">
-                      <div class="flex flex-row flex-wrap gap-2 m-2">
-                        {#each Object.values(UserPermissions).filter((i) => !i.startsWith(`cos_`) && !i.startsWith(`secret`)) as item}
-                          <div class="flex flex-row items-center gap-1">
-                            <Checkbox
-                              bind:checked={
-                                () => {
-                                  return perGamePermissions[game]?.includes(item) ?? false;
-                                },
-                                (val) => {
-                                  if (val) {
-                                    perGamePermissions = {
-                                      ...perGamePermissions,
-                                      [game]: [...(perGamePermissions[game] ?? []), item],
-                                    };
-                                  } else {
-                                    perGamePermissions = {
-                                      ...perGamePermissions,
-                                      [game]: perGamePermissions[game]?.filter((perm) => perm !== item) ?? [],
-                                    };
-                                  }
-                                }
-                              }
-                              id={`${game}_${item}`} />
-                            <Label for={`${game}_${item}`}>{item}</Label>
-                          </div>
-                        {/each}
-                      </div>
-                    </Accordion.Content>
-                  </Accordion.Item>
-                {/each}
-              </Accordion.Root>
-              <Button class="mt-4 mb-2 w-full" onclick={sendUserRoles} disabled={!hasBeenLoaded}>Update Roles</Button>
-            </Tabs.Content>
           </Tabs.Root>
         </div>
         <div class="flex flex-col items-center p-4 gap-4 bg-accent rounded-lg w-[300px]">
-          <p>One-Shots</p>
+          <p class="text-2xl">One-Shots</p>
           <Button
             disabled={!isDev}
             variant="destructive"
@@ -658,15 +537,23 @@
                 <td>{user.githubId ?? "N/A"}</td>
                 <td>{user.discordId ?? "N/A"}</td>
                 <td>
-                  <div class="flex flex-row flex-wrap overflow-scroll gap-1">
-                    {#each user.permissions.sitewide as perm}
-                      <span class="px-2 py-1 bg-secondary rounded">{perm}</span>
-                    {/each}
-                    {#each Object.entries(user.permissions.perGame) as [game, perms]}
-                      {#each perms as perm}
-                        <span class="px-2 py-1 bg-secondary rounded">{game}: {perm}</span>
+                  <div class="flex flex-row gap-4 items-center">
+                    <div class="flex flex-row w-full flex-wrap max-h-32 overflow-y-scroll scrollbar-thin gap-1">
+                      {#each user.permissions.sitewide as perm}
+                        <span class="px-2 py-1 bg-secondary rounded">{perm}</span>
                       {/each}
-                    {/each}
+                      {#each Object.entries(user.permissions.perGame) as [game, perms]}
+                        {#each perms as perm}
+                          <span class="px-2 py-1 bg-secondary rounded">{game}: {perm}</span>
+                        {/each}
+                      {/each}
+                    </div>
+                    <Button size="icon" variant="outline" onclick={() => {
+                      userSelectedId = user.id;
+                      userShowRolesDialog = true;
+                    }}>
+                      <PencilLine />
+                    </Button>
                   </div>
                 </td>
               </tr>
@@ -716,7 +603,7 @@
               <p><strong>Display Name:</strong> {selectedGame.displayName}</p>
               <p><strong>Platforms:</strong> {selectedGame.platforms.join(", ")}</p>
               <p><strong>Categories:</strong> {selectedGame.categories.join(", ")}</p>
-              <p><strong>Is Default:</strong> {selectedGame.default ? "Yes" : "No"}</p>
+              <p><strong>Is Default:</strong> {selectedGame.isDefault ? "Yes" : "No"}</p>
             </div>
           </Tabs.Content>
           <Tabs.Content value="versions" class="flex flex-col items-center">
@@ -732,7 +619,7 @@
                   <th>Version ID</th>
                   <th>Version</th>
                   <th>Default</th>
-                  <th>Linked Versions</th>
+                  <th>Deprecated</th>
                   <th>Group</th>
                   <th>Created At</th>
                   <th>Updated At</th>
@@ -745,8 +632,8 @@
                     <td>{version.version}</td>
                     <td>
                       <Button
-                        variant={version.defaultVersion ? "default" : "outline"}
-                        disabled={version.defaultVersion}
+                        variant={version.isDefault ? "default" : "outline"}
+                        disabled={version.isDefault}
                         onclick={() => {
                           trpc.internal.admin.game.setDefaultVersion
                             .mutate({ gameName: selectedGame.name, versionId: version.id })
@@ -759,11 +646,29 @@
                               toast.error(`Failed to set version ${version.version} as default. ${parseErrorMessage(err)}`);
                             });
                         }}>
-                        {version.defaultVersion ? "Default" : "Set as Default"}
+                        {version.isDefault ? "Default" : "Set as Default"}
                       </Button>
                     </td>
                     <td>
-                      <div class="flex flex-row items-center">
+                      <Button
+                        variant={!version.isDeprecated ? "default" : "outline"}
+                        onclick={() => {
+                          trpc.internal.admin.game.setVersionDeprecated
+                            .mutate({ gameName: selectedGame.name, versionId: version.id, isDeprecated: !version.isDeprecated })
+                            .then(() => {
+                              toast.success(`Version ${version.version} deprecated set to ${!version.isDeprecated}.`);
+                              fetchGames();
+                            })
+                            .catch((err) => {
+                              console.error(err);
+                              toast.error(`Failed to set version ${version.version} deprecation. ${parseErrorMessage(err)}`);
+                            });
+                        }}>
+                        {version.isDeprecated ? "Deprecated" : "Supported"}
+                      </Button>
+                    </td>
+                    <td>
+                      <div class="flex flex-row justify-center items-center">
                         {version.groupName ?? "N/A"}<Button
                           size="icon"
                           class="ml-2"
@@ -773,7 +678,8 @@
                             setGroupNameValue = version.groupName ?? "";
                             setGroupNameDialogOpen = true;
                           }}><PencilLine /></Button>
-                      </div></td>
+                      </div>
+                    </td>
                     <td>{`${new Date(version.createdAt).toLocaleString()}`}</td>
                     <td>{`${new Date(version.updatedAt).toLocaleString()}`}</td>
                   </tr>
@@ -1115,20 +1021,11 @@
   </DialogContent>
 </Dialog>
 
-<Dialog bind:open={roleAddGameDialogOpen}>
+<Dialog bind:open={userShowRolesDialog}>
   <DialogContent>
-    <div class="flex flex-col items-center rounded-lg justify-center flex-wrap">
-      <p class="p-2 text-2xl">Add Game to pergame</p>
-      {#each games as g}
-        {#if !Object.keys(perGamePermissions).includes(g.name)}
-          <Button
-            class=" mb-2"
-            onclick={() => {
-              addGameToPerGamePermissions(g.name);
-              roleAddGameDialogOpen = false;
-            }}>{g.displayName}</Button>
-        {/if}
-      {/each}
+    <div class="flex flex-col items-center rounded-lg justify-center">
+      <p class="p-2 text-2xl">Edit Roles for User {userSelectedId}</p>
+      <RolesEditor bind:userId={userSelectedId} availableGameNames={games} onSubmit={() => { userShowRolesDialog = false }}  />
     </div>
   </DialogContent>
 </Dialog>

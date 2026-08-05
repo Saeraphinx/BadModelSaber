@@ -1,10 +1,12 @@
 import { TRPCError } from "@trpc/server";
 import { Op } from "sequelize";
 import z from "zod";
-import { Project, ProjectApiV3, versionApiV3Schema, Version, User, GameVersion, UserPermissions, Status } from "../../../shared/Database.ts";
+import { Project, ProjectApiV3, versionApiV3Schema, Version, User, GameVersion, UserPermissions, Status, assetApiV3Schema, projectApiV3Schema, Asset, Tags } from "../../../shared/Database.ts";
 import { anyGameProcedure, anyProcedure, loggedInProcedure, router } from "../../trpc.ts";
 import fs from "fs";
 import { createPatch, diffLines, lineDiff } from "diff";
+import { Sequelize } from "sequelize-typescript";
+import { parseErrorMessage } from "../../../shared/Tools.ts";
 
 export const getThingsInternalRouter = router({
     // #region getProject
@@ -176,4 +178,36 @@ export const getThingsInternalRouter = router({
             return diff;
         }),
     // #endregion
+    getFrontPageIcons: anyProcedure()
+        .output(z.array(assetApiV3Schema.or(projectApiV3Schema)))
+        .query(async ({ ctx }) => {
+            try {
+                const assets = await Asset.findAll({
+                    where: {
+                        status: Status.Verified,
+                    },
+                    limit: 10,
+                    order: [
+                        [Sequelize.fn('array_position', Sequelize.col('tags'), Tags.Featured), 'ASC'],
+                        [Sequelize.fn('array_position', Sequelize.col('tags'), Tags.Contest), 'ASC'],
+                        ['createdAt', 'DESC']
+                    ],
+                    include: { all: true }
+                });
+                const projects = await Project.findAll({
+                    where: {
+                        status: Status.Public,
+                        isFeatured: true,
+                    },
+                    limit: 10,
+                    order: [['createdAt', 'DESC']],
+                    include: { all: true }
+                });
+                let response = await Promise.all([...assets.map(asset => asset.toApiV3(), ...projects.map(project => project.toApiV3()))]);
+                return response;
+            } catch (err) {
+                console.error(err);
+                throw new TRPCError({ code: `INTERNAL_SERVER_ERROR`, message: `Error fetching front page assets: ${parseErrorMessage(err)}` });
+            }
+        })
 })

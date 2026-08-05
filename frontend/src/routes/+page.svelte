@@ -1,6 +1,6 @@
 <script lang="ts">
   import AssetCard from "$lib/components/assets/AssetCard.svelte";
-  import { type AssetApiV3 } from "$lib/scripts/from_backend/DBExtras.js";
+  import { type AssetApiV3, type ProjectApiV3 } from "$lib/scripts/from_backend/DBExtras.js";
   import { trpc } from "$lib/scripts/utils/api";
   import { Button } from "$shadcn/components/ui/button";
   import * as Carousel from "$shadcn/components/ui/carousel";
@@ -10,14 +10,15 @@
   import { ExternalLinkIcon } from "@lucide/svelte";
   import Separator from "$shadcn/components/ui/separator/separator.svelte";
   import { m } from "$lib/paraglide/messages";
+  import ModIconCard from "../lib/components/mods/ModIconCard.svelte";
 
   const { data: _internal } = $props();
   const { user, fetch } = $derived(_internal);
 
   let subtitle: string = $state(m["homepage.subtitle"]());
-  let recentlyUploadedVerified: AssetApiV3[] = $state([]);
+  let recentlyUploadedVerified: (AssetApiV3 | ProjectApiV3)[] = $state([]);
   onMount(async () => {
-    trpc.v3.assets.getFrontPageAssets.query().then((data) => {
+    trpc.internal.getThings.getFrontPageIcons.query().then((data) => {
       recentlyUploadedVerified = data;
     });
 
@@ -55,9 +56,13 @@
       }>
       <Carousel.Content class="">
         {#if recentlyUploadedVerified.length > 0}
-          {#each recentlyUploadedVerified as asset (asset.id)}
+          {#each recentlyUploadedVerified as thing (thing.id)}
             <Carousel.Item class="pl-4 basis-auto">
-              <AssetCard {asset} size="large" />
+              {#if `oldId` in thing}
+                <AssetCard asset={thing} size="large" />
+              {:else}
+                <ModIconCard project={thing} size="large" />
+              {/if}
             </Carousel.Item>
           {/each}
         {:else}

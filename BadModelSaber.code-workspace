@@ -28,7 +28,8 @@
             "**/.svelte-kit": true,
             "backend/": true,
             "frontend/":true
-        }
+        },
+        "js/ts.experimental.useTsgo": true
     },
     "launch": {
         "version": "0.2.0",

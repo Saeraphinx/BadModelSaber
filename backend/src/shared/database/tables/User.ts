@@ -409,6 +409,19 @@ export class User extends Model<InferAttributes<User>, InferCreationAttributes<U
         await Promise.all(migrationPromises);
     }
 
+    public canUserBeBanned(): boolean {
+        if (this.checkRoles([UserPermissions.C_Banned])) {
+            return false;
+        }
+
+        if (this.checkRoles({
+            hasOneOf: [UserPermissions.Advanced_Admin_Tasks, UserPermissions.Administrative_Tasks, UserPermissions.Users_EditAllRoles]
+        })) {
+            return false;
+        }
+        return true;
+    }
+
     // #region Reports
     public async report(reportedBy: User, reason: string): Promise<ThingRequest> {
         let existingRequests = await ThingRequest.findAll({

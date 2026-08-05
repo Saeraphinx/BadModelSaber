@@ -283,6 +283,17 @@ export function getRoleData(role: string): {
   }
 }
 
+export function getRolesCategories(): Map<string, UserPermissions[]> {
+  let categories: Map<string, UserPermissions[]> = new Map();
+  for (let role of Object.values(UserPermissions)) {
+    let category = role.split('_')[0];
+    let arr = categories.get(category) ?? [];
+    arr.push(role);
+    categories.set(category, arr);
+  }
+  return categories;
+}
+
 export enum KnownSponsorUrls {
   Pixiv,
   Patreon,
