@@ -93,15 +93,9 @@
 
   <!-- Status -->
   <div class="absolute top-0 right-0 p-3">
-    {#if props.project.status === Status.Verified}
+    {#if props.project.status === Status.Public}
       <StatusHoverCard status={props.project.status} type="mod">
         <BadgeCheck class="text-green-400" />
-      </StatusHoverCard>
-    {:else if props.project.status === Status.Queue}
-      <BadgeAlert class="text-yellow-400" />
-    {:else if props.project.status === Status.Unverified}
-      <StatusHoverCard status={props.project.status} type="mod">
-        <CircleHelp class="text-white/80" />
       </StatusHoverCard>
     {:else}
       <BadgeX class="text-red-400" />

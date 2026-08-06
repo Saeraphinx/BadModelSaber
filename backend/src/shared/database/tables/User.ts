@@ -118,7 +118,11 @@ export class User extends Model<InferAttributes<User>, InferCreationAttributes<U
         userPlatforms: z.array(userPlatformSchema),
         avatarUrl: z.url(),
         permissions: z.object({
-            perGame: z.record(z.string(), z.array(z.enum(UserPermissions))),
+            perGame: z.record(z.string(), z.array(z.enum(UserPermissions).exclude(Object.values(UserPermissions).filter((i) => 
+            i.startsWith(`cos_`) && 
+            i.startsWith(`secret`) && 
+            i.includes(`user`) &&
+            i.includes(`admin`)) as any))),
             sitewide: z.array(z.enum(UserPermissions))
         }),
         shouldDmAlerts: z.boolean(),

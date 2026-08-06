@@ -8,6 +8,7 @@
   import { Dialog, DialogContent } from "../../shadcn/components/ui/dialog";
   import { Label } from "../../shadcn/components/ui/label";
   import { getRolesCategories } from "../../scripts/utils/stylizer";
+  import { onMount } from "svelte";
 
   let {
     permObj = $bindable({
@@ -76,6 +77,12 @@
         toast.error(`Failed to update roles: ${parseErrorMessage(err)}`);
       });
   }
+
+  onMount(() => {
+    if (userId) {
+      fetchUserRoles();
+    }
+  });
 </script>
 
 <div class="flex flex-col w-full">
@@ -91,7 +98,7 @@
         <div class="flex flex-row flex-wrap gap-2 m-2">
           {#each getRolesCategories() as items}
             <div class="flex flex-col w-full gap-1">
-              <p class="text-sm text-muted-foreground">{items[0]}</p>
+              <p class="text-sm text-muted-foreground capitalize">{items[0]}</p>
               <div class="flex flex-row flex-wrap gap-2">
                 {#each items[1] as item}
                   <div class="flex flex-row items-center gap-1">
@@ -123,29 +130,40 @@
         <Accordion.Trigger class="bg-secondary p-2 rounded-t-md w-full text-left">{availableGameNames.find((agv) => agv.name == game)?.displayName ?? game} Permissions</Accordion.Trigger>
         <Accordion.Content class="p-2">
           <div class="flex flex-row flex-wrap gap-2 m-2">
-            {#each Object.values(UserPermissions).filter((i) => !i.startsWith(`cos_`) && !i.startsWith(`secret`)) as item}
-              <div class="flex flex-row items-center gap-1">
-                <Checkbox
-                  bind:checked={
-                    () => {
-                      return permObj.perGamePermissions[game]?.includes(item) ?? false;
-                    },
-                    (val) => {
-                      if (val) {
-                        permObj.perGamePermissions = {
-                          ...permObj.perGamePermissions,
-                          [game]: [...(permObj.perGamePermissions[game] ?? []), item],
-                        };
-                      } else {
-                        permObj.perGamePermissions = {
-                          ...permObj.perGamePermissions,
-                          [game]: permObj.perGamePermissions[game]?.filter((perm) => perm !== item) ?? [],
-                        };
-                      }
-                    }
-                  }
-                  id={`${game}_${item}`} />
-                <Label for={`${game}_${item}`}>{item}</Label>
+            {#each getRolesCategories(Object.values(UserPermissions).filter((i) => 
+            !i.startsWith(`cos_`) && 
+            !i.startsWith(`secret`) && 
+            !i.includes(`user`) &&
+            !i.includes(`admin`))) as items}
+              <div class="flex flex-col w-full gap-1">
+                <p class="text-sm text-muted-foreground capitalize">{items[0]}</p>
+                <div class="flex flex-row flex-wrap gap-2">
+                  {#each items[1] as item}
+                    <div class="flex flex-row items-center gap-1">
+                      <Checkbox
+                        bind:checked={
+                          () => {
+                            return permObj.perGamePermissions[game]?.includes(item) ?? false;
+                          },
+                          (val) => {
+                            if (val) {
+                              permObj.perGamePermissions = {
+                                ...permObj.perGamePermissions,
+                                [game]: [...(permObj.perGamePermissions[game] ?? []), item],
+                              };
+                            } else {
+                              permObj.perGamePermissions = {
+                                ...permObj.perGamePermissions,
+                                [game]: permObj.perGamePermissions[game]?.filter((perm) => perm !== item) ?? [],
+                              };
+                            }
+                          }
+                        }
+                        id={`${game}_${item}`} />
+                      <Label for={`${game}_${item}`}>{item}</Label>
+                    </div>
+                  {/each}
+                </div>
               </div>
             {/each}
           </div>

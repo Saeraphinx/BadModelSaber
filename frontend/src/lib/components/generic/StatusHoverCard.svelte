@@ -4,16 +4,27 @@
   import { getStatusString } from "$lib/scripts/utils/stylizer";
   import { Badge } from "$shadcn/components/ui/badge";
   import * as ToolTip from "$shadcn/components/ui/tooltip";
+  import type { HTMLAttributes } from "svelte/elements";
+  import { cn } from "tailwind-variants";
 
-  let props: {
+  let {
+    status,
+    type,
+    countdownDate = null,
+    children = null,
+    enableHover = true,
+    isMuted = false,
+  }: {
     status: Status;
     type: "mod" | "asset";
     countdownDate?: Date | number | string | null;
     children?: any;
+    enableHover?: boolean;
+    isMuted?: boolean;
   } = $props();
 
   let style = $derived.by(() => {
-    switch (props.status) {
+    switch (status) {
       case Status.Public:
       case Status.Verified:
         return "border-green-600 text-green-200";
@@ -24,15 +35,15 @@
       case Status.NonDefault_Testing:
         return "border-orange-600 text-orange-200";
       case Status.Private:
-          return "border-blue-600 text-blue-200";
+        return "border-blue-600 text-blue-200";
       default:
         return "border-red-600 text-red-200";
     }
   });
 
   let titleString = $derived.by(() => {
-    if (props.type === "asset") {
-      switch (props.status) {
+    if (type === "asset") {
+      switch (status) {
         case Status.Verified:
           return m["assets.statusHover.verified.title"]();
         case Status.Unverified:
@@ -49,7 +60,7 @@
           return "";
       }
     } else {
-      switch (props.status) {
+      switch (status) {
         case Status.Verified:
           return m["mods.statusHover.verified.title"]();
         case Status.Unverified:
@@ -68,8 +79,8 @@
     }
   });
   let descriptionString = $derived.by(() => {
-    if (props.type === "asset") {
-      switch (props.status) {
+    if (type === "asset") {
+      switch (status) {
         case Status.Verified:
           return m["assets.statusHover.verified.description"]();
         case Status.Unverified:
@@ -85,7 +96,7 @@
           return "";
       }
     } else {
-      switch (props.status) {
+      switch (status) {
         case Status.Verified:
           return m["mods.statusHover.verified.description"]();
         case Status.Unverified:
@@ -106,8 +117,8 @@
 
   // relative time left until the countdown date string, in days then hours then minutes then seconds but only showing highest value
   let timeLeft = $derived.by(() => {
-    if (props.countdownDate) {
-      const diff = Math.max(0, Math.floor((new Date(props.countdownDate).getTime() - Date.now()) / 1000));
+    if (countdownDate) {
+      const diff = Math.max(0, Math.floor((new Date(countdownDate).getTime() - Date.now()) / 1000));
       if (diff >= 86400) return `${Math.floor(diff / 86400)}d`;
       if (diff >= 3600) return `${Math.floor(diff / 3600)}h`;
       if (diff >= 60) return `${Math.floor(diff / 60)}m`;
@@ -117,22 +128,30 @@
   });
 </script>
 
-<ToolTip.Root>
-  <ToolTip.Trigger>
-    {#if props.children}
-      {@render props.children()}
-    {:else}
-      <Badge variant="outline" class="capitalize {style}">
-        <p>{getStatusString(props.status)}</p>
-        {#if props.countdownDate && timeLeft !== 0}
-          <!-- Countdown timer-->
-          <p title={new Date(props.countdownDate).toISOString()}>({timeLeft})</p>
-        {/if}
-      </Badge>
+{#snippet badge()}
+  <Badge variant="outline" class="capitalize {style} {isMuted ? `opacity-50` : ``}">
+    <p>{getStatusString(status)}</p>
+    {#if countdownDate && timeLeft !== 0}
+      <!-- Countdown timer-->
+      <p title={new Date(countdownDate).toISOString()}>({timeLeft})</p>
     {/if}
-  </ToolTip.Trigger>
-  <ToolTip.Content class="flex flex-col p-4 w-64">
-    <p class="text-base font-semibold">{@html titleString}</p>
-    <p class="text-xs text-gray-500">{@html descriptionString}</p>
-  </ToolTip.Content>
-</ToolTip.Root>
+  </Badge>
+{/snippet}
+
+{#if enableHover}
+  <ToolTip.Root>
+    <ToolTip.Trigger>
+      {#if children}
+        {@render children()}
+      {:else}
+        {@render badge()}
+      {/if}
+    </ToolTip.Trigger>
+    <ToolTip.Content class="flex flex-col p-4 w-64">
+      <p class="text-base font-semibold">{@html titleString}</p>
+      <p class="text-xs text-gray-500">{@html descriptionString}</p>
+    </ToolTip.Content>
+  </ToolTip.Root>
+{:else}
+  {@render badge()}
+{/if}

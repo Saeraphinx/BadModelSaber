@@ -1,7 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { Op } from "sequelize";
 import z from "zod";
-import { Project, ProjectApiV3, versionApiV3Schema, Version, User, GameVersion, UserPermissions, Status, assetApiV3Schema, projectApiV3Schema, Asset, Tags } from "../../../shared/Database.ts";
+import { Project, ProjectApiV3, versionApiV3Schema, Version, User, GameVersion, UserPermissions, Status, assetApiV3Schema, projectApiV3Schema, Asset, Tags, AssetApiV3 } from "../../../shared/Database.ts";
 import { anyGameProcedure, anyProcedure, loggedInProcedure, router } from "../../trpc.ts";
 import fs from "fs";
 import { createPatch, diffLines, lineDiff } from "diff";
@@ -203,8 +203,15 @@ export const getThingsInternalRouter = router({
                     order: [['createdAt', 'DESC']],
                     include: { all: true }
                 });
-                let response = await Promise.all([...assets.map(asset => asset.toApiV3(), ...projects.map(project => project.toApiV3()))]);
-                return response;
+                let responses: Promise<AssetApiV3 | ProjectApiV3>[] = [];
+                // combine assets and projects into a single array of promises, do it this way so that they actually all go into the array
+                for (let asset of assets) {
+                    responses.push(asset.toApiV3() as Promise<AssetApiV3>);
+                }
+                for (let project of projects) {
+                    responses.push(project.toApiV3() as Promise<ProjectApiV3>);
+                }
+                return await Promise.all(responses);
             } catch (err) {
                 console.error(err);
                 throw new TRPCError({ code: `INTERNAL_SERVER_ERROR`, message: `Error fetching front page assets: ${parseErrorMessage(err)}` });

@@ -16,7 +16,7 @@
   import { onMount, tick, untrack } from "svelte";
   import { MediaQuery } from "svelte/reactivity";
   import { Button } from "$lib/shadcn/components/ui/button";
-  import { checkRoles } from "$lib/scripts/utils/checkRoles";
+  import { checkRoles, getAllowedVersionStatuses } from "$lib/scripts/utils/checkRoles";
   import * as Drawer from "../../lib/shadcn/components/ui/drawer";
   import { replaceState } from "$app/navigation";
   import { page } from "$app/state";
@@ -72,15 +72,7 @@
   async function fetchMods() {
     if (!selectedGame) return;
     isLoading = true;
-    let statusLookup = [Status.Verified];
-    if (checkRoles(user, { hasOneOf: [UserPermissions.Secret_Features]})) {
-      statusLookup.push(Status.Queue, Status.Testing);
-    } else if (checkRoles(user, { hasOneOf: [UserPermissions.Mods_ViewAll]})) {
-      statusLookup.push(Status.Queue, Status.Testing, Status.Removed, Status.Private);
-    }
-    if (user) {
-      statusLookup.push(Status.Unverified);
-    }
+    let statusLookup = getAllowedVersionStatuses(user, false, selectedGame.name);
     if (gameVersions.some((v) => v.gameName !== selectedGame.name)) {
       await trpc.v3.games.getGameVersions.query({ gameName: selectedGame.name, includeExtras: true }).then((versions) => {
         gameVersions = versions.gameVersions as GameVersionApiV3_full[];

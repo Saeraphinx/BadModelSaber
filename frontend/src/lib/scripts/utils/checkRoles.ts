@@ -1,7 +1,20 @@
-import type { UserPermissions } from "../from_backend/DBExtras";
+import { Status, UserPermissions } from "../from_backend/DBExtras";
 
 type UserPermObj = { permissions: { sitewide: UserPermissions[], perGame: Record<string, UserPermissions[]> } }
 type CheckRolesInput = { hasAllOf?: UserPermissions[], hasOneOf?: UserPermissions[], denied?: UserPermissions[] };
+
+export function getAllowedVersionStatuses(userPermObj: UserPermObj | undefined, allowedToBypass = false, gameName?: string | null): Status[] {
+  let statusLookup = [Status.Verified];
+  if (userPermObj) {
+    statusLookup.push(Status.Unverified);
+  }
+  if (checkRoles(userPermObj, { hasOneOf: [UserPermissions.Secret_Features] }, gameName)) {
+    statusLookup.push(Status.Queue, Status.Testing);
+  } else if (checkRoles(userPermObj, { hasOneOf: [UserPermissions.Mods_ViewAll] }, gameName) || allowedToBypass) {
+    statusLookup.push(Status.Queue, Status.Testing, Status.Removed, Status.Private);
+  }
+  return Array.from(new Set(statusLookup));
+}
 
 export function checkRoles(userPermObj: UserPermObj | undefined, has: UserPermissions[], gameName?: string | null): boolean;
 export function checkRoles(userPermObj: UserPermObj | undefined, has: UserPermissions[], gameName?: `any`): boolean;
@@ -15,7 +28,7 @@ export function checkRoles(userPermObj: UserPermObj | undefined, roles: UserPerm
   if (Array.isArray(roles)) {
     if (gameName === `any`) {
       return roles.some(role => userPermObj.permissions.sitewide.includes(role) || Object.values(userPermObj.permissions.perGame).some(gameRoles => gameRoles.includes(role)));
-    } else if (gameName) { 
+    } else if (gameName) {
       return roles.some(role => (userPermObj.permissions.sitewide.includes(role) || (userPermObj.permissions.perGame[gameName] && userPermObj.permissions.perGame[gameName].includes(role))));
     } else {
       return roles.some(role => userPermObj.permissions.sitewide.includes(role));

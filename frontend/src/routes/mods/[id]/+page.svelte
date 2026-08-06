@@ -5,8 +5,8 @@
   import Markdown from "$lib/components/generic/Markdown.svelte";
   import VersionCard from "$lib/components/mods/VersionCard.svelte";
   import { m } from "$lib/paraglide/messages";
-  import { availableLocales, type UserApiV3, UserPermissions } from "$lib/scripts/from_backend/DBExtras.js";
-  import { checkRoles } from "$lib/scripts/utils/checkRoles.js";
+  import { availableLocales, Status, type UserApiV3, UserPermissions } from "$lib/scripts/from_backend/DBExtras.js";
+  import { checkRoles, getAllowedVersionStatuses } from "$lib/scripts/utils/checkRoles.js";
   import { getRelativeTimeString, getStatusString } from "$lib/scripts/utils/stylizer.js";
   import { Separator } from "$shadcn/components/ui/separator";
   import * as Tooltip from "$shadcn/components/ui/tooltip/index.js";
@@ -24,8 +24,8 @@
   import { getProjectThumbnailUrl, handleTrpcError, parseErrorMessage, trpc } from "$lib/scripts/utils/api.js";
   import { invalidateAll } from "$app/navigation";
   import ReportDialog from "../../../lib/components/dialogs/ReportDialog.svelte";
-  import { getLocale, type Locale } from "../../../lib/paraglide/runtime";
-  import type { inferProcedureOutput } from "@trpc/server";
+  import { getLocale } from "../../../lib/paraglide/runtime";
+  import StatusHoverCard from "../../../lib/components/generic/StatusHoverCard.svelte";
 
   const { data: _internal } = $props();
   const {
@@ -92,6 +92,12 @@
     if (!user) return false;
     return project.authors.some((a) => a.id === user.id);
   });
+
+  let allowedStatuses = $derived.by(() => {
+    return getAllowedVersionStatuses(user, isAuthor, project.gameName);
+  });
+  // svelte-ignore state_referenced_locally
+  let enabledStatuses: Status[] = $state(Array.from(new Set(versions.map((v => v.status)).filter((s) => allowedStatuses.includes(s)))));
   // #endregion
   // #region Edit & Translate
   let isEditing = $state(false);
@@ -321,8 +327,29 @@
         </div>
         <Separator class="my-4" />
       {/if}
+      <div class="flex flex-row items-center justify-between mx-1">
+        <p class="text-base font-bold">{m["common.dataTable.status"]()}</p>
+        <div class="flex flex-row flex-wrap gap-x-2 justify-end">
+          {#each allowedStatuses as status}
+            <Button
+              variant="ghost"
+              size="sm"
+              class="p-0"
+              onclick={() => {
+                if (enabledStatuses.includes(status)) {
+                  enabledStatuses = enabledStatuses.filter((s) => s !== status);
+                } else {
+                  enabledStatuses = [...enabledStatuses, status];
+                }
+              }}>
+              <StatusHoverCard status={status} type="mod" enableHover={false} isMuted={!enabledStatuses.includes(status)} />
+            </Button>
+          {/each}
+        </div>
+      </div>
+      <Separator class="my-4" />
       <div class="flex flex-col gap-2">
-        {#each versions as version}
+        {#each versions.filter(v => enabledStatuses.includes(v.status)) as version}
           <VersionCard {version} approvalDialog={shouldAllowApproval ? approvalDialog : undefined} showStatusHistory={shouldAllowStatusHistory} {codeDialog} isEditable={shouldAllowEdit} {gameVersions} showUserQueueOptions={isAuthor || version.uploaderId == user?.id} reportDialog={reportDialog} />
         {:else}
           <p class="text-center text-gray-500">{m["mods.noVersionsFound"]()}</p>

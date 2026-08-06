@@ -10,7 +10,7 @@
   import { Checkbox } from "$shadcn/components/ui/checkbox";
   import { toast } from "svelte-sonner";
   import { RefreshCwIcon, PlusIcon, PencilLine, TrashIcon } from "@lucide/svelte";
-  import { Dialog, DialogContent } from "$shadcn/components/ui/dialog/index.js";
+  import { Dialog, DialogContent, DialogHeader } from "$shadcn/components/ui/dialog/index.js";
   import { checkRoles } from "$lib/scripts/utils/checkRoles.js";
   import { onMount, tick, untrack } from "svelte";
   import { getVersionDecompUrl, getVersionManifestUrl, parseErrorMessage } from "$lib/scripts/utils/api.js";
@@ -513,7 +513,7 @@
     <Tabs.Content value="users">
       <div class="flex flex-col m-auto w-full items-center gap-4 p-4">
         <div class="flex flex-col items-center p-4 bg-accent rounded-lg justify-center w-sm">
-          <Input placeholder="Search by username or ID..." bind:value={userSearchQuery} class="" oninput={debounce(searchUsers, 500, { immediate: true })} />
+          <Input placeholder="Search by username or ID..." bind:value={userSearchQuery} class="" oninput={debounce(searchUsers, 500)} />
         </div>
         <table class="table-auto w-full">
           <thead>
@@ -522,7 +522,7 @@
               <th>User ID</th>
               <th>Username</th>
               <th>Display Name</th>
-              <th>Github ID</th>
+              <th>GitHub ID</th>
               <th>Discord ID</th>
               <th>Roles</th>
             </tr>
