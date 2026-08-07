@@ -23,7 +23,7 @@
   import { page } from "$app/state";
   import { Separator } from "$shadcn/components/ui/separator";
   import { SemVer } from "semver";
-  import RolesEditor from "../../lib/components/users/RolesEditor.svelte";
+  import RolesEditorDialog from "../../lib/components/dialogs/RolesEditorDialog.svelte";
 
   const { data: _internal } = $props();
   // svelte-ignore state_referenced_locally
@@ -139,6 +139,7 @@
   // #region User Management
   let userSearchQuery = $state("");
   let userSearchResults: Awaited<ReturnType<typeof searchUsers>> = $state([]);
+  let userRoleEditDialog: RolesEditorDialog;
   async function searchUsers() {
     if (userSearchQuery.trim().length === 0) {
       userSearchResults = [];
@@ -149,9 +150,6 @@
       return res;
     });
   }
-
-  let userSelectedId = $state(-1);
-  let userShowRolesDialog = $state(false);
   // #endregion
 
   // #region Game Management
@@ -279,8 +277,8 @@
   // #endregion
 
   // #region Approval Queue
-  let approvalDialog: ApprovalDialog | null = null;
-  let codeDialog: CodeDialog | null = null;
+  let approvalDialog: ApprovalDialog;
+  let codeDialog: CodeDialog;
   let aqSelectedGameName = $state("");
   let aqSelectedGame = $derived.by(() => games.find((game) => game.name === aqSelectedGameName));
   let aqModsInApprovalQueue: Awaited<ReturnType<typeof fetchApprovalQueue>> = $state([]);
@@ -549,8 +547,7 @@
                       {/each}
                     </div>
                     <Button size="icon" variant="outline" onclick={() => {
-                      userSelectedId = user.id;
-                      userShowRolesDialog = true;
+                      userRoleEditDialog.showDialog(user, games);
                     }}>
                       <PencilLine />
                     </Button>
@@ -1021,17 +1018,9 @@
   </DialogContent>
 </Dialog>
 
-<Dialog bind:open={userShowRolesDialog}>
-  <DialogContent>
-    <div class="flex flex-col items-center rounded-lg justify-center">
-      <p class="p-2 text-2xl">Edit Roles for User {userSelectedId}</p>
-      <RolesEditor bind:userId={userSelectedId} availableGameNames={games} onSubmit={() => { userShowRolesDialog = false }}  />
-    </div>
-  </DialogContent>
-</Dialog>
-
 <ApprovalDialog bind:this={approvalDialog} />
 <CodeDialog bind:this={codeDialog} />
+<RolesEditorDialog bind:this={userRoleEditDialog} />
 
 <style>
   table {

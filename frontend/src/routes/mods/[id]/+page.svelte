@@ -85,7 +85,7 @@
 
   let shouldAllowTranslation = $derived.by(() => {
     if (!user) return false;
-    return checkRoles(user, { hasOneOf: [UserPermissions.Mods_EditAll, UserPermissions.Mods_TranslateAll] }, project.gameName);
+    return checkRoles(user, { hasOneOf: [UserPermissions.Mods_TranslateAll] }, project.gameName);
   });
 
   let isAuthor = $derived.by(() => {
@@ -97,7 +97,7 @@
     return getAllowedVersionStatuses(user, isAuthor, project.gameName);
   });
   // svelte-ignore state_referenced_locally
-  let enabledStatuses: Status[] = $state(Array.from(new Set(versions.map((v => v.status)).filter((s) => allowedStatuses.includes(s)))));
+  let enabledStatuses: Status[] = $state(Array.from(new Set(versions.map((v) => v.status).filter((s) => allowedStatuses.includes(s)))));
   // #endregion
   // #region Edit & Translate
   let isEditing = $state(false);
@@ -201,8 +201,8 @@
             label: m["dialogs.reload"](),
             onClick: () => {
               invalidateAll();
-            }
-          }
+            },
+          },
         });
         isSaving = false;
       })
@@ -218,11 +218,13 @@
   let allTranslations: Awaited<ReturnType<typeof trpc.internal.translation.getTranslationsForProject.query>> = [];
   async function getCurrentTranslation(forceRefresh = false) {
     if (forceRefresh || allTranslations.length === 0) {
-      await trpc.internal.translation.getTranslationsForProject.query({
-        id: project.id,
-      }).then((translations) => {
-        allTranslations = translations;
-      });
+      await trpc.internal.translation.getTranslationsForProject
+        .query({
+          id: project.id,
+        })
+        .then((translations) => {
+          allTranslations = translations;
+        });
     }
 
     translationName = allTranslations.find((t) => t.language === translatingLanguage && t.contentType === `name`)?.translatedString || ``;
@@ -246,17 +248,16 @@
       .then((res) => {
         if (!res.ok) {
           // Try fetching from master branch if main branch doesn't exist
-          return fetch(`https://raw.githubusercontent.com/${regex[1]}/${regex[2]}/refs/heads/master/README.md`)
-            .then((res) => {
-              if (!res.ok) {
-                toast.error(m["toasts.error.generic"](), { description: `Could not fetch README from GitHub. Please make sure the repository has a README.md file in the root directory.` });
-                return;
-              }
-              return res.text().then((text) => {
-                editedDescription = text || "";
-                toast.success("Fetched README from GitHub successfully. You can now save it as the description translation.");
-              });
-            })
+          return fetch(`https://raw.githubusercontent.com/${regex[1]}/${regex[2]}/refs/heads/master/README.md`).then((res) => {
+            if (!res.ok) {
+              toast.error(m["toasts.error.generic"](), { description: `Could not fetch README from GitHub. Please make sure the repository has a README.md file in the root directory.` });
+              return;
+            }
+            return res.text().then((text) => {
+              editedDescription = text || "";
+              toast.success("Fetched README from GitHub successfully. You can now save it as the description translation.");
+            });
+          });
         }
         return res.text().then((text) => {
           editedDescription = text || "";
@@ -292,6 +293,9 @@
       </div>
     </div>
     <div class="grid grid-cols-1 not-md:grid-cols-2 not-md:w-full gap-2 ml-auto">
+      {#if project.status === Status.Private && !isEditing && !isTranslating && shouldAllowEdit}
+        <Button variant="outline">{m["mods.makePublic"]()}</Button>
+      {/if}
       {#if shouldAllowEdit}
         {#if !isEditing && !isTranslating}
           <Button variant="outline" class="ml-auto w-full" onclick={() => (isEditing = true)}>
@@ -342,15 +346,23 @@
                   enabledStatuses = [...enabledStatuses, status];
                 }
               }}>
-              <StatusHoverCard status={status} type="mod" enableHover={false} isMuted={!enabledStatuses.includes(status)} />
+              <StatusHoverCard {status} type="mod" enableHover={false} isMuted={!enabledStatuses.includes(status)} />
             </Button>
           {/each}
         </div>
       </div>
       <Separator class="my-4" />
       <div class="flex flex-col gap-2">
-        {#each versions.filter(v => enabledStatuses.includes(v.status)) as version}
-          <VersionCard {version} approvalDialog={shouldAllowApproval ? approvalDialog : undefined} showStatusHistory={shouldAllowStatusHistory} {codeDialog} isEditable={shouldAllowEdit} {gameVersions} showUserQueueOptions={isAuthor || version.uploaderId == user?.id} reportDialog={reportDialog} />
+        {#each versions.filter((v) => enabledStatuses.includes(v.status)) as version}
+          <VersionCard
+            {version}
+            approvalDialog={shouldAllowApproval ? approvalDialog : undefined}
+            showStatusHistory={shouldAllowStatusHistory}
+            {codeDialog}
+            isEditable={shouldAllowEdit}
+            {gameVersions}
+            showUserQueueOptions={isAuthor || version.uploaderId == user?.id}
+            {reportDialog} />
         {:else}
           <p class="text-center text-gray-500">{m["mods.noVersionsFound"]()}</p>
         {/each}
@@ -358,7 +370,7 @@
     </div>
     <div class="w-full overflow-hidden">
       <!-- Databar -->
-      <div class="flex justify-evenly bg-card rounded-md p-4 mb-4">
+      <div class="flex justify-evenly items-center bg-card rounded-md p-4 mb-4">
         <div class="flex flex-col items-center text-center justify-center">
           <p class="text-sm text-gray-500">{m["common.dataTable.status"]()}</p>
           <p class="text-base font-bold">{getStatusString(project.status)}</p>
@@ -373,7 +385,8 @@
         </div>
         <div class="flex flex-col items-center text-center justify-center">
           <p class="text-sm text-gray-500">{m["common.dataTable.moreInfo"]()}</p>
-          <a class="text-base font-bold hover:text-blue-400 transition-colors" href={project.gitUrl} target="_blank" rel="noopener noreferrer">{project.gitUrl.startsWith("https://github.com") ? m["common.dataTable.sourceUrl"]() : m["common.dataTable.websiteUrl"]()}</a>
+          <a class="text-base font-bold hover:text-blue-400 transition-colors" href={project.gitUrl} target="_blank" rel="noopener noreferrer"
+            >{project.gitUrl.startsWith("https://github.com") ? m["common.dataTable.sourceUrl"]() : m["common.dataTable.websiteUrl"]()}</a>
         </div>
         <div class="flex flex-col items-center text-center justify-center">
           <p class="text-sm text-gray-500">{m["common.dataTable.created"]()}</p>
@@ -418,7 +431,7 @@
                       });
                     });
                 }}>
-                {m["mods.uploadAndSaveIcon"]()} 
+                {m["mods.uploadAndSaveIcon"]()}
               </Button>
             </div>
             <Label for="summary">{m["common.dataTable.summary"]()}</Label>
@@ -512,7 +525,7 @@
                   {availableLocales.find((l) => l.code == translatingLanguage)?.name || m["mods.translation.language"]()}
                 </Select.Trigger>
                 <Select.Content class="w-full">
-                  {#each availableLocales.filter(l => l.backend) as locale}
+                  {#each availableLocales.filter((l) => l.backend) as locale}
                     <Select.Item value={locale.code}>{locale.name}</Select.Item>
                   {/each}
                 </Select.Content>
@@ -566,9 +579,7 @@
             </Tabs.Root>
             <div class="flex flex-row justify-end gap-2">
               <Button variant="outline" onclick={() => (isTranslating = false)} disabled={isSaving}>{m[`dialogs.cancel`]()}</Button>
-               <Button
-                disabled={!translatingLanguage || translatingLanguage.trim() === "" || isSaving}
-                onclick={() => onSaveChangesTranslating(`description`)}>
+              <Button disabled={!translatingLanguage || translatingLanguage.trim() === "" || isSaving} onclick={() => onSaveChangesTranslating(`description`)}>
                 {#if isSaving}
                   {m["dialogs.saving"]()}
                 {:else}

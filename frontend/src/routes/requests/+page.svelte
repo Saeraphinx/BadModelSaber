@@ -79,7 +79,7 @@
 {/snippet}
 
 <div class="flex flex-col items-center justify-center">
-  <Tabs.Root class="w-full items-center" value="admin">
+  <Tabs.Root class="w-full items-center" value="incoming">
     <Tabs.List>
       <Tabs.Trigger value="outgoing">
         My Outgoing Requests

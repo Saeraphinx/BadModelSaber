@@ -6,7 +6,7 @@ export type ElementType<T> = T extends (infer U)[] ? U : T;
 export const dbId = z.int().positive();
 
 export enum PlatformType {
-  GitHub = "GitHub",
+  GitHub = "GitHub_Sponsor",
   KoFi = "Ko-fi",
   Patreon = "Patreon",
 }

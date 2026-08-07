@@ -228,6 +228,7 @@
     "uploadNewVersion": "Upload New Version",
     "upload": "Upload",
     "uploadAndSaveIcon": "Upload & Save Icon",
+    "makePublic": "Make Public",
     "nameIdExplanation": "The Manifest ID is a unique identifier for this project that is used in the manifest (e.g. the \"id\" field in a BSIPA manifest) of all of your versions. It is typically the same as the name. This cannot be changed after the project is created.",
     "deprecatedVersionWarning": "Your selected game version is no longer supported.",
     "deprecatedVersionWarningDescription": "This version is no longer community supported and may not receive mod updates. Please consider updating your game to a more recent or supported version.",
@@ -329,6 +330,7 @@
     "username": "Username",
     "displayName": "Display Name",
     "bio": "Bio",
+    "donationLinks": "Donation Links",
     "noAssetsFoundForUser": "No assets found for {name}.",
     "noModsFoundForUser": "No mods found for {name}."
   },
@@ -452,6 +454,7 @@
     "confirm": "Confirm",
     "reject": "Reject",
     "close": "Close",
+    "add": "Add",
     "remove": "Remove",
     "preview": "Preview",
     "reload": "Reload",

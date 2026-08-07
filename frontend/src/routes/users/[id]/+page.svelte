@@ -8,7 +8,7 @@
   import { toast } from "svelte-sonner";
   import { parseErrorMessage } from "$lib/scripts/utils/api.js";
   import { navigating } from "$app/state";
-  import { UserPermissions } from "$lib/scripts/from_backend/DBExtras.js";
+  import { PlatformType, UserPermissions, type UserApiV3 } from "$lib/scripts/from_backend/DBExtras.js";
   import { checkRoles } from "$lib/scripts/utils/checkRoles.js";
   import { Button } from "$lib/shadcn/components/ui/button/index.js";
   import ModCard from "$lib/components/mods/ModCard.svelte";
@@ -19,6 +19,10 @@
   import { invalidate } from "$app/navigation";
   import { m } from "$lib/paraglide/messages";
   import Checkbox from "../../../lib/shadcn/components/ui/checkbox/checkbox.svelte";
+  import RolesEditorDialog from "../../../lib/components/dialogs/RolesEditorDialog.svelte";
+  import z from "zod/v4";
+  import * as Select from "../../../lib/shadcn/components/ui/select";
+  import { XIcon } from "@lucide/svelte";
 
   const { data: _internal } = $props();
   const { pageData, trpc, user } = $derived(_internal);
@@ -42,6 +46,7 @@
   let editBio = $state(``);
   let editHideDiscordId = $state(false);
   let editHideGithubId = $state(false);
+  let editUserPlatforms: UserApiV3['userPlatforms'] = $state([]);
   let allowEditing = $derived.by(() => {
     if (!user) return false;
     return checkRoles(user, {
@@ -59,6 +64,7 @@
       bio: string;
       hideDiscordId?: boolean;
       hideGithubId?: boolean;
+      userPlatforms?: UserApiV3['userPlatforms'];
     } = {
       displayName: editDisplayName,
       bio: editBio,
@@ -67,6 +73,10 @@
     if (allowEditingConfidentials) {
       editData.hideDiscordId = editHideDiscordId;
       editData.hideGithubId = editHideGithubId;
+    }
+
+    if (editUserPlatforms) {
+      editData.userPlatforms = editUserPlatforms;
     }
 
     trpc.internal.updateThings.user.updateUser.mutate(editData).then(() => {
@@ -85,12 +95,16 @@
     editDisplayName = pdUser?.displayName || "";
     editHideDiscordId = user?.hideDiscordId || false;
     editHideGithubId = user?.hideGithubId || false;
+    editUserPlatforms = pdUser?.userPlatforms || [];
   });
   // #endregion
 
   let showBanButton = $derived.by(() => checkRoles(user, [UserPermissions.Users_Ban]));
   let showEditButton = $derived.by(() => allowEditing && !isEditing);
+  let showEditRolesButton = $derived.by(() => checkRoles(user, [UserPermissions.Users_EditAllRoles]));
   let showSomeLinkedButtons = $derived.by(() => ((pdUser.userPlatforms?.length ?? 0 > 0) || pdUser.githubId || pdUser.discordId));
+
+  let roleEditorDialog: RolesEditorDialog;
 </script>
 
 <div class="flex flex-col items-center mx-4">
@@ -115,7 +129,7 @@
             {#each pdUser.userPlatforms as sponsorUrl}
               <SponsorButton class="w-full" type={sponsorUrl.platform} url={sponsorUrl.url} />
             {/each}
-            {#if (showSomeLinkedButtons || pdUser.githubId || pdUser.discordId) && (showEditButton || showBanButton)}
+            {#if (showSomeLinkedButtons || pdUser.githubId || pdUser.discordId) && (showEditButton || showBanButton || showEditRolesButton)}
                 <Separator orientation="horizontal" />
             {/if}
             <!-- Edit button section -->
@@ -163,6 +177,13 @@
                 </Button>
               {/if}
             {/if}
+            {#if !isEditing && showEditRolesButton}
+              <Button variant="outline" class="w-full" onclick={() => {
+                roleEditorDialog.showDialog(pdUser);
+              }}>
+                Edit Roles
+              </Button>
+            {/if}
           </div>
         </div>
       {/if}
@@ -203,6 +224,35 @@
             <Label class="p-1 pb-2" for="bio">{m["users.bio"]()}</Label>
             <Textarea placeholder="Bio" bind:value={editBio} class="w-full" />
           </div>
+          <!-- UserPlatforms Linking -->
+        <div class="w-full max-w-lg">
+          <div class="flex flex-row justify-between items-center pb-2">
+            <p class="text-sm font-semibold ml-1">{m["users.donationLinks"]()}</p>
+            <Button size="sm" variant="outline" class="h-6" onclick={() => {
+              editUserPlatforms = [...(editUserPlatforms ?? []), { platform: PlatformType.GitHub, url: "" }];
+            }}>{m["dialogs.add"]()}</Button>
+          </div>
+          <div class="flex flex-col gap-2">
+            {#each editUserPlatforms as eUP}
+              <div class="grid grid-cols-[1.5fr_2fr_0.3fr] gap-2">
+                <Select.Root type="single" bind:value={eUP.platform}>
+                  <Select.Trigger class="w-full">
+                    {eUP.platform.replace("_", " ")}
+                  </Select.Trigger>
+                  <Select.Content class="w-full">
+                    {#each Object.values(PlatformType) as platform}
+                      <Select.Item placeholder="URL..." value={platform}>{platform.replace("_", " ")}</Select.Item>
+                    {/each}
+                  </Select.Content>
+                </Select.Root>
+                <Input placeholder="URL" bind:value={eUP.url} aria-invalid={!z.url().safeParse(eUP.url).success} class="w-full" />
+                <Button variant="destructive" size="icon" onclick={() => {
+                  editUserPlatforms = editUserPlatforms ? editUserPlatforms.filter((up) => up !== eUP) : [];
+                }}><XIcon /></Button>
+              </div>
+            {/each}
+          </div>
+        </div>
           {#if allowEditingConfidentials}
             <div class="flex flex-row justify-center items-center gap-4">
               <div class="flex flex-row justify-center items-center gap-2">
@@ -217,7 +267,7 @@
           {/if}
           <Button onclick={onEditSubmit}>{m["dialogs.saveChanges"]()}</Button>
         </div>
-        {#if pdUser.id == user?.id}
+        {#if allowEditingConfidentials}
           <div class="flex flex-col justify-center w-full max-w-md p-4 gap-2 bg-card rounded-lg">
             <div class="grid grid-cols-2 gap-4">
               <Button variant="outline" disabled={user?.githubId !== null} onclick={() => {
@@ -242,3 +292,4 @@
 </div>
 
 <ApprovalDialog bind:this={dialog} />
+<RolesEditorDialog bind:this={roleEditorDialog} />
