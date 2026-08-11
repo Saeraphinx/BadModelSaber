@@ -1,0 +1,27 @@
+name: Sync GitHub Merges to Forgejo
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Push to Forgejo
+        env:
+          FORGEJO_USERNAME: ${{ secrets.FORGEJO_USERNAME }}
+          FORGEJO_TOKEN: ${{ secrets.FORGEJO_SYNC_TOKEN }}
+        run: |
+          git config --global user.name "GitHub Sync Bot"
+          git config --global user.email "bot@github.com"
+          
+          # Replace with your actual Forgejo domain and path
+          git remote add forgejo https://$FORGEJO_USERNAME:$FORGEJO_TOKEN@://git.sae.sh
+          git push forgejo main --tags
