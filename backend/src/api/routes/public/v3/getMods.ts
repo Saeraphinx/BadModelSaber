@@ -71,7 +71,7 @@ export const GetModsV3 = router({
             }
 
             if (input.status && input.status.length > 0) {
-                if (input.status.every(s => User.getAllowedStatuses(ctx.user, 'mod').includes(s))) {
+                if (input.status.every(s => User.getAllowedStatuses(ctx.user, 'mod', input.gameName).includes(s))) {
                     versionFilters = {
                         status: {
                             [Op.in]: input.status,

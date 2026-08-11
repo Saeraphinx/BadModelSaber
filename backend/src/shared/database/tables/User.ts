@@ -223,7 +223,7 @@ export class User extends Model<InferAttributes<User>, InferCreationAttributes<U
         }
 
         if (this.checkRoles([UserPermissions.Secret_Features])) {
-            return [Status.Public, Status.Verified, Status.Unverified, Status.Queue, Status.Testing];
+            return [Status.Public, Status.Verified, Status.Unverified, Status.Queue, Status.Testing, Status.NonDefault_Testing];
         } else {
             return [Status.Public, Status.Verified, Status.Unverified];
         }
