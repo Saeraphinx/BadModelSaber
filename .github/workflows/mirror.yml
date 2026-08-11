@@ -23,5 +23,5 @@ jobs:
           git config --global user.email "bot@github.com"
           
           # Replace with your actual Forgejo domain and path
-          git remote add forgejo https://$FORGEJO_USERNAME:$FORGEJO_TOKEN@://git.sae.sh
+          git remote add forgejo https://$FORGEJO_USERNAME:$FORGEJO_TOKEN@git.sae.sh/saeraphinx/BadModelSaber.git
           git push forgejo main --tags
