@@ -1,11 +1,11 @@
 import { CreationAttributes, UniqueConstraintError, ValidationError } from "sequelize";
 import { Context } from "../src/api/trpc";
-import { Asset, AssetFileFormat, License, Project, Status, User, UserPermissions, Version } from "../src/shared/Database";
+import { Asset, AssetFileFormat, defaultGamePermissions, defaultSitewidePermissions, getDefaultPermissions, License, Project, RenderingModes, Status, User, UserPermissions, Version } from "../src/shared/Database";
 import { fromZodError, isZodErrorLike } from "zod-validation-error";
 import { SemVer } from "semver";
 
 // most endpoints don't actually need a fully functional context, so we can just kinda do this
-export function createTestContext(userId: string): Context {
+export function createTestContext(userId: number): Context {
     return {
         req: {} as any,
         res: {} as any,
@@ -21,7 +21,10 @@ export function createTestContext(userId: string): Context {
  */
 export function createDummyUser(id?: number, permissions?: UserPermissions[], override?: Partial<CreationAttributes<User>>): User
 export function createDummyUser(id?: number, permissions?: { sitewide: UserPermissions[]; perGame: Record<string, UserPermissions[]> }, override?: Partial<CreationAttributes<User>>): User
-export function createDummyUser(id?: number, permissions: UserPermissions[] | { sitewide: UserPermissions[]; perGame: Record<string, UserPermissions[]> } = [], override?: Partial<CreationAttributes<User>>): User {
+export function createDummyUser(id?: number, permissions?: UserPermissions[] | { sitewide: UserPermissions[]; perGame: Record<string, UserPermissions[]> }, override?: Partial<CreationAttributes<User>>): User {
+    if (!permissions) {
+        permissions = { sitewide: [...defaultSitewidePermissions, ...defaultGamePermissions], perGame: {} };
+    }
     if (Array.isArray(permissions)) {
         permissions = { sitewide: permissions, perGame: {} };
     }
@@ -34,6 +37,7 @@ export function createDummyUser(id?: number, permissions: UserPermissions[] | { 
         avatarUrl: `https://example.com/`,
         userPlatforms: [],
         bio: "",
+        shouldDmAlerts: false,
         ...override,
     });
 }
@@ -57,7 +61,7 @@ export function createDummyAsset(uploader: number | undefined = 5, id?: number, 
     }
     return new Asset({
         name: `Asset ${id}`,
-        type: AssetFileFormat.Avatar_Avatar,
+        type: AssetFileFormat.Banner_Png,
         description: "This is a test asset",
         license: License.CC0,
         tags: [],

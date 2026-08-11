@@ -16,39 +16,38 @@
   import { onMount, tick, untrack } from "svelte";
   import { MediaQuery } from "svelte/reactivity";
   import { Button } from "$lib/shadcn/components/ui/button";
-  import { checkRoles, getAllowedVersionStatuses } from "$lib/scripts/utils/checkRoles";
+  import { getAllowedVersionStatuses } from "$lib/scripts/utils/checkRoles";
   import * as Drawer from "../../lib/shadcn/components/ui/drawer";
   import { replaceState } from "$app/navigation";
   import { page } from "$app/state";
 
   const { data: _internal } = $props();
-  const { pageData, trpc, user } = $derived(_internal);
+  const { pageData: {games, query, startingGame}, trpc, user } = $derived(_internal);
   let tooSmall = new MediaQuery("max-width: 768px");
-
   let isLoading = $state(true);
-  const games = $derived(pageData.games);
+
+  // #region Games & GameVersions
   // svelte-ignore state_referenced_locally
-  let selectedGameName = $state<string>(pageData.startingGame.game.name || ``);
+  let selectedGameName = $state<string>(startingGame.game.name || ``);
   // svelte-ignore state_referenced_locally
   let selectedGame = $derived.by(() => games?.find((g) => g.name === selectedGameName));
   // svelte-ignore state_referenced_locally
-  let gameVersions: GameVersionApiV3_full[] = $state((pageData.startingGame.gameVersions as GameVersionApiV3_full[]) || []);
+  let gameVersions: GameVersionApiV3_full[] = $state((startingGame.gameVersions as GameVersionApiV3_full[]) || []);
   // svelte-ignore state_referenced_locally
-  let selectedGameVersionId = $state<string>(pageData.query.gameVersionId || ``);
+  let selectedGameVersionId = $state<string>(query.gameVersionId || ``);
   let selectedGameVersion = $derived.by(() => gameVersions.find((v) => v.id === parseInt(selectedGameVersionId)));
+  // #endregion
 
   let isFilterStatusVisible = $state(true);
   let isFilterCategoryVisible = $state(true);
-  let filterMobileDrawerVisible = $state(false);sortCategoriesPublic
+  let filterMobileDrawerVisible = $state(false);
   let searchEngine = $state<ReturnType<typeof generateProjectSearchEngine>>();
   // svelte-ignore state_referenced_locally
-  let searchQuery = $state(pageData.query.searchQuery || ``);
-  let currentPage = $state(1);
-  let pageSize = $state(20);
-  // svelte-ignore non_reactive_update
-  let totalUnfilteredSize = $derived(searchEngine?.mods.size || -1);
+  let searchQuery = $state(query.searchQuery || ``);
   // svelte-ignore state_referenced_locally
-  let selectedStatuses = $state<Status[]>(pageData.query.statuses.length > 0 ? pageData.query.statuses : [Status.Verified]);
+  let availableStatuses: Status[] = $derived.by(() => Array.from(new Set(Array.from(searchEngine?.mods.values() || []).map((result) => result.version.status))));
+  // svelte-ignore state_referenced_locally
+  let selectedStatuses = $state<Status[]>(query.statuses.length > 0 ? query.statuses : [Status.Verified]);
   let selectedCategories = $state<string[]>([]);
   let filteredMods = $derived.by(() => {
     if (!searchEngine) return [];
@@ -62,7 +61,8 @@
     return searchResults.sort((a,b) => sortCategoriesPublic(a.project,b.project));
   });
   let totalSize = $derived(filteredMods.length);
-  let availableStatuses: Status[] = $derived.by(() => Array.from(new Set(Array.from(searchEngine?.mods.values() || []).map((result) => result.version.status))));
+  let currentPage = $state(1);
+  let pageSize = $state(20);
   let filterModsPageView = $derived.by(() => {
     let startIndex = (currentPage - 1) * pageSize;
     let endIndex = startIndex + pageSize;
@@ -129,7 +129,6 @@
     </div>
     <div class="flex flex-col justify-center items-center">
       <MiniPagination bind:totalCount={totalSize} bind:selectedPageSize={pageSize} bind:currentPage={currentPage} />
-      <p class="text-sm text-muted-foreground">{totalUnfilteredSize} total mods</p>
     </div>
   </div>
 {/snippet}
@@ -161,7 +160,7 @@
         </Select.Root>
       </span>
     {/if}
-    {#if selectedGameVersion?.isDeprecated || true}
+    {#if selectedGameVersion?.isDeprecated}
       <div class="flex flex-col gap-2 bg-orange-800/20 px-4 py-2 rounded-md">
         <div class="flex flex-row items-center gap-2">
           <TriangleAlertIcon class="h-16 w-16 text-amber-500 mx-1" />

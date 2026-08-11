@@ -208,6 +208,7 @@ export enum Tags {
 export enum UserPermissions {
   Mods_Create = "mods_create", // User can create new mods (e.g. sabers, platforms, etc.)
   Mods_ViewAll = "mods_view_all", // User can view all mods, including private ones 
+  Mods_Edit = "mods_edit", // User can edit their own mods
   Mods_EditAll = "mods_edit_all", // User can edit all mods, including those created by other users
   Mods_TranslateAll = "mods_translate_all", // User can translate all mods, including those created by other users
   Mods_UploadAll = "mods_upload_all", // User can upload new versions for all mods, including those created by other users
@@ -215,6 +216,7 @@ export enum UserPermissions {
 
   Asset_Create = "asset_create", // User can create/upload assets
   Asset_ViewAll = "asset_view_all", // User can view all assets, including private ones
+  Asset_Edit = "asset_edit", // User can edit their own assets
   Asset_EditAll = "asset_edit_all", // User can edit all assets, including private ones
   Asset_Approval = "asset_approval", // User can approve/reject pending assets 
   Asset_InternalTags = "asset_internal_tags", // User can add/remove internal tags (e.g. featured)
@@ -593,8 +595,6 @@ export const projectApiV3Schema = z.object({
   status: z.enum(Status),
   iconFileUrl: z.url(),
   gitUrl: z.url(),
-  lastApprovedById: dbId.nullable(),
-  lastUpdatedById: dbId,
   statusHistory: z.array(statusHistorySchema),
   translation: z.object({
     name: z.string().nullable(),

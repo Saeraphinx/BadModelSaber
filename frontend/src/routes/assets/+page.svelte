@@ -19,7 +19,7 @@
   import { m } from "$lib/paraglide/messages.js";
   import MiniPagination from "$lib/components/generic/MiniPagination.svelte";
   import BigPagination from "$lib/components/generic/BigPagination.svelte";
-  import { checkRoles } from "$lib/scripts/utils/checkRoles.js";
+  import { checkAllowApproval, checkRoles, getAllowedAssetStatuses } from "$lib/scripts/utils/checkRoles.js";
   import * as Drawer from "$shadcn/components/ui/drawer";
   import { parseErrorMessage } from "../../lib/scripts/utils/api.js";
   import * as RadioGroup from "../../lib/shadcn/components/ui/radio-group";
@@ -58,13 +58,7 @@
   let selectedRenderingMethod = $state<RenderingModes | `all`>(initQuery.renderingMethod ? initQuery.renderingMethod : `all`);
   // svelte-ignore state_referenced_locally
   let searchQuery = $state<string>(initQuery.searchQuery || ``);
-  let assetStatuses = $derived.by(() => {
-    if (!user) return [Status.Verified];
-    if (checkRoles(user, [UserPermissions.Asset_ViewAll], `any`)) {
-      return Object.values(Status);
-    }
-    return [Status.Verified, Status.Unverified];
-  });
+  let assetStatuses = $derived.by(() => getAllowedAssetStatuses(user, false, `beatsaber`));
 
   // Filters Themselves
   let filteredAssets: AssetApiV3[] = $derived.by(() => {
@@ -306,7 +300,7 @@
             <span class="text-gray-500 dark:text-gray-400 w-full py-8 text-center">{m["assets.noAssetsFound"]()}</span>
           {/if}
           {#each currentAssetArray as asset (asset.id)}
-            <AssetCard {asset} approvalDialog={checkRoles(user, [UserPermissions.Asset_Approval], asset.gameName) ? dialog : undefined} size={selectedCardSize} />
+            <AssetCard {asset} approvalDialog={checkAllowApproval(user, asset) ? dialog : undefined} size={selectedCardSize} />
           {/each}
         {/if}
       </div>

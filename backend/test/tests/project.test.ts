@@ -30,11 +30,9 @@ describe("projects", () => {
 
     // #region Permission tests
     describe("canView", () => {
-        test(`true for verified & unverified (logged in) projects`, async () => {
-            project.status = Status.Verified;
+        test(`true for public projects`, async () => {
+            project.status = Status.Public;
             expect(await project.canView(null)).toBe(true);
-            project.status = Status.Unverified;
-            expect(await project.canView(null)).toBe(false);
             expect(await project.canView(createDummyUser(54321))).toBe(true);
         });
     
@@ -45,7 +43,7 @@ describe("projects", () => {
     
         test(`true for private projects if user is author`, async () => {
             project.status = Status.Private;
-            await project.$set(`authors`, [testUser]);
+            await project.$set(`authors`, [testUser.id]);
             expect(await project.canView(testUser)).toBe(true);
         });
 
@@ -57,7 +55,9 @@ describe("projects", () => {
 
     describe("canEdit", () => {
         test(`true for author`, async () => {
-            await project.$set(`authors`, [testUser]);
+            await project.$set(`authors`, [testUser.id]);
+            //console.log(`testUser:`, testUser);
+            //console.log(`project authors:`, await project.$get(`authors`));
             expect(await project.canEdit(testUser)).toBe(true);
         });
 

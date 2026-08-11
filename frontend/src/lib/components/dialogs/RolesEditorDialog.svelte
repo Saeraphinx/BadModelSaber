@@ -120,7 +120,7 @@
       <Accordion.Root type="single" class="w-full max-h-96 scrollbar-thin overflow-y-scroll mb-2" value="sw">
         {@render checkboxes(getRolesCategories(), true, "", "sw")}
         {#each Object.keys(permObj.perGame) as game}
-          {@render checkboxes(getRolesCategories(Object.values(UserPermissions).filter((i) => !i.startsWith(`cos_`) && !i.startsWith(`secret`) && !i.includes(`user`) && !i.includes(`admin`))), false, game, `pg_${game}`)}
+          {@render checkboxes(getRolesCategories(Object.values(UserPermissions).filter((i) => !i.startsWith(`cos_`) && !i.startsWith(`secret`)  && i !== `game_create` && !i.includes(`user`) && !i.includes(`admin`))), false, game, `pg_${game}`)}
         {/each}
       </Accordion.Root>
       <DialogFooter>

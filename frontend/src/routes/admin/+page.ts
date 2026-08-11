@@ -12,13 +12,14 @@ export const load: PageLoad = async ({ parent }) => {
 
   if (!checkRoles(parentData.user, {
     hasOneOf: [
-      UserPermissions.Administrative_Tasks,
-      UserPermissions.Mods_Approval,
-      UserPermissions.Game_Create,
+      UserPermissions.Advanced_Admin_Tasks,
+      UserPermissions.Administrative_Tasks, 
+      UserPermissions.Mods_Approval, 
+      UserPermissions.Game_Create, 
       UserPermissions.Game_Edit,
       UserPermissions.Game_EditVersions,
       UserPermissions.Game_ViewExtras,
-      UserPermissions.Users_Ban,
+      //UserPermissions.Users_Ban, //not needed atm
       UserPermissions.Users_EditAllRoles
     ]
   }, `any`)) {

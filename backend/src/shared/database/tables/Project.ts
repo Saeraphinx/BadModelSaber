@@ -245,7 +245,7 @@ export class Project extends Model<InferAttributes<Project>, InferCreationAttrib
         }
 
         if ((await this.authorIds).includes(user.id)) {
-            return true;
+            return user.checkRoles([UserPermissions.Mods_Edit], this.gameName);
         }
 
         return user.checkRoles([UserPermissions.Mods_EditAll], this.gameName);
@@ -577,8 +577,6 @@ export class Project extends Model<InferAttributes<Project>, InferCreationAttrib
             status: this.status,
             iconFileUrl: this.iconUrl,
             gitUrl: this.gitUrl,
-            lastApprovedById: this.lastApprovedById,
-            lastUpdatedById: this.lastUpdatedById,
             statusHistory: this.statusHistory,
             createdAt: this.createdAt,
             updatedAt: this.updatedAt,

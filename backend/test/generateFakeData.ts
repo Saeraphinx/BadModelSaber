@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 
-import { Alert, AlertType, Asset, AssetFileFormat, DatabaseManager, Game, GameVersion, License, LinkedAssetLinkType, PlatformType, Project, Status, Tags, User, UserPermissions, UserPlatform, Version } from '../src/shared/Database.ts';
+import { Alert, AlertType, Asset, AssetFileFormat, AssetValidStatusesArray, DatabaseManager, Game, GameVersion, License, LinkedAssetLinkType, PlatformType, Project, ProjectValidStatusesArray, Status, Tags, User, UserPermissions, UserPlatform, Version, VersionValidStatusesArray } from '../src/shared/Database.ts';
 import { faker } from '@faker-js/faker';
 import { Op } from 'sequelize';
 import { SemVer } from 'semver';
@@ -72,7 +72,22 @@ export async function generateFakeData(connectionString?: string): Promise<boole
                 perGame: {}
             }
         });
+        let perGameUser = await User.create({
+            discordId: faker.number.int({ min: 100000000000000000, max: 999999999999999999 }).toString(),
+            username: faker.internet.username({ firstName: `Johnbs`, lastName: role }),
+            displayName: faker.internet.displayName({ firstName: `Johnbs`, lastName: role }),
+            avatarUrl: `https://cdn.discordapp.com/embed/avatars/${index % 6}.png`,
+            bio: faker.lorem.sentence(),
+            userPlatforms: faker.helpers.arrayElements(sponserUrls, { min: 0, max: 3 }),
+            permissions: {
+                sitewide: [],
+                perGame: {
+                    beatsaber: [role]
+                }
+            }
+        });
         users.push(user);
+        users.push(perGameUser);
     }
 
     if (db.adminUser) {
@@ -104,7 +119,7 @@ export async function generateFakeData(connectionString?: string): Promise<boole
                     fileHash: faker.git.commitSha(),
                     fileSize: faker.number.int({ min: 1000, max: 1000000 }),
                     iconNames: faker.helpers.arrayElements(testIcons, { min: 1, max: 5 }),
-                    status: faker.helpers.arrayElement(Object.values(Status)),
+                    status: faker.helpers.arrayElement(AssetValidStatusesArray),
                     gameName: `beatsaber`,
                     tags: faker.helpers.arrayElements(Object.values(Tags), { min: 0, max: 5 }),
                 }).then((asset) => {
@@ -113,7 +128,7 @@ export async function generateFakeData(connectionString?: string): Promise<boole
                 }));
             }
 
-            for (let status of Object.values(Status)) {
+            for (let status of ProjectValidStatusesArray) {
                 awaitingPromises.push(Project.create({
                     name: `${faker.lorem.words(1)} ${status}`,
                     nameId: faker.helpers.slugify(faker.lorem.words(2)).toLowerCase(),
@@ -128,24 +143,26 @@ export async function generateFakeData(connectionString?: string): Promise<boole
                     lastUpdatedById: user.id,
                 }).then(async (project) => {
                     await project.$add(`authors`, user);
-                    return await Version.create({
-                        projectId: project.id,
-                        semver: new SemVer(`${faker.number.int({ min: 0, max: 3 })}.${faker.number.int({ min: 0, max: 10 })}.${faker.number.int({ min: 0, max: 20 })}`),
-                        contentHashes: [{
-                            path: `content/${faker.lorem.word()}.zip`,
-                            hash: faker.git.commitSha(),
-                        }],
-                        fileSize: faker.number.int({ min: 1000, max: 1000000 }),
-                        dependencies: [],
-                        lastUpdatedById: user.id,
-                        platform: `universal`,
-                        status: status,
-                        uploaderId: user.id,
-                        zipHash: faker.git.commitSha(),
-                    }).then(async (version) => {
-                        await version.$set(`supportedGameVersions`, faker.helpers.arrayElements(gameVersionIds, { min: 1, max: gameVersionIds.length }));
-                        return version;
-                    });
+                    for (const vs of VersionValidStatusesArray) {                       
+                        return await Version.create({
+                            projectId: project.id,
+                            semver: new SemVer(`${faker.number.int({ min: 0, max: 3 })}.${faker.number.int({ min: 0, max: 10 })}.${faker.number.int({ min: 0, max: 20 })}`),
+                            contentHashes: [{
+                                path: `content/${faker.lorem.word()}.zip`,
+                                hash: faker.git.commitSha(),
+                            }],
+                            fileSize: faker.number.int({ min: 1000, max: 1000000 }),
+                            dependencies: [],
+                            lastUpdatedById: user.id,
+                            platform: `universal`,
+                            status: vs,
+                            uploaderId: user.id,
+                            zipHash: faker.git.commitSha(),
+                        }).then(async (version) => {
+                            await version.$set(`supportedGameVersions`, faker.helpers.arrayElements(gameVersionIds, { min: 1, max: gameVersionIds.length }));
+                            return version;
+                        });
+                    }
                 }));
             }
         }

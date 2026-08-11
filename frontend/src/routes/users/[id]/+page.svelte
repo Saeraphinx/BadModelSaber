@@ -60,23 +60,22 @@
   });
   function onEditSubmit() {
     let editData: {
+      id: number;
       displayName: string;
       bio: string;
       hideDiscordId?: boolean;
       hideGithubId?: boolean;
-      userPlatforms?: UserApiV3['userPlatforms'];
+      userPlatforms: { platform: PlatformType; url: string }[];
     } = {
+      id: pdUser.id,
       displayName: editDisplayName,
       bio: editBio,
+      userPlatforms: editUserPlatforms as { platform: PlatformType; url: string }[],
     };
 
     if (allowEditingConfidentials) {
       editData.hideDiscordId = editHideDiscordId;
       editData.hideGithubId = editHideGithubId;
-    }
-
-    if (editUserPlatforms) {
-      editData.userPlatforms = editUserPlatforms;
     }
 
     trpc.internal.updateThings.user.updateUser.mutate(editData).then(() => {

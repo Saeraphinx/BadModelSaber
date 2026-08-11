@@ -1,9 +1,6 @@
-import { Status, UserPermissions, type GameVersionApiV3_full } from "$lib/scripts/from_backend/DBExtras";
-import { error } from "@sveltejs/kit";
+import { Status } from "$lib/scripts/from_backend/DBExtras";
 import type { PageLoad } from "./$types";
-import { checkRoles } from "$lib/scripts/utils/checkRoles.js";
 import { createTRPC, handleTrpcError } from "$lib/scripts/utils/api.js";
-import { m } from "../../lib/paraglide/messages";
 
 //export const ssr = false;
 export const load: PageLoad = async ({ fetch, url }) => {

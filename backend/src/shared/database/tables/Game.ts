@@ -1,10 +1,11 @@
 import { CreationOptional, InferAttributes, InferCreationAttributes, NonAttribute } from "sequelize";
-import { AfterValidate, AllowNull, Column, CreatedAt, DataType, Default, DeletedAt, Model, PrimaryKey, Table, UpdatedAt } from "sequelize-typescript";
+import { AfterCreate, AfterValidate, AllowNull, Column, CreatedAt, DataType, Default, DeletedAt, Model, PrimaryKey, Table, UpdatedAt } from "sequelize-typescript";
 import { WebhookLogType } from "../DBExtras.ts";
 import { createRandomString } from "../../Tools.ts";
 import { APIMessage, MessagePayload, WebhookMessageCreateOptions } from "discord.js";
 import { Webhooks } from "../../Webhooks.ts";
 import z from "zod/v4";
+import { defaultGamePermissions, User } from "./User.ts";
 
 
 export type GameWebhookConfig = {
@@ -67,6 +68,21 @@ export class Game extends Model<InferAttributes<Game>, InferCreationAttributes<G
         if (instance.name.includes(` `) || instance.name !== instance.name.toLowerCase()) {
             throw new Error(`Game name must be lowercase and cannot contain spaces.`);
         }
+    }
+
+    @AfterCreate
+    private static updateAllPermissionsForNewGame(instance: Game) {
+        // Update all user permissions to include the new game in their permissions object
+        User.findAll().then((users) => {
+            users.forEach((user) => {
+                let userPerms = user.permissions;
+                if (!userPerms.perGame[instance.name]) {
+                    userPerms.perGame[instance.name] = defaultGamePermissions;
+                    user.permissions = userPerms;
+                    user.save();
+                }
+            });
+        });
     }
 
     public static get defaultGame(): NonAttribute<Promise<Game>> {

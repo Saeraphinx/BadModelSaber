@@ -293,8 +293,12 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
             return false; // Only logged-in users can edit assets
         }
 
+        if (this.uploaderId === user.id) {
+            return user.checkRoles([UserPermissions.Asset_Edit]);
+        }
+
         // Users can edit their own assets
-        return user.id === this.uploaderId || user.checkRoles([UserPermissions.Asset_EditAll], this.gameName);
+        return user.checkRoles([UserPermissions.Asset_EditAll], this.gameName);
     }
     // #endregion
     // #region Edits
@@ -388,6 +392,7 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
             requestResponseBy: userToCredit.id,
             requestType: RequestType.Asset_Credit,
             objectToAdd: userToCredit.id,
+            refrencedGameName: this.gameName,
         })
     }
 
@@ -425,6 +430,7 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
                 requesterId: reqBy.id,
                 requestResponseBy: assetToLink.uploaderId,
                 requestType: RequestType.Asset_Link,
+                refrencedGameName: this.gameName,
                 objectToAdd: {
                     id: assetToLink.id,
                     linkType: type

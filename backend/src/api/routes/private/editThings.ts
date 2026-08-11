@@ -12,7 +12,7 @@ import { Logger } from "../../../shared/Logger.ts";
 
 export const updateThingsRouter = router({
     asset: {
-        updateAsset: loggedInAssetProcedure().input(z.object({
+        updateAsset: loggedInAssetProcedure([UserPermissions.Asset_Edit, UserPermissions.Asset_EditAll]).input(z.object({
             data: Asset.validator.pick({
                 name: true,
                 description: true,
@@ -29,7 +29,7 @@ export const updateThingsRouter = router({
                 throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: `Error updating asset: ${parseErrorMessage(err)}` });
             });
         }),
-        submitAssetForApproval: loggedInAssetProcedure().mutation(async ({ input, ctx }) => {
+        submitAssetForApproval: loggedInAssetProcedure([UserPermissions.Asset_Edit, UserPermissions.Asset_EditAll]).mutation(async ({ input, ctx }) => {
             const asset = ctx.asset;
             if (!asset.canEdit(ctx.user)) {
                 throw new TRPCError({ code: `FORBIDDEN`, message: `You are not allowed to edit this asset` });
@@ -40,7 +40,7 @@ export const updateThingsRouter = router({
                 throw new TRPCError({ code: `INTERNAL_SERVER_ERROR`, message: `Error submitting asset for approval: ${parseErrorMessage(err)}` });
             });
         }),
-        addAssetLink: loggedInAssetProcedure().input(z.object({
+        addAssetLink: loggedInAssetProcedure([UserPermissions.Asset_Edit, UserPermissions.Asset_EditAll]).input(z.object({
             linkToId: dbId,
             type: z.enum(LinkedAssetLinkType)
         })).mutation(async ({ input, ctx }) => {
@@ -63,7 +63,7 @@ export const updateThingsRouter = router({
                 throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: `Error linking asset: ${parseErrorMessage(err)}` });
             });
         }),
-        addAssetCollaborator: loggedInAssetProcedure().input(z.object({
+        addAssetCollaborator: loggedInAssetProcedure([UserPermissions.Asset_Edit, UserPermissions.Asset_EditAll]).input(z.object({
             // id: dbId,
             userId: dbId
         })).mutation(async ({ input, ctx }) => {
@@ -86,7 +86,7 @@ export const updateThingsRouter = router({
         }),
     },
     project: {
-        updateProject: loggedInProjectProcedure().input(z.object({
+        updateProject: loggedInProjectProcedure([UserPermissions.Mods_Edit, UserPermissions.Mods_EditAll]).input(z.object({
             data: Project.validator.pick({
                 description: true,
                 collaboratorIds: true,
@@ -114,7 +114,7 @@ export const updateThingsRouter = router({
                 return updatedProject.toApiV3();
             });
         }),
-        updateProjectIcon: loggedInProcedure().input(zfd.formData({
+        updateProjectIcon: loggedInProcedure([UserPermissions.Mods_Edit, UserPermissions.Mods_EditAll]).input(zfd.formData({
             projectId: zfd.numeric(),
             icon: zfd.file().refine((file) => Validator.validateThumbnail(file), { message: "Invalid icon file format" })
         })).mutation(async ({ input, ctx }) => {
@@ -146,7 +146,7 @@ export const updateThingsRouter = router({
         }),
     },
     version: {
-        updateVersion: loggedInVersionProcedure().input(z.object({
+        updateVersion: loggedInVersionProcedure([UserPermissions.Mods_Edit, UserPermissions.Mods_EditAll]).input(z.object({
             data: z.object({
                 semver: z.string().transform(val => {
                     let sv = new SemVer(val); // this will throw if the semver is invalid
@@ -169,7 +169,7 @@ export const updateThingsRouter = router({
                 throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: `Error updating version: ${parseErrorMessage(err)}` });
             });
         }),
-        submitForApproval: loggedInVersionProcedure().mutation(async ({ ctx }) => {
+        submitForApproval: loggedInVersionProcedure([UserPermissions.Mods_Edit, UserPermissions.Mods_EditAll]).mutation(async ({ ctx }) => {
             const version = ctx.version;
             const project = ctx.project;
 
@@ -187,7 +187,7 @@ export const updateThingsRouter = router({
                 throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: `Error submitting version for approval: ${parseErrorMessage(err)}` });
             });
         }),
-        removeFromQueue: loggedInVersionProcedure().mutation(async ({ ctx }) => {
+        removeFromQueue: loggedInVersionProcedure([UserPermissions.Mods_Edit, UserPermissions.Mods_EditAll]).mutation(async ({ ctx }) => {
             const version = ctx.version;
             const project = ctx.project;
 
@@ -208,26 +208,37 @@ export const updateThingsRouter = router({
     },
     user: {
         updateUser: loggedInProcedure([UserPermissions.Users_EditSelf]).input(z.object({
+            id: dbId,
             displayName: User.validator.shape.displayName.optional(),
             bio: User.validator.shape.bio.optional(),
+            userPlatforms: User.validator.shape.userPlatforms.optional(),
             hideDiscordId: User.validator.shape.hideDiscordId.optional(),
             hideGithubId: User.validator.shape.hideGithubId.optional(),
         })).mutation(async ({ input, ctx }) => {
+            const user = await User.findByPk(input.id);
+            if (!user) {
+                throw new TRPCError({ code: 'NOT_FOUND', message: `User not found` });
+            }
             if (input.displayName !== undefined) {
-                ctx.user.displayName = input.displayName;
+                user.displayName = input.displayName;
             }
             if (input.bio !== undefined) {
-                ctx.user.bio = input.bio;
+                user.bio = input.bio;
             }
-            if (input.hideDiscordId !== undefined) {
-                ctx.user.hideDiscordId = input.hideDiscordId;
+            if (input.userPlatforms !== undefined) {
+                user.userPlatforms = input.userPlatforms;
             }
-            if (input.hideGithubId !== undefined) {
-                ctx.user.hideGithubId = input.hideGithubId;
+            if (user.id == ctx.user.id) {
+                if (input.hideDiscordId !== undefined) {
+                    user.hideDiscordId = input.hideDiscordId;
+                }
+                if (input.hideGithubId !== undefined) {
+                    user.hideGithubId = input.hideGithubId;
+                }
             }
-            await ctx.user.save().catch(handleCatch(`Error saving user ${ctx.user.id} (${ctx.user.username})`));
+            await user.save().catch(handleCatch(`Error saving user ${ctx.user.id} (${ctx.user.username})`));
             Logger.info(`User ${ctx.user.id} (${ctx.user.username}) has updated their profile.`);
-            return ctx.user.toApiV3();
+            return user.toApiV3();
         }),
         toggleSecretFeatures: loggedInProcedure({ denied: [UserPermissions.C_Banned] }).input(z.object({
             enabled: z.boolean(),

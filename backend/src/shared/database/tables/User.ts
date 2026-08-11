@@ -12,15 +12,29 @@ import { ThingRequest } from "./ThingRequest.ts";
 import { Translation } from "./Translation.ts";
 import { Project } from "./Project.ts";
 import { ProjectAuthor } from "./Junctions.ts";
-import sequelize from "sequelize/lib/sequelize";
 import { WebhookPayloadGenerator, Webhooks } from "../../Webhooks.ts";
 import { Game } from "./Game.ts";
 
-export const DefaultPermissions = [UserPermissions.Asset_Create, UserPermissions.Mods_Create, UserPermissions.Users_EditSelf];
-export const DefaultPermissionsObject = {
-    sitewide: DefaultPermissions,
-    perGame: {},
-} as const;
+export const defaultSitewidePermissions = [UserPermissions.Users_EditSelf];
+export const defaultGamePermissions = [UserPermissions.Asset_Create, UserPermissions.Asset_Edit, UserPermissions.Mods_Create, UserPermissions.Mods_Edit]
+export async function getDefaultPermissions(): Promise<{
+    sitewide: UserPermissions[];
+    perGame: Record<string, UserPermissions[]>;
+}> {
+    let allGameNames = await Game.findAll({ attributes: ['name'] }).then(games => games.map(g => g.name));
+    let defaultPermissions: {
+        sitewide: UserPermissions[];
+        perGame: Record<string, UserPermissions[]>;
+    } = {
+        sitewide: defaultSitewidePermissions,
+        perGame: {},
+    } 
+    for (const gameName of allGameNames) {
+        defaultPermissions.perGame[gameName] = defaultGamePermissions;
+    }
+    return defaultPermissions;
+}
+
 export type UserEditable = Pick<InferAttributes<User>, "displayName" | "bio">
 export type UserInfer = InferAttributes<User>;
 @Table({
@@ -122,6 +136,7 @@ export class User extends Model<InferAttributes<User>, InferCreationAttributes<U
             i.startsWith(`cos_`) && 
             i.startsWith(`secret`) && 
             i.includes(`user`) &&
+            i !== `game_create` &&
             i.includes(`admin`)) as any))),
             sitewide: z.array(z.enum(UserPermissions))
         }),

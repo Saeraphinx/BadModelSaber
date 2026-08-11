@@ -1,5 +1,5 @@
 import * as fs from "fs";
-import { generateFakeData } from "./generateFakeData.ts";
+//import { generateFakeData } from "./generateFakeData.ts";
 import { EnvConfig } from "../src/shared/EnvConfig.ts";
 import { PostgreSqlContainer } from "@testcontainers/postgresql";
 import { TestProject } from "vitest/node";
@@ -18,16 +18,16 @@ export default async function setup(project: TestProject) {
     // @ts-ignore
     project.provide(`postgresUrl`, postgresContainer.getConnectionUri());
 
-    if (!fs.existsSync(`./storage/fakeData.json`)) {
-        console.log(`No test data found, generating fake data...`);
-        await generateFakeData(postgresContainer.getConnectionUri()).then(() => {
-            console.log(`Fake data generated.`);
-        }).catch(err => {
-            console.error(`Error generating fake data:`, err);
-            process.exit(4234);
-        });
-        await postgresContainer.restart();
-    }
+    // if (!fs.existsSync(`./storage/fakeData.json`)) {
+    //     console.log(`No test data found, generating fake data...`);
+    //     await generateFakeData(postgresContainer.getConnectionUri()).then(() => {
+    //         console.log(`Fake data generated.`);
+    //     }).catch(err => {
+    //         console.error(`Error generating fake data:`, err);
+    //         process.exit(4234);
+    //     });
+    //     await postgresContainer.restart();
+    // }
 
     project.onTestsRerun(async () => {
         await postgresContainer.restart();

@@ -2,7 +2,7 @@
   import { Status, type GameVersionApiV3, type VersionApiV3 } from "$lib/scripts/from_backend/DBExtras";
   import { getRelativeTimeString } from "$lib/scripts/utils/stylizer";
   import * as Accordion from "$shadcn/components/ui/accordion/index";
-  import { BadgeInfoIcon, DownloadIcon, FileCodeIcon, FolderIcon, InfoIcon, Link2Icon, LinkIcon, MegaphoneIcon, ServerCogIcon, SquarePenIcon } from "@lucide/svelte";
+  import { BadgeInfoIcon, DownloadIcon, FileCodeIcon, FolderIcon, InfoIcon, Link2Icon, LinkIcon, MegaphoneIcon, ServerCogIcon, SquarePenIcon, XIcon } from "@lucide/svelte";
   import ApprovalDialog from "../dialogs/ApprovalDialog.svelte";
   import CodeDialog from "../dialogs/CodeDialog.svelte";
   import ReportDialog from "../dialogs/ReportDialog.svelte";
@@ -139,6 +139,11 @@
       <!-- <Button variant="ghost" size="sm" href="/mods/{version.projectId}#{version.id}" class="has-[>svg]:px-1 h-6"><Link2Icon class="text-gray-400"/></Button> -->
       <p title={new Date(version.createdAt).toISOString()} class="text-sm text-gray-500">{getRelativeTimeString(new Date(version.createdAt))}</p>
       <StatusHoverCard status={version.status} type="mod" countdownDate={version.nextStatusChangeTime} />
+      {#if isEditable && version.status === Status.Queue}
+        <Button variant="outline" size="sm" class="has-[>svg]:px-0 mt-0.5 h-6 w-6" onclick={() => removeFromQueue()}>
+          <XIcon class="h-3.5 w-3.5" />
+        </Button>
+      {/if}
     </span>
   </div>
   <div class="flex flex-col items-center">
@@ -268,7 +273,7 @@
           </Accordion.Content>
         </Accordion.Item>
       {/if}
-      <Accordion.Item value="details" class="px-2 py-1">
+      <Accordion.Item value="details" class="px-2 py-1 border-0">
         <Accordion.Trigger class="text-sm font-normal p-0.5">
           <span class="flex flex-row items-center gap-1">
             <InfoIcon class="h-4 w-4" />

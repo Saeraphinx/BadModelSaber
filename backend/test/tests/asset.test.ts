@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, inject, test } from "vitest";
-import { Alert, Asset, AssetFileFormat, AssetInfer, ThingRequest, DatabaseManager, License, RequestType, Status, Tags, User, UserPermissions } from "../../src/shared/Database.ts";
+import { Alert, Asset, AssetFileFormat, AssetInfer, ThingRequest, DatabaseManager, License, RequestType, Status, Tags, User, UserPermissions, AssetTypesWithRenderingMethod, RenderingModes } from "../../src/shared/Database.ts";
 import { createDummyAsset, createDummyUser, handleException } from "../testTools.ts";
 
 describe("assets", () => {
@@ -108,10 +108,11 @@ describe("assets", () => {
                 fileHash: `hash_${format}`,
                 type: format,
                 status: Status.Private,
+                renderingMethod: AssetTypesWithRenderingMethod.includes(format) ? RenderingModes.BIRP_SinglePass : undefined,
             }).save();
             await testAsset.submitForApproval(testUser);
             await testAsset.reload();
-            expect(testAsset.status).toBe(Status.Pending);
+            expect(testAsset.status).toBe(Status.Queue);
         });
 
         test.for(getAssetTypes(true))(`sets status to Unverified for format %s`, async (format) => {
@@ -121,6 +122,7 @@ describe("assets", () => {
                 fileHash: `hash_${format}`,
                 type: format,
                 status: Status.Private,
+                renderingMethod: AssetTypesWithRenderingMethod.includes(format) ? RenderingModes.BIRP_SinglePass : undefined,
             }).save();
             await testAsset.submitForApproval(testUser);
             await testAsset.reload();

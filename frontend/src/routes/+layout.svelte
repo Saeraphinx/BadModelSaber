@@ -1,7 +1,6 @@
 <script lang="ts">
   import "../app.css";
   import * as NavigationMenu from "$shadcn/components/ui/navigation-menu/index.js";
-  import { NavigationMenu as NavigationMenuPrimitive } from "bits-ui";
   import * as DropdownMenu from "$shadcn/components/ui/dropdown-menu/index.js";
   import { onMount } from "svelte";
   import { buttonVariants } from "$shadcn/components/ui/button";
@@ -201,33 +200,32 @@
   function handleLoggerConnection(connect: boolean) {
     if (connect) {
       loggerSubscription = trpc.internal.admin.dev.subscribeAdminLogs.subscribe(undefined, {
-          onData(log) {
-            let title = `[${log.level.toUpperCase()}] ${new Date().toISOString()}`
-            switch (log.level) {
-              case "warn":
-                toast.warning(title, { description: log.message, position: "bottom-right", duration: 15000 });
-                break;
-              case "error":
-                toast.error(title, { description: log.message, position: "bottom-right", duration: 30000 });
-                break;
-              default:
-                toast.info(title, { description: log.message, position: "bottom-right", duration: 10000 });
-            }
-          },
-          onError(err) {
-            console.error(err);
-            toast.error("Failed to subscribe to admin logs.", { description: parseErrorMessage(err), position: "bottom-right" });
-          },
-          onStarted() {
-            isLoggerConnected = true;
-            toast.success("Successfully subscribed to admin logs.", { description: "", position: "bottom-right" });
-          },
-          onStopped() {
-            isLoggerConnected = false;
-            toast.info("Unsubscribed from admin logs.", { description: "", position: "bottom-right", duration: 30000 });
-          },
+        onData(log) {
+          let title = `[${log.level.toUpperCase()}] ${new Date().toISOString()}`;
+          switch (log.level) {
+            case "warn":
+              toast.warning(title, { description: log.message, position: "bottom-right", duration: 15000 });
+              break;
+            case "error":
+              toast.error(title, { description: log.message, position: "bottom-right", duration: 30000 });
+              break;
+            default:
+              toast.info(title, { description: log.message, position: "bottom-right", duration: 10000 });
+          }
         },
-      );
+        onError(err) {
+          console.error(err);
+          toast.error("Failed to subscribe to admin logs.", { description: parseErrorMessage(err), position: "bottom-right" });
+        },
+        onStarted() {
+          isLoggerConnected = true;
+          toast.success("Successfully subscribed to admin logs.", { description: "", position: "bottom-right" });
+        },
+        onStopped() {
+          isLoggerConnected = false;
+          toast.info("Unsubscribed from admin logs.", { description: "", position: "bottom-right", duration: 30000 });
+        },
+      });
     } else {
       if (loggerSubscription) {
         loggerSubscription.unsubscribe();
@@ -335,29 +333,17 @@
 
 <div>
   <!-- #region top bar -->
-  {#if showDevbar.current}
-    {#if env.PUBLIC_BASE_URL.includes(`localhost`)}
-      <div class="absolute top-0 z-50 text-center pt-0.5 w-full bg-linear-to-r from-[#8e28e200] via-[#8e28e299] to-[#8e28e200]">
-        <!-- svelte-ignore a11y_distracting_elements -->
-        <p class="text-base">ModelSaber Development Instance</p>
-      </div>
-    {:else if env.PUBLIC_BASE_URL.includes(`saera.gay`)}
-      <div class="absolute top-0 z-50 text-center pt-0.5 m-auto w-full bg-linear-to-r from-[#DC2DE220] via-[#DC2DE299] to-[#DC2DE220]">
-        <!-- svelte-ignore a11y_distracting_elements -->
-        <p class="text-base">ModelSaber Public Development Instance</p>
-      </div>
-    {/if}
-  {:else if env.PUBLIC_BASE_URL.includes(`localhost`) || env.PUBLIC_BASE_URL.includes(`saera.gay`)}
-    <div class="sticky z-50">
-      <span class="bg-[#8e28e2] w-2 h-2 block absolute top-7 left-7 rounded-full animate-pulse"></span>
-    </div>
-  {/if}
   <div class="flex w-auto flex-row text-base justify-between">
     <!-- Logo -->
-    <a href="/">
-      <div class="flex items-center justify-center md:w-32 h-16 md:ml-16 ml-4 md:p-4">
-        <img src="/modelsaber-logo-web.svg" alt="ModelSaber Logo" class="h-8 w-8 mr-2" />
+    <a href="/" class="flex items-center justify-start h-16 md:ml-16 ml-4 md:p-4 gap-0.5">
+      <img src="/modelsaber-logo-web.svg" alt="ModelSaber Logo" class="h-8 w-8 mr-2" />
+      <div class="flex flex-col items-center justify-center">
         <span class="text-xl font-bold">{m.name()}</span>
+        {#if env.PUBLIC_BASE_URL.includes(`localhost`)}
+          <Badge variant="outline" class="bg-linear-to-tl from-[#8e28e260] to-[#DC2DE260]">Development Instance</Badge>
+        {:else if env.PUBLIC_BASE_URL.includes(`saera.gay`)}
+          <Badge variant="outline" class="bg-linear-to-tl from-[#DC2DE260] to-[#8e28e260]">Public Development Instance</Badge>
+        {/if}
       </div>
     </a>
     <!-- Navigation Bar -->
@@ -380,8 +366,11 @@
       {/if}
       <!-- User Avatar or Login Button -->
       <DropdownMenu.Root>
-        <DropdownMenu.Trigger class="p-2 rounded-full hover:bg-accent transition-colors duration-300">
+        <DropdownMenu.Trigger class="flex not-md:flex-wrap flex-row items-center gap-1 p-2 rounded-full hover:bg-accent transition-colors duration-300">
           {#if isLoggedIn}
+            {#if user && user.id == 9}
+              <Badge variant="outline" class="border-orange-600 text-orange-200">Test User</Badge>
+            {/if}
             <Avatar.Root>
               {#if hasUnreadAlerts}
                 <Avatar.Badge class="bg-red-400 top-0" />
@@ -418,16 +407,8 @@
                 {m["layout.userMenu.requests"]()}
               </DropdownMenu.Item>
             </a>
-            {#if checkRoles(user, { hasOneOf: [
-              UserPermissions.Administrative_Tasks, 
-              UserPermissions.Mods_Approval, 
-              UserPermissions.Game_Create, 
-              UserPermissions.Game_Edit,
-              UserPermissions.Game_EditVersions,
-              UserPermissions.Game_ViewExtras,
-              UserPermissions.Users_Ban,
-              UserPermissions.Users_EditAllRoles
-              ]}, `any`)}
+            {#if checkRoles(user, { hasOneOf: [UserPermissions.Advanced_Admin_Tasks, UserPermissions.Administrative_Tasks, UserPermissions.Mods_Approval, UserPermissions.Game_Create, UserPermissions.Game_Edit, UserPermissions.Game_EditVersions, UserPermissions.Game_ViewExtras, UserPermissions.Users_EditAllRoles] },  //UserPermissions.Users_Ban, //not needed atm
+              `any`)}
               <a href="/admin">
                 <DropdownMenu.Item>
                   <Settings />
@@ -435,7 +416,7 @@
                 </DropdownMenu.Item>
               </a>
             {/if}
-            {#if checkRoles(user, [UserPermissions.Administrative_Tasks])}
+            {#if checkRoles(user, [UserPermissions.Advanced_Admin_Tasks])}
               <button onclick={() => handleLoggerConnection(!isLoggerConnected)}>
                 <DropdownMenu.Item>
                   <Server />
@@ -451,25 +432,29 @@
                 </DropdownMenu.Item>
               </button>
             {/if}
-            {#if checkRoles(user, [UserPermissions.Asset_Create], `any`)}
+            {#if checkRoles(user, [UserPermissions.Asset_Create, UserPermissions.Mods_Create], `any`)}
               <DropdownMenu.Sub>
                 <DropdownMenu.SubTrigger>
                   <PlusIcon />
                   {m["layout.userMenu.create"]()}
                 </DropdownMenu.SubTrigger>
                 <DropdownMenu.SubContent class="">
-                  <a href="/create/project">
-                    <DropdownMenu.Item>
-                      <FolderGit2Icon />
-                      {m["layout.userMenu.createProject"]()}
-                    </DropdownMenu.Item>
-                  </a>
-                  <a href="/create/asset">
-                    <DropdownMenu.Item>
-                      <FileAxis3DIcon />
-                      {m["layout.userMenu.createAsset"]()}
-                    </DropdownMenu.Item>
-                  </a>
+                  {#if checkRoles(user, [UserPermissions.Mods_Create], `any`)}
+                    <a href="/create/project">
+                      <DropdownMenu.Item>
+                        <FolderGit2Icon />
+                        {m["layout.userMenu.createProject"]()}
+                      </DropdownMenu.Item>
+                    </a>
+                  {/if}
+                  {#if checkRoles(user, [UserPermissions.Mods_Create], `any`)}
+                    <a href="/create/asset">
+                      <DropdownMenu.Item>
+                        <FileAxis3DIcon />
+                        {m["layout.userMenu.createAsset"]()}
+                      </DropdownMenu.Item>
+                    </a>
+                  {/if}
                 </DropdownMenu.SubContent>
               </DropdownMenu.Sub>
             {/if}
@@ -541,7 +526,7 @@
           {#if isLoggedIn}
             <a class="text-xs text-muted-foreground text-center p-1" href="{env.PUBLIC_API_URL}/docs"> API Docs </a>
           {/if}
-          {#if user && checkRoles(user, { hasOneOf: [UserPermissions.Administrative_Tasks, UserPermissions.Secret_Features] })}
+          {#if user && checkRoles(user, [UserPermissions.Administrative_Tasks, UserPermissions.Secret_Features])}
             <DropdownMenu.Separator />
             <span class="text-xs text-muted-foreground text-center p-1">
               Administrative Information<br />

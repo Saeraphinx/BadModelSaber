@@ -287,7 +287,7 @@ export const uploadStuff = router({
             Logger.error(`Error creating version: ${parseErrorMessage(err)}`);
             throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Failed to create version. Please contact a site administrator.' });
         }).then(async (version) => {
-            version.$set(`supportedGameVersions`, newGameVersions);
+            await version.$set(`supportedGameVersions`, newGameVersions);
             version.supportedGameVersions = newGameVersions; // ensure the supportedGameVersions property is updated in the version instance for toApi
             Logger.log(`Version database entry created for user ${ctx.user?.id} with version ID ${version.id} for project ID ${project.id}`);
             let versionFolder = path.join(project.folderPath, version.id.toString());

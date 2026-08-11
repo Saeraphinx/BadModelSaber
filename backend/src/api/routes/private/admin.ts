@@ -344,9 +344,9 @@ export const AdminRouter = router({
                 Logger.log(`Impersonating test user by admin user ${ctx.userId}`);
 
                 let testUser = await User.findOrCreate({
-                    where: { id: 9 },
+                    where: { id: 6 },
                     defaults: {
-                        id: 9,
+                        id: 6,
                         username: `testuser`,
                         displayName: `Test User`,
                         bio: `Test user for development purposes.`,

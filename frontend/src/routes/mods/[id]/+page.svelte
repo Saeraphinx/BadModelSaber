@@ -6,7 +6,7 @@
   import VersionCard from "$lib/components/mods/VersionCard.svelte";
   import { m } from "$lib/paraglide/messages";
   import { availableLocales, Status, type UserApiV3, UserPermissions } from "$lib/scripts/from_backend/DBExtras.js";
-  import { checkRoles, getAllowedVersionStatuses } from "$lib/scripts/utils/checkRoles.js";
+  import { checkRoles, getAllowedVersionStatuses, checkAllowApproval, checkAllowStatusHistory, checkAllowEdit, checkAllowTranslate } from "$lib/scripts/utils/checkRoles";
   import { getRelativeTimeString, getStatusString } from "$lib/scripts/utils/stylizer.js";
   import { Separator } from "$shadcn/components/ui/separator";
   import * as Tooltip from "$shadcn/components/ui/tooltip/index.js";
@@ -46,47 +46,10 @@
   let reportDialog = $state<ReportDialog>();
 
   // #region Permissions
-  let shouldAllowApproval = $derived.by(() => {
-    if (!user) return false;
-    return checkRoles(
-      user,
-      {
-        hasOneOf: [UserPermissions.Mods_Approval],
-      },
-      project.gameName,
-    );
-  });
-
-  let shouldAllowStatusHistory = $derived.by(() => {
-    if (!user) return false;
-    if (project.authors.some((a) => a.id === user.id)) return true;
-    if (versions.some((v) => v.uploaderId === user.id)) return true;
-    if (versions.some((v) => v.statusHistory.some((sh) => sh.userId === user.id))) return true;
-    return checkRoles(
-      user,
-      {
-        hasOneOf: [UserPermissions.Mods_Approval, UserPermissions.Secret_Features],
-      },
-      project.gameName,
-    );
-  });
-
-  let shouldAllowEdit = $derived.by(() => {
-    if (!user) return false;
-    if (project.authors.some((a) => a.id === user.id)) return true;
-    return checkRoles(
-      user,
-      {
-        hasOneOf: [UserPermissions.Mods_EditAll],
-      },
-      project.gameName,
-    );
-  });
-
-  let shouldAllowTranslation = $derived.by(() => {
-    if (!user) return false;
-    return checkRoles(user, { hasOneOf: [UserPermissions.Mods_TranslateAll] }, project.gameName);
-  });
+  let shouldAllowApproval = $derived.by(() => checkAllowApproval(user, project));
+  let shouldAllowStatusHistory = $derived.by(() => checkAllowStatusHistory(user, project, versions));
+  let shouldAllowEdit = $derived.by(() => checkAllowEdit(user, project));
+  let shouldAllowTranslation = $derived.by(() => checkAllowTranslate(user, project));
 
   let isAuthor = $derived.by(() => {
     if (!user) return false;
@@ -331,27 +294,29 @@
         </div>
         <Separator class="my-4" />
       {/if}
-      <div class="flex flex-row items-center justify-between mx-1">
-        <p class="text-base font-bold">{m["common.dataTable.status"]()}</p>
-        <div class="flex flex-row flex-wrap gap-x-2 justify-end">
-          {#each allowedStatuses as status}
-            <Button
-              variant="ghost"
-              size="sm"
-              class="p-0"
-              onclick={() => {
-                if (enabledStatuses.includes(status)) {
-                  enabledStatuses = enabledStatuses.filter((s) => s !== status);
-                } else {
-                  enabledStatuses = [...enabledStatuses, status];
-                }
-              }}>
-              <StatusHoverCard {status} type="mod" enableHover={false} isMuted={!enabledStatuses.includes(status)} />
-            </Button>
-          {/each}
+      {#if allowedStatuses.length !== 1}
+        <div class="flex flex-row items-center justify-between mx-1">
+          <p class="text-base font-bold">{m["common.dataTable.status"]()}</p>
+          <div class="flex flex-row flex-wrap gap-x-2 justify-end">
+            {#each allowedStatuses as status}
+              <Button
+                variant="ghost"
+                size="sm"
+                class="p-0"
+                onclick={() => {
+                  if (enabledStatuses.includes(status)) {
+                    enabledStatuses = enabledStatuses.filter((s) => s !== status);
+                  } else {
+                    enabledStatuses = [...enabledStatuses, status];
+                  }
+                }}>
+                <StatusHoverCard {status} type="mod" enableHover={false} isMuted={!enabledStatuses.includes(status)} />
+              </Button>
+            {/each}
+          </div>
         </div>
-      </div>
-      <Separator class="my-4" />
+        <Separator class="my-4" />
+      {/if}
       <div class="flex flex-col gap-2">
         {#each versions.filter((v) => enabledStatuses.includes(v.status)) as version}
           <VersionCard
@@ -362,7 +327,7 @@
             isEditable={shouldAllowEdit}
             {gameVersions}
             showUserQueueOptions={isAuthor || version.uploaderId == user?.id}
-            {reportDialog} />
+            reportDialog={shouldAllowEdit || !user ? undefined : reportDialog} />
         {:else}
           <p class="text-center text-gray-500">{m["mods.noVersionsFound"]()}</p>
         {/each}
@@ -373,7 +338,8 @@
       <div class="flex justify-evenly items-center bg-card rounded-md p-4 mb-4">
         <div class="flex flex-col items-center text-center justify-center">
           <p class="text-sm text-gray-500">{m["common.dataTable.status"]()}</p>
-          <p class="text-base font-bold">{getStatusString(project.status)}</p>
+          <StatusHoverCard status={project.status} type="mod" enableHover={false} textSize="base-bold" />
+          <!-- <p class="text-base font-bold">{getStatusString(project.status)}</p> -->
         </div>
         <div class="flex flex-col items-center text-center justify-center">
           <p class="text-sm text-gray-500">{m["common.dataTable.game"]()}</p>

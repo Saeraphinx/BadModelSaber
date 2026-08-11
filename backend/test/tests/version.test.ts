@@ -24,7 +24,7 @@ describe("versions", () => {
 
         testUser = await createDummyUser(12345).save();
         project = await createDummyProject(`beatsaber`, undefined, {
-            status: Status.Verified,
+            status: Status.Public,
         }).save();
         version = await createDummyVersion(project.id, testUser.id).save();
     });
@@ -40,7 +40,7 @@ describe("versions", () => {
             version.status = Status.Verified;
             expect(await version.canView(null)).toBe(true);
             version.status = Status.Unverified;
-            expect(await version.canView(null)).toBe(false);
+            expect(await version.canView(null)).toBe(true);
             expect(await version.canView(createDummyUser(54321))).toBe(true);
         });
 
@@ -104,11 +104,11 @@ describe("versions", () => {
             await version.setStatus(Status.Verified, testUser, `Initial approval`);
             returnWebhookExpect(WebhookLogType.StatusUpdate);
             returnWebhookExpect(WebhookLogType.Text_StatusUpdate);
-            returnWebhookExpect(WebhookLogType.NewlyVerifiedVersion);
+            returnWebhookExpect(WebhookLogType.FirstVerificationVersion);
             expect(webhookMock).toHaveBeenCalledTimes(3);
             expect(alertMock).toHaveBeenCalledTimes(1);
             expect(alertMock).toHaveBeenCalledWith(expect.objectContaining({
-                type: AlertType.ThingVerified,
+                type: AlertType.ThingGood,
             }));
             expect(version.lastApprovedById).toBe(testUser.id);
             expect(version.status).toBe(Status.Verified);
@@ -131,7 +131,7 @@ describe("versions", () => {
             expect(webhookMock).toHaveBeenCalledTimes(2);
             expect(alertMock).toHaveBeenCalledTimes(1);
             expect(alertMock).toHaveBeenCalledWith(expect.objectContaining({
-                type: AlertType.ThingRemoval,
+                type: AlertType.ThingBad,
             }));
             expect(version.status).toBe(Status.Unverified);
             expect(version.statusHistory).toHaveLength(2);
@@ -153,7 +153,7 @@ describe("versions", () => {
             expect(webhookMock).toHaveBeenCalledTimes(2);
             expect(alertMock).toHaveBeenCalledTimes(1);
             expect(alertMock).toHaveBeenCalledWith(expect.objectContaining({
-                type: AlertType.ThingRemoval,
+                type: AlertType.ThingBad,
             }));
             expect(version.status).toBe(Status.Removed);
             expect(version.statusHistory).toHaveLength(2);

@@ -1,4 +1,4 @@
-import { AlertType, Asset, AssetFileFormat, AssetPublicAPIv2, DatabaseManager, DefaultPermissionsObject, Game, GameVersion, License, LinkedAssetLinkType, ModApiv2, ModVersionsApiv2, Project, Status, Tags, User, UserPermissions, UserPublicApiV2, Version, VersionValidStatuses, RenderingModes } from "./Database.ts";
+import { AlertType, Asset, AssetFileFormat, AssetPublicAPIv2, DatabaseManager, Game, GameVersion, License, LinkedAssetLinkType, ModApiv2, ModVersionsApiv2, Project, Status, Tags, User, UserPermissions, UserPublicApiV2, Version, VersionValidStatuses, RenderingModes, getDefaultPermissions } from "./Database.ts";
 import { Logger } from "./Logger.ts";
 import * as fs from "fs";
 import * as crypto from "crypto";
@@ -231,12 +231,13 @@ export async function importFromOldModelSaber(): Promise<void> {
                     });
 
                     if (discordUser.id !== `0`) {
+                        let defaultPerms = await getDefaultPermissions();
                         return await User.create({
                             discordId: discordUser.id,
                             username: discordUser.username,
                             displayName: discordUser.global_name || discordUser.username,
                             avatarUrl: `https://cdn.discordapp.com/avatars/${discordUser.id}/${discordUser.avatar}.webp?animated=true`,
-                            permissions: DefaultPermissionsObject,
+                            permissions: defaultPerms,
                         }).catch(err => {
                             Logger.error(`Failed to create user ${discordUser.id} (${discordUser.username}): ${err}`);
                             Logger.debug(`User data: ${JSON.stringify(discordUser)}`);
@@ -392,7 +393,6 @@ export async function importFromBadBeatMods() {
     let startTime = Date.now();
     let totalStartTime = startTime;
     const importerUser = await User.create({
-        id: 3,
         username: `BeatMods Import`,
         displayName: `BeatMods Importer`,
         avatarUrl: `https://cdn.discordapp.com/embed/avatars/6.png`,
@@ -536,7 +536,7 @@ export async function importFromBadBeatMods() {
     let specialIdCounter = totalBeatmodsMods + 1;
     for (const { mod, versions } of mods) {
         let idToUse = mod.id;
-        if (mod.id === 143 || mod.id === 5 || mod.id === 69 /* for pink */) {
+        if (mod.id === 6 || mod.id === 143 || mod.id === 5 || mod.id === 69 /* for pink */) {
             idToUse = specialIdCounter;
             Logger.debug(`Assigning special ID ${specialIdCounter} to mod ${mod.id} (${mod.name})`);
             specialIdCounter++;
@@ -789,6 +789,7 @@ export async function importFromBadBeatMods() {
 }
 
 async function getNewUserFromOldUser(user: UserPublicApiV2): Promise<User> {
+    let defaultPerms = await getDefaultPermissions();
     return await User.findOrCreate({
         where: {
             username: user.username,
@@ -797,7 +798,7 @@ async function getNewUserFromOldUser(user: UserPublicApiV2): Promise<User> {
             username: user.username,
             displayName: user.displayName,
             githubId: user.githubId?.toString(),
-            permissions: DefaultPermissionsObject,
+            permissions: defaultPerms,
             avatarUrl: `https://github.com/${user.username}.png`,
             bio: user.bio,
             createdAt: user.createdAt

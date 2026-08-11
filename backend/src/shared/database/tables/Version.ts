@@ -405,6 +405,10 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
     public async setStatus(newStatus: VersionValidStatuses, user: User, reason: string, shouldAlert = true, shouldSendWebhooks = true): Promise<this> {
         let previousStatus = this.status;
         this.status = newStatus;
+
+        let hasBeenVerifiedBefore = this.statusHistory.some(entry => entry.status === Status.Verified);
+        let hasBeenUnverifiedBefore = this.statusHistory.some(entry => entry.status === Status.Unverified);
+
         this.statusHistory = [...this.statusHistory, {
             status: newStatus,
             reason: reason,
@@ -437,8 +441,8 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
         });
 
         // alerts & webhooks
-        let isFirstVerification = previousStatus !== Status.Verified && newStatus === Status.Verified && this.statusHistory.some(entry => entry.status === Status.Verified) === false;
-        let isFirstUnverification = previousStatus !== Status.Unverified && newStatus === Status.Unverified && this.statusHistory.some(entry => entry.status === Status.Verified || entry.status === Status.Unverified) === false;
+        let isFirstVerification = previousStatus !== Status.Verified && newStatus === Status.Verified && !(hasBeenVerifiedBefore);
+        let isFirstUnverification = previousStatus !== Status.Unverified && newStatus === Status.Unverified && !(hasBeenVerifiedBefore || hasBeenUnverifiedBefore);
         let wasPlacedInTesting = previousStatus !== Status.Testing && newStatus === Status.Testing;
         let wasPlacedInQueue = previousStatus !== Status.Queue && newStatus === Status.Queue;
         let wasVerificationRemoved = previousStatus === Status.Verified && newStatus !== Status.Verified;

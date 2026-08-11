@@ -10,6 +10,7 @@
   let {
     status,
     type,
+    textSize = `base`,
     countdownDate = null,
     children = null,
     enableHover = true,
@@ -17,6 +18,7 @@
   }: {
     status: Status;
     type: "mod" | "asset";
+    textSize?: "base" | `base-bold`;
     countdownDate?: Date | number | string | null;
     children?: any;
     enableHover?: boolean;
@@ -130,7 +132,7 @@
 
 {#snippet badge()}
   <Badge variant="outline" class="capitalize {style} {isMuted ? `opacity-50` : ``}">
-    <p>{getStatusString(status)}</p>
+    <p class={textSize == `base-bold` ? `text-base` : `text-xs`}>{getStatusString(status)}</p>
     {#if countdownDate && timeLeft !== 0}
       <!-- Countdown timer-->
       <p title={new Date(countdownDate).toISOString()}>({timeLeft})</p>
