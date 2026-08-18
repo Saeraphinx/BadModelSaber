@@ -66,7 +66,7 @@ export const GetModsV3 = router({
                 userFilters = {
                     id: {
                         [Op.in]: input.authors,
-                    },
+                    }
                 };
             }
 

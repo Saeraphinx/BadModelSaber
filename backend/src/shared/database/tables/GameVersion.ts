@@ -124,9 +124,15 @@ export class GameVersion extends Model<InferAttributes<GameVersion>, InferCreati
     }
 
     public toApiV2(): GameVersionApiV2 {
+        let gameName = this.gameName.toLowerCase();
+        if (gameName === `beatsaber`) {
+            gameName = `Beat Saber`;
+        } else if (gameName === `chromapper`) {
+            gameName = `ChroMapper`;
+        }
         return {
             id: this.id,
-            gameName: this.gameName,
+            gameName: gameName,
             version: this.version,
             defaultVersion: this.isDefault,
             createdAt: this.createdAt,

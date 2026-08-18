@@ -586,13 +586,19 @@ export class Project extends Model<InferAttributes<Project>, InferCreationAttrib
 
     public async toApiV2(gameVersionId?: number): Promise<ModApiv2> {
         let authors = this.authors ? await Promise.all(this.authors.map(a => a.toApiV2())) : [];
+        let gameName = this.gameName.toLowerCase();
+        if (gameName === `beatsaber`) {
+            gameName = `BeatSaber`;
+        } else if (gameName === `chromapper`) {
+            gameName = `ChroMapper`;
+        }
 
         return {
             id: this.id,
             name: this.name,
             summary: this.summary,
             description: this.description,
-            gameName: this.gameName,
+            gameName: gameName,
             category: this.category,
             authors: authors, // to be filled in later
             status: this.status == Status.Public ? `verified` : this.status,
