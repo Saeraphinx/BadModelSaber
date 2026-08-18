@@ -461,7 +461,7 @@ const ModApiV1Schema: z.ZodType<ModApiV1> = z.lazy(() => z.object({
 export const UserApiV2Schema = z.object({
   id: z.number().int().positive(),
   username: z.string(),
-  githubId: z.number().nullable(),
+  githubId: z.string().nullable(),
   sponsorUrl: z.string().nullable(),
   displayName: z.string(),
   roles: z.object({ // do not allow roles to be sent when using v2 of the API
@@ -479,8 +479,6 @@ export const GameVersionApiv2Schema = z.object({
   gameName: z.string(),
   version: z.string(),
   defaultVersion: z.boolean(),
-  createdAt: z.date(),
-  updatedAt: z.date(),
 });
 export type GameVersionApiV2 = z.infer<typeof GameVersionApiv2Schema>;
 

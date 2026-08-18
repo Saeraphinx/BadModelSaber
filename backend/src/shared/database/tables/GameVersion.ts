@@ -134,9 +134,7 @@ export class GameVersion extends Model<InferAttributes<GameVersion>, InferCreati
             id: this.id,
             gameName: gameName,
             version: this.version,
-            defaultVersion: this.isDefault,
-            createdAt: this.createdAt,
-            updatedAt: this.updatedAt,
+            defaultVersion: this.isDefault
         };
     }
 }
