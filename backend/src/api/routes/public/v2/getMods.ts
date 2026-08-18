@@ -17,7 +17,7 @@ export const getModsV2Router = router({
         .input(z.object({
             gameName: z.string().default(`beatsaber`),
             gameVersion: z.string().optional(),
-            status: z.enum([`verified`, `unverified`, `pending`, `all`]).default(Status.Verified),
+            status: z.enum([`verified`, `unverified`, `pending`, `all`]).default(`verified`),
         }))
         .output(z.object({
             mods: z.object({
@@ -29,7 +29,7 @@ export const getModsV2Router = router({
             let timingString = ``;
             let startTime = Date.now();
             let gameVersionWhereOptions: WhereOptions<GameVersion> = {
-                gameName: input.gameName,
+                gameName: input.gameName.toLowerCase(), // case insensitive, due to bsmanager defaulting to BeatSaber
             };
             if (input.gameVersion) {
                 gameVersionWhereOptions.version = input.gameVersion;
@@ -38,17 +38,17 @@ export const getModsV2Router = router({
             let allowedStatuses: Status[];
             switch (input.status) {
                 case `all`:
-                    allowedStatuses = [Status.Verified, Status.Unverified, Status.Queue, Status.Testing];
+                    allowedStatuses = [Status.Public, Status.Verified, Status.Unverified, Status.Queue, Status.Testing];
                     break;
                 case `pending`:
-                    allowedStatuses = [Status.Verified, Status.Queue, Status.Testing];
+                    allowedStatuses = [Status.Public, Status.Verified, Status.Queue, Status.Testing];
                     break;
                 case Status.Unverified:
-                    allowedStatuses = [Status.Verified, Status.Unverified];
+                    allowedStatuses = [Status.Public, Status.Verified, Status.Unverified];
                     break;
                 case Status.Verified:
                 default:
-                    allowedStatuses = [Status.Verified];
+                    allowedStatuses = [Status.Public, Status.Verified];
                     break;
             }
 
@@ -59,6 +59,9 @@ export const getModsV2Router = router({
                 include: [User, {
                     model: Project,
                     include: [User],
+                    where: {
+                        status: [Status.Public]
+                    }
                 }, {
                         model: GameVersion,
                         where: gameVersionWhereOptions,
