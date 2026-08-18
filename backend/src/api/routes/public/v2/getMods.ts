@@ -29,7 +29,7 @@ export const getModsV2Router = router({
             let timingString = ``;
             let startTime = Date.now();
             let gameVersionWhereOptions: WhereOptions<GameVersion> = {
-                gameName: input.gameName.toLowerCase(), // case insensitive, due to bsmanager defaulting to BeatSaber
+                gameName: input.gameName.toLowerCase(), // case insensitive, bsmanager defaults to BeatSaber
             };
             if (input.gameVersion) {
                 gameVersionWhereOptions.version = input.gameVersion;
