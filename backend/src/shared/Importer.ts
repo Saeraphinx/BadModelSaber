@@ -660,7 +660,7 @@ export async function importFromBadBeatMods() {
                     defaults: {
                         gameName: project.gameName,
                         version: gv.version,
-                        createdAt: gv.createdAt
+                        //createdAt: gv.createdAt
                     }
                 }).then((record) => {
                     return record[0];
