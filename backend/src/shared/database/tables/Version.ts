@@ -704,6 +704,11 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
                 translatedStatus = this.status;
         }
 
+        let translatedPlatform: ModVersionsApiv2[`platform`] = this.platform;
+        if (this.platform === `universal`) {
+            translatedPlatform = `universalpc`;
+        }
+
         return {
             id: this.id,
             modId: this.projectId,

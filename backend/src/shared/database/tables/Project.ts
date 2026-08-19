@@ -593,6 +593,23 @@ export class Project extends Model<InferAttributes<Project>, InferCreationAttrib
             gameName = `ChroMapper`;
         }
 
+        // add here as needed
+        let category = this.category.toLowerCase();
+        switch (category) {
+            case `ui enhancement`:
+                category = `ui`;
+            case `leaderboard`:
+                category = `other`;
+            case `practice & training`:
+                category = `practice`;
+            case `streaming tools`:
+                category = `streamtools`;
+            case `tweaks & tools`:
+                category = `tweaks`;
+            case `text changes`:
+                category = `text`;
+        }
+
         return {
             id: this.id,
             name: this.name,

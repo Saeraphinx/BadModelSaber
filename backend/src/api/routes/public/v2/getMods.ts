@@ -68,13 +68,20 @@ export const getModsV2Router = router({
                         through: { attributes: [] },
                         required: true, // inner join
                     }],
+                order: [['projectId', 'ASC'], ['semver', 'DESC']],
             }).then(results => {
                 timingString += `db;dur=${Date.now() - startTime}`;
                 startTime = Date.now();
                 return results;
             });
 
-            let output = await Promise.all(versions.sort((a, b) => compare(b.semver, a.semver)) // sort versions in descending order
+            let output = await Promise.all(versions.sort((a, b) => {
+                if (a.projectId === b.projectId) {
+                    return compare(b.semver, a.semver); // sort versions in descending order
+                } else {
+                    return a.projectId - b.projectId; // sort by projectId in ascending order
+                }
+            }) // sort versions in descending order
                 .filter((v, i, arr) => arr.findIndex(other => other.projectId === v.projectId) === i) // filter to unique projects
                 .filter(async v => await v.canView(ctx.user)))
                 .then(results => {
@@ -83,11 +90,14 @@ export const getModsV2Router = router({
                     return results;
                 }) // filter to versions the user can view
 
-            let newOutput = await Promise.all(output.map(async v => ({
-                mod: await (await v.project as Project).toApiV2(),
+            let newOutput = await Promise.all(output.map(async v => {
                 // find all dependencies that match the current version's dependencies
-                latest: await v.toApiV2(v.dependencies.map(dep => output.find(o => o.projectId === dep.pId && (new Range(dep.sv)).test(o.semver))?.id ?? 0)),
-            }))
+                let deps = v.dependencies.map(dep => output.find(o => o.projectId === dep.pId && (new Range(dep.sv)).test(o.semver))?.id ?? 0);
+                return {
+                    mod: await (await v.project as Project).toApiV2(),
+                    latest: await v.toApiV2(deps),
+                };
+            })
             ).then(results => results.filter(o => o.latest.dependencies.every(d => results.some(o2 => o2.latest.id === d))))
                 .then(results => {
                     timingString += `, filterp2;dur=${Date.now() - startTime}`;
