@@ -488,7 +488,7 @@ export const ModApiv2Schema = z.object({
   summary: z.string(),
   description: z.string(),
   gameName: z.string(),
-  category: z.string(),
+  category: z.enum(["core","essential","library","cosmetic","practice","gameplay","streamtools","ui","lighting","tweaks","multiplayer","text","editor","other"]),
   authors: z.array(UserApiV2Schema),
   status: z.enum([`private`, `removed`, `pending`, `unverified`, `verified`]),
   iconFileName: z.string(),

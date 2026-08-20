@@ -474,6 +474,7 @@ export async function importFromBadBeatMods() {
             displayName: `Beat Saber`,
             default: true,
             categories: [
+                `Mod Loader`, 
                 `Core`,
                 `Essential`,
                 `Lighting`,

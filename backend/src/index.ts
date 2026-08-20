@@ -69,6 +69,7 @@ export async function init(overrideDbName?: string) {
     // #region Register routes
     const apiRouter = express.Router();
     const fileRouter = express.Router();
+    const legacyFileRouter = express.Router();
 
     apiRouter.use((req, res, next) => {
         let url = EnvConfig.server.hideFullQueryInLogs ? req.originalUrl.split("?")[0] : req.originalUrl;
@@ -93,6 +94,10 @@ export async function init(overrideDbName?: string) {
 
     // todo: add seperate cors settings for fileRouter if needed
     fileRouter.use(cors({
+        origin: `*`,
+    }))
+
+    legacyFileRouter.use(cors({
         origin: `*`,
     }))
 
@@ -157,7 +162,9 @@ export async function init(overrideDbName?: string) {
     });
     apiRouter.use(loadOpenApiMiddleware); // load all openapi routes
 
-    FileRoutes.loadRoutes(fileRouter);
+    
+
+    FileRoutes.loadRoutes(fileRouter, legacyFileRouter);
 
     apiRouter.use((req, res, next) => {
         res.status(404).send({ message: `Unknown route.` });
@@ -165,6 +172,7 @@ export async function init(overrideDbName?: string) {
 
     app.use(`${EnvConfig.server.apiRoute}`, apiRouter);
     app.use(`${EnvConfig.server.fileRoute}`, fileRouter);
+    app.use(`/cdn`, legacyFileRouter); // this will forever haunt me
 
     // catch all unknown routes and return a 404
     app.use((err: any, req: any, res: any, next: any) => {

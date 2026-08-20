@@ -596,6 +596,8 @@ export class Project extends Model<InferAttributes<Project>, InferCreationAttrib
         // add here as needed
         let category = this.category.toLowerCase();
         switch (category) {
+            case `mod loader`:
+                category = `core`;
             case `ui enhancement`:
                 category = `ui`;
             case `leaderboard`:
@@ -606,7 +608,7 @@ export class Project extends Model<InferAttributes<Project>, InferCreationAttrib
                 category = `streamtools`;
             case `tweaks & tools`:
                 category = `tweaks`;
-            case `text changes`:
+            case `text replacement`:
                 category = `text`;
         }
 
@@ -616,7 +618,7 @@ export class Project extends Model<InferAttributes<Project>, InferCreationAttrib
             summary: this.summary,
             description: this.description,
             gameName: gameName,
-            category: this.category,
+            category: category as ModApiv2[`category`],
             authors: authors, // to be filled in later
             status: this.status == Status.Public ? `verified` : this.status,
             iconFileName: this.iconFileName,

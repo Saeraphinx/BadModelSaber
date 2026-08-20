@@ -102,8 +102,8 @@ export const updateThingsRouter = router({
                 throw new TRPCError({ code: 'FORBIDDEN', message: `You are not allowed to edit this project` });
             }
 
-            if (input.data.category) {
-                if (input.data.category === 'Core' || input.data.category === 'Essential') {
+            if (input.data.category && input.data.category !== project.category) {
+                if (input.data.category === 'Core' || input.data.category === 'Essential' || input.data.category === 'Mod Loader') {
                     if (!ctx.user.checkRoles([UserPermissions.Mods_Approval], project.gameName)) {
                         throw new TRPCError({ code: 'FORBIDDEN', message: `You do not have permission to set this category` });
                     }

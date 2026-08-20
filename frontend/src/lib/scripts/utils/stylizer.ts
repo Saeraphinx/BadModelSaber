@@ -49,7 +49,7 @@ export function getRenderingMethodSupportedGV(method: RenderingModes): string {
 
 export function sortCategoriesPublic(a: { category: string }, b: { category: string }) {
   // put core, essential, leaderboard in that order, then other & libraries at the bottom
-  const topCategories = [`Core`, `Essential`, `Leaderboard`];
+  const topCategories = [`Mod Loader`, `Core`, `Essential`, `Leaderboard`];
   const bottomCategories = [`Other`, `Library`];
 
   const aCategory = a.category;

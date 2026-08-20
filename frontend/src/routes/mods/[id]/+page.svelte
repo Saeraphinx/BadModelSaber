@@ -410,13 +410,16 @@
                 {editedCategory}
               </Select.Trigger>
               <Select.Content class="w-full">
-                {#if project.category === `Core` || checkRoles(user, [UserPermissions.Mods_Approval], project.gameName)}
+                {#if (project.category === `Mod Loader` || checkRoles(user, [UserPermissions.Mods_Approval], project.gameName)) && game.categories.includes(`Mod Loader`)}
+                  <Select.Item value={`Mod Loader`}>Mod Loader</Select.Item>
+                {/if}
+                {#if (project.category === `Core` || checkRoles(user, [UserPermissions.Mods_Approval], project.gameName)) && game.categories.includes(`Core`)}
                   <Select.Item value={`Core`}>Core</Select.Item>
                 {/if}
-                {#if project.category === `Essential` || checkRoles(user, [UserPermissions.Mods_Approval], project.gameName)}
+                {#if (project.category === `Essential` || checkRoles(user, [UserPermissions.Mods_Approval], project.gameName)) && game.categories.includes(`Essential`)}
                   <Select.Item value={`Essential`}>Essential</Select.Item>
                 {/if}
-                {#each game.categories.filter((v) => v !== `Core` && v !== `Essential`) || [] as category}
+                {#each game.categories.filter((v) => v !== `Core` && v !== `Essential` && v !== `Mod Loader`) || [] as category}
                   <Select.Item value={category}>{category}</Select.Item>
                 {/each}
               </Select.Content>

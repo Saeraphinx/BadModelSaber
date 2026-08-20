@@ -707,6 +707,10 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
         let translatedPlatform: ModVersionsApiv2[`platform`] = this.platform;
         if (this.platform === `universal`) {
             translatedPlatform = `universalpc`;
+        } else if (this.platform === `oculus`) {
+            translatedPlatform = `oculusquest`;
+        } else if (this.platform === `steam`) {
+            translatedPlatform = `steam`;
         }
 
         return {
@@ -714,7 +718,7 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
             modId: this.projectId,
             modVersion: this.semver.raw,
             author: uploader.toApiV2(),
-            platform: this.platform,
+            platform: translatedPlatform,
             zipHash: this.zipHash,
             contentHashes: this.contentHashes,
             status: translatedStatus,

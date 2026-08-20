@@ -93,7 +93,7 @@
     })
     output.sort((a, b) => {
       // put core, essential, library, leaderboard in that order, then the rest alphabetically
-      const order = [`Core`, `Essential`, `Library`, `Leaderboard`];
+      const order = [`Mod Loader`, `Core`, `Essential`, `Library`, `Leaderboard`];
       let aIndex = order.indexOf(a[0].category);
       let bIndex = order.indexOf(b[0].category);
       if (aIndex === -1) aIndex = Number.POSITIVE_INFINITY;

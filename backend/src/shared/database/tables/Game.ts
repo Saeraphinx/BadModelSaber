@@ -24,7 +24,7 @@ export type GameInfer = InferAttributes<Game>;
 })
 export class Game extends Model<InferAttributes<Game>, InferCreationAttributes<Game>> {
     private static _defaultGame: NonAttribute<Game>;
-    private static readonly _defaultCategories: NonAttribute<string[]> = [`Core`, `Essentials`, `Other`];
+    private static readonly _defaultCategories: NonAttribute<string[]> = [`Mod Loader`, `Core`, `Essentials`, `Other`];
     private static readonly _defaultPlatforms: NonAttribute<string[]> = [`universal`];
 
     @AllowNull(false)
@@ -111,10 +111,6 @@ export class Game extends Model<InferAttributes<Game>, InferCreationAttributes<G
     public async addCategory(category: string): Promise<Game> {
         let newCategories = this.categories ? [...this.categories] : Game._defaultCategories;
 
-        if (category === `Core` || category === `Essentials` || category === `Other`) {
-            throw new Error(`Cannot remove required categories: Core, Essentials, or Other.`);
-        }
-
         if (newCategories.includes(category)) {
             throw new Error(`Category ${category} already exists.`);
         }
@@ -133,8 +129,8 @@ export class Game extends Model<InferAttributes<Game>, InferCreationAttributes<G
     public async removeCategory(category: string): Promise<Game> {
         let newCategories = this.categories ? [...this.categories] : Game._defaultCategories;
 
-        if (category === `Core` || category === `Essentials` || category === `Other`) {
-            throw new Error(`Cannot remove required categories: Core, Essentials, or Other.`);
+        if (category === `Other`) {
+            throw new Error(`Cannot remove required categories: Other.`);
         }
 
         if (!newCategories.includes(category)) {
@@ -148,8 +144,11 @@ export class Game extends Model<InferAttributes<Game>, InferCreationAttributes<G
     }
 
     public async setCategories(categories: string[]): Promise<Game> {
-        let noReqdCats = categories.filter((c) => c !== `Core` && c !== `Essentials` && c !== `Other`);
-        let newCategories = [`Core`, `Essentials`, ...noReqdCats, `Other`];
+        if (!categories.includes(`Other`)) {
+            throw new Error(`Categories must include required category: Other.`);
+        }
+        
+        let newCategories = [...categories];
         return await this.update({
             categories: newCategories
         });

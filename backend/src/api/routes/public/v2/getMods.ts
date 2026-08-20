@@ -1,9 +1,10 @@
 import { GameVersion, ModApiv2Schema, ModVersionsApiv2Schema, Project, Status, User, UserPermissions, Version } from "../../../../shared/Database.ts";
 import { z } from "zod/v4";
-import { Op, WhereOptions, where } from "sequelize";
+import { Op, WhereOptions, Sequelize } from "sequelize";
 import { anyProcedure, router } from "../../../trpc.ts";
 import { compare, Range } from "semver";
-import sequelize from "sequelize/lib/sequelize";
+
+const hashLookupSchema = z.string().trim().min(32).max(32).regex(/^[a-fA-F0-9]+$/);
 
 export const getModsV2Router = router({
     getMods: anyProcedure()
@@ -18,6 +19,7 @@ export const getModsV2Router = router({
             gameName: z.string().default(`beatsaber`),
             gameVersion: z.string().optional(),
             status: z.enum([`verified`, `unverified`, `pending`, `all`]).default(`verified`),
+            platform: z.enum([`universalpc`, `oculuspc`, `steampc`]).default(`universalpc`),
         }))
         .output(z.object({
             mods: z.object({
@@ -52,9 +54,17 @@ export const getModsV2Router = router({
                     break;
             }
 
+            let platforms = [`universal`];
+            if (input.platform === `oculuspc`) {
+                platforms.push(`oculus`);
+            } else if (input.platform === `steampc`) {
+                platforms.push(`steam`);
+            }
+
             let versions = await Version.findAll({
                 where: {
                     status: allowedStatuses,
+                    platform: { [Op.in]: platforms },
                 },
                 include: [User, {
                     model: Project,
@@ -119,14 +129,15 @@ export const getModsV2Router = router({
             }
         })
         .input(z.object({
-            hash: z.string().or(z.array(z.string())),
+            hash: z.union([hashLookupSchema, z.array(hashLookupSchema)]),
             status: z.enum(Status).optional()
         }))
         .output(z.object({
             modVersions: ModVersionsApiv2Schema.array(),
         }))
         .query(async ({ input }) => {
-            let hashes = Array.isArray(input.hash) ? input.hash : [input.hash];
+            let hashes = normalizeHashes(input.hash);
+            let hashesSqlArray = toSqlTextArrayLiteral(hashes);
             let statusFilter: WhereOptions<Version> = {};
             if (input.status) {
                 statusFilter.status = input.status;
@@ -137,7 +148,11 @@ export const getModsV2Router = router({
                     ...statusFilter,
                     [Op.or]: [
                         { zipHash: { [Op.in]: hashes } },
-                        sequelize.where(sequelize.fn('jsonb_exists', sequelize.col('contentHashes'), hashes), Op.eq, true)
+                        Sequelize.where(
+                            Sequelize.literal(`EXISTS (SELECT 1 FROM unnest("contentHashes") AS ch WHERE ch->>'hash' = ANY(${hashesSqlArray}))`),
+                            Op.eq,
+                            true
+                        )
                     ]
                 },
                 include: [User]
@@ -157,7 +172,7 @@ export const getModsV2Router = router({
             }
         })
         .input(z.object({
-            hashes: z.array(z.string()),
+            hashes: z.union([hashLookupSchema, z.array(hashLookupSchema)]),
             status: z.enum(Status).optional()
         }))
         .output(z.object({
@@ -168,13 +183,20 @@ export const getModsV2Router = router({
             if (input.status) {
                 statusFilter.status = input.status;
             }
+            let hashes = normalizeHashes(input.hashes);
+            let hashSet = new Set(hashes);
+            let hashesSqlArray = toSqlTextArrayLiteral(hashes);
             // only compare against `zipHash` and the `hash` field of contentHashes
             let modVersions = await Version.findAll({
                 where: {
                     ...statusFilter,
                     [Op.or]: [
-                        { zipHash: { [Op.in]: input.hashes } },
-                        sequelize.where(sequelize.fn('jsonb_exists', sequelize.col('contentHashes'), input.hashes), Op.eq, true)
+                        { zipHash: { [Op.in]: hashes } },
+                        Sequelize.where(
+                            Sequelize.literal(`EXISTS (SELECT 1 FROM unnest("contentHashes") AS ch WHERE ch->>'hash' = ANY(${hashesSqlArray}))`),
+                            Op.eq,
+                            true
+                        )
                     ]
                 },
                 include: [User]
@@ -185,7 +207,7 @@ export const getModsV2Router = router({
                 let apiObj = await mv.toApiV2([]);
                 let allHashes = [mv.zipHash, ...(apiObj.contentHashes.map(ch => ch.hash))];
                 for (let hash of allHashes) {
-                    if (input.hashes.includes(hash)) {
+                    if (hashSet.has(hash.toLowerCase())) {
                         if (!retObj[hash]) {
                             retObj[hash] = [];
                         }
@@ -198,3 +220,13 @@ export const getModsV2Router = router({
             };
         }),
 });
+
+function normalizeHashes(input: string | string[]) {
+    let hashes = Array.isArray(input) ? input : [input];
+    return [...new Set(hashes)];
+}
+
+function toSqlTextArrayLiteral(hashes: string[]) {
+    // `hashLookupSchema` constrains values to hex chars only, so quoted literals are safe here.
+    return `ARRAY[${hashes.map(hash => `'${hash}'`).join(`,`)}]::text[]`;
+}
