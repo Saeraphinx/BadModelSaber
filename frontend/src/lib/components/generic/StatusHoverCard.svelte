@@ -1,5 +1,7 @@
 <script lang="ts">
-  import { m } from "$lib/paraglide/messages";
+  import { i18n } from "$lib/scripts/i18n";
+
+  const { t } = i18n();
   import { Status } from "$lib/scripts/from_backend/DBExtras";
   import { getStatusString } from "$lib/scripts/utils/stylizer";
   import { Badge } from "$shadcn/components/ui/badge";
@@ -47,34 +49,34 @@
     if (type === "asset") {
       switch (status) {
         case Status.Verified:
-          return m["assets.statusHover.verified.title"]();
+          return t(`assets.statusHover.verified.title`);
         case Status.Unverified:
-          return m["assets.statusHover.unverified.title"]();
+          return t(`assets.statusHover.unverified.title`);
         case Status.Queue:
-          return m["mods.statusHover.queue.title"]();
+          return t(`mods.statusHover.queue.title`);
         case Status.Testing:
-          return m["assets.statusHover.queue.title"]();
+          return t(`assets.statusHover.queue.title`);
         case Status.Private:
-          return m["assets.statusHover.private.title"]();
+          return t(`assets.statusHover.private.title`);
         case Status.Removed:
-          return m["assets.statusHover.removed.title"]();
+          return t(`assets.statusHover.removed.title`);
         default:
           return "";
       }
     } else {
       switch (status) {
         case Status.Verified:
-          return m["mods.statusHover.verified.title"]();
+          return t(`mods.statusHover.verified.title`);
         case Status.Unverified:
-          return m["mods.statusHover.unverified.title"]();
+          return t(`mods.statusHover.unverified.title`);
         case Status.Queue:
-          return m["mods.statusHover.queue.title"]();
+          return t(`mods.statusHover.queue.title`);
         case Status.Testing:
-          return m["mods.statusHover.testing.title"]();
+          return t(`mods.statusHover.testing.title`);
         case Status.Private:
-          return m["mods.statusHover.private.title"]();
+          return t(`mods.statusHover.private.title`);
         case Status.Removed:
-          return m["mods.statusHover.removed.title"]();
+          return t(`mods.statusHover.removed.title`);
         default:
           return "";
       }
@@ -84,33 +86,33 @@
     if (type === "asset") {
       switch (status) {
         case Status.Verified:
-          return m["assets.statusHover.verified.description"]();
+          return t(`assets.statusHover.verified.description`);
         case Status.Unverified:
-          return m["assets.statusHover.unverified.description"]();
+          return t(`assets.statusHover.unverified.description`);
         case Status.Queue:
         case Status.Testing:
-          return m["assets.statusHover.queue.description"]();
+          return t(`assets.statusHover.queue.description`);
         case Status.Private:
-          return m["assets.statusHover.private.description"]();
+          return t(`assets.statusHover.private.description`);
         case Status.Removed:
-          return m["assets.statusHover.removed.description"]();
+          return t(`assets.statusHover.removed.description`);
         default:
           return "";
       }
     } else {
       switch (status) {
         case Status.Verified:
-          return m["mods.statusHover.verified.description"]();
+          return t(`mods.statusHover.verified.description`);
         case Status.Unverified:
-          return m["mods.statusHover.unverified.description"]();
+          return t(`mods.statusHover.unverified.description`);
         case Status.Queue:
-          return m["mods.statusHover.queue.description"]();
+          return t(`mods.statusHover.queue.description`);
         case Status.Testing:
-          return m["mods.statusHover.testing.description"]();
+          return t(`mods.statusHover.testing.description`);
         case Status.Private:
-          return m["mods.statusHover.private.description"]();
+          return t(`mods.statusHover.private.description`);
         case Status.Removed:
-          return m["mods.statusHover.removed.description"]();
+          return t(`mods.statusHover.removed.description`);
         default:
           return "";
       }

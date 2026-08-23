@@ -1,21 +1,20 @@
 import type { Handle, HandleFetch, ServerInit } from '@sveltejs/kit';
-import { paraglideMiddleware } from '$lib/paraglide/server';
 import { env } from '$env/dynamic/public';
 import { env as penv } from '$env/dynamic/private';
 import { browser, dev } from '$app/environment';
 
-// creating a handle to use the paraglide middleware
-const paraglideHandle: Handle = ({ event, resolve }) =>
-  paraglideMiddleware(event.request, ({ request: localizedRequest, locale }) => {
-    event.request = localizedRequest;
-    return resolve(event, {
-      transformPageChunk: ({ html }) => {
-        return html.replace('%lang%', locale);
-      }
-    });
-  });
+// // creating a handle to use the paraglide middleware
+// const paraglideHandle: Handle = ({ event, resolve }) =>
+//   paraglideMiddleware(event.request, ({ request: localizedRequest, locale }) => {
+//     event.request = localizedRequest;
+//     return resolve(event, {
+//       transformPageChunk: ({ html }) => {
+//         return html.replace('%lang%', locale);
+//       }
+//     });
+//   });
 
-export const handle: Handle = paraglideHandle;
+// export const handle: Handle = paraglideHandle;
 let hasWarnedAboutCORS = false;
 export const handleFetch: HandleFetch = async ({ request, fetch: svelteFetch, event }) => {
   let modifiedRequest = request;

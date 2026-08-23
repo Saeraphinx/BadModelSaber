@@ -1,6 +1,8 @@
 <script lang="ts">
   import { invalidateAll } from "$app/navigation";
-  import { m } from "$lib/paraglide/messages";
+  import { i18n } from "$lib/scripts/i18n";
+
+  const { t } = i18n();
   import { Status } from "$lib/scripts/from_backend/DBExtras";
   import { parseErrorMessage, trpc } from "$lib/scripts/utils/api";
   import { getStatusAvailableThings, getStatusString } from "$lib/scripts/utils/stylizer";
@@ -85,7 +87,7 @@
       })
       .catch((err) => {
         console.error(`Error updating thing ${id} (${name}):`, err);
-        toast.error(m["toasts.error.save"](), {
+        toast.error(t(`toasts.error.save`), {
           description: parseErrorMessage(err),
           dismissable: true,
           duration: 30000,
@@ -97,8 +99,8 @@
 <Dialog.Root bind:open={visible}>
   <Dialog.Content class="sm:max-w-[550px]">
     <Dialog.Header>
-      <Dialog.Title>{m["dialogs.approvalDialog.title"]({ name })}</Dialog.Title>
-      <Dialog.Description>{m["dialogs.approvalDialog.description"]({ name })}</Dialog.Description>
+      <Dialog.Title>{t(`dialogs.approvalDialog.title`, { name })}</Dialog.Title>
+      <Dialog.Description>{t(`dialogs.approvalDialog.description`, { name })}</Dialog.Description>
     </Dialog.Header>
     <div class="flex flex-row">
       <RadioGroup.Root bind:value={selectedStatus} >
@@ -112,9 +114,9 @@
         {/each}
       </RadioGroup.Root>
       <div class="flex flex-col w-full ml-4">
-        <Input type="text" placeholder={m["dialogs.approvalDialog.reasonPlaceholder"]()} class="w-full" bind:value={reason} />
-        <p class="text-sm text-muted-foreground mt-1">{m["dialogs.approvalDialog.reasonWillBeVisible"]({ name })}</p>
-        <Label class="mt-4">{m["dialogs.approvalDialog.presetReasons"]()}</Label>
+        <Input type="text" placeholder={t(`dialogs.approvalDialog.reasonPlaceholder`)} class="w-full" bind:value={reason} />
+        <p class="text-sm text-muted-foreground mt-1">{t(`dialogs.approvalDialog.reasonWillBeVisible`, { name })}</p>
+        <Label class="mt-4">{t(`dialogs.approvalDialog.presetReasons`)}</Label>
         <Select.Root type="single" >
           <Select.Trigger class="w-full mt-1">
             Select a preset...
@@ -131,11 +133,11 @@
       {#if type === `version`}
         <div class="flex items-center space-x-2">
           <Switch id="autosetProject" bind:checked={autosetProject} />
-          <Label for="autosetProject">{m["dialogs.approvalDialog.autosetProject"]()}</Label>
+          <Label for="autosetProject">{t(`dialogs.approvalDialog.autosetProject`)}</Label>
         </div>
       {/if}
-      <Button variant="ghost" onclick={() => (visible = false)}>{m["dialogs.cancel"]()}</Button>
-      <Button type="submit" onclick={handleSubmit}>{m["dialogs.submit"]()}</Button>
+      <Button variant="ghost" onclick={() => (visible = false)}>{t(`dialogs.cancel`)}</Button>
+      <Button type="submit" onclick={handleSubmit}>{t(`dialogs.submit`)}</Button>
     </Dialog.Footer>
   </Dialog.Content>
 </Dialog.Root>

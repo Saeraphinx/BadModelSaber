@@ -1,5 +1,7 @@
 <script lang="ts">
-  import { m } from "$lib/paraglide/messages";
+  import { i18n } from "$lib/scripts/i18n";
+
+  const { t } = i18n();
   import type { ProjectApiV3, VersionApiV3 } from "$lib/scripts/from_backend/DBExtras";
   import { getProjectThumbnailUrl, getVersionDownloadUrl } from "$lib/scripts/utils/api";
   import Button from "$shadcn/components/ui/button/button.svelte";

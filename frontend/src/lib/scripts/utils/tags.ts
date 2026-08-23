@@ -1,7 +1,8 @@
 import type { ClassValue } from "svelte/elements";
 import { AssetFileFormat, Tags } from "../from_backend/DBExtras";
-import { m } from "$lib/paraglide/messages";
-import { getLocale } from "$lib/paraglide/runtime";
+import { i18n } from "$lib/scripts/i18n";
+
+const { t, language } = i18n();
 
 export function getTagData(tag: Tags, assetType: AssetFileFormat, shouldShowInternal: boolean = false): { translatedTag: string, category: string, outlineColor: ClassValue, disabled: boolean, animated: boolean } {
   let splitType = assetType.split("_");
@@ -93,25 +94,25 @@ export function getTagData(tag: Tags, assetType: AssetFileFormat, shouldShowInte
         disabled = true;
       }
     case Tags.NSFW:
-      category = m["enums.tagCategories.features"]();
+      category = t(`enums.tagCategories.features`);
       break;
 
     case Tags.Hitsound:
     case Tags.BadHitsound:
     case Tags.MenuClick:
-      category = m["enums.tagCategories.typeSpecific"]();
+      category = t(`enums.tagCategories.typeSpecific`);
       if (type !== `sound`) disabled = true;
       break;
 
     case Tags.FirstPerson:
     case Tags.ThirdPerson:
       if (type !== `camera2`) disabled = true;
-      category = m["enums.tagCategories.typeSpecific"]();
+      category = t(`enums.tagCategories.typeSpecific`);
       break;
 
     case Tags.Featured:
     case Tags.Contest:
-      category = m["enums.tagCategories.internal"]();
+      category = t(`enums.tagCategories.internal`);
       disabled = !shouldShowInternal;
       break;
     case Tags.Pride:
@@ -130,16 +131,16 @@ export function getTagData(tag: Tags, assetType: AssetFileFormat, shouldShowInte
     case Tags.Underswing:
     case Tags.TimeDependence:
     default:
-      category = m["enums.tagCategories.general"]();
+      category = t(`enums.tagCategories.general`);
       break;
   }
   // #endregion categories & disabled
   let translatedTag:string;
   try {
-    translatedTag = m[`enums.tags.${tag}`]();
+    translatedTag = t(`enums.tags.${tag}`);
   } catch (e) {
     // Fallback to tag key if translation not found
-    console.warn(`Translation for tag ${tag} not found for locale ${getLocale()}.`);
+    console.warn(`Translation for tag ${tag} not found for locale ${language}.`);
     translatedTag = tag;
   }
   return {

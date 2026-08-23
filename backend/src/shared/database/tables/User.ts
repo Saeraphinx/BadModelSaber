@@ -496,7 +496,7 @@ export class User extends Model<InferAttributes<User>, InferCreationAttributes<U
             id: this.id,
             username: this.username,
             githubId: this.hideGithubId ? null : this.githubId,
-            sponsorUrl: this.userPlatforms.length > 0 ? this.userPlatforms[0].url : null,
+            sponsorUrl: null,
             displayName: this.displayName ?? this.username,
             roles: {
                 sitewide: [],

@@ -1,5 +1,4 @@
 {
-  "$schema": "https://inlang.com/schema/inlang-message-format",
   "name": "ModelSaber",
   "loading": "Loading...",
   "homepage": {
@@ -49,41 +48,15 @@
       "modelsaberOpenSource": "ModelSaber is Open Source!"
     },
     "alertSidebar": {
-      "readAlerts": [
-        {
-          "declarations": [
-            "input count",
-            "local countPlural = count: plural"
-          ],
-          "selectors": [
-            "countPlural"
-          ],
-          "match": {
-            "countPlural=one": "You have {count} alert.",
-            "countPlural=other": "You have {count} alerts."
-          }
-        }
-      ],
-      "unreadAlerts": [
-        {
-          "declarations": [
-            "input count",
-            "local countPlural = count: plural"
-          ],
-          "selectors": [
-            "countPlural"
-          ],
-          "match": {
-            "countPlural=one": "You have {count} unread alert.",
-            "countPlural=other": "You have {count} unread alerts."
-          }
-        }
-      ],
       "markAllRead": "Mark all as read",
       "showRead": "Show read alerts",
       "noAlertsAvailable": "No alerts available.",
       "noUnreadAlerts": "No unread alerts."
-    }
+    },
+    "readAlerts_one": "You have {{count}} alert.",
+    "readAlerts_other": "You have {{count}} alerts.",
+    "unreadAlerts_one": "You have {{count}} unread alert.",
+    "unreadAlerts_other": "You have {{count}} unread alerts."
   },
   "search": {
     "search": "Search",

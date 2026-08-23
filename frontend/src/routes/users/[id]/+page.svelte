@@ -17,13 +17,14 @@
   import { Textarea } from "$lib/shadcn/components/ui/textarea";
   import { Label } from "$lib/shadcn/components/ui/label";
   import { invalidate } from "$app/navigation";
-  import { m } from "$lib/paraglide/messages";
   import Checkbox from "../../../lib/shadcn/components/ui/checkbox/checkbox.svelte";
   import RolesEditorDialog from "../../../lib/components/dialogs/RolesEditorDialog.svelte";
   import z from "zod/v4";
   import * as Select from "../../../lib/shadcn/components/ui/select";
   import { XIcon } from "@lucide/svelte";
+  import { i18n } from "../../../lib/scripts/i18n";
 
+  const { t } = i18n();
   const { data: _internal } = $props();
   const { pageData, trpc, user } = $derived(_internal);
   const pdUser = $derived(pageData.user);
@@ -65,12 +66,12 @@
       bio: string;
       hideDiscordId?: boolean;
       hideGithubId?: boolean;
-      userPlatforms: { platform: PlatformType; url: string }[];
+      userPlatforms: { platform: PlatformType; username: string }[];
     } = {
       id: pdUser.id,
       displayName: editDisplayName,
       bio: editBio,
-      userPlatforms: editUserPlatforms as { platform: PlatformType; url: string }[],
+      userPlatforms: editUserPlatforms as { platform: PlatformType; username: string }[],
     };
 
     if (allowEditingConfidentials) {
@@ -81,10 +82,10 @@
     trpc.internal.updateThings.user.updateUser.mutate(editData).then(() => {
       isEditing = false;
       tabsValue = "mods";
-      toast.success(m["toasts.success.savedChanges"]());
+      toast.success(t(`toasts.success.savedChanges`));
       invalidate((url) => url.pathname.includes(`v3.user.getUserById`));
     }).catch((err) => {
-      toast.error(m["toasts.error.generic"](), { description: parseErrorMessage(err) });
+      toast.error(t(`toasts.error.generic`), { description: parseErrorMessage(err) });
     });
   }
 
@@ -119,14 +120,14 @@
             <!-- Sponsor buttons & user linked ids section -->
             {#if pdUser.githubId}
               {#await fetch(`https://api.github.com/user/${pdUser.githubId}`).then(res => res.json()) then githubUser}
-                <SponsorButton class="w-full" type="profile_github" url="https://github.com/{githubUser.login}" />
+                <SponsorButton class="w-full" type="profile_github" username={githubUser.login} />
               {/await}
             {/if}
             {#if pdUser.discordId}
-              <SponsorButton class="w-full" type="profile_discord" url="discord://discord.com/users/{pdUser.discordId}" />
+              <SponsorButton class="w-full" type="profile_discord" username={pdUser.discordId} />
             {/if}
             {#each pdUser.userPlatforms as sponsorUrl}
-              <SponsorButton class="w-full" type={sponsorUrl.platform} url={sponsorUrl.url} />
+              <SponsorButton class="w-full" type={sponsorUrl.platform} username={sponsorUrl.username} />
             {/each}
             {#if (showSomeLinkedButtons || pdUser.githubId || pdUser.discordId) && (showEditButton || showBanButton || showEditRolesButton)}
                 <Separator orientation="horizontal" />
@@ -137,7 +138,7 @@
                 isEditing = true
                 tabsValue = "edit";
               }}>
-                {m["dialogs.edit"]()}
+                {t(`dialogs.edit`)}
               </Button>
             {/if}
             {#if isEditing}
@@ -145,7 +146,7 @@
                 isEditing = false;
                 tabsValue = "mods";
               }}>
-                {m["dialogs.cancel"]()}
+                {t(`dialogs.cancel`)}
               </Button>
             {/if}
             <!-- Ban button section -->
@@ -156,7 +157,7 @@
                     trpc.internal.admin.user.banUser.mutate({ userId: pdUser.id, ban: false}).then(() => {
                       toast.success("User unbanned.");
                     }).catch((err) => {
-                      toast.error(m["toasts.error.generic"](), { description: parseErrorMessage(err) });
+                      toast.error(t(`toasts.error.generic`), { description: parseErrorMessage(err) });
                     });
                   }
                 }}>
@@ -168,7 +169,7 @@
                     trpc.internal.admin.user.banUser.mutate({ userId: pdUser.id, ban: true}).then(() => {
                       toast.success("User banned.");
                     }).catch((err) => {
-                      toast.error(m["toasts.error.generic"](), { description: parseErrorMessage(err) });
+                      toast.error(t(`toasts.error.generic`), { description: parseErrorMessage(err) });
                     });
                   }
                 }}>
@@ -192,44 +193,44 @@
   <Tabs.Root bind:value={tabsValue} class="w-full">
     <Tabs.List variant="line" class="justify-center items-center m-auto">
       {#if !isEditing}
-        <Tabs.Trigger value="mods">{m["mods.mods"]()}</Tabs.Trigger>
-        <Tabs.Trigger value="assets">{m["assets.assets"]()}</Tabs.Trigger>
+        <Tabs.Trigger value="mods">{t(`mods.mods`)}</Tabs.Trigger>
+        <Tabs.Trigger value="assets">{t(`assets.assets`)}</Tabs.Trigger>
       {/if}
       {#if isEditing}
-        <Tabs.Trigger value="edit">{m["dialogs.edit"]()}</Tabs.Trigger>
+        <Tabs.Trigger value="edit">{t(`dialogs.edit`)}</Tabs.Trigger>
       {/if}
     </Tabs.List>
       <Tabs.Content value="mods" class="w-full mt-4 flex flex-row flex-wrap justify-center gap-8 m-auto">
         {#each mods as mod}
           <ModCard project={mod} />
         {:else}
-          <p class="text-base text-muted-foreground">{m["users.noModsFoundForUser"]({name: pdUser.displayName})}</p>
+          <p class="text-base text-muted-foreground">{t(`users.noModsFoundForUser`, {name: pdUser.displayName})}</p>
         {/each}
       </Tabs.Content>
       <Tabs.Content value="assets" class="w-full mt-4 flex flex-row flex-wrap justify-evenly gap-8 m-auto">
         {#each assets as asset}
           <AssetCard {asset} size="large" approvalDialog={dialog} />
         {:else}
-          <p class="text-base text-muted-foreground">{m["users.noAssetsFoundForUser"]({ name: pdUser.displayName })}</p>
+          <p class="text-base text-muted-foreground">{t(`users.noAssetsFoundForUser`, { name: pdUser.displayName })}</p>
         {/each}
       </Tabs.Content>
       <Tabs.Content value="edit" class="w-full mt-4 flex flex-col items-center gap-4 m-auto">
         <div class="flex flex-col justify-center w-full max-w-md p-4 gap-4 bg-card rounded-lg">
           <div class="w-full max-w-lg">
-            <Label class="p-1 pb-2" for="displayName">{m["users.displayName"]()}</Label>
+            <Label class="p-1 pb-2" for="displayName">{t(`users.displayName`)}</Label>
             <Input placeholder="Display Name" bind:value={editDisplayName} class="w-full" />
           </div>
           <div class="w-full max-w-lg">
-            <Label class="p-1 pb-2" for="bio">{m["users.bio"]()}</Label>
+            <Label class="p-1 pb-2" for="bio">{t(`users.bio`)}</Label>
             <Textarea placeholder="Bio" bind:value={editBio} class="w-full" />
           </div>
           <!-- UserPlatforms Linking -->
         <div class="w-full max-w-lg">
           <div class="flex flex-row justify-between items-center pb-2">
-            <p class="text-sm font-semibold ml-1">{m["users.donationLinks"]()}</p>
+            <p class="text-sm font-semibold ml-1">{t(`users.donationLinks`)}</p>
             <Button size="sm" variant="outline" class="h-6" onclick={() => {
-              editUserPlatforms = [...(editUserPlatforms ?? []), { platform: PlatformType.GitHub, url: "" }];
-            }}>{m["dialogs.add"]()}</Button>
+              editUserPlatforms = [...(editUserPlatforms ?? []), { platform: PlatformType.GitHub, username: "" }];
+            }}>{t(`dialogs.add`)}</Button>
           </div>
           <div class="flex flex-col gap-2">
             {#each editUserPlatforms as eUP}
@@ -240,11 +241,11 @@
                   </Select.Trigger>
                   <Select.Content class="w-full">
                     {#each Object.values(PlatformType) as platform}
-                      <Select.Item placeholder="URL..." value={platform}>{platform.replace("_", " ")}</Select.Item>
+                      <Select.Item placeholder="Username" value={platform}>{platform.replace("_", " ")}</Select.Item>
                     {/each}
                   </Select.Content>
                 </Select.Root>
-                <Input placeholder="URL" bind:value={eUP.url} aria-invalid={!z.url().safeParse(eUP.url).success} class="w-full" />
+                <Input placeholder="URL" bind:value={eUP.username} aria-invalid={!z.string().regex(/^[a-zA-Z0-9_-]{3,16}$/).safeParse(eUP.username).success} class="w-full" />
                 <Button variant="destructive" size="icon" onclick={() => {
                   editUserPlatforms = editUserPlatforms ? editUserPlatforms.filter((up) => up !== eUP) : [];
                 }}><XIcon /></Button>
@@ -256,15 +257,15 @@
             <div class="flex flex-row justify-center items-center gap-4">
               <div class="flex flex-row justify-center items-center gap-2">
                 <Checkbox bind:checked={editHideDiscordId} />
-                <Label for="hideDiscordId">{m["users.hideDiscordId"]()}</Label>
+                <Label for="hideDiscordId">{t(`users.hideDiscordId`)}</Label>
               </div>
               <div class="flex flex-row justify-center items-center gap-2">
                 <Checkbox bind:checked={editHideGithubId} />
-                <Label for="hideGithubId">{m["users.hideGithubId"]()}</Label>
+                <Label for="hideGithubId">{t(`users.hideGithubId`)}</Label>
               </div>
             </div>
           {/if}
-          <Button onclick={onEditSubmit}>{m["dialogs.saveChanges"]()}</Button>
+          <Button onclick={onEditSubmit}>{t(`dialogs.saveChanges`)}</Button>
         </div>
         {#if allowEditingConfidentials}
           <div class="flex flex-col justify-center w-full max-w-md p-4 gap-2 bg-card rounded-lg">
@@ -273,16 +274,16 @@
                 trpc.internal.auth.linkGitHubToaccount.query({}).then(({ url }) => {
                   window.open(url, "_blank");
                 }).catch((err) => {
-                  toast.error(m["toasts.error.generic"](), { description: parseErrorMessage(err) });
+                  toast.error(t(`toasts.error.generic`), { description: parseErrorMessage(err) });
                 })
-              }}>{m["users.linkToGithub"]()}</Button>
+              }}>{t(`users.linkToGithub`)}</Button>
               <Button variant="outline" disabled={user?.discordId !== null} onclick={() => {
                 trpc.internal.auth.linkDiscordToAccount.query({}).then(({ url }) => {
                   window.open(url, "_blank");
                 }).catch((err) => {
-                  toast.error(m["toasts.error.generic"](), { description: parseErrorMessage(err) });
+                  toast.error(t(`toasts.error.generic`), { description: parseErrorMessage(err) });
                 })
-              }}>{m["users.linkToDiscord"]()}</Button>
+              }}>{t(`users.linkToDiscord`)}</Button>
             </div>
           </div>
         {/if}

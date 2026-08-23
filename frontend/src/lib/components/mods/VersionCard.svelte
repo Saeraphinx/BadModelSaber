@@ -10,7 +10,9 @@
   import { getVersionDecompUrl, getVersionDownloadUrl, getVersionManifestUrl, parseErrorMessage, trpc } from "$lib/scripts/utils/api";
   import Spinner from "$shadcn/components/ui/spinner/spinner.svelte";
   import Button from "$shadcn/components/ui/button/button.svelte";
-  import { m } from "$lib/paraglide/messages";
+  import { i18n } from "$lib/scripts/i18n";
+
+  const { t } = i18n();
   import DownloadButton from "../generic/DownloadButton.svelte";
   import * as Select from "$shadcn/components/ui/select";
   import { toast } from "svelte-sonner";
@@ -76,13 +78,13 @@
         supportedGameVersionIds: editedGameVersionIds.map(id => parseInt(id)),
       }
     }).then(() => {
-      toast.success(m["toasts.success.savedChanges"]());
+      toast.success(t(`toasts.success.savedChanges`));
       isEditing = false;
       version.supportedGameVersions = gameVersions.filter(gv => editedGameVersionIds.includes(gv.id.toString()));
     }).catch(err => {
       // handle error, maybe show a toast or something
       console.error(err);
-      toast.error(m["toasts.error.save"](), {
+      toast.error(t(`toasts.error.save`), {
         description: parseErrorMessage(err),
       });
     });
@@ -93,10 +95,10 @@
     trpc.internal.updateThings.version.submitForApproval.mutate({
       id: version.id
     }).then(() => {
-      toast.success(m["toasts.success.submit"]());
+      toast.success(t(`toasts.success.submit`));
     }).catch(err => {
       console.error(err);
-      toast.error(m["toasts.failedTo.submit"](), {
+      toast.error(t(`toasts.failedTo.submit`), {
         description: parseErrorMessage(err),
       });
     });
@@ -106,10 +108,10 @@
     trpc.internal.updateThings.version.removeFromQueue.mutate({
       id: version.id
     }).then(() => {
-      toast.success(m["toasts.success.savedChanges"]());
+      toast.success(t(`toasts.success.savedChanges`));
     }).catch(err => {
       console.error(err);
-      toast.error(m["toasts.failedTo.submit"](), {
+      toast.error(t(`toasts.failedTo.submit`), {
         description: parseErrorMessage(err),
       });
     });
@@ -152,7 +154,7 @@
         <Accordion.Trigger class="text-sm font-normal p-0.5">
           <span class="flex flex-row items-center gap-1">
             <ServerCogIcon class="h-4 w-4" />
-            {m["common.dataTable.supportedGameVersions"]()}
+            {t(`common.dataTable.supportedGameVersions`)}
           </span>
         </Accordion.Trigger>
         <Accordion.Content class="p-2">
@@ -182,7 +184,7 @@
         <Accordion.Trigger class="text-sm font-normal p-0.5">
           <span class="flex flex-row items-center gap-1">
             <FolderIcon class="h-4 w-4" />
-            {m["common.dataTable.dependencies"]()}
+            {t(`common.dataTable.dependencies`)}
           </span>
         </Accordion.Trigger>
         <Accordion.Content class="p-2">
@@ -203,7 +205,7 @@
                 {/each}
               {/await}
             {:else}
-              <p class="text-sm text-gray-500">{m[`common.dataTable.noDependencies`]()}</p>
+              <p class="text-sm text-gray-500">{t(`common.dataTable.noDependencies`)}</p>
             {/if}
           </div>
         </Accordion.Content>
@@ -213,19 +215,19 @@
           <Accordion.Trigger class="text-sm font-normal p-0.5">
             <span class="flex flex-row items-center gap-1">
               <FileCodeIcon class="h-4 w-4" />
-              {m["common.dataTable.filesAndManifest"]()}
+              {t(`common.dataTable.filesAndManifest`)}
             </span>
           </Accordion.Trigger>
           <Accordion.Content class="p-2">
             <div class="flex flex-row flex-wrap gap-2 justify-center">
               <Button variant="outline" size="sm" onclick={() => showCode("code")}>
-                {m[`common.dataTable.viewCode`]()}
+                {t(`common.dataTable.viewCode`)}
               </Button>
               <Button variant="outline" size="sm" onclick={() => showCode("manifest")}>
-                {m[`common.dataTable.viewManifest`]()}
+                {t(`common.dataTable.viewManifest`)}
               </Button>
               <Button variant="outline" size="sm" onclick={() => showCode("files")}>
-                {m[`common.dataTable.viewFiles`]()}
+                {t(`common.dataTable.viewFiles`)}
               </Button>
             </div>
           </Accordion.Content>
@@ -236,7 +238,7 @@
           <Accordion.Trigger class="text-sm font-normal p-0.5">
             <span class="flex flex-row items-center gap-1">
               <BadgeInfoIcon class="h-4 w-4" />
-              {m[`common.dataTable.approvalHistory`]()}
+              {t(`common.dataTable.approvalHistory`)}
             </span>
           </Accordion.Trigger>
           <Accordion.Content class="flex flex-col justify-center p-2">
@@ -254,19 +256,19 @@
             {#if approvalDialog}
               <Separator class="my-2" />
               <Button variant="outline" size="sm" onclick={() => approvalDialog?.showDialog(version.id, version.semver, `version`, version.status)}>
-                {m["common.buttons.approvalDialog"]()}
+                {t(`common.buttons.approvalDialog`)}
               </Button>
             {/if}
             {#if showUserQueueOptions}
               {#if version.status === Status.Queue || version.status === Status.Testing}
                 <Separator class="my-2" />
                 <Button variant="outline" size="sm" onclick={() => removeFromQueue()}>
-                  {m["common.buttons.removeFromQueue"]()}
+                  {t(`common.buttons.removeFromQueue`)}
                 </Button>
               {:else if version.status === Status.Private}
                 <Separator class="my-2" />
                 <Button variant="outline" size="sm" onclick={() => submitForApproval()}>
-                  {m["common.buttons.submitForApproval"]()}
+                  {t(`common.buttons.submitForApproval`)}
                 </Button>
               {/if}
             {/if}
@@ -277,18 +279,18 @@
         <Accordion.Trigger class="text-sm font-normal p-0.5">
           <span class="flex flex-row items-center gap-1">
             <InfoIcon class="h-4 w-4" />
-            {m[`common.dataTable.details`]()}
+            {t(`common.dataTable.details`)}
           </span>
         </Accordion.Trigger>
         <Accordion.Content class="p-2">
           <div class="flex flex-row flex-wrap gap-1">
             {#each [
-              {title: m["common.dataTable.id"]()  , content: `${version.id}`},
-              {title: m["common.dataTable.fileSize"](), content: `${version.fileSize > (1024 * 1024) ? `${(version.fileSize / (1024 * 1024)).toFixed(2)} MB` : `${(version.fileSize / 1024).toFixed(2)} KB`}`},
-              {title: m["common.dataTable.fileCount"](), content: `${version.contentHashes.length}`},
-              {title: m["common.dataTable.uploadedBy"](), content: `${version.uploaderId}`},
-              {title: m["common.dataTable.platform"](), content: `${version.platform}`},
-              {title: m["common.dataTable.lastUpdated"](), content: `${new Date(version.updatedAt).toLocaleDateString()}`, tooltip: `${new Date(version.updatedAt).toLocaleString()}`}
+              {title: t(`common.dataTable.id`)  , content: `${version.id}`},
+              {title: t(`common.dataTable.fileSize`), content: `${version.fileSize > (1024 * 1024) ? `${(version.fileSize / (1024 * 1024)).toFixed(2)} MB` : `${(version.fileSize / 1024).toFixed(2)} KB`}`},
+              {title: t(`common.dataTable.fileCount`), content: `${version.contentHashes.length}`},
+              {title: t(`common.dataTable.uploadedBy`), content: `${version.uploaderId}`},
+              {title: t(`common.dataTable.platform`), content: `${version.platform}`},
+              {title: t(`common.dataTable.lastUpdated`), content: `${new Date(version.updatedAt).toLocaleDateString()}`, tooltip: `${new Date(version.updatedAt).toLocaleString()}`}
               ] as item}
               <div class="flex flex-row text-sm bg-accent p-0.5 px-1 gap-0.5 rounded-md">
                 <p class="text-sm text-muted-foreground">{item.title}:</p>
@@ -303,15 +305,15 @@
       {#if isEditable}
         {#if isEditing}
           <Button variant="outline" size="sm" onclick={() => isEditing = !isEditing}>
-            {m[`dialogs.cancel`]()}
+            {t(`dialogs.cancel`)}
           </Button>
            <Button variant="outline" size="sm" onclick={saveChanges}>
-            {m[`dialogs.save`]()}
+            {t(`dialogs.save`)}
            </Button>
         {:else}
           <Button variant="outline" size="sm" onclick={() => isEditing = !isEditing}>
             <SquarePenIcon class="h-4 w-4" />
-            {m[`dialogs.edit`]()}
+            {t(`dialogs.edit`)}
           </Button>
         {/if}
       {/if}
@@ -319,12 +321,12 @@
         {#if reportDialog && !isEditable}
           <Button variant="outline" size="sm" onclick={() => reportDialog?.showDialog(version.id, version.semver, `version`)}>
             <MegaphoneIcon class="h-4 w-4" />
-            {m[`common.buttons.report`]()}
+            {t(`common.buttons.report`)}
           </Button>
         {/if}
         <DownloadButton variant="outline" size="sm" downloadType="mod" status={version.status} href={getVersionDownloadUrl(version)}>
           <DownloadIcon class="h-4 w-4" />
-          {m[`common.buttons.download`]()}
+          {t(`common.buttons.download`)}
         </DownloadButton>
       {/if}
     </div>

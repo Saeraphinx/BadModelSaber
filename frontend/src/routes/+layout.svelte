@@ -2,7 +2,7 @@
   import "../app.css";
   import * as NavigationMenu from "$shadcn/components/ui/navigation-menu/index.js";
   import * as DropdownMenu from "$shadcn/components/ui/dropdown-menu/index.js";
-  import { onMount } from "svelte";
+  import { onMount, setContext } from "svelte";
   import { buttonVariants } from "$shadcn/components/ui/button";
   import * as Avatar from "$shadcn/components/ui/avatar";
   import { BellIcon, LogInIcon, LogOutIcon, Menu, MessageCircleQuestionIcon, PlusIcon, Settings, TrafficConeIcon, UserIcon, SettingsIcon, LanguagesIcon, FolderGit2Icon, FileAxis3DIcon, Server } from "@lucide/svelte";
@@ -20,17 +20,21 @@
   import { Label } from "$shadcn/components/ui/label";
   import ScrollArea from "$shadcn/components/ui/scroll-area/scroll-area.svelte";
   import { invalidateAll } from "$app/navigation";
-  import { getLocale, setLocale, type Locale } from "$lib/paraglide/runtime";
-  import { m } from "$lib/paraglide/messages";
   import { Spinner } from "$shadcn/components/ui/spinner";
   import { checkRoles } from "$lib/scripts/utils/checkRoles";
   import { parseErrorMessage } from "$lib/scripts/utils/api";
+  import { i18n, setI18n } from "../lib/scripts/i18n";
 
   const { data: _internal, children } = $props();
   const { user, alertCount, pendingToasts, trpc } = $derived(_internal);
+  
   let showFullBar = new MediaQuery("min-width: 769px");
   let showDevbar = new MediaQuery(`min-height: 550px`);
   let isLoggedIn = $derived(!!(user && user.id));
+
+  // Transtions Initialization
+  setI18n();
+  const { t, changeLanguage, language } = i18n();
 
   // #region KonamiListener
   onMount(() => {
@@ -55,7 +59,7 @@
 
       if (inputSequence.join("") === konamiCode.join("")) {
         if (!isLoggedIn) {
-          toast.error(m["toasts.secretFeatures.mustBeLoggedIn"](), {
+          toast.error(t(`toasts.secretFeatures.mustBeLoggedIn`), {
             duration: 5000,
             closeButton: true,
             dismissable: true,
@@ -63,8 +67,8 @@
           return;
         }
         if (checkRoles(user, [UserPermissions.Secret_Features])) {
-          toast.info(m["toasts.secretFeatures.alreadyEnabled"](), {
-            description: m["toasts.secretFeatures.alreadyEnabledDescription"](),
+          toast.info(t(`toasts.secretFeatures.alreadyEnabled`), {
+            description: t(`toasts.secretFeatures.alreadyEnabledDescription`),
             duration: 5000,
             closeButton: true,
             dismissable: true,
@@ -72,8 +76,8 @@
           return;
         }
         inputSequence = []; // Reset the sequence after activation
-        toast.info(m["toasts.secretFeatures.unlocked"](), {
-          description: m["toasts.secretFeatures.unlockedDescription"](),
+        toast.info(t(`toasts.secretFeatures.unlocked`), {
+          description: t(`toasts.secretFeatures.unlockedDescription`),
           duration: 60000,
           dismissable: true,
           action: {
@@ -82,14 +86,14 @@
               trpc.internal.updateThings.user.toggleSecretFeatures
                 .mutate({ enabled: true })
                 .then(() => {
-                  toast.success(m["toasts.secretFeatures.enabled"](), {
-                    description: m["toasts.secretFeatures.enabledDescription"](),
+                  toast.success(t(`toasts.secretFeatures.enabled`), {
+                    description: t(`toasts.secretFeatures.enabledDescription`),
                     closeButton: true,
                   });
                   window.location.reload(); // do a full-on reload due to the role changes potentially breaking stuff
                 })
                 .catch((error) => {
-                  toast.error(m["toasts.error.generic"](), {
+                  toast.error(t(`toasts.error.generic`), {
                     description: parseErrorMessage(error),
                   });
                 });
@@ -112,13 +116,13 @@
     trpc.internal.updateThings.user.toggleSecretFeatures
       .mutate({ enabled: false })
       .then(() => {
-        toast.info(m["toasts.secretFeatures.disabled"](), {
-          description: m["toasts.secretFeatures.disabledDescription"](),
+        toast.info(t(`toasts.secretFeatures.disabled`), {
+          description: t(`toasts.secretFeatures.disabledDescription`),
         });
         invalidateAll(); // Refresh user data
       })
       .catch((error) => {
-        toast.error(m["toasts.error.generic"](), {
+        toast.error(t(`toasts.error.generic`), {
           description: parseErrorMessage(error),
         });
       });
@@ -144,7 +148,7 @@
         return data;
       })
       .catch((err) => {
-        toast.error(m["toasts.error.generic"](), { description: parseErrorMessage(err) });
+        toast.error(t("toasts.error.generic", { description: parseErrorMessage(err) }));
         return [];
       })
       .finally(() => {
@@ -162,7 +166,7 @@
   // Alert count toast
   onMount(() => {
     if (hasUnreadAlerts) {
-      toast.info(m["toasts.unreadAlerts"]({ count: unreadAlertCount }), {
+      toast.info(t("layout.unreadAlerts", { count: unreadAlertCount }), {
         description: "",
         duration: 10000,
         closeButton: true,
@@ -239,42 +243,40 @@
     document.documentElement.classList.remove("unrendered");
   });
 
-  let currentLocale = getLocale();
-
   const links = [
-    { href: "/", label: m["layout.navbar.home"](), target: undefined },
+    { href: "/", label: t(`layout.navbar.home`), target: undefined },
     {
       href: "",
-      label: m["layout.navbar.mods.mods"](),
+      label: t(`layout.navbar.mods.mods`),
       target: undefined,
       children: [
-        { href: "/mods", label: m["layout.navbar.mods.browseMods"]() },
-        { href: "https://bsmg.wiki/beginners-guide.html", label: m["layout.navbar.mods.beatsaberBeginngersGuide"](), target: "_blank" },
-        { href: "https://bsmg.wiki/modding", label: m["layout.navbar.mods.moddersGuide"](), target: "_blank" },
-        { href: "https://github.com/Saeraphinx/BadModelSaber/blob/main/mod-approval-guidelines.md", label: m["layout.navbar.mods.pcApprovalGuide"](), target: "_blank" },
-        { href: "/mods/compare", label: m["layout.navbar.mods.compareVersions"]() },
+        { href: "/mods", label: t(`layout.navbar.mods.browseMods`) },
+        { href: "https://bsmg.wiki/beginners-guide.html", label: t(`layout.navbar.mods.beatsaberBeginngersGuide`), target: "_blank" },
+        { href: "https://bsmg.wiki/modding", label: t(`layout.navbar.mods.moddersGuide`), target: "_blank" },
+        { href: "https://github.com/Saeraphinx/BadModelSaber/blob/main/mod-approval-guidelines.md", label: t(`layout.navbar.mods.pcApprovalGuide`), target: "_blank" },
+        { href: "/mods/compare", label: t(`layout.navbar.mods.compareVersions`) },
       ],
     },
     {
       href: "",
-      label: m["layout.navbar.assets.assets"](),
+      label: t(`layout.navbar.assets.assets`),
       target: undefined,
       children: [
-        { href: "/assets", label: m["layout.navbar.assets.browseAssets"]() },
+        { href: "/assets", label: t(`layout.navbar.assets.browseAssets`) },
         {
-          label: m["layout.navbar.assets.creationGuide"](),
+          label: t(`layout.navbar.assets.creationGuide`),
           href: "https://bsmg.wiki/beginners-guide.html#making-3d-models",
           target: "_blank",
         },
         {
-          label: m["layout.navbar.assets.installationGuide"](),
+          label: t(`layout.navbar.assets.installationGuide`),
           href: "https://bsmg.wiki/models/custom-sabers.html",
           target: "_blank",
         },
       ],
     },
-    { href: "https://bsmg.wiki", label: m["layout.navbar.wiki"](), target: "_blank" },
-    { href: "https://discord.gg/beatsabermods", label: m["layout.navbar.discord"](), target: "_blank" },
+    { href: "https://bsmg.wiki", label: t(`layout.navbar.wiki`), target: "_blank" },
+    { href: "https://discord.gg/beatsabermods", label: t(`layout.navbar.discord`), target: "_blank" },
   ];
 </script>
 
@@ -312,20 +314,20 @@
   {#if page.data.pageMetadata?.title && page.data.pageMetadata?.title.includes(" - ")}
     <title>{page.data.pageMetadata.title}</title>
   {:else if page.data.pageMetadata?.title}
-    <title>{page.data.pageMetadata?.title ? `${page.data.pageMetadata.title} - ${m.name()}` : `${m.name()}`}</title>
+    <title>{page.data.pageMetadata?.title ? `${page.data.pageMetadata.title} - ${t(`name`)}` : `${t(`name`)}`}</title>
   {:else}
-    <title>{m.name()}</title>
+    <title>{t(`name`)}</title>
   {/if}
   <link rel="icon" href="/favicon.png" />
   <!-- OpenGraph -->
   {#if page.data.pageMetadata?.title && page.data.pageMetadata?.title.includes(" - ")}
     <meta property="og:title" content={page.data.pageMetadata.title} />
   {:else if page.data.pageMetadata?.title}
-    <meta property="og:title" content={`${page.data.pageMetadata.title} - ${m.name()}`} />
+    <meta property="og:title" content={`${page.data.pageMetadata.title} - ${t(`name`)}`} />
   {:else}
-    <meta property="og:title" content={`${m.name()}`} />
+    <meta property="og:title" content={`${t(`name`)}`} />
   {/if}
-  <meta property="og:description" content={page.data.pageMetadata?.description! ?? m["homepage.subtitle"]()} />
+  <meta property="og:description" content={page.data.pageMetadata?.description! ?? t(`homepage.subtitle`)} />
   <meta property="og:image" content={page.data.pageMetadata?.imageUrl ?? `${env.PUBLIC_BASE_URL}/modelsaber-logo-web.svg`} />
   <meta name="theme-color" content="#972DE2" />
 </svelte:head>
@@ -338,7 +340,7 @@
     <a href="/" class="flex items-center justify-start h-16 md:ml-16 ml-4 md:p-4 gap-0.5">
       <img src="/modelsaber-logo-web.svg" alt="ModelSaber Logo" class="h-8 w-8 mr-2" />
       <div class="flex flex-col items-center justify-center">
-        <span class="text-xl font-bold">{m.name()}</span>
+        <span class="text-xl font-bold">{t(`name`)}</span>
         {#if env.PUBLIC_BASE_URL.includes(`localhost`)}
           <Badge variant="outline" class="bg-linear-to-tl from-[#8e28e260] to-[#DC2DE260]">Development Instance</Badge>
         {:else if env.PUBLIC_BASE_URL.includes(`saera.gay`)}
@@ -387,13 +389,13 @@
             <a href="/users/me">
               <DropdownMenu.Item>
                 <UserIcon />
-                {m["layout.userMenu.profile"]()}
+                {t(`layout.userMenu.profile`)}
               </DropdownMenu.Item>
             </a>
             <button onclick={openAlertsSidebar}>
               <DropdownMenu.Item>
                 <BellIcon />
-                {m["layout.userMenu.alerts"]()}
+                {t(`layout.userMenu.alerts`)}
                 {#if hasUnreadAlerts}
                   <Badge class="ml-0.5" variant="destructive">
                     {unreadAlertCount}
@@ -404,7 +406,7 @@
             <a href="/requests">
               <DropdownMenu.Item>
                 <MessageCircleQuestionIcon />
-                {m["layout.userMenu.requests"]()}
+                {t(`layout.userMenu.requests`)}
               </DropdownMenu.Item>
             </a>
             {#if checkRoles(user, { hasOneOf: [UserPermissions.Advanced_Admin_Tasks, UserPermissions.Administrative_Tasks, UserPermissions.Mods_Approval, UserPermissions.Game_Create, UserPermissions.Game_Edit, UserPermissions.Game_EditVersions, UserPermissions.Game_ViewExtras, UserPermissions.Users_EditAllRoles] },  //UserPermissions.Users_Ban, //not needed atm
@@ -412,7 +414,7 @@
               <a href="/admin">
                 <DropdownMenu.Item>
                   <Settings />
-                  {m["layout.userMenu.adminPanel"]()}
+                  {t(`layout.userMenu.adminPanel`)}
                 </DropdownMenu.Item>
               </a>
             {/if}
@@ -428,7 +430,7 @@
               <button onclick={removeSecret}>
                 <DropdownMenu.Item>
                   <TrafficConeIcon class="text-orange-500" />
-                  {m["layout.userMenu.disableSecretFeatures"]()}
+                  {t(`layout.userMenu.disableSecretFeatures`)}
                 </DropdownMenu.Item>
               </button>
             {/if}
@@ -436,14 +438,14 @@
               <DropdownMenu.Sub>
                 <DropdownMenu.SubTrigger>
                   <PlusIcon />
-                  {m["layout.userMenu.create"]()}
+                  {t(`layout.userMenu.create`)}
                 </DropdownMenu.SubTrigger>
                 <DropdownMenu.SubContent class="">
                   {#if checkRoles(user, [UserPermissions.Mods_Create], `any`)}
                     <a href="/create/project">
                       <DropdownMenu.Item>
                         <FolderGit2Icon />
-                        {m["layout.userMenu.createProject"]()}
+                        {t(`layout.userMenu.createProject`)}
                       </DropdownMenu.Item>
                     </a>
                   {/if}
@@ -451,7 +453,7 @@
                     <a href="/create/asset">
                       <DropdownMenu.Item>
                         <FileAxis3DIcon />
-                        {m["layout.userMenu.createAsset"]()}
+                        {t(`layout.userMenu.createAsset`)}
                       </DropdownMenu.Item>
                     </a>
                   {/if}
@@ -460,19 +462,21 @@
             {/if}
             <DropdownMenu.Separator />
           {/if}
-          <p class="p-1 text-sm">{m["layout.userMenu.options"]()}</p>
+          <p class="p-1 text-sm">{t(`layout.userMenu.options`)}</p>
           <DropdownMenu.Sub>
             <DropdownMenu.SubTrigger>
               <LanguagesIcon />
-              {m["layout.userMenu.language"]()}
+              {t(`layout.userMenu.language`)}
             </DropdownMenu.SubTrigger>
             <DropdownMenu.SubContent class="">
               <DropdownMenu.RadioGroup
-                value={currentLocale}
+                value={language}
                 onValueChange={(val) => {
-                  setLocale(val as Locale);
+                  changeLanguage(val, () => {
+                    invalidateAll();
+                  });
                 }}>
-                <DropdownMenu.Label>{m["layout.userMenu.language"]()}</DropdownMenu.Label>
+                <DropdownMenu.Label>{t(`layout.userMenu.language`)}</DropdownMenu.Label>
                 {#each availableLocales as locale}
                   {#if locale.frontend}
                     {#if !locale.secret || (locale.secret && checkRoles(user, [UserPermissions.Secret_Features]))}
@@ -492,7 +496,7 @@
               }}>
               <DropdownMenu.Item>
                 <LogOutIcon class="text-red-400" />
-                {m["layout.userMenu.logout"]()}
+                {t(`layout.userMenu.logout`)}
               </DropdownMenu.Item>
             </button>
           {:else}
@@ -505,7 +509,7 @@
               }}>
               <DropdownMenu.Item>
                 <LogInIcon />
-                {m["layout.userMenu.loginDiscord"]()}
+                {t(`layout.userMenu.loginDiscord`)}
               </DropdownMenu.Item>
             </button>
             <button
@@ -517,12 +521,12 @@
               }}>
               <DropdownMenu.Item>
                 <LogInIcon />
-                {m["layout.userMenu.loginGitHub"]()}
+                {t(`layout.userMenu.loginGitHub`)}
               </DropdownMenu.Item>
             </button>
           {/if}
           <DropdownMenu.Separator />
-          <p class="text-xs text-muted-foreground text-center p-1"><a href="https://github.com/Saeraphinx/BadModelSaber" target="_blank">{m["layout.userMenu.modelsaberOpenSource"]()}</a></p>
+          <p class="text-xs text-muted-foreground text-center p-1"><a href="https://github.com/Saeraphinx/BadModelSaber" target="_blank">{t(`layout.userMenu.modelsaberOpenSource`)}</a></p>
           {#if isLoggedIn}
             <a class="text-xs text-muted-foreground text-center p-1" href="{env.PUBLIC_API_URL}/docs"> API Docs </a>
           {/if}
@@ -547,14 +551,14 @@
 <Sheet.Root bind:open={openAlerts}>
   <Sheet.Content class="grid grid-rows-[auto_1fr_auto] h-full">
     <Sheet.Header>
-      <Sheet.Title class="text-lg font-semibold">{m["layout.userMenu.alerts"]()}</Sheet.Title>
+      <Sheet.Title class="text-lg font-semibold">{t(`layout.userMenu.alerts`)}</Sheet.Title>
       <div class="flex flex-row justify-between items-center">
         <Sheet.Description class="text-sm flex flex-row text-gray-500">
           {#if !isLoadingAlerts}
             {#if showRead}
-              {m["layout.alertSidebar.readAlerts"]({ count: allAlerts.length })}
+              {t(`layout.alertSidebar.readAlerts`, { count: allAlerts.length })}
             {:else}
-              {m["layout.alertSidebar.unreadAlerts"]({ count: unreadAlertCount })}
+              {t(`layout.alertSidebar.unreadAlerts`, { count: unreadAlertCount })}
             {/if}
           {:else}
             <div class="flex flex-row items-center justify-center gap-2">
@@ -565,7 +569,7 @@
         </Sheet.Description>
         <div class="flex items-center space-x-2">
           <Switch id="show-read" bind:checked={showRead} onCheckedChange={updateAlerts} />
-          <Label for="show-read">{m["layout.alertSidebar.showRead"]()}</Label>
+          <Label for="show-read">{t(`layout.alertSidebar.showRead`)}</Label>
         </div>
       </div>
     </Sheet.Header>
@@ -580,7 +584,7 @@
             }} />
         {:else}
           <div class="flex justify-center items-center gap-2">
-            <p class="text-gray-500">{m["layout.alertSidebar.noAlertsAvailable"]()}</p>
+            <p class="text-gray-500">{t(`layout.alertSidebar.noAlertsAvailable`)}</p>
           </div>
         {/each}
       {:else}
@@ -593,13 +597,13 @@
             }} />
         {:else}
           <div class="flex justify-center items-center gap-2">
-            <p class="text-gray-500">{m["layout.alertSidebar.noUnreadAlerts"]()}</p>
+            <p class="text-gray-500">{t(`layout.alertSidebar.noUnreadAlerts`)}</p>
           </div>
         {/each}
       {/if}
     </ScrollArea>
     <Sheet.Footer>
-      <Sheet.Close class={buttonVariants({ variant: "outline" })}>{m["dialogs.close"]()}</Sheet.Close>
+      <Sheet.Close class={buttonVariants({ variant: "outline" })}>{t(`dialogs.close`)}</Sheet.Close>
     </Sheet.Footer>
   </Sheet.Content>
 </Sheet.Root>

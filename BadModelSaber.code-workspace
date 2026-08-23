@@ -15,7 +15,6 @@
     "extensions": {
         "recommendations": [
             "svelte.svelte-vscode",
-            "inlang.vs-code-extension"
         ]
     },
     "settings": {
@@ -29,7 +28,10 @@
             "backend/": true,
             "frontend/":true
         },
-        "js/ts.experimental.useTsgo": true
+        "js/ts.experimental.useTsgo": true,
+        "i18n-ally.localesPaths": [
+            "messages"
+        ]
     },
     "launch": {
         "version": "0.2.0",

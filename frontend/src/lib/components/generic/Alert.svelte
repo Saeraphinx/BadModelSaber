@@ -6,7 +6,9 @@
   import { ExternalLinkIcon } from '@lucide/svelte';
   import { toast } from 'svelte-sonner';
   import type { HTMLAttributes } from 'svelte/elements';
-  import { m } from '../../paraglide/messages';
+  import { i18n } from "$lib/scripts/i18n";
+
+  const { t } = i18n();
 
   let {
     alert,
@@ -52,7 +54,7 @@
     }, 500);
     trpc.internal.alerts.markAlertRead.mutate({ id: alert.id }).catch((error) => {
       console.error('Failed to mark alert as read:', error);
-      toast.error(m["toasts.error.generic"](), {
+      toast.error(t(`toasts.error.generic`), {
         description: parseErrorMessage(error),
       });
     });
@@ -70,7 +72,7 @@
     }, 500);
      trpc.internal.alerts.deleteAlert.mutate({ id: alert.id }).catch((error) => {
       console.error('Failed to delete alert:', error);
-      toast.error(m["toasts.error.generic"](), {
+      toast.error(t(`toasts.error.generic`), {
         description: parseErrorMessage(error),
       });
     });

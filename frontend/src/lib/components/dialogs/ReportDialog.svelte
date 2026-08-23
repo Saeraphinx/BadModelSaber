@@ -1,5 +1,7 @@
 <script lang="ts">
-  import { m } from "$lib/paraglide/messages";
+  import { i18n } from "$lib/scripts/i18n";
+
+  const { t } = i18n();
   import { parseErrorMessage, trpc } from "$lib/scripts/utils/api";
   import { Button } from "$shadcn/components/ui/button";
   import * as Dialog from "$shadcn/components/ui/dialog";
@@ -28,13 +30,13 @@
       reason: reason,
     }).then((res) => {
       console.log(`Successfully reported ${type} ${id}`);
-      toast.success(m["toasts.success.reportSubmitted"](), {
+      toast.success(t(`toasts.success.reportSubmitted`), {
         dismissable: true,
       });
       visible = false;
     }).catch((err) => {
       console.error(`Error reporting ${type} ${id}:`, err);
-      toast.error(m["toasts.error.generic"](), {
+      toast.error(t(`toasts.error.generic`), {
         description: parseErrorMessage(err),
         dismissable: true,
         duration: 30000
@@ -46,15 +48,15 @@
 <Dialog.Root bind:open={visible}>
   <Dialog.Content class="sm:max-w-[425px]">
     <Dialog.Header>
-      <Dialog.Title>{m["dialogs.reportDialog.title"]({ name })}</Dialog.Title>
-      <Dialog.Description>{m["dialogs.reportDialog.description"]()}</Dialog.Description>
+      <Dialog.Title>{t(`dialogs.reportDialog.title`, { name })}</Dialog.Title>
+      <Dialog.Description>{t(`dialogs.reportDialog.description`)}</Dialog.Description>
     </Dialog.Header>
     <div class="flex flex-row">
-      <Textarea bind:value={reason} placeholder={m["dialogs.reportDialog.reasonPlaceholder"]()} />
+      <Textarea bind:value={reason} placeholder={t(`dialogs.reportDialog.reasonPlaceholder`)} />
     </div>
     <Dialog.Footer>
-      <Button variant="ghost" onclick={() => (visible = false)}>{m["dialogs.cancel"]()}</Button>
-      <Button type="submit" onclick={handleSubmit}>{m["dialogs.submit"]()}</Button>
+      <Button variant="ghost" onclick={() => (visible = false)}>{t(`dialogs.cancel`)}</Button>
+      <Button type="submit" onclick={handleSubmit}>{t(`dialogs.submit`)}</Button>
     </Dialog.Footer>
   </Dialog.Content>
 </Dialog.Root>

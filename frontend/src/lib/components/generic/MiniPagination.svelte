@@ -1,5 +1,7 @@
 <script lang="ts">
-  import { m } from "$lib/paraglide/messages";
+  import { i18n } from "$lib/scripts/i18n";
+
+  const { t } = i18n();
   import { Button } from "$shadcn/components/ui/button";
   import { ChevronLeft, ChevronRight } from "@lucide/svelte";
 

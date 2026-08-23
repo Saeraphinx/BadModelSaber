@@ -6,7 +6,9 @@
   import type { RequestMessage as ReqMessage } from "$lib/scripts/from_backend/DBExtras.js";
   import Textarea from "$shadcn/components/ui/textarea/textarea.svelte";
   import Button from "$shadcn/components/ui/button/button.svelte";
-  import { m } from "$lib/paraglide/messages.js";
+  import { i18n } from "$lib/scripts/i18n";
+
+  const { t } = i18n();
   import { onMount } from "svelte";
   import Spinner from "$shadcn/components/ui/spinner/spinner.svelte";
   import { toast } from "svelte-sonner";
@@ -54,7 +56,7 @@
     if (checkRoles(user, [UserPermissions.Requests_ManageAll, typeInfo.managePerm], pageData.refrencedGameName) || (pageData.requestResponseBy === user?.id)) {
       if (pageData.accepted === null) {
         initMessage = true
-        initialString += `\n\n${m["requests.wouldYouLikeToAcceptOrReject"]()}`;
+        initialString += `\n\n${t(`requests.wouldYouLikeToAcceptOrReject`)}`;
       }
     }
 
@@ -137,7 +139,7 @@
       })
       .catch((err) => {
         console.error("Failed to send message:", err);
-        toast.error(m["toasts.error.generic"](), { description: parseErrorMessage(err) });
+        toast.error(t(`toasts.error.generic`), { description: parseErrorMessage(err) });
       });
   }
 
@@ -148,7 +150,7 @@
     }).then(r => {
       return r.message
     }).catch(e => {
-      return toast.error(m["toasts.error.generic"](), { description: parseErrorMessage(e) });
+      return toast.error(t(`toasts.error.generic`), { description: parseErrorMessage(e) });
     })
   }
 </script>
@@ -166,12 +168,12 @@
       <VersionCard version={pageData.refrencedThing} />
     {/if}
     <div class="flex flex-col items-start gap-2 bg-card p-4 rounded-lg shadow-md w-full">
-      <h1 class="text-2xl font-bold">{m["requests.tableTitle"]({ type: m[`enums.requestTypes.${pageData.requestType}`]() })}</h1>
-      <p class="text-gray-500">{m["requests.requestID"]({ id: pageData.id })}</p>
-      <p class="text-gray-500">{m["requests.status"]({ status: pageData.accepted ?? m["requests.notResolved"]() })}</p>
-      <p class="text-gray-500">{m["requests.resolvedBy"]({ name: pageData.resolvedBy ?? m["requests.notResolved"]() })}</p>
-      <p class="text-gray-500">{m["requests.createdBy"]({ name: users.get(pageData.requesterId)?.displayName || "Unknown User" })}</p>
-      <p class="text-gray-500">{m["requests.createdAt"]({ date: new Date(pageData.createdAt).toLocaleDateString() })}</p>
+      <h1 class="text-2xl font-bold">{t(`requests.tableTitle`, { type: m[`enums.requestTypes.${pageData.requestType}`]() })}</h1>
+      <p class="text-gray-500">{t(`requests.requestID`, { id: pageData.id })}</p>
+      <p class="text-gray-500">{t(`requests.status`, { status: pageData.accepted ?? t(`requests.notResolved`) })}</p>
+      <p class="text-gray-500">{t(`requests.resolvedBy`, { name: pageData.resolvedBy ?? t(`requests.notResolved`) })}</p>
+      <p class="text-gray-500">{t(`requests.createdBy`, { name: users.get(pageData.requesterId)?.displayName || "Unknown User" })}</p>
+      <p class="text-gray-500">{t(`requests.createdAt`, { date: new Date(pageData.createdAt).toLocaleDateString() })}</p>
     </div>
   </div>
   <div class="flex flex-col w-full max-w-2xl">
@@ -187,9 +189,9 @@
       {/key}
       {#if isAllowedToSend}
         <div class="flex flex-col items-end">
-          <Textarea bind:value={messageBox} placeholder={m["requests.typeYourMessageHere"]()} class="w-full" rows={5} />
+          <Textarea bind:value={messageBox} placeholder={t(`requests.typeYourMessageHere`)} class="w-full" rows={5} />
           <Button disabled={isSending || messageBox.trim() == ""} variant="default" class="mt-2 w-32" onclick={sendMessage}>
-            {m["requests.submitMessage"]()}
+            {t(`requests.submitMessage`)}
             {#if isSending}
               <Spinner />
             {/if}

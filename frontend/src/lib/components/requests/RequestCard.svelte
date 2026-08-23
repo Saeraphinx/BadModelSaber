@@ -3,7 +3,9 @@
   import { cn } from "$shadcn/utils";
   import { MessageSquareTextIcon } from "@lucide/svelte";
   import type { HTMLAttributes } from "svelte/elements";
-  import { m } from "../../paraglide/messages";
+  import { i18n } from "$lib/scripts/i18n";
+
+  const { t } = i18n();
 
   let {
     request,
@@ -22,8 +24,8 @@
     <p>{requestTypeTitleString}: {request.refrencedThingName}</p>
   </a>
   <div class="relative">
-    <a href="/users/{request.requesterId}" class="text-sm text-gray-500 mt-1">{m["requests.createdBy"]({name: request.requester?.displayName ?? ``})}</a>
-    <p class="text-sm text-gray-500 mt-1">{m["requests.createdAt"]({ date: new Date(request.createdAt).toLocaleDateString()})}</p>
+    <a href="/users/{request.requesterId}" class="text-sm text-gray-500 mt-1">{t(`requests.createdBy`, {name: request.requester?.displayName ?? ``})}</a>
+    <p class="text-sm text-gray-500 mt-1">{t(`requests.createdAt`, { date: new Date(request.createdAt).toLocaleDateString()})}</p>
     {#if request.requestType.includes("report")}
       <div class="absolute bottom-0 right-0 flex items-center mt-2">
         <MessageSquareTextIcon class="text-gray-500" />

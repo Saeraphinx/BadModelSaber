@@ -281,7 +281,7 @@ export const platformTypeSchema = z.enum(PlatformType)
 export type UserPlatform = z.infer<typeof userPlatformSchema>;
 export const userPlatformSchema = z.object({
   platform: platformTypeSchema,
-  url: z.string()
+  username: z.string()
 })
 
 export type AssetPublicAPIv2 = z.infer<typeof assetPublicAPIv2Schema>;
@@ -461,7 +461,7 @@ const ModApiV1Schema: z.ZodType<ModApiV1> = z.lazy(() => z.object({
 export const UserApiV2Schema = z.object({
   id: z.number().int().positive(),
   username: z.string(),
-  githubId: z.number().nullable(),
+  githubId: z.string().nullable(),
   sponsorUrl: z.string().nullable(),
   displayName: z.string(),
   roles: z.object({ // do not allow roles to be sent when using v2 of the API
@@ -479,8 +479,6 @@ export const GameVersionApiv2Schema = z.object({
   gameName: z.string(),
   version: z.string(),
   defaultVersion: z.boolean(),
-  createdAt: z.date(),
-  updatedAt: z.date(),
 });
 export type GameVersionApiV2 = z.infer<typeof GameVersionApiv2Schema>;
 
@@ -490,7 +488,7 @@ export const ModApiv2Schema = z.object({
   summary: z.string(),
   description: z.string(),
   gameName: z.string(),
-  category: z.string(),
+  category: z.enum(["core","essential","library","cosmetic","practice","gameplay","streamtools","ui","lighting","tweaks","multiplayer","text","editor","other"]),
   authors: z.array(UserApiV2Schema),
   status: z.enum([`private`, `removed`, `pending`, `unverified`, `verified`]),
   iconFileName: z.string(),

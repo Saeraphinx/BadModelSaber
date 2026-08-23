@@ -9,13 +9,15 @@
   import AutoScroll from "embla-carousel-auto-scroll"
   import { ExternalLinkIcon } from "@lucide/svelte";
   import Separator from "$shadcn/components/ui/separator/separator.svelte";
-  import { m } from "$lib/paraglide/messages";
+  import { i18n } from "$lib/scripts/i18n";
+
+  const { t } = i18n();
   import ModIconCard from "../lib/components/mods/ModIconCard.svelte";
 
   const { data: _internal } = $props();
   const { user, fetch } = $derived(_internal);
 
-  let subtitle: string = $state(m["homepage.subtitle"]());
+  let subtitle: string = $state(t(`homepage.subtitle`));
   let recentlyUploadedVerified: (AssetApiV3 | ProjectApiV3)[] = $state([]);
   onMount(async () => {
     trpc.internal.getThings.getFrontPageIcons.query().then((data) => {
@@ -32,11 +34,11 @@
 
 <div class="flex flex-col align-middle justify-center-safe items-center h-screen-nav min-h-[300px]">
   <img src="/modelsaber-logo-web.svg" alt="ModelSaber Logo" class="h-24 w-24" />
-  <h1 class="text-4xl font-bold">{ m["homepage.title"]() }</h1>
+  <h1 class="text-4xl font-bold">{ t(`homepage.title`) }</h1>
   <p class="text-lg text-gray-500">{ subtitle }</p>
   <div>
-    <Button class="mt-2" href="/assets">{ m["homepage.browseButton"]()}</Button>
-    <Button class="mt-2 ml-2" variant="outline" href="https://bsmg.wiki/models">{m["homepage.wikiButton"]()} <ExternalLinkIcon /></Button>
+    <Button class="mt-2" href="/assets">{ t(`homepage.browseButton`)}</Button>
+    <Button class="mt-2 ml-2" variant="outline" href="https://bsmg.wiki/models">{t(`homepage.wikiButton`)} <ExternalLinkIcon /></Button>
   </div>
   <Separator class="my-6 mx-[25%]" />
   <div class="max-w-screen">

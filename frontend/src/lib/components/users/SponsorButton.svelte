@@ -5,13 +5,30 @@
 
   let { 
     type,
-    url,
+    username,
     class: className,
     ...restProps
    } : {
     type: PlatformType | `profile_discord` | `profile_github`;
-    url: string;
+    username: string;
   } & HTMLAttributes<HTMLElement> = $props();
+
+    let url = $derived.by(() => {
+      switch (type) {
+        case PlatformType.GitHub:
+          return `https://github.com/sponsors/${username}`;
+        case PlatformType.KoFi:
+          return `https://ko-fi.com/${username}`;
+        case PlatformType.Patreon:
+          return `https://www.patreon.com/${username}`;
+        case `profile_discord`:
+          return `discord://discord.com/users/${username}`;
+        case `profile_github`:
+          return `https://github.com/${username}`;
+        default:
+          return `#`;
+      }
+    });
 </script>
 
 <Button class={className} variant="outline" href={url} target={type === `profile_discord` ? `_self` : `_blank`} {...restProps}>

@@ -12,7 +12,9 @@
   import { parseErrorMessage, trpc } from "$lib/scripts/utils/api";
   import { toast } from "svelte-sonner";
   import { zAsset } from "$lib/scripts/from_backend/validators";
-  import { m } from "$lib/paraglide/messages";
+  import { i18n } from "$lib/scripts/i18n";
+
+  const { t } = i18n();
   import * as RadioGroup from "../../../lib/shadcn/components/ui/radio-group";
   import { getRenderingMethodString, getRenderingMethodSupportedGV } from "../../../lib/scripts/utils/stylizer";
   import { onMount } from "svelte";
@@ -64,7 +66,7 @@
     );
     console.log("Submitting asset with data:", formData.get("data"));
     if (!asset || !asset[0]) {
-      toast.error(m["toasts.error.validationTitle"](), { description: m["toasts.error.validation.invalidFile"]() });
+      toast.error(t(`toasts.error.validationTitle`), { description: t(`toasts.error.validation.invalidFile`) });
       console.error("No asset file selected.");
       return;
     }
@@ -74,7 +76,7 @@
         formData.append(`icon_${i + 1}`, thumbnails[i]);
       }
     } else {
-      toast.error(m["toasts.error.validationTitle"](), { description: m["toasts.error.validation.invalidFile"]() });
+      toast.error(t(`toasts.error.validationTitle`), { description: t(`toasts.error.validation.invalidFile`) });
       console.error("No thumbnail file(s) selected.");
       return;
     }
@@ -85,12 +87,12 @@
       .then((asset) => {
         if (asset) {
           localStorage.removeItem(`createAssetData`);
-          toast.success(m["toasts.success.submit"]());
+          toast.success(t(`toasts.success.submit`));
           return asset;
         }
       })
       .catch((err) => {
-        toast.error(m["toasts.error.generic"](), { description: parseErrorMessage(err) });
+        toast.error(t(`toasts.error.generic`), { description: parseErrorMessage(err) });
         console.error(err);
       });
 
@@ -133,8 +135,8 @@
 </script>
 
 <div class="flex flex-col text-center w-full p-4">
-  <h1 class="text-2xl font-bold mb-4">{m["assets.upload.createAsset"]()}</h1>
-  <p class="text-base mb-4">{m["assets.upload.createAssetSubtitle"]()}</p>
+  <h1 class="text-2xl font-bold mb-4">{t(`assets.upload.createAsset`)}</h1>
+  <p class="text-base mb-4">{t(`assets.upload.createAssetSubtitle`)}</p>
 </div>
 
 <div class="flex flex-row flex-wrap justify-center p-4 gap-4">
@@ -142,16 +144,16 @@
     <!-- left side -->
     <div class="flex flex-col justify-center w-full max-w-xl p-4 gap-2 bg-card rounded-lg shadow-md" oninput={saveDataToLocalStorage}>
       <span>
-        <Label class="p-1 pb-2" for="name">{m["common.dataTable.name"]()}</Label>
+        <Label class="p-1 pb-2" for="name">{t(`common.dataTable.name`)}</Label>
         <Input bind:value={name} aria-invalid={!zAsset.shape.name.safeParse(name).success} id="name" />
       </span>
       <span>
-        <Label class="p-1 pb-2" for="type">{m["common.dataTable.type"]()}</Label>
+        <Label class="p-1 pb-2" for="type">{t(`common.dataTable.type`)}</Label>
         <TypeSelector bind:value={type} id="type" class="w-full" />
       </span>
       {#if AssetTypesWithRenderingMethod.includes(type)}
         <span>
-          <Label class="p-1 pb-2" for="renderingMethod">{m["common.dataTable.renderingMethod"]()}</Label>
+          <Label class="p-1 pb-2" for="renderingMethod">{t(`common.dataTable.renderingMethod`)}</Label>
           <RadioGroup.Root bind:value={renderingMethod} class="flex flex-row flex-wrap">
             {#each Object.entries(RenderingModes) as mode}
               {#if mode[1] !== RenderingModes.Unknown}
@@ -170,27 +172,27 @@
         </span>
       {/if}
       <span>
-        <Label class="p-1 pb-2" for="description">{m["common.dataTable.description"]()}</Label>
+        <Label class="p-1 pb-2" for="description">{t(`common.dataTable.description`)}</Label>
         <Textarea class="min-h-32" bind:value={description} aria-invalid={!zAsset.shape.description.safeParse(description).success} id="description" />
       </span>
       <span>
-        <Label class="p-1 pb-2" for="license">{m["common.dataTable.license"]()}</Label>
+        <Label class="p-1 pb-2" for="license">{t(`common.dataTable.license`)}</Label>
         <LicenseSelector bind:value={license} id="license" />
       </span>
       {#if license === "custom"}
         <span>
-          <Label class="p-1 pb-2" for="custom-license">{m["common.dataTable.customLicense"]()}</Label>
+          <Label class="p-1 pb-2" for="custom-license">{t(`common.dataTable.customLicense`)}</Label>
           <Input bind:value={customLicense} aria-invalid={!zAsset.shape.licenseUrl.safeParse(customLicense).success} id="custom-license" />
         </span>
       {/if}
       <span>
-        <Label class="p-1 pb-2" for="tags">{m["common.dataTable.tags"]()}</Label>
+        <Label class="p-1 pb-2" for="tags">{t(`common.dataTable.tags`)}</Label>
         <div class="flex flex-row items-center justify-between">
           <div class="flex flex-wrap gap-2 pl-1">
             {#each tags as tag}
               <TagBadge {tag} />
             {:else}
-              <span class="text-muted-foreground">{m["common.dataTable.noTags"]()}</span>
+              <span class="text-muted-foreground">{t(`common.dataTable.noTags`)}</span>
             {/each}
           </div>
           <Button variant="secondary" onclick={() => (openTagPicker = true)}>
@@ -204,21 +206,21 @@
   <div class="flex flex-col w-full max-w-md">
     <!-- right side -->
     <div class="flex flex-col justify-center w-full max-w-md p-4 bg-card rounded-lg shadow-md">
-      <p>{m["assets.upload.thumbnailRuleListHeader"]()}</p>
+      <p>{t(`assets.upload.thumbnailRuleListHeader`)}</p>
       <ul class="list-disc ml-6">
-        <li>{m["assets.upload.thumbnailRuleList1"]()}</li>
-        <li>{m["assets.upload.thumbnailRuleList2"]()}</li>
-        <li>{m["assets.upload.thumbnailRuleList3"]()}</li>
-        <li>{m["assets.upload.thumbnailRuleList4"]()}</li>
+        <li>{t(`assets.upload.thumbnailRuleList1`)}</li>
+        <li>{t(`assets.upload.thumbnailRuleList2`)}</li>
+        <li>{t(`assets.upload.thumbnailRuleList3`)}</li>
+        <li>{t(`assets.upload.thumbnailRuleList4`)}</li>
       </ul>
     </div>
     <div class="flex flex-col justify-center w-full max-w-md p-4 bg-card rounded-lg shadow-md mt-4">
       <!-- value is the first file in the files array -->
-      <Label class="p-1 pb-2" for="thumbnail">{m["assets.upload.thumbnail"]()}</Label>
+      <Label class="p-1 pb-2" for="thumbnail">{t(`assets.upload.thumbnail`)}</Label>
       <Input id="thumbnail" type="file" bind:files={thumbnails} accept=".png,.jpeg,.webp,.gif" multiple />
-      <p class="text-sm text-muted-foreground mt-2 pl-1">{m["assets.upload.thumbnailFooter"]()}</p>
+      <p class="text-sm text-muted-foreground mt-2 pl-1">{t(`assets.upload.thumbnailFooter`)}</p>
       <span class="h-4"></span>
-      <Label class="p-1 pb-2" for="zip">{m["assets.asset"]()}</Label>
+      <Label class="p-1 pb-2" for="zip">{t(`assets.asset`)}</Label>
       <Input
         bind:files={asset}
         class=""
@@ -227,10 +229,10 @@
         accept={Object.values(AssetFileFormat)
           .map((f) => f.split(`_`)[1])
           .join(`,.`)} />
-      <p class="text-sm text-muted-foreground mt-2 pl-1">{m["assets.upload.ensureRights"]()}</p>
+      <p class="text-sm text-muted-foreground mt-2 pl-1">{t(`assets.upload.ensureRights`)}</p>
     </div>
     <div class="flex flex-col justify-center w-full max-w-md p-4 bg-card rounded-lg shadow-md mt-4">
-      <Button onclick={submitAsset} disabled={!isAbleToSubmit} class="w-full">{m["dialogs.submit"]()}</Button>
+      <Button onclick={submitAsset} disabled={!isAbleToSubmit} class="w-full">{t(`dialogs.submit`)}</Button>
     </div>
   </div>
 </div>

@@ -37,7 +37,9 @@
   import StatusHoverCard from "$lib/components/generic/StatusHoverCard.svelte";
   import DownloadButton from "$lib/components/generic/DownloadButton.svelte";
   import ReportDialog from "$lib/components/dialogs/ReportDialog.svelte";
-  import { m } from "$lib/paraglide/messages.js";
+  import { i18n } from "$lib/scripts/i18n";
+
+  const { t } = i18n();
   import { checkRoles } from "$lib/scripts/utils/checkRoles.js";
   import Markdown from "$lib/components/generic/Markdown.svelte";
   import * as Tabs from "$shadcn/components/ui/tabs/index.js";
@@ -91,7 +93,7 @@
     }
 
     if (!zAssetName.success && !zAssetDescription.success) {
-      toast.error(m["toasts.error.validationTitle"]());
+      toast.error(t(`toasts.error.validationTitle`));
       return;
     }
 
@@ -105,14 +107,14 @@
         },
       })
       .then((res) => {
-        toast.success(m["toasts.success.savedChanges"]());
+        toast.success(t(`toasts.success.savedChanges`));
         invalidateAll().then(() => {
           isEditing = false;
         });
       })
       .catch((err) => {
         console.error("Error saving changes:", err);
-        toast.error(m["toasts.error.generic"](), { description: parseErrorMessage(err) });
+        toast.error(t(`toasts.error.generic`), { description: parseErrorMessage(err) });
       });
   }
   // #endregion
@@ -133,7 +135,7 @@
           isRelatedLoading = false;
         })
         .catch((err) => {
-          toast.error(m["toasts.failedTo.loadAssets"]());
+          toast.error(t(`toasts.failedTo.loadAssets`));
           isRelatedLoading = false;
         });
     } else {
@@ -146,7 +148,7 @@
         isAuthorLoading = false;
       })
       .catch((err) => {
-        toast.error(m["toasts.failedTo.loadAssets"]());
+        toast.error(t(`toasts.failedTo.loadAssets`));
         isAuthorLoading = false;
       });
     await Promise.all([pa, pb]);
@@ -182,17 +184,17 @@
   <div class="mt-4 w-full bg-card rounded-lg border border-border p-4">
     <div class="flex flex-col gap-3 overflow-hidden">
       <div class="flex justify-between items-center">
-        <span class="text-muted-foreground">{m["common.dataTable.uploadedBy"]()}</span>
+        <span class="text-muted-foreground">{t(`common.dataTable.uploadedBy`)}</span>
         <a href="/users/{pageData.uploaderId}" class="font-medium text-primary hover:underline">{pageData.uploader?.displayName}</a>
       </div>
       <div class="flex justify-between items-center">
-        <span class="text-muted-foreground">{m["common.dataTable.tags"]()}</span>
+        <span class="text-muted-foreground">{t(`common.dataTable.tags`)}</span>
         <div class="flex flex-wrap gap-1 max-w-[70%] justify-end">
           {#if !isEditing}
             {#each pageData.tags as tag}
               <TagBadge tag={tag as Tags} />
             {:else}
-              <span class="text-muted-foreground">{m["common.dataTable.noTags"]()}</span>
+              <span class="text-muted-foreground">{t(`common.dataTable.noTags`)}</span>
             {/each}
           {:else}
             {#each editTags as tag}
@@ -209,15 +211,15 @@
           {/if}
         </div>
       </div>
-      {@render dT_Regular(m["common.dataTable.type"](), typeData.combinedString)}
+      {@render dT_Regular(t(`common.dataTable.type`), typeData.combinedString)}
       {#if pageData.fileSize > 1024 * 1024}
-        {@render dT_Regular(m["common.dataTable.fileSize"](), `${(pageData.fileSize / (1024 * 1024)).toFixed(2)} MB`)}
+        {@render dT_Regular(t(`common.dataTable.fileSize`), `${(pageData.fileSize / (1024 * 1024)).toFixed(2)} MB`)}
       {:else}
-        {@render dT_Regular(m["common.dataTable.fileSize"](), `${(pageData.fileSize / 1024).toFixed(2)} KB`)}
+        {@render dT_Regular(t(`common.dataTable.fileSize`), `${(pageData.fileSize / 1024).toFixed(2)} KB`)}
       {/if}
       {#if pageData.renderingMethod}
         <div class="flex justify-between items-center">
-          <span class="text-muted-foreground pr-1">{m["common.dataTable.renderingMethod"]()}</span>
+          <span class="text-muted-foreground pr-1">{t(`common.dataTable.renderingMethod`)}</span>
           <span class="font-medium text-right text-primary">
             {getRenderingMethodString(pageData.renderingMethod)}
             <p class="text-xs text-muted-foreground">{getRenderingMethodSupportedGV(pageData.renderingMethod)}</p>
@@ -225,16 +227,16 @@
         </div>
       {/if}
       <div class="flex justify-between items-center">
-        <span class="text-muted-foreground pr-2">{m["common.dataTable.status"]()}</span>
+        <span class="text-muted-foreground pr-2">{t(`common.dataTable.status`)}</span>
         <StatusHoverCard status={pageData.status} type="asset">
           <Badge variant={pageData.status ? `outline` : `default`} class="capitalize">{getStatusString(pageData.status)}</Badge>
         </StatusHoverCard>
       </div>
       {#if pageData.license}
         <div class="flex justify-between items-center">
-          <span class="text-muted-foreground">{m["common.dataTable.license"]()}</span>
+          <span class="text-muted-foreground">{t(`common.dataTable.license`)}</span>
           {#if pageData.licenseUrl}
-            <a href={pageData.licenseUrl} target="_blank" rel="noopener noreferrer" class="font-medium text-primary hover:underline">{m["common.dataTable.customLicense"]()}</a>
+            <a href={pageData.licenseUrl} target="_blank" rel="noopener noreferrer" class="font-medium text-primary hover:underline">{t(`common.dataTable.customLicense`)}</a>
           {:else}
             <span class="font-medium">{pageData.license.toLocaleUpperCase()}</span>
           {/if}
@@ -242,14 +244,14 @@
       {/if}
       {#if pageData.sourceUrl}
         <div class="flex justify-between items-center">
-          <span class="text-muted-foreground">{m["common.dataTable.source"]()}</span>
-          <a href={pageData.sourceUrl} target="_blank" rel="noopener noreferrer" class="font-medium text-primary hover:underline">{m["common.dataTable.viewSource"]()}</a>
+          <span class="text-muted-foreground">{t(`common.dataTable.source`)}</span>
+          <a href={pageData.sourceUrl} target="_blank" rel="noopener noreferrer" class="font-medium text-primary hover:underline">{t(`common.dataTable.viewSource`)}</a>
         </div>
       {/if}
-      {@render dT_Regular(m["common.dataTable.uploadAt"](), new Date(pageData.createdAt).toLocaleString())}
-      {@render dT_Regular(m["common.dataTable.lastUpdated"](), new Date(pageData.updatedAt).toLocaleString())}
+      {@render dT_Regular(t(`common.dataTable.uploadAt`), new Date(pageData.createdAt).toLocaleString())}
+      {@render dT_Regular(t(`common.dataTable.lastUpdated`), new Date(pageData.updatedAt).toLocaleString())}
       <div class="flex justify-between items-center overflow-ellipsis">
-        <span class="text-muted-foreground">{m["common.dataTable.fileHash"]()}</span>
+        <span class="text-muted-foreground">{t(`common.dataTable.fileHash`)}</span>
         <div class="flex flex-row items-center gap-2 justify-end max-w-[70%]">
           <div class="block overflow-ellipsis overflow-hidden whitespace-nowrap max-w-full">
             <span class="font-mono w-full" title={pageData.fileHash}>{pageData.fileHash}</span>
@@ -285,8 +287,8 @@
             <img src={`${getThumbnailUrl(pageData.id, icon)}`} alt="Icon for {pageData.name}" class="w-full h-full rounded-2xl transition-all duration-300 {isBlurred ? `blur-2xl` : ``}" />
             {#if isBlurred}
               <div class="flex flex-col absolute top-0 left-0 w-full h-full justify-center items-center">
-                <p class="text-green">{m["assets.nsfwWarning"]()}</p>
-                <Button onclick={() => (isBlurred = false)}>{m["common.buttons.unhide"]()}</Button>
+                <p class="text-green">{t(`assets.nsfwWarning`)}</p>
+                <Button onclick={() => (isBlurred = false)}>{t(`common.buttons.unhide`)}</Button>
               </div>
             {/if}
           </div>
@@ -306,7 +308,7 @@
       {#if apiType === "related" && isEditing}
         <Button onclick={() => addRelatedDialog?.showDialog(pageData.id)}>
           <PlusIcon />
-          {m["assets.carousels.addRelatedAsset"]()}
+          {t(`assets.carousels.addRelatedAsset`)}
         </Button>
       {/if}
     </div>
@@ -357,18 +359,18 @@
     {#if !isEditing}
       <DownloadButton downloadType="asset" status={pageData.status} variant="default" href={getAssetDownloadUrl(pageData)} download>
         <DownloadIcon />
-        {m["common.buttons.download"]()}
+        {t(`common.buttons.download`)}
       </DownloadButton>
       <DownloadButton downloadType="asset" status={pageData.status} variant="secondary" href={getOneClickUrl(pageData)}>
         <CloudDownloadIcon />
-        {m["common.buttons.oneClickInstall"]()}
+        {t(`common.buttons.oneClickInstall`)}
       </DownloadButton>
       {#if allowedToReport}
         <Button variant="destructive" onclick={() => {
           reportDialog?.showDialog(pageData.id, pageData.name, `asset`);
         }}>
           <MegaphoneIcon />
-          {m["common.buttons.report"]()}
+          {t(`common.buttons.report`)}
         </Button>
       {/if}
       {#if user && user.id === pageData.uploaderId && pageData.status === Status.Private}
@@ -379,14 +381,14 @@
               trpc.internal.updateThings.asset.submitAssetForApproval
                 .mutate({ id: pageData.id })
                 .then(() => {
-                  toast.success(m["toasts.success.assetSubmittedForApproval"]());
+                  toast.success(t(`toasts.success.assetSubmittedForApproval`));
                 })
                 .catch((err) => {
-                  toast.error(m["toasts.error.generic"](), { description: parseErrorMessage(err) });
+                  toast.error(t(`toasts.error.generic`), { description: parseErrorMessage(err) });
                 });
             }}>
             <BadgeAlert />
-            {m["common.buttons.submitForApproval"]()}
+            {t(`common.buttons.submitForApproval`)}
           </Button>
         </div>
       {/if}
@@ -397,7 +399,7 @@
             approvalDialog?.showDialog(pageData.id, pageData.name, `asset`, pageData.status);
           }}>
           <BadgeAlert />
-          {m["common.buttons.approvalDialog"]()}
+          {t(`common.buttons.approvalDialog`)}
         </Button>
       {/if}
     {/if}
@@ -409,7 +411,7 @@
           onclick={() => {
             saveChanges();
           }}>
-          {m["dialogs.saveChanges"]()}
+          {t(`dialogs.saveChanges`)}
         </Button>
         <Button
           variant="secondary"
@@ -419,7 +421,7 @@
             editDescription = pageData.description || "";
             editTags = (pageData.tags as Tags[]) || [];
           }}>
-          {m["dialogs.discardChanges"]()}
+          {t(`dialogs.discardChanges`)}
         </Button>
       {:else}
         <Button
@@ -428,7 +430,7 @@
             isEditing = !isEditing;
           }}>
           <Edit />
-          {m["dialogs.edit"]()}
+          {t(`dialogs.edit`)}
         </Button>
       {/if}
     {/if}
@@ -457,10 +459,10 @@
     <Tabs.Root value="edit" class="w-full">
       <Tabs.List class="bg-transparent border-b border-border mb-2">
         <Tabs.Trigger value="edit">
-          {m["dialogs.edit"]()}
+          {t(`dialogs.edit`)}
         </Tabs.Trigger>
         <Tabs.Trigger value="preview">
-          {m["dialogs.preview"]()}
+          {t(`dialogs.preview`)}
         </Tabs.Trigger>
       </Tabs.List>
       <Tabs.Content value="edit">
@@ -503,12 +505,12 @@
         <Separator class="my-4 w-full" />
         {@render description()}
         <Separator class="my-4 w-full" />
-        <span class="text-lg font-semibold">{ m["assets.previewTitle"]()}</span>
+        <span class="text-lg font-semibold">{ t(`assets.previewTitle`)}</span>
         <AssetPreview asset={pageData} />
         <Separator class="my-4 w-full" />
-        {@render assetCarousel(relatedAssets, isRelatedLoading, `related`, m["assets.carousels.relatedAssets"](), m["assets.carousels.relatedAssetsNoneFound"]())}
+        {@render assetCarousel(relatedAssets, isRelatedLoading, `related`, t(`assets.carousels.relatedAssets`), t(`assets.carousels.relatedAssetsNoneFound`))}
         <Separator class="my-4 w-full" />
-        {@render assetCarousel(authorAssets, isAuthorLoading, `author`, m["assets.carousels.authorAssets"]({ name: pageData.uploader?.displayName ?? ``}), m["assets.carousels.authorAssetsNoneFound"]({ name: pageData.uploader?.displayName ?? ``}))}
+        {@render assetCarousel(authorAssets, isAuthorLoading, `author`, t(`assets.carousels.authorAssets`, { name: pageData.uploader?.displayName ?? ``}), m["assets.carousels.authorAssetsNoneFound"]({ name: pageData.uploader?.displayName ?? ``}))}
         {#if mobileView.current}
           {@render dataTable()}
         {/if}

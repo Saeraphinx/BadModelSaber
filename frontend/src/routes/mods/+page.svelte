@@ -1,7 +1,9 @@
 <script lang="ts">
   import MiniPagination from "$lib/components/generic/MiniPagination.svelte";
   import ModCard from "$lib/components/mods/ModCard.svelte";
-  import { m } from "$lib/paraglide/messages.js";
+  import { i18n } from "$lib/scripts/i18n";
+
+  const { t } = i18n();
   import { Status, UserPermissions, type GameVersionApiV3, type GameVersionApiV3_full } from "$lib/scripts/from_backend/DBExtras";
   import { generateProjectSearchEngine } from "$lib/scripts/utils/search.js";
   import { getStatusString } from "$lib/scripts/utils/stylizer";
@@ -123,7 +125,7 @@
       {#if tooSmall.current}
         <Button variant="outline" onclick={() => (filterMobileDrawerVisible = true)}>
           <FunnelIcon class="h-4 w-4" />
-          <span class="sr-only">{m["search.showFilters"]()}</span>
+          <span class="sr-only">{t(`search.showFilters`)}</span>
         </Button>
       {/if}
     </div>
@@ -136,7 +138,7 @@
 {#snippet gameFilter()}
   <div class="flex flex-col bg-card gap-4 p-4 rounded-md">
     <span>
-      <Label class="pb-2 px-1">{m[`mods.game`]()}</Label>
+      <Label class="pb-2 px-1">{t(`mods.game`)}</Label>
       <Select.Root type="single" bind:value={selectedGameName} onValueChange={fetchMods}>
         <Select.Trigger class="w-full">{selectedGame?.displayName}</Select.Trigger>
         <Select.Content>
@@ -148,11 +150,11 @@
     </span>
     {#if selectedGame}
       <span>
-        <Label class="pb-2 px-1">{m[`mods.gameVersion`]()}</Label>
+        <Label class="pb-2 px-1">{t(`mods.gameVersion`)}</Label>
         <Select.Root type="single" bind:value={selectedGameVersionId} onValueChange={fetchMods}>
-          <Select.Trigger class="w-full">{selectedGameVersion?.version || m[`common.all`]()}</Select.Trigger>
+          <Select.Trigger class="w-full">{selectedGameVersion?.version || t(`common.all`)}</Select.Trigger>
           <Select.Content>
-            <Select.Item value={``}>{m[`common.all`]()}</Select.Item>
+            <Select.Item value={``}>{t(`common.all`)}</Select.Item>
             {#each gameVersions as version}
               <Select.Item value={version.id.toString()}>{version.version}</Select.Item>
             {/each}
@@ -164,9 +166,9 @@
       <div class="flex flex-col gap-2 bg-orange-800/20 px-4 py-2 rounded-md">
         <div class="flex flex-row items-center gap-2">
           <TriangleAlertIcon class="h-16 w-16 text-amber-500 mx-1" />
-          <span class="text-base/tight text-amber-500">{m["mods.deprecatedVersionWarning"]()}</span>
+          <span class="text-base/tight text-amber-500">{t(`mods.deprecatedVersionWarning`)}</span>
         </div>
-        <span class="text-xs text-orange-300">{m["mods.deprecatedVersionWarningDescription"]()}</span>
+        <span class="text-xs text-orange-300">{t(`mods.deprecatedVersionWarningDescription`)}</span>
       </div>
     {/if}
   </div>
@@ -176,7 +178,7 @@
   <Collapsible.Root bind:open={isFilterStatusVisible}>
     <div class="flex flex-col bg-card rounded-md min-w-62 w-full py-2 px-4">
       <Collapsible.Trigger class="flex items-center justify-between w-full">
-        <span class="text-lg font-semibold">{m["common.dataTable.status"]()}</span>
+        <span class="text-lg font-semibold">{t(`common.dataTable.status`)}</span>
         <ChevronRightIcon class="h-4 w-4 transition-transform {isFilterStatusVisible ? `rotate-90` : ``}" />
       </Collapsible.Trigger>
       <Collapsible.Content class="my-2">
@@ -206,7 +208,7 @@
   <Collapsible.Root bind:open={isFilterCategoryVisible}>
     <div class="flex flex-col bg-card rounded-md min-w-62 w-full py-2 px-4">
       <Collapsible.Trigger class="flex items-center justify-between w-full">
-        <span class="text-lg font-semibold">{m["common.dataTable.category"]()}</span>
+        <span class="text-lg font-semibold">{t(`common.dataTable.category`)}</span>
         <ChevronRightIcon class="h-4 w-4 transition-transform {isFilterCategoryVisible ? `rotate-90` : ``}" />
       </Collapsible.Trigger>
       <Collapsible.Content class="my-2">

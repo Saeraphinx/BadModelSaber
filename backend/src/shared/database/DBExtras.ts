@@ -281,7 +281,7 @@ export const platformTypeSchema = z.enum(PlatformType)
 export type UserPlatform = z.infer<typeof userPlatformSchema>;
 export const userPlatformSchema = z.object({
   platform: platformTypeSchema,
-  url: z.string()
+  username: z.string()
 })
 
 export type AssetPublicAPIv2 = z.infer<typeof assetPublicAPIv2Schema>;
