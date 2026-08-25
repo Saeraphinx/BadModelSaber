@@ -4,13 +4,17 @@ import { getContext, setContext } from "svelte";
 import { get, type Writable } from "svelte/store";
 import { createI18nStore } from "svelte-i18next";
 
-import en from "../../../messages/en.json";
+import en from "../../../messages/en_us.json";
+import owo from "../../../messages/owo.json";
 
 
 i18next.init({
   resources: {
     en: {
       translation: en,
+    },
+    owo: {
+      translation: owo,
     },
   },
   lng: "en",

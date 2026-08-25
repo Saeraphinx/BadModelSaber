@@ -2,79 +2,29 @@
   "name": "ModelSaber",
   "loading": "Loading...",
   "homepage": {
-    "title": "ModelSaber",
+    "title": "$(name)",
     "subtitle": "A collection of various assets for use within Beat Saber.",
     "browseButton": "Browse Assets",
     "wikiButton": "Model Wiki"
   },
-  "layout": {
-    "navbar": {
-      "home": "Home",
-      "mods": {
-        "mods": "Mods",
-        "browseMods": "Browse Mods",
-        "compareVersions": "Compare Versions",
-        "beatsaberBeginngersGuide": "Beat Saber Beginner's Guide",
-        "moddersGuide": "Modder's Guide",
-        "pcApprovalGuide": "Approval Guidelines"
-      },
-      "assets": {
-        "assets": "Assets",
-        "browseAssets": "Browse Assets",
-        "creationGuide": "Creation Guide",
-        "installationGuide": "Installation Guide"
-      },
-      "wiki": "Wiki",
-      "discord": "Discord"
-    },
-    "userMenu": {
-      "profile": "Profile",
-      "alerts": "Alerts",
-      "requests": "Requests",
-      "adminPanel": "Admin Panel",
-      "disableSecretFeatures": "Disable Secret Features",
-      "create": "Create",
-      "createProject": "Create Project",
-      "createAsset": "Create Asset",
-      "options": "Options",
-      "theme": "Theme",
-      "system": "System",
-      "light": "Light",
-      "dark": "Dark",
-      "language": "Language",
-      "logout": "Logout",
-      "loginDiscord": "Login with Discord",
-      "loginGitHub": "Login with GitHub",
-      "modelsaberOpenSource": "ModelSaber is Open Source!"
-    },
-    "alertSidebar": {
-      "markAllRead": "Mark all as read",
-      "showRead": "Show read alerts",
-      "noAlertsAvailable": "No alerts available.",
-      "noUnreadAlerts": "No unread alerts."
-    },
-    "readAlerts_one": "You have {{count}} alert.",
-    "readAlerts_other": "You have {{count}} alerts.",
-    "unreadAlerts_one": "You have {{count}} unread alert.",
-    "unreadAlerts_other": "You have {{count}} unread alerts."
-  },
-  "search": {
-    "search": "Search",
-    "searchAssets": "Search Assets...",
-    "searchMods": "Search Mods...",
-    "perPage": "{{count}} per page",
-    "cardsPerPage": "# per page",
-    "size": "Size",
-    "showFilters": "Show Filters",
-    "xToYOfZResults": "{{start}}-{{end}} of {{total}} results",
-    "filters": "Filters"
-  },
   "common": {
     "all": "All",
+    "mod": "Mod",
+    "mods": "Mods",
+    "asset": "Asset",
+    "assets": "Assets",
+    "version": "Version",
+    "versions": "Versions",
+    "project": "Project",
+    "projects": "Projects",
+    "game": "Game",
+    "games": "Games",
+    "gameVersion": "Game Version",
+    "gameVersions": "Game Versions",
     "buttons": {
       "download": "Download",
       "oneClickInstall": "OneClick Install",
-      "approvalDialog": "Approval Dialog",
+      "approvalDialog": "Approval Menu",
       "submitForApproval": "Submit for Approval",
       "removeFromQueue": "Remove from Queue",
       "report": "Report",
@@ -85,7 +35,7 @@
       "goToMod": "Go to Mod Page",
       "goToAsset": "Go to Asset Page",
       "updateStatus": "Update Status",
-      "openApprovalDialog": "Open Approval Dialog"
+      "openApprovalDialog": "Open Approval Menu"
     },
     "dataTable": {
       "id": "ID",
@@ -130,33 +80,72 @@
       "fileHash": "File Hash"
     }
   },
-  "assets": {
-    "asset": "Asset",
-    "assets": "Assets",
-    "noAssetsFound": "No assets found.",
-    "statusHover": {
-      "verified": {
-        "title": "This asset has been verified by the ModelSaber team and <span class=\"text-green-600\">is safe to use!</span>",
-        "description": "Verified assets have been checked for malware and are safe to use. Look for the green checkmark!"
+  "layout": {
+    "navbar": {
+      "home": "Home",
+      "mods": {
+        "modsHeader": "Mods",
+        "browseMods": "Browse Mods",
+        "compareVersions": "Compare Versions",
+        "beatsaberBeginnersGuide": "Beat Saber Beginner's Guide",
+        "moddersGuide": "Modder's Guide",
+        "pcApprovalGuide": "Approval Guidelines"
       },
-      "unverified": {
-        "title": "This asset has <b>not</b> been verified by the ModelSaber team. <span class=\"text-orange-400\">Use at your own risk!</span>",
-        "description": "Unverified assets have not been checked for malware. Be cautious when downloading and using these assets."
+      "assets": {
+        "assetsHeader": "Assets",
+        "browseAssets": "Browse Assets",
+        "creationGuide": "Creation Guide",
+        "installationGuide": "Installation Guide"
       },
-      "queue": {
-        "title": "This asset is currently pending approval. <span class=\"text-red-600\">Use with caution!</span>",
-        "description": "Assets in the queue have not been reviewed by the approval team. They may contain malware or be incompatible with the game. Be cautious when downloading and using these asset. <b>You will not receive support for unverified assets.</b>"
-      },
-      "private": {
-        "title": "This asset is private.",
-        "description": "Private assets are not visible to the public"
-      },
-      "removed": {
-        "title": "This asset has been removed.",
-        "description": "Removed assets have been taken down by the approval team and are not visible to the public."
-      }
+      "wiki": "Wiki",
+      "discord": "Discord"
     },
-    "previewTitle": "Asset Preview",
+    "userMenu": {
+      "profile": "Profile",
+      "alerts": "Alerts",
+      "requests": "Requests",
+      "adminPanel": "Admin Panel",
+      "disableSecretFeatures": "Disable Secret Features",
+      "create": "Create",
+      "createProject": "Create Project",
+      "createAsset": "Create Asset",
+      "options": "Options",
+      "theme": "Theme",
+      "system": "System",
+      "light": "Light",
+      "dark": "Dark",
+      "language": "Language",
+      "logout": "Logout",
+      "loginDiscord": "Login with Discord",
+      "loginGitHub": "Login with GitHub",
+      "modelsaberOpenSource": "ModelSaber is Open Source!"
+    },
+    "alertSidebar": {
+      "markAllRead": "Mark all as read",
+      "showRead": "Show read alerts",
+      "noAlertsAvailable": "No alerts available.",
+      "noUnreadAlerts": "No unread alerts."
+    },
+    "readAlerts_one": "You have {{count}} alert.",
+    "readAlerts_other": "You have {{count}} alerts.",
+    "unreadAlerts_one": "You have {{count}} unread alert.",
+    "unreadAlerts_other": "You have {{count}} unread alerts."
+  },
+  "search": {
+    "search": "Search",
+    "searchAssets": "Search Assets...",
+    "searchMods": "Search Mods...",
+    "sizeHeader": "Size",
+    "showFilters": "Show Filters",
+    "filters": "Filters",
+    "cardsPerPage": "# per page",
+    "pagination": {
+      "perPage": "{{count}} per page",
+      "summary": "{{start}}-{{end}} of {{total}} results"
+    }
+  },
+  "assets": {
+    "noAssetsFound": "No assets found.",
     "nsfwWarning": "This asset is marked as NSFW.",
     "carousels": {
       "addRelatedAsset": "Add Related Asset",
@@ -166,7 +155,7 @@
       "authorAssetsNoneFound": "No other assets found by {{name}}."
     },
     "upload": {
-      "createAsset": "Create Asset",
+      "createAssetTitle": "Create Asset",
       "createAssetSubtitle": "Please fill out the form below to upload a new asset to ModelSaber.",
       "selectTags": "Select Tags",
       "thumbnailRuleListHeader": "Thumbnail Rules:",
@@ -179,27 +168,43 @@
       "ensureRights": "Please ensure that you have the rights to upload this asset to ModelSaber."
     },
     "preview": {
+      "previewTitle": "Asset Preview",
       "noAudioSupport": "Your browser does not support the audio element.",
       "waitingForData": "Waiting for preview data...",
       "openHSVPreviewer": "Open in HitScoreVisualizer Previewer",
       "noPreviewAvailable": "No preview available for this asset.",
       "downloadAndLoadPreview": "Download and Load Preview",
-      "textOnlySr": "This preview only shows the content within the file. If you wish to read it, please <a href={{downloadUrl}}>download the file</a> and open it with your system.",
+      "textOnlySr": "This preview only shows the content within the file. If you wish to read it, please <a href=\"{{downloadUrl}}\">download the file</a> and open it with your system.",
       "failedToLoadError": "Failed to load preview data: {{error}}"
+    },
+    "statusHover": {
+      "verified": {
+        "title": "This asset has been verified by the ModelSaber team and <span class=\"text-green-600\">is safe to use!</span>",
+        "description": "Verified assets have been checked for malware and are safe to use. Look for the green checkmark!"
+      },
+      "unverified": {
+        "title": "This asset has <b>not</b> been verified by the ModelSaber team. <span class=\"text-orange-400\">Use at your own risk!</span>",
+        "description": "Unverified assets have not been checked for malware. Be cautious when downloading and using these assets."
+      },
+      "queue": {
+        "title": "This asset is currently pending approval. <span class=\"text-red-600\">Use with caution!</span>",
+        "description": "Assets in the queue have not been reviewed by the approval team. They may contain malware or be incompatible with the game. Be cautious when downloading and using these assets. <b>You will not receive support for unverified assets.</b>"
+      },
+      "private": {
+        "title": "This asset is private.",
+        "description": "Private assets are not visible to the public"
+      },
+      "removed": {
+        "title": "This asset has been removed.",
+        "description": "Removed assets have been taken down by the approval team and are not visible to the public."
+      }
     }
   },
   "mods": {
-    "mod": "Mod",
-    "mods": "Mods",
-    "project": "Project",
-    "version": "Version",
-    "game": "Game",
-    "gameVersion": "Game Version",
+    "noModsFound": "No mods found.",
     "noProjectsFound": "No projects found.",
     "noVersionsFound": "No versions found.",
-    "noModsFound": "No mods found.",
     "uploadNewVersion": "Upload New Version",
-    "upload": "Upload",
     "uploadAndSaveIcon": "Upload & Save Icon",
     "makePublic": "Make Public",
     "nameIdExplanation": "The Manifest ID is a unique identifier for this project that is used in the manifest (e.g. the \"id\" field in a BSIPA manifest) of all of your versions. It is typically the same as the name. This cannot be changed after the project is created.",
@@ -208,7 +213,7 @@
     "createProject": {
       "title": "Create Project",
       "subtitle": "Please fill out the form below to create a new project.",
-      "thumbnailRileListHeader": "Icon Rules:",
+      "thumbnailRuleListHeader": "Icon Rules:",
       "thumbnailRuleList1": "Must be a square image (1:1 aspect ratio).",
       "thumbnailRuleList2": "Should be at least 128x128 pixels.",
       "thumbnailRuleList3": "Must be in .png, .jpeg, .webp, or .gif.",
@@ -303,9 +308,7 @@
     "username": "Username",
     "displayName": "Display Name",
     "bio": "Bio",
-    "donationLinks": "Donation Links",
-    "noAssetsFoundForUser": "No assets found for {{name}}.",
-    "noModsFoundForUser": "No mods found for {{name}}."
+    "donationLinks": "Donation Links"
   },
   "enums": {
     "status": {
@@ -474,7 +477,7 @@
         },
         "olderVersion": {
           "title": "Older Version",
-          "description": "A previous version of of the asset released before the current one"
+          "description": "A previous version of the asset released before the current one"
         }
       }
     }
