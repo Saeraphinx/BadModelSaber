@@ -1,4 +1,4 @@
-name: Test
+name: Build and Test
 
 on:
   push:
@@ -7,13 +7,33 @@ on:
     branches: [ "main" ]
 
 jobs:
-  Test:
+  Build and Test Backend:
     runs-on: debian
     steps:
     - uses: actions/checkout@v3
+
+    - name: Move to Backend
+      run: cd backend
+    
     - name: Install Packages
       run: yarn
-    - name: Run TypeScript Compiler
+
+    - name: Build
       run: yarn build
+
     - name: Run Vitest
       run: yarn test
+
+  Build Frontend:
+    runs-on: debian
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Move to Frontend
+      run: cd frontend
+    
+    - name: Install Packages
+      run: yarn
+
+    - name: Build
+      run: yarn build
