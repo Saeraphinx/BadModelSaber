@@ -556,9 +556,9 @@
         <Sheet.Description class="text-sm flex flex-row text-gray-500">
           {#if !isLoadingAlerts}
             {#if showRead}
-              {t(`layout.alertSidebar.readAlerts`, { count: allAlerts.length })}
+              {t(`layout.alertSidebar.readAlerts`, "",  { count: allAlerts.length })}
             {:else}
-              {t(`layout.alertSidebar.unreadAlerts`, { count: unreadAlertCount })}
+              {t(`layout.alertSidebar.unreadAlerts`, "", { count: unreadAlertCount })}
             {/if}
           {:else}
             <div class="flex flex-row items-center justify-center gap-2">

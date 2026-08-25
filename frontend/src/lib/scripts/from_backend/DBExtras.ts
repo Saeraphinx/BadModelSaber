@@ -44,14 +44,14 @@ export const availableLocales: {
     backend: true,
   },
   {
-    code: "qab",
+    code: "owo",
     name: "OwO",
     secret: true,
     frontend: true,
     backend: false,
   },
   {
-    code: "qaa",
+    code: "cimode",
     name: "Translation Keys",
     secret: true,
     frontend: true,

@@ -5,18 +5,15 @@
   "languageTags": [
     "en",
     "cn",
-    "qaa",
-    "qab"
+    "jp"
   ],
   "locales": [
     "en",
     "cn",
-    "qaa",
-    "qab"
+    "jp"
   ],
-  "modules": [
-    "https://cdn.jsdelivr.net/npm/@inlang/plugin-message-format@4/dist/index.js",
-    "https://cdn.jsdelivr.net/npm/@inlang/plugin-m-function-matcher@2/dist/index.js"
+	"modules": [
+		"https://cdn.jsdelivr.net/npm/@inlang/plugin-i18next@latest/dist/index.js"
   ],
   "plugin.inlang.messageFormat": {
     "pathPattern": "./messages/{locale}.json"
