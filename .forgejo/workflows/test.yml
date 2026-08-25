@@ -9,6 +9,9 @@ on:
 jobs:
   Build and Test Backend:
     runs-on: debian
+    defaults:
+      run:
+        working-directory: ./backend # run only
     steps:
     - uses: actions/checkout@v3
 
@@ -26,6 +29,9 @@ jobs:
 
   Build Frontend:
     runs-on: debian
+    defaults:
+      run:
+        working-directory: ./frontend # run only
     steps:
     - uses: actions/checkout@v3
 
