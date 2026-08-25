@@ -14,9 +14,6 @@ jobs:
         working-directory: ./backend # run only
     steps:
     - uses: actions/checkout@v3
-
-    - name: Move to Backend
-      run: cd backend
     
     - name: Install Packages
       run: yarn
@@ -34,9 +31,6 @@ jobs:
         working-directory: ./frontend # run only
     steps:
     - uses: actions/checkout@v3
-
-    - name: Move to Frontend
-      run: cd frontend
     
     - name: Install Packages
       run: yarn
