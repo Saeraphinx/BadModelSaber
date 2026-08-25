@@ -1,7 +1,7 @@
 <script lang="ts">
   import { i18n } from "$lib/scripts/i18n";
 
-  const { t } = i18n();
+  const { t, language } = i18n();
   import { Status } from "$lib/scripts/from_backend/DBExtras";
   import { getStatusString } from "$lib/scripts/utils/stylizer";
   import { Badge } from "$shadcn/components/ui/badge";
@@ -134,7 +134,7 @@
 
 {#snippet badge()}
   <Badge variant="outline" class="capitalize {style} {isMuted ? `opacity-50` : ``}">
-    <p class={textSize == `base-bold` ? `text-base` : `text-xs`}>{getStatusString(status)}</p>
+    <p class={textSize == `base-bold` ? `text-base` : `text-xs`}>{getStatusString(t, status)}</p>
     {#if countdownDate && timeLeft !== 0}
       <!-- Countdown timer-->
       <p title={new Date(countdownDate).toISOString()}>({timeLeft})</p>

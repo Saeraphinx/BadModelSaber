@@ -6,7 +6,7 @@
   const { t } = i18n();
   import { Status, UserPermissions, type GameVersionApiV3, type GameVersionApiV3_full } from "$lib/scripts/from_backend/DBExtras";
   import { generateProjectSearchEngine } from "$lib/scripts/utils/search.js";
-  import { getStatusString } from "$lib/scripts/utils/stylizer";
+  import { getStatusString, sortCategoriesPublic } from "$lib/scripts/utils/stylizer";
   import Checkbox from "$shadcn/components/ui/checkbox/checkbox.svelte";
   import * as Collapsible from "$shadcn/components/ui/collapsible";
   import Input from "$shadcn/components/ui/input/input.svelte";
@@ -14,7 +14,6 @@
   import * as Select from "$shadcn/components/ui/select";
   import Skeleton from "$shadcn/components/ui/skeleton/skeleton.svelte";
   import { ChevronRightIcon, FunnelIcon, TriangleAlertIcon } from "@lucide/svelte";
-  import { sortCategoriesPublic } from "$lib/scripts/utils/stylizer";
   import { onMount, tick, untrack } from "svelte";
   import { MediaQuery } from "svelte/reactivity";
   import { Button } from "$lib/shadcn/components/ui/button";
@@ -196,7 +195,7 @@
               checked={selectedStatuses.includes(status)}
               value={status}
               id={status} />
-            <Label for={status}>{getStatusString(status)}</Label>
+            <Label for={status}>{getStatusString(t, status)}</Label>
           </div>
         {/each}
       </Collapsible.Content>

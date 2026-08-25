@@ -1,6 +1,7 @@
 import i18next, { type i18n as I18nType } from "i18next";
 
 import { getContext, setContext } from "svelte";
+import { get, type Writable } from "svelte/store";
 import { createI18nStore } from "svelte-i18next";
 
 import en from "../../../messages/en.json";
@@ -21,7 +22,8 @@ i18next.init({
 
 const getI18nStore = () => createI18nStore(i18next);
 export const setI18n = () => setContext("i18n", getI18nStore());
-export const i18n = () => (getContext<I18nType>("i18n"));
+export const i18n = () => get(getContext<Writable<I18nType>>("i18n"));
+export type i18nT = I18nType[`t`];
 
 // typescript support
 declare module "i18next" {

@@ -17,7 +17,7 @@
 
   let statuses = Object.values(Status).map((status) => ({
     value: status,
-    label: getStatusString(status),
+    label: getStatusString(t, status),
     showFor: getStatusAvailableThings(status)
   }));
 

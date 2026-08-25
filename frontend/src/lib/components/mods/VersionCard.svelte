@@ -12,7 +12,7 @@
   import Button from "$shadcn/components/ui/button/button.svelte";
   import { i18n } from "$lib/scripts/i18n";
 
-  const { t } = i18n();
+  const { t, language } = i18n();
   import DownloadButton from "../generic/DownloadButton.svelte";
   import * as Select from "$shadcn/components/ui/select";
   import { toast } from "svelte-sonner";
@@ -139,7 +139,7 @@
     <a class="text-lg font-medium pt-0.5" href="/mods/{version.projectId}#{version.id}">{version.semver}</a>
     <span class="flex flex-row items-center gap-1">
       <!-- <Button variant="ghost" size="sm" href="/mods/{version.projectId}#{version.id}" class="has-[>svg]:px-1 h-6"><Link2Icon class="text-gray-400"/></Button> -->
-      <p title={new Date(version.createdAt).toISOString()} class="text-sm text-gray-500">{getRelativeTimeString(new Date(version.createdAt))}</p>
+      <p title={new Date(version.createdAt).toISOString()} class="text-sm text-gray-500">{getRelativeTimeString(new Date(version.createdAt), language)}</p>
       <StatusHoverCard status={version.status} type="mod" countdownDate={version.nextStatusChangeTime} />
       {#if isEditable && version.status === Status.Queue}
         <Button variant="outline" size="sm" class="has-[>svg]:px-0 mt-0.5 h-6 w-6" onclick={() => removeFromQueue()}>

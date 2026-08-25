@@ -354,7 +354,7 @@
             {#each Object.values(Status).filter((s) => {
               return versions.some((v) => v.status === s);
             }) as status}
-              <Command.Group heading={m[`enums.status.${status}`]()}>
+              <Command.Group heading={t(`enums.status.${status}`)}>
                 {#each versions.filter((v) => v.status === status) as version}
                   <Command.Item
                     value={version.id.toString()}

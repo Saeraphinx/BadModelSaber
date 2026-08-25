@@ -358,7 +358,7 @@
           <p class="text-sm text-gray-500">{t(`common.dataTable.created`)}</p>
           <Tooltip.Root>
             <Tooltip.Trigger class="text-base font-bold">
-              {getRelativeTimeString(new Date(project.createdAt))}
+              {getRelativeTimeString(new Date(project.createdAt), language)}
             </Tooltip.Trigger>
             <Tooltip.Content class="bg-card text-card-foreground rounded-md p-2 text-sm">
               {new Date(project.createdAt).toLocaleString()}

@@ -5,6 +5,7 @@
   import type { HTMLAttributes } from "svelte/elements";
   import { cn } from "$shadcn/utils";
   import { getRoleData } from "../../scripts/utils/stylizer";
+  import { i18n } from "../../scripts/i18n";
 
   const {
     user,
@@ -17,10 +18,11 @@
     small?: boolean;
     onClick?: () => void;
   } & HTMLAttributes<HTMLDivElement> = $props();
+  const { t } = i18n();
 
   //check if user has any fancy roles and if so, add a badge for them
   let roleStyle = $derived.by(() => {
-    let roleStyles = user.permissions.sitewide.map((role) => getRoleData(role)).filter((role) => !role.hidden);
+    let roleStyles = user.permissions.sitewide.map((role) => getRoleData(t, role)).filter((role) => !role.hidden);
     if (roleStyles.length === 0)
       return {
         badgeBorder: `bg-card`,

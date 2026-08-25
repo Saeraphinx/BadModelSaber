@@ -16,9 +16,8 @@
 
   const { t } = i18n();
   import * as RadioGroup from "../../../lib/shadcn/components/ui/radio-group";
-  import { getRenderingMethodString, getRenderingMethodSupportedGV } from "../../../lib/scripts/utils/stylizer";
+  import { getRenderingMethodString, getRenderingMethodSupportedGV } from "$lib/scripts/utils/stylizer";
   import { onMount } from "svelte";
-  import { isRedirect, redirect } from "@sveltejs/kit";
   import { goto } from "$app/navigation";
 
   let type = $state(AssetFileFormat.Note_Bloq);
@@ -161,7 +160,7 @@
                   <RadioGroup.Item value={mode[1]} id={mode[1]} />
                   <span class="flex flex-col">
                     <Label for={mode[1]}>
-                      {getRenderingMethodString(mode[1])}
+                      {getRenderingMethodString(t, mode[1])}
                     </Label>
                     <p class="text-xs text-gray-400">For {getRenderingMethodSupportedGV(mode[1])}</p>
                   </span>

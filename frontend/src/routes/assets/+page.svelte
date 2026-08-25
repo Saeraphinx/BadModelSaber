@@ -139,7 +139,7 @@
         <ChevronRight class="h-4 w-4 transition-transform {filterFileFormatVisible ? `rotate-90` : ``}" />
       </Collapsible.Trigger>
       <Collapsible.Content class="my-2">
-        {#each getAssetTypeCategories() as type}
+        {#each getAssetTypeCategories(t) as type}
           <div class="pt-1">
             <span class="font-medium my-2">{type[0]}</span>
             <Separator class="my-1" />
@@ -184,7 +184,7 @@
               <RadioGroup.Item value={mode[1]} id={mode[1]} />
               <span class="flex flex-col">
                 <Label for={mode[1]}>
-                  {getRenderingMethodString(mode[1])}
+                  {getRenderingMethodString(t, mode[1])}
                 </Label>
                   <p class="text-xs text-gray-400">For {getRenderingMethodSupportedGV(mode[1])}</p>
               </span>
@@ -224,7 +224,7 @@
                 checked={selectedStatuses.includes(status)}
                 value={status}
                 id={status} />
-              <Label for={status}>{getStatusString(status)}</Label>
+              <Label for={status}>{getStatusString(t, status)}</Label>
             </div>
           {/each}
         </Collapsible.Content>

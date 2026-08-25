@@ -46,7 +46,7 @@
 
   const { data: _internal } = $props();
   const { trpc, user, pageData } = $derived(_internal);
-  const typeData = $derived.by(() => getAssetTypeData(pageData.type));
+  const typeData = $derived.by(() => getAssetTypeData(t, pageData.type));
 
   let mobileView = new MediaQuery("max-width: 767px"); // something something inclusivity
   let iconApi = $state<CarouselAPI>();
@@ -221,7 +221,7 @@
         <div class="flex justify-between items-center">
           <span class="text-muted-foreground pr-1">{t(`common.dataTable.renderingMethod`)}</span>
           <span class="font-medium text-right text-primary">
-            {getRenderingMethodString(pageData.renderingMethod)}
+            {getRenderingMethodString(t, pageData.renderingMethod)}
             <p class="text-xs text-muted-foreground">{getRenderingMethodSupportedGV(pageData.renderingMethod)}</p>
           </span>
         </div>
@@ -229,7 +229,7 @@
       <div class="flex justify-between items-center">
         <span class="text-muted-foreground pr-2">{t(`common.dataTable.status`)}</span>
         <StatusHoverCard status={pageData.status} type="asset">
-          <Badge variant={pageData.status ? `outline` : `default`} class="capitalize">{getStatusString(pageData.status)}</Badge>
+          <Badge variant={pageData.status ? `outline` : `default`} class="capitalize">{getStatusString(t, pageData.status)}</Badge>
         </StatusHoverCard>
       </div>
       {#if pageData.license}
@@ -281,7 +281,7 @@
     }}
     opts={{ loop: true }}>
     <Carousel.Content>
-      {#each pageData.icons as icon}
+      {#each pageData.iconUrls as icon}
         <Carousel.Item>
           <div class="overflow-hidden rounded-2xl mx-8 relative">
             <img src={`${getThumbnailUrl(pageData.id, icon)}`} alt="Icon for {pageData.name}" class="w-full h-full rounded-2xl transition-all duration-300 {isBlurred ? `blur-2xl` : ``}" />
@@ -295,8 +295,8 @@
         </Carousel.Item>
       {/each}
     </Carousel.Content>
-    {#if iconApi && pageData.icons.length > 1}
-      <CarouselNavigator api={iconApi} numberOfDots={pageData.icons.length} />
+    {#if iconApi && pageData.iconUrls.length > 1}
+      <CarouselNavigator api={iconApi} numberOfDots={pageData.iconUrls.length} />
     {/if}
   </Carousel.Root>
 {/snippet}
@@ -510,7 +510,7 @@
         <Separator class="my-4 w-full" />
         {@render assetCarousel(relatedAssets, isRelatedLoading, `related`, t(`assets.carousels.relatedAssets`), t(`assets.carousels.relatedAssetsNoneFound`))}
         <Separator class="my-4 w-full" />
-        {@render assetCarousel(authorAssets, isAuthorLoading, `author`, t(`assets.carousels.authorAssets`, { name: pageData.uploader?.displayName ?? ``}), m["assets.carousels.authorAssetsNoneFound"]({ name: pageData.uploader?.displayName ?? ``}))}
+        {@render assetCarousel(authorAssets, isAuthorLoading, `author`, t(`assets.carousels.authorAssets`, { name: pageData.uploader?.displayName ?? ``}), t(`assets.carousels.authorAssetsNoneFound`, { name: pageData.uploader?.displayName ?? ``}))}
         {#if mobileView.current}
           {@render dataTable()}
         {/if}

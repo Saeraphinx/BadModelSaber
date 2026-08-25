@@ -62,11 +62,11 @@
     "search": "Search",
     "searchAssets": "Search Assets...",
     "searchMods": "Search Mods...",
-    "perPage": "{count} per page",
+    "perPage": "{{count}} per page",
     "cardsPerPage": "# per page",
     "size": "Size",
     "showFilters": "Show Filters",
-    "xToYOfZResults": "{start}-{end} of {total} results",
+    "xToYOfZResults": "{{start}}-{{end}} of {{total}} results",
     "filters": "Filters"
   },
   "common": {
@@ -162,8 +162,8 @@
       "addRelatedAsset": "Add Related Asset",
       "relatedAssets": "Related Assets",
       "relatedAssetsNoneFound": "No related assets found.",
-      "authorAssets": "Other assets by {name}",
-      "authorAssetsNoneFound": "No other assets found by {name}."
+      "authorAssets": "Other assets by {{name}}",
+      "authorAssetsNoneFound": "No other assets found by {{name}}."
     },
     "upload": {
       "createAsset": "Create Asset",
@@ -184,8 +184,8 @@
       "openHSVPreviewer": "Open in HitScoreVisualizer Previewer",
       "noPreviewAvailable": "No preview available for this asset.",
       "downloadAndLoadPreview": "Download and Load Preview",
-      "textOnlySr": "This preview only shows the content within the file. If you wish to read it, please <a href={downloadUrl}>download the file</a> and open it with your system.",
-      "failedToLoadError": "Failed to load preview data: {error}"
+      "textOnlySr": "This preview only shows the content within the file. If you wish to read it, please <a href={{downloadUrl}}>download the file</a> and open it with your system.",
+      "failedToLoadError": "Failed to load preview data: {{error}}"
     }
   },
   "mods": {
@@ -217,15 +217,15 @@
       "fetchReadme": "Fetch Readme from GitHub"
     },
     "createVersion": {
-      "title": "Create Version for {projectName}",
-      "subtitle": "Please fill out the form below to create a new version for {projectName}.",
+      "title": "Create Version for {{projectName}}",
+      "subtitle": "Please fill out the form below to create a new version for {{projectName}}.",
       "addDependency": "Add Dependency",
       "semverShouldMatchManifest": "The semantic version should match the version specified in your manifest.json file.",
       "importFromOtherVersion": "Import dependencies from another version",
       "importAllFromManifest": "Import all data from manifest",
       "importDepsFromManifest": "Import dependencies from manifest",
       "importFromOtherVersionDialogTitle": "Import Dependencies from Another Version",
-      "importFromOtherVersionDialogDescription": "Select another version of {projectName} to import dependencies from. This will copy all dependencies from the selected version to the new version you are creating.",
+      "importFromOtherVersionDialogDescription": "Select another version of {{projectName}} to import dependencies from. This will copy all dependencies from the selected version to the new version you are creating.",
       "searchVersion": "Search Versions...",
       "packingFileIntoZip": "Your DLL file will be packed into a zip file upon upload in the Plugins folder. If you want to include additional files, or if your DLL should be placed in a different folder, please create a zip file with the correct structure and upload that instead."
     },
@@ -234,18 +234,18 @@
       "loadManifest": "Load Manifest",
       "noIssuesFound": "No issues found.",
       "couldNotReadManifest": "Could not read manifest from file. Please ensure it is a valid .dll or .zip file containing a manifest.json.",
-      "manifestProjectNameMismatch": "The name specified in your manifest ({manifestName}) doesn't match the name of the project you're uploading to ({expectedName}). Please ensure the 'name' field in your manifest matches the name of your project on ModelSaber.",
-      "manifestProjectIdMismatch" : "The manifest ID specified in your manifest ({manifestId}) doesn't match the manifest ID of the project you're uploading to ({expectedManifestId}). Please ensure the 'id' field in your manifest matches the manifest ID of your project on ModelSaber.",
+      "manifestProjectNameMismatch": "The name specified in your manifest ({{manifestName}}) doesn't match the name of the project you're uploading to ({{expectedName}}). Please ensure the 'name' field in your manifest matches the name of your project on ModelSaber.",
+      "manifestProjectIdMismatch" : "The manifest ID specified in your manifest ({{manifestId}}) doesn't match the manifest ID of the project you're uploading to ({{expectedManifestId}}). Please ensure the 'id' field in your manifest matches the manifest ID of your project on ModelSaber.",
       "dependencies": {
         "manifestMissingdependsOn": "Your manifest is missing the 'dependsOn' field, which is required to specify your mod's dependencies. Please add this field to your manifest and try again.",
-        "webInvalidRange": "Dependency {depName} has an invalid game version range specified: {sv}. Please ensure all dependencies have valid semantic version ranges.",
-        "manifestInvalidRange": "Dependency {depName} has an invalid game version range specified: {sv}. Please ensure all dependencies in your manifest have valid semantic version ranges.",
-        "webDependencyNotFound": "Dependency {depName}@{sv} was not found in the manifest. Please ensure all dependencies listed are included in the manifest file.",
-        "manifestDependencyNotFound": "Dependency {depName}@{sv} specified in manifest not found. Please ensure all dependencies listed in your manifest are marked as dependencies on ModelSaber."
+        "webInvalidRange": "Dependency {{depName}} has an invalid game version range specified: {{sv}}. Please ensure all dependencies have valid semantic version ranges.",
+        "manifestInvalidRange": "Dependency {{depName}} has an invalid game version range specified: {{sv}}. Please ensure all dependencies in your manifest have valid semantic version ranges.",
+        "webDependencyNotFound": "Dependency {{depName}}@{{sv}} was not found in the manifest. Please ensure all dependencies listed are included in the manifest file.",
+        "manifestDependencyNotFound": "Dependency {{depName}}@{{sv}} specified in manifest not found. Please ensure all dependencies listed in your manifest are marked as dependencies on ModelSaber."
       },
-      "manifestGameVersionIsntLowest": "The game version specified in your manifest ({manifestGameVersion}) isn't the lowest game version specified among your supported game versions. Please ensure the 'gameVersion' field in your manifest specifies the lowest game version your mod supports, or update your supported game versions to match the game version specified in your manifest.",
-      "manifestSemVerDoesntMatch": "The semantic version specified in your manifest ({manifestSemVer}) doesn't match the semantic version specified for your mod ({expectedSemVer}). Please ensure the 'semver' field in your manifest matches the version of your mod.",
-      "duplicateDependency": "The dependency {depName} appears more than once. Please ensure each dependency is listed only once."
+      "manifestGameVersionIsntLowest": "The game version specified in your manifest ({{manifestGameVersion}}) isn't the lowest game version specified among your supported game versions. Please ensure the 'gameVersion' field in your manifest specifies the lowest game version your mod supports, or update your supported game versions to match the game version specified in your manifest.",
+      "manifestSemVerDoesntMatch": "The semantic version specified in your manifest ({{manifestSemVer}}) doesn't match the semantic version specified for your mod ({{expectedSemVer}}). Please ensure the 'semver' field in your manifest matches the version of your mod.",
+      "duplicateDependency": "The dependency {{depName}} appears more than once. Please ensure each dependency is listed only once."
     },
     "translation": {
       "language": "Language",
@@ -281,16 +281,16 @@
   },
   "requests": {
     "wouldYouLikeToAcceptOrReject": "Would you like to accept or reject this request?",
-    "initialMessageCredit": "{name} would like to add you as a collaborator to the asset {assetName}.",
-    "initialMessageLink": "{name} would like to link your asset, {toLinkAssetName}, to their asset, {assetName}.",
-    "initialMessageReport": "{name} would like to report \"{assetName}\".",
-    "tableTitle": "{type} Request",
-    "requestID": "Request ID: {id}",
-    "status": "Request Status: {status}",
-    "resolvedBy": "Resolved By: {name}",
+    "initialMessageCredit": "{{name}} would like to add you as a collaborator to the asset {{assetName}}.",
+    "initialMessageLink": "{{name}} would like to link your asset, {{toLinkAssetName}}, to their asset, {{assetName}}.",
+    "initialMessageReport": "{{name}} would like to report \"{{assetName}}\".",
+    "tableTitle": "{{type}} Request",
+    "requestID": "Request ID: {{id}}",
+    "status": "Request Status: {{status}}",
+    "resolvedBy": "Resolved By: {{name}}",
     "notResolved": "Not Resolved",
-    "createdBy": "Created By: {name}",
-    "createdAt": "Created At: {date}",
+    "createdBy": "Created By: {{name}}",
+    "createdAt": "Created At: {{date}}",
     "typeYourMessageHere": "Type your message here...",
     "noMessagesFound": "No messages found for this request.",
     "submitMessage": "Submit Message"
@@ -304,8 +304,8 @@
     "displayName": "Display Name",
     "bio": "Bio",
     "donationLinks": "Donation Links",
-    "noAssetsFoundForUser": "No assets found for {name}.",
-    "noModsFoundForUser": "No mods found for {name}."
+    "noAssetsFoundForUser": "No assets found for {{name}}.",
+    "noModsFoundForUser": "No mods found for {{name}}."
   },
   "enums": {
     "status": {
@@ -432,9 +432,9 @@
     "preview": "Preview",
     "reload": "Reload",
     "approvalDialog": {
-      "title": "Update Status for {name}",
-      "description": "Select the new status for \"{name}\". Click save to apply the changes.",
-      "reasonWillBeVisible": "This reason will be visible to the author(s) of {name}.",
+      "title": "Update Status for {{name}}",
+      "description": "Select the new status for \"{{name}}\". Click save to apply the changes.",
+      "reasonWillBeVisible": "This reason will be visible to the author(s) of {{name}}.",
       "reasonPlaceholder": "Enter reason for status change (optional)",
       "presetReasons": "Preset Reasons",
       "autosetProject": "Autoset Project"
@@ -449,7 +449,7 @@
       "neverShowAgain": "If you'd like to never see this warning again, please click the \"Don't show again\" button."
     },
     "reportDialog": {
-      "title": "Report {name}",
+      "title": "Report {{name}}",
       "description": "If you believe this item violates our rules, please provide a reason for reporting it. Our moderation team will review the report and take appropriate action if necessary.",
       "reasonPlaceholder": "Enter reason for your report."
     },
@@ -480,21 +480,6 @@
     }
   },
   "toasts": {
-    "unreadAlerts": [
-      {
-        "declarations": [
-          "input count",
-          "local countPlural = count: plural"
-        ],
-        "selectors": [
-          "countPlural"
-        ],
-        "match": {
-          "countPlural=one": "You have {count} unread alert.",
-          "countPlural=other": "You have {count} unread alerts."
-        }
-      }
-    ],
     "error": {
       "generic": "An error occurred. Please try again later.",
       "save": "Failed to save changes.",

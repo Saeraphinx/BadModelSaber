@@ -15,7 +15,7 @@
   } & HTMLAttributes<HTMLDivElement> = $props();
 
   let requestTypeTitleString = $derived.by(() => {
-    return m[`enums.requestTypes.${request.requestType}`]();
+    return t(`enums.requestTypes.${request.requestType}`);
   });
 </script>
 

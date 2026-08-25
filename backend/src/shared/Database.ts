@@ -137,10 +137,10 @@ export class DatabaseManager {
                 },
                 userPlatforms: [{
                     platform: PlatformType.Patreon,
-                    url: `https://www.patreon.com/beatsabermoddinggroup`
+                    username: `beatsabermoddinggroup`
                 }, {
                     platform: PlatformType.KoFi,
-                    url: `https://ko-fi.com/beatsabermods`
+                    username: `beatsabermods`
                 }],
                 avatarUrl: `https://cdn.discordapp.com/embed/avatars/5.png`
             }

@@ -20,10 +20,14 @@ export const up: Migration = async ({ context: db }) => {
             }).filter((plat) => plat.username !== null) as { platform: string; username: string }[];
         }
 
-        await queryInterface.bulkUpdate(
-            `users`,
-            { userPlatforms: migratedPlatforms },
-            { id: user.id }
+        const escapedPlatforms = queryInterface.sequelize.escape(JSON.stringify(migratedPlatforms));
+
+        await queryInterface.sequelize.query(
+            `UPDATE users SET "userPlatforms" = ${escapedPlatforms}::jsonb WHERE id = :id`,
+            {
+                replacements: { id: user.id },
+                type: QueryTypes.UPDATE,
+            }
         );
     }
 };
@@ -31,9 +35,8 @@ export const up: Migration = async ({ context: db }) => {
 export const down: Migration = async ({ context: db }) => {
     // Not reversible: original full URL values are discarded once converted to usernames.
     const queryInterface = db.sequelize.getQueryInterface();
-    await queryInterface.bulkUpdate(
-        `users`,
-        { userPlatforms: [] },
-        {} // Apply to all users
+    await queryInterface.sequelize.query(
+        `UPDATE users SET "userPlatforms" = '[]'::jsonb`,
+        { type: QueryTypes.UPDATE }
     );
 };

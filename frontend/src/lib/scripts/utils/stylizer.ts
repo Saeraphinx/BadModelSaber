@@ -1,6 +1,5 @@
-import { i18n } from "$lib/scripts/i18n";
+import { type i18nT } from "$lib/scripts/i18n";
 
-const { t, language } = i18n();
 import { AssetFileFormat, RenderingModes, Status, UserPermissions } from "../from_backend/DBExtras";
 
 // export function capitalizeFirstLetter(str: any): string {
@@ -9,7 +8,7 @@ import { AssetFileFormat, RenderingModes, Status, UserPermissions } from "../fro
 //   return str.charAt(0).toUpperCase() + str.slice(1);
 // }
 
-export function getStatusString(status: Status): string {
+export function getStatusString(t: i18nT, status: Status): string {
   return t(`enums.status.${status}`);
 }
 
@@ -31,7 +30,7 @@ export function getStatusAvailableThings(status: Status): string[] {
 }
 
 
-export function getRenderingMethodString(method: RenderingModes): string {
+export function getRenderingMethodString(t: i18nT, method: RenderingModes): string {
   return t(`enums.renderingModes.${method}`);
 }
 
@@ -100,7 +99,7 @@ export function sortCategoriesPublic(a: { category: string }, b: { category: str
 //   }
 // }
 
-export function getAssetTypeData(format: AssetFileFormat): {
+export function getAssetTypeData(t: i18nT, format: AssetFileFormat): {
   rawString: AssetFileFormat;
   formatString: string;
   typeString: string;
@@ -113,7 +112,7 @@ export function getAssetTypeData(format: AssetFileFormat): {
     // @ts-expect-error
     translatedType = t(`enums.assetTypes.${type}`);
   } catch (e) {
-    console.debug(`Translation for asset type ${type} not found for locale ${language}.`);
+    console.debug(`Translation for asset type ${type} not found current for locale.`);
     translatedType = type;
   }
   let fileFormat = `.${format.split('_')[1].toLowerCase()}`;
@@ -138,10 +137,10 @@ export function getAssetTypeData(format: AssetFileFormat): {
   }
 }
 
-export function getAssetTypeCategories(): Map<string, ReturnType<typeof getAssetTypeData>[]> {
+export function getAssetTypeCategories(t: i18nT): Map<string, ReturnType<typeof getAssetTypeData>[]> {
   let categories: Map<string, ReturnType<typeof getAssetTypeData>[]> = new Map();
   for (let format in AssetFileFormat) {
-    let assetTypeData = getAssetTypeData(AssetFileFormat[format as keyof typeof AssetFileFormat]);
+    let assetTypeData = getAssetTypeData(t, AssetFileFormat[format as keyof typeof AssetFileFormat]);
     let category = categories.get(assetTypeData.typeString) ?? [];
     category.push(assetTypeData);
     categories.set(assetTypeData.typeString, category);
@@ -200,7 +199,7 @@ export function getAssetTypeCategories(): Map<string, ReturnType<typeof getAsset
   return categories;
 }
 
-export function getRoleData(role: string): {
+export function getRoleData(t: i18nT, role: string): {
   bgColor: string;
   badgeBorder: string;
   textColor: string;
@@ -305,7 +304,7 @@ export function getSponserUrlData(sponsorUrl: string | string[] | null) {
 
 }
 
-export function getRelativeTimeString(date: Date, lang = language) {
+export function getRelativeTimeString(date: Date, lang: string): string {
   // Allow dates or times to be passed
   const timeMs = typeof date === "number" ? date : date.getTime();
   const diff = timeMs - Date.now();
@@ -332,4 +331,6 @@ export function getRelativeTimeString(date: Date, lang = language) {
       return rtf.format(value, unit as Intl.RelativeTimeFormatUnit);
     }
   }
+
+  return ""; // Fallback in case no unit is found, though this should not happen
 }

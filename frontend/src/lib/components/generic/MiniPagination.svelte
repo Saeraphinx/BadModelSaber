@@ -16,7 +16,7 @@
   } = $props();
 
   let pageString = $derived.by(() => {
-    return m["search.xToYOfZResults"]({
+    return t("search.xToYOfZResults", {
       start: (currentPage - 1) * selectedPageSize + 1,
       end: selectedPageSize * currentPage > totalCount ? totalCount : selectedPageSize * currentPage,
       total: totalCount

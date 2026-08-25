@@ -36,18 +36,18 @@
   onMount(() => {
     let initialString = "";
     if (pageData.requestType === RequestType.Asset_Credit) {
-      initialString = m["requests.initialMessageCredit"]({
+      initialString = t(`requests.initialMessageCredit`, {
         name: pageData?.requester?.displayName || "Unknown User",
         assetName: pageData.refrencedThingName ?? "Unknown Asset",
       });
     } else if (pageData.requestType === RequestType.Asset_Link) {
-      initialString = m["requests.initialMessageLink"]({
+      initialString = t(`requests.initialMessageLink`, {
         name: pageData?.requester?.displayName || "Unknown User",
         assetName: (pageData.refrencedThing && typeInfo.nameProp in pageData.refrencedThing ? pageData.refrencedThing[typeInfo.nameProp as keyof typeof pageData.refrencedThing] : null) ?? "Unknown Asset",
         toLinkAssetName: "Unknown Asset",
       });
     } else {
-      initialString = m["requests.initialMessageReport"]({
+      initialString = t(`requests.initialMessageReport`, {
         name: pageData.requester?.displayName || "Unknown User",
         assetName: pageData.refrencedThingName,
       });
@@ -168,7 +168,7 @@
       <VersionCard version={pageData.refrencedThing} />
     {/if}
     <div class="flex flex-col items-start gap-2 bg-card p-4 rounded-lg shadow-md w-full">
-      <h1 class="text-2xl font-bold">{t(`requests.tableTitle`, { type: m[`enums.requestTypes.${pageData.requestType}`]() })}</h1>
+      <h1 class="text-2xl font-bold">{t(`requests.tableTitle`, { type: t(`enums.requestTypes.${pageData.requestType}`) })}</h1>
       <p class="text-gray-500">{t(`requests.requestID`, { id: pageData.id })}</p>
       <p class="text-gray-500">{t(`requests.status`, { status: pageData.accepted ?? t(`requests.notResolved`) })}</p>
       <p class="text-gray-500">{t(`requests.resolvedBy`, { name: pageData.resolvedBy ?? t(`requests.notResolved`) })}</p>
@@ -184,7 +184,7 @@
         {#each messages as message}
           <RequestMessage accept={() => {handleRequest(true)}} reject={() => {handleRequest(false)}} {message} user={users.get(message.userId) || { id: -1, displayName: "Unknown User", avatarUrl: "", useSystemAvatar: true }} class="w-full max-w-2xl mb-4" />
         {:else}
-          <p class="text-muted-foreground">{m["requests.noMessagesFound"]}</p>
+          <p class="text-muted-foreground">{t(`requests.noMessagesFound`)}</p>
         {/each}
       {/key}
       {#if isAllowedToSend}
