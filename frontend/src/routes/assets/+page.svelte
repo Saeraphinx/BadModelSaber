@@ -249,16 +249,16 @@
       <div class="grid grid-cols-[1fr_1.75fr] w-full items-center gap-2">
         <Label for="per-page-select" class="text-sm">{t(`search.cardsPerPage`)}</Label>
         <Select.Root allowDeselect={false} bind:value={selectedPageSizeString} type="single" onValueChange={(value) => (currentPage = 1)}>
-          <Select.Trigger id="per-page-select" class="w-full">{t(`search.perPage`, { count: selectedPageSizeString })}</Select.Trigger>
+          <Select.Trigger id="per-page-select" class="w-full">{t(`search.pagination.perPage`, { count: selectedPageSizeString })}</Select.Trigger>
           <Select.Content>
             {#each [24, 48, 72] as amount}
               <Select.Item value={amount.toString()}>
-                {t(`search.perPage`, { count: amount })}
+                {t(`search.pagination.perPage`, { count: amount })}
               </Select.Item>
             {/each}
           </Select.Content>
         </Select.Root>
-        <Label for="size-select" class="text-sm">{t(`search.size`)}</Label>
+        <Label for="size-select" class="text-sm">{t(`search.sizeHeader`)}</Label>
         <Select.Root allowDeselect={false} bind:value={selectedCardSize} type="single" onValueChange={(value) => (currentPage = 1)}>
           <Select.Trigger id="size-select" class="w-full capitalize">{selectedCardSize}</Select.Trigger>
           <Select.Content>

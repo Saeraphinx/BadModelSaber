@@ -290,7 +290,7 @@
       {#if checkRoles(user, [UserPermissions.Mods_UploadAll], project.gameName) || project.authors.some((a) => a.id === user?.id)}
         <div class="flex flex-row items-center justify-between mx-1">
           <h2 class="text-xl font-bold">{t(`mods.uploadNewVersion`)}</h2>
-          <Button variant="outline" href="/create/project/{project.id}"><UploadIcon />{t(`mods.upload`)}</Button>
+          <Button variant="outline" href="/create/project/{project.id}"><UploadIcon />{t(`mods.uploadNewVersionButton`)}</Button>
         </div>
         <Separator class="my-4" />
       {/if}

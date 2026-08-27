@@ -4,21 +4,21 @@ import { getContext, setContext } from "svelte";
 import { get, type Writable } from "svelte/store";
 import { createI18nStore } from "svelte-i18next";
 
-import en from "../../../messages/en_us.json";
+import en from "../../../messages/en-US.json";
 import owo from "../../../messages/owo.json";
 
 
 i18next.init({
   resources: {
-    en: {
+    en_US: {
       translation: en,
     },
     owo: {
       translation: owo,
     },
   },
-  lng: "en",
-  fallbackLng: 'en',
+  lng: "en_US",
+  fallbackLng: 'en_US',
   interpolation: {
     escapeValue: false, // not needed for svelte as it escapes by default
   }

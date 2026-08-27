@@ -31,7 +31,8 @@
         "js/ts.experimental.useTsgo": true,
         "i18n-ally.localesPaths": [
             "messages"
-        ]
+        ],
+        "i18n-ally.enabledFrameworks": ["i18next"]
     },
     "launch": {
         "version": "0.2.0",
