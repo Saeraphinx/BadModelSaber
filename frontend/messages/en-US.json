@@ -2,7 +2,7 @@
   "name": "ModelSaber",
   "loading": "Loading...",
   "homepage": {
-    "title": "$(name)",
+    "title": "$t(name)",
     "subtitle": "A collection of various assets for use within Beat Saber.",
     "browseButton": "Browse Assets",
     "wikiButton": "Model Wiki"
@@ -317,7 +317,7 @@
       "queue": "In Queue",
       "unverified": "Unverified",
       "testing": "Testing",
-      "non_default_testing": "ND Testing",
+      "non_default_testing": "Non-Supported Testing",
       "verified": "Verified",
       "public": "Public",
       "removed": "Removed"

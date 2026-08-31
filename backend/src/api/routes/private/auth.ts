@@ -2,14 +2,16 @@ import { Logger } from '../../../shared/Logger.ts';
 import { Validator } from '../../../shared/Validator.ts';
 import { createRandomString, parseErrorMessage } from '../../../shared/Tools.ts';
 import { EnvConfig } from '../../../shared/EnvConfig.ts';
-import { User, UserPermissions } from '../../../shared/Database.ts';
+import { defaultGamePermissions, defaultSitewidePermissions, Game, User, UserPermissions } from '../../../shared/Database.ts';
 import { anyProcedure, loggedInProcedure, notLoggedInProcedure, publicProcedure, router } from '../../trpc.ts';
 import { REST, RESTGetAPICurrentUserGuildsQuery, RESTGetAPICurrentUserGuildsResult, RESTGetAPICurrentUserResult, RESTGetAPIGuildMemberResult, RESTOAuth2AuthorizationQuery, RESTPostOAuth2AccessTokenWithBotAndGuildsScopeResult, RESTPostOAuth2ClientCredentialsResult, Routes } from 'discord.js';
 import { OAuth2API } from '@discordjs/core';
 import z from 'zod/v4';
 import { TRPCError } from '@trpc/server';
 import { OAuthApp } from "@octokit/oauth-app";
-import { Op } from 'sequelize';
+import { Op, WhereOptions } from 'sequelize';
+import { Keys } from '../../../shared/database/tables/Keys.ts';
+import { createHash } from 'crypto';
 
 export function loadAuthConfig() {
     if (!EnvConfig.auth.discord.clientSecret || !EnvConfig.auth.discord.clientId) {
@@ -32,8 +34,6 @@ function prepAuth(ip: string, redirectUrl: string, userId?: number, minsToTimeou
     }, 1000 * 60 * minsToTimeout);
     return state;
 }
-
-export const defaultRoles = [UserPermissions.Asset_Create, UserPermissions.Mods_Create, UserPermissions.Users_EditSelf];
 
 export const authRouter = router({
     // #region Discord Login
@@ -102,9 +102,19 @@ export const authRouter = router({
 
             let dbUser = await User.findOne({ where: { discordId: userInfo.id } });
             if (!dbUser) {
+                let allGamesPermObject: { [key: string]: UserPermissions[] } = await Game.findAll().then(games => {
+                    let obj: { [key: string]: UserPermissions[] } = {};
+                    for (let game of games) {
+                        obj[game.id] = defaultGamePermissions;
+                    }
+                    return obj;
+                }).catch((err) => {
+                    Logger.error(`Error fetching games from database: ${parseErrorMessage(err)}`);
+                    throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: `Internal server error.` });
+                });
                 let roles = {
-                    sitewide: defaultRoles,
-                    perGame: {},
+                    sitewide: defaultSitewidePermissions,
+                    perGame: allGamesPermObject,
                 };
                 if (userInfo && EnvConfig.auth.discord.autoAdminIds && EnvConfig.auth.discord.autoAdminIds.includes(userInfo.id)) {
                     Logger.info(`Auto-assigning administrative permissions to user ${userInfo.username} (${userInfo.id})`);
@@ -229,9 +239,19 @@ export const authRouter = router({
 
             let dbUser = await User.findOne({ where: { githubId: githubUser.id.toString() } });
             if (!dbUser) {
+                let allGamesPermObject: { [key: string]: UserPermissions[] } = await Game.findAll().then(games => {
+                    let obj: { [key: string]: UserPermissions[] } = {};
+                    for (let game of games) {
+                        obj[game.id] = defaultGamePermissions;
+                    }
+                    return obj;
+                }).catch((err) => {
+                    Logger.error(`Error fetching games from database: ${parseErrorMessage(err)}`);
+                    throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: `Internal server error.` });
+                });
                 let roles = {
-                    sitewide: defaultRoles,
-                    perGame: {},
+                    sitewide: defaultSitewidePermissions,
+                    perGame: allGamesPermObject,
                 };
                 if (githubUser && EnvConfig.auth.github.autoAdminIds && EnvConfig.auth.github.autoAdminIds.includes(githubUser.id.toString())) {
                     Logger.info(`Auto-assigning administrative permissions to user ${githubUser.login} (${githubUser.id})`);
@@ -284,7 +304,7 @@ export const authRouter = router({
                 throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: `GitHub authentication is not configured on this server.` });
             }
 
-            let state = prepAuth(ctx.req.ip || ``, input.redirect ?? EnvConfig.server.frontendUrl, ctx.userId);
+            let state = prepAuth(ctx.req.ip || ``, input.redirect ?? EnvConfig.server.frontendUrl, ctx.user.id);
             if (!state) {
                 throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: `Could not prepare authentication.` });
             }
@@ -395,7 +415,7 @@ export const authRouter = router({
                 throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: `Discord authentication is not configured on this server.` });
             }
 
-            let state = prepAuth(ctx.req.ip || ``, input.redirect ?? EnvConfig.server.frontendUrl, ctx.userId);
+            let state = prepAuth(ctx.req.ip || ``, input.redirect ?? EnvConfig.server.frontendUrl, ctx.user.id);
             if (!state) {
                 throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: `Could not prepare authentication.` });
             }
@@ -493,5 +513,67 @@ export const authRouter = router({
                 });
             });
         }),
+    generateApiKey: loggedInProcedure()
+        .input(z.object({
+            name: z.string().min(1).max(64),
+        }))
+        .mutation(async ({ ctx, input }) => {
+            if (ctx.isApiKey) {
+                throw new TRPCError({ code: 'FORBIDDEN', message: `API keys cannot generate new API keys.` });
+            }
 
+            const { key, hash } = Keys.generateKey(ctx.user.id);
+
+            await Keys.create({
+                key: key,
+                userId: ctx.user.id,
+                name: input.name,
+            }).then(() => {
+                Logger.info(`User ${ctx.user.username} (${ctx.user.id}) generated a new API key.`);
+            });
+
+            return { hash: hash, name: input.name }
+        }),
+    listApiKeys: loggedInProcedure()
+        .query(async ({ ctx }) => {
+            const keys = await Keys.findAll({
+                where: { userId: ctx.user.id },
+                attributes: ['name', 'createdAt', 'updatedAt'],
+            });
+            
+            return keys.map((key) => ({
+                name: key.name,
+                createdAt: key.createdAt,
+                updatedAt: key.updatedAt,
+            }));
+        }),
+    revokeApiKey: loggedInProcedure()
+        .input(z.object({
+            name: z.string().min(1).max(64).optional(),
+            key: z.string().length(43).optional(),
+        }))
+        .mutation(async ({ ctx, input }) => {
+            let whereOptions: WhereOptions<Keys> = { userId: ctx.user.id };
+            if (input.name) {
+                whereOptions.name = input.name;
+            } else if (input.key) {
+                let key = input.key.split('.')[2];
+                if (!key || key.length !== 43) {
+                    throw new TRPCError({ code: 'BAD_REQUEST', message: `Invalid API key format.` });
+                }
+
+                const hash = createHash('sha256').update(key).digest(`base64url`);
+                whereOptions.key = hash;
+            }
+
+            await Keys.destroy({
+                where: whereOptions
+            }).then((count) => {
+                if (count === 0) {
+                    throw new TRPCError({ code: 'NOT_FOUND', message: `API key not found.` });
+                } else {
+                    Logger.info(`User ${ctx.user.username} (${ctx.user.id}) revoked ${count} API key(s).`);
+                }
+            });
+        }),
 })

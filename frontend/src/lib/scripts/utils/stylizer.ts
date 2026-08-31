@@ -327,8 +327,13 @@ export function getRelativeTimeString(date: Date, lang: string): string {
   for (const { unit, ms } of units) {
     if (absDiff >= ms || unit === "second") {
       const value = Math.round(diff / ms);
-      const rtf = new Intl.RelativeTimeFormat(lang, { numeric: "auto", style: "long" });
-      return rtf.format(value, unit as Intl.RelativeTimeFormatUnit);
+      try {
+        const rtf = new Intl.RelativeTimeFormat(lang, { numeric: "auto", style: "long" });
+        return rtf.format(value, unit as Intl.RelativeTimeFormatUnit);
+      } catch (e) {
+        const rtf = new Intl.RelativeTimeFormat(`en`, { numeric: "auto", style: "long" });
+        return rtf.format(value, unit as Intl.RelativeTimeFormatUnit); // Fallback in case of error
+      }
     }
   }
 

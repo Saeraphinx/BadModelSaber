@@ -3,7 +3,7 @@ import type { PageLoad } from "./$types";
 import { handleTrpcError } from "$lib/scripts/utils/api";
 import { getProjectThumbnailUrl } from "$lib/scripts/utils/api";
 import { availableLocales } from "../../../lib/scripts/from_backend/DBExtras";
-import { i18n } from "$lib/scripts/i18n";
+import { i18nInstance } from "$lib/scripts/i18n";
 
 //export const ssr = false;
 export const load: PageLoad = async ({ parent, params }) => {
@@ -15,12 +15,7 @@ export const load: PageLoad = async ({ parent, params }) => {
 
   const { user, trpc } = await parent();
 
-  let language: string | undefined = undefined;
-  try {
-    language = i18n().language;
-  } catch (e) {
-    console.warn(`Unable to get current language from i18n: ${e}`);
-  }
+  let language: string | undefined = i18nInstance.language;
   if (!availableLocales.find((l) => l.code == language)?.backend) {
     language = undefined;
   }

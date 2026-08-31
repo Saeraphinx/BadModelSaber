@@ -1,4 +1,4 @@
-import { Alert, Asset, AssetValidStatusesArray, dbId, Game, GameVersion, Project, ProjectValidStatusesArray, Status, User, UserPermissions, userPermissionsSchema, Version, VersionValidStatusesArray, WebhookLogType } from "../../../shared/Database.ts";
+import { Alert, Asset, AssetValidStatusesArray, dbId, defaultGamePermissions, defaultSitewidePermissions, Game, GameVersion, Project, ProjectValidStatusesArray, Status, User, UserPermissions, userPermissionsSchema, Version, VersionValidStatusesArray, WebhookLogType } from "../../../shared/Database.ts";
 import { Validator } from "../../../shared/Validator.ts";
 import z from "zod/v4";
 import { dedupeArray, handleCatch, parseErrorMessage } from "../../../shared/Tools.ts";
@@ -8,7 +8,6 @@ import { importFromBadBeatMods, importFromOldModelSaber } from "../../../shared/
 import { TRPCError } from "@trpc/server";
 import { EnvConfig } from "../../../shared/EnvConfig.ts";
 import { Op } from "sequelize";
-import { defaultRoles } from "./auth.ts";
 import { on } from "events";
 import { LogEntry } from "winston";
 import * as fs from "fs";
@@ -343,6 +342,20 @@ export const AdminRouter = router({
                 }
                 Logger.log(`Impersonating test user by admin user ${ctx.userId}`);
 
+                let allGamesPermObject: { [key: string]: UserPermissions[] } = await Game.findAll().then(games => {
+                    let obj: { [key: string]: UserPermissions[] } = {};
+                    for (let game of games) {
+                        obj[game.id] = defaultGamePermissions;
+                    }
+                    return obj;
+                }).catch((err) => {
+                    Logger.error(`Error fetching games from database: ${parseErrorMessage(err)}`);
+                    throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: `Internal server error.` });
+                });
+                let roles = {
+                    sitewide: [...defaultSitewidePermissions, UserPermissions.C_System, UserPermissions.C_Developer],
+                    perGame: allGamesPermObject,
+                };
                 let testUser = await User.findOrCreate({
                     where: { id: 6 },
                     defaults: {
@@ -350,10 +363,7 @@ export const AdminRouter = router({
                         username: `testuser`,
                         displayName: `Test User`,
                         bio: `Test user for development purposes.`,
-                        permissions: {
-                            sitewide: [...defaultRoles, UserPermissions.C_System, UserPermissions.C_Developer],
-                            perGame: {},
-                        },
+                        permissions: roles,
                     },
                 });
 

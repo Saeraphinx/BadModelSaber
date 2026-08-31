@@ -7,6 +7,7 @@ import SuperJSON from 'superjson';
 import { parseErrorMessage } from '../shared/Tools.ts';
 import z, { ZodError } from 'zod/v4';
 import { Session, SessionData } from 'express-session';
+import { Keys } from '../shared/database/tables/Keys.ts';
 
 
 // eslint-disable-next-line quotes
@@ -28,17 +29,27 @@ declare module 'http' {
  * Creates context for an incoming request
  * @see https://trpc.io/docs/v11/context
  */
-export function createContext(opts: CreateExpressContextOptions) {
+export async function createContext(opts: CreateExpressContextOptions) {
+    return await manualCreateContext(opts.req, opts.res);
+}
+
+export async function manualCreateContext(req: CreateExpressContextOptions['req'], res: CreateExpressContextOptions['res']) {
     let userId = undefined;
-    if (opts.req.session?.userId) {
-        userId = opts.req.session.userId;
+    let isApiKey = false;
+    if (req.session?.userId) {
+        userId = req.session.userId;
+    } else if (req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
+        const token = req.headers.authorization.slice(7);
+        userId = await Keys.checkKey(token);
+        isApiKey = true;
     }
 
     return {
-        req: opts.req,
-        res: opts.res,
+        req: req,
+        res: res,
         userId: userId,
-        db: opts.req.database,
+        db: req.database,
+        isApiKey: isApiKey,
     };
 }
 

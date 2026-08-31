@@ -23,7 +23,7 @@ export const availableLocales: {
   backend: boolean; // whether this translation is used in mod/asset translations (e.g. backend things) or just text translations (e.g. frontend things)
 }[] = [
   {
-    code: "en",
+    code: "en-us",
     name: "English",
     secret: false,
     backend: false, // English is the default language and is used as a fallback for missing translations, so it should not be marked as a backend translation
@@ -252,7 +252,7 @@ export enum UserPermissions {
   C_Admin = "cos_admin", // User is an admin of the site
   C_BSMG_Staff = "cos_bsmg_staff", // User is a member of the BSMG staff
   C_Modeler = "cos_modeler", // User is a recognized modeler on ModelSaber
-  C_Modder = "cos_modder", // User is a recognized modeler on ModelSaber
+  C_Modder = "cos_modder", // User is a recognized modder on ModelSaber
   C_System = "cos_system", // User is a system account
 }
 

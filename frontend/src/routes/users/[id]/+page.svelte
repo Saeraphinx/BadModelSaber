@@ -193,8 +193,8 @@
   <Tabs.Root bind:value={tabsValue} class="w-full">
     <Tabs.List variant="line" class="justify-center items-center m-auto">
       {#if !isEditing}
-        <Tabs.Trigger value="mods">{t(`mods.mods`)}</Tabs.Trigger>
-        <Tabs.Trigger value="assets">{t(`assets.assets`)}</Tabs.Trigger>
+        <Tabs.Trigger value="mods">{t(`common.mods`)}</Tabs.Trigger>
+        <Tabs.Trigger value="assets">{t(`common.assets`)}</Tabs.Trigger>
       {/if}
       {#if isEditing}
         <Tabs.Trigger value="edit">{t(`dialogs.edit`)}</Tabs.Trigger>
@@ -204,14 +204,14 @@
         {#each mods as mod}
           <ModCard project={mod} />
         {:else}
-          <p class="text-base text-muted-foreground">{t(`users.noModsFoundForUser`, {name: pdUser.displayName})}</p>
+          <p class="text-base text-muted-foreground">{t(`mods.noModsFound`)}</p>
         {/each}
       </Tabs.Content>
       <Tabs.Content value="assets" class="w-full mt-4 flex flex-row flex-wrap justify-evenly gap-8 m-auto">
         {#each assets as asset}
           <AssetCard {asset} size="large" approvalDialog={dialog} />
         {:else}
-          <p class="text-base text-muted-foreground">{t(`users.noAssetsFoundForUser`, { name: pdUser.displayName })}</p>
+          <p class="text-base text-muted-foreground">{t(`assets.noAssetsFound`, { name: pdUser.displayName })}</p>
         {/each}
       </Tabs.Content>
       <Tabs.Content value="edit" class="w-full mt-4 flex flex-col items-center gap-4 m-auto">
@@ -245,7 +245,7 @@
                     {/each}
                   </Select.Content>
                 </Select.Root>
-                <Input placeholder="URL" bind:value={eUP.username} aria-invalid={!z.string().regex(/^[a-zA-Z0-9_-]{3,16}$/).safeParse(eUP.username).success} class="w-full" />
+                <Input placeholder={t(`users.username`)} bind:value={eUP.username} aria-invalid={!z.string().regex(/^[a-zA-Z0-9_-]{3,16}$/).safeParse(eUP.username).success} class="w-full" />
                 <Button variant="destructive" size="icon" onclick={() => {
                   editUserPlatforms = editUserPlatforms ? editUserPlatforms.filter((up) => up !== eUP) : [];
                 }}><XIcon /></Button>

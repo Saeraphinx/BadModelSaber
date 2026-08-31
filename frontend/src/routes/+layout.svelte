@@ -19,11 +19,11 @@
   import { Switch } from "$shadcn/components/ui/switch";
   import { Label } from "$shadcn/components/ui/label";
   import ScrollArea from "$shadcn/components/ui/scroll-area/scroll-area.svelte";
-  import { invalidateAll } from "$app/navigation";
+  import { invalidateAll, beforeNavigate, afterNavigate } from "$app/navigation";
   import { Spinner } from "$shadcn/components/ui/spinner";
   import { checkRoles } from "$lib/scripts/utils/checkRoles";
   import { parseErrorMessage } from "$lib/scripts/utils/api";
-  import { i18n, setI18n } from "../lib/scripts/i18n";
+  import { i18n, setI18n } from "$lib/scripts/i18n";
 
   const { data: _internal, children } = $props();
   const { user, alertCount, pendingToasts, trpc } = $derived(_internal);
@@ -35,6 +35,7 @@
   // Transtions Initialization
   setI18n();
   const { t, changeLanguage, language } = i18n();
+  console.log(`Current Language: ${language}`);
 
   // #region KonamiListener
   onMount(() => {
@@ -247,11 +248,11 @@
     { href: "/", label: t(`layout.navbar.home`), target: undefined },
     {
       href: "",
-      label: t(`layout.navbar.mods.mods`),
+      label: t(`layout.navbar.mods.modsHeader`),
       target: undefined,
       children: [
         { href: "/mods", label: t(`layout.navbar.mods.browseMods`) },
-        { href: "https://bsmg.wiki/beginners-guide.html", label: t(`layout.navbar.mods.beatsaberBeginngersGuide`), target: "_blank" },
+        { href: "https://bsmg.wiki/beginners-guide.html", label: t(`layout.navbar.mods.beatsaberBeginnersGuide`), target: "_blank" },
         { href: "https://bsmg.wiki/modding", label: t(`layout.navbar.mods.moddersGuide`), target: "_blank" },
         { href: "https://github.com/Saeraphinx/BadModelSaber/blob/main/mod-approval-guidelines.md", label: t(`layout.navbar.mods.pcApprovalGuide`), target: "_blank" },
         { href: "/mods/compare", label: t(`layout.navbar.mods.compareVersions`) },
@@ -259,7 +260,7 @@
     },
     {
       href: "",
-      label: t(`layout.navbar.assets.assets`),
+      label: t(`layout.navbar.assets.assetsHeader`),
       target: undefined,
       children: [
         { href: "/assets", label: t(`layout.navbar.assets.browseAssets`) },
@@ -278,6 +279,14 @@
     { href: "https://bsmg.wiki", label: t(`layout.navbar.wiki`), target: "_blank" },
     { href: "https://discord.gg/beatsabermods", label: t(`layout.navbar.discord`), target: "_blank" },
   ];
+
+  let isNavigating = $state(false);
+  beforeNavigate(() => {
+    isNavigating = true;
+  });
+  afterNavigate(() => {
+    isNavigating = false;
+  });
 </script>
 
 {#snippet navbar_main(orientation = "vertical")}
@@ -335,6 +344,9 @@
 
 <div>
   <!-- #region top bar -->
+  {#if isNavigating}
+    <div class="fixed top-0 left-0 w-full h-1 bg-gradient-to-r from-[#8e28e2] via-[#DC2DE2] to-[#8e28e2] z-50 motion-safe:animate-pulse"></div>
+  {/if}
   <div class="flex w-auto flex-row text-base justify-between">
     <!-- Logo -->
     <a href="/" class="flex items-center justify-start h-16 md:ml-16 ml-4 md:p-4 gap-0.5">

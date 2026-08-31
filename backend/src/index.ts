@@ -10,6 +10,7 @@ import { Sequelize } from "sequelize";
 import { createCaller, generateOpenAPIDoc, loadExpressMiddleware, loadOpenApiMiddleware } from "./api/routers.ts";
 import swaggerUi from "swagger-ui-express";
 import { OpenAPIUploadDocs } from "./api/routes/public/v3/upload.ts";
+import { createContext, manualCreateContext } from "./api/trpc.ts";
 
 // eslint-disable-next-line quotes
 declare module 'express-serve-static-core' {
@@ -118,7 +119,7 @@ export async function init(overrideDbName?: string) {
     });
     apiRouter.use(`/trpc`, loadExpressMiddleware);
     // Legacy route handling - redirect old v2 routes to new v2 routes because past me was a fucking idiot
-    apiRouter.use((req, res, next) => {
+    apiRouter.use(async (req, res, next) => {
         if (req.url.startsWith(`/mods`)) {
             req.url = req.url.replace(`/mods`, `/v2/mods`);
             return next();
@@ -135,15 +136,11 @@ export async function init(overrideDbName?: string) {
         // handle public v3 upload routes that are a bit scuffed because of openapi and tRPC not playing nice with multipart/form-data. 
         let caller: Promise<any> | null = null;
         if (req.url.startsWith(`/v3/asset/upload`) && req.method === 'POST') {
-            caller = createCaller({
-                req, res, db,
-                userId: req.session['userId'],
-            }).v3.upload.assetUpload(req.body);
+            let context = await manualCreateContext(req, res);
+            caller = createCaller(context).v3.upload.assetUpload(req.body);
         } else if (req.url.match(/^\/v3\/project\/[^\/]+\/upload$/) && req.method === 'POST') {
-            caller = createCaller({
-                req, res, db,
-                userId: req.session['userId'],
-            }).v3.upload.versionUpload({
+            let context = await manualCreateContext(req, res);
+            caller = createCaller(context).v3.upload.versionUpload({
                 id: req.url.split(`/`)[3],
                 ...req.body
             });

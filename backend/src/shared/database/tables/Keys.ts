@@ -1,13 +1,12 @@
 import { CreationOptional, InferAttributes, InferCreationAttributes } from "sequelize";
-import { AllowNull, Column, DataType, Model, PrimaryKey, Table } from "sequelize-typescript";
+import { AllowNull, Column, CreatedAt, DataType, Model, PrimaryKey, Table, UpdatedAt } from "sequelize-typescript";
 import { createRandomString } from "../../Tools.ts";
 import { createHash, timingSafeEqual } from "crypto";
-
-const nullHash = createHash('sha256').update(`null`).digest(`base64url`);
 
 @Table({
     tableName: "keys",
     modelName: "keys",
+    timestamps: true,
 })
 export class Keys extends Model<InferAttributes<Keys>, InferCreationAttributes<Keys>> {
     @PrimaryKey
@@ -19,21 +18,45 @@ export class Keys extends Model<InferAttributes<Keys>, InferCreationAttributes<K
     @Column(DataType.INTEGER)
     declare userId: number;
 
-    public static generateKey(): { key: string, hash: string } {
-        const hash = createRandomString(64); // Replace this with your actual hash generation logic
-        const key = createHash('sha256').update(hash).digest(`base64url`);
+    @AllowNull(false)
+    @Column(DataType.STRING)
+    declare name: string;
+
+    @CreatedAt
+    declare createdAt: CreationOptional<Date>;
+    @UpdatedAt
+    declare updatedAt: CreationOptional<Date>;
+
+    public static generateKey(userId: number): { key: string, hash: string } {
+        const hash = createRandomString(32);
+        const key = `bbmat.${userId.toString(16)}.${createHash('sha256').update(hash).digest(`base64url`)}`;
         return { key, hash };
     }
 
     public static async checkKey(key: string): Promise<number | null> {
-        let hash = createHash('sha256').update(key).digest(`base64url`);
-        const keyInstance = await this.findByPk(hash);
-
-        // Use timingSafeEqual to prevent timing attacks and check that the key exists (since the backup hash is always the same)
-        if (timingSafeEqual(Buffer.from(keyInstance?.key ?? nullHash), Buffer.from(hash)) && keyInstance) {
-            return keyInstance.userId;
-        } else {
+        let splitKey = key.split('.');
+        if (splitKey.length !== 3 || splitKey[0] !== 'bbmat') {
             return null;
         }
+
+        const userId = parseInt(splitKey[1], 16);
+        const hash = splitKey[2];
+        if (isNaN(userId) || hash.length !== 43) {
+            return null;
+        }
+
+        const keyInstances = await this.findAll({ where: { userId } });
+        const inputHashBuffer = Buffer.from(hash);
+        try {
+            for (const keyInstance of keyInstances) {
+                const dbHashBuffer = Buffer.from(keyInstance.key.split('.')[2]);
+                if (dbHashBuffer.length === inputHashBuffer.length && timingSafeEqual(dbHashBuffer, inputHashBuffer)) {
+                    return keyInstance.userId;
+                }
+            }
+        } catch (error) {
+            return null;
+        }
+        return null;
     }
 }

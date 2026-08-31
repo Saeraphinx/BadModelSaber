@@ -1,10 +1,10 @@
 import type { ClassValue } from "svelte/elements";
 import { AssetFileFormat, Tags } from "../from_backend/DBExtras";
-import { i18n } from "$lib/scripts/i18n";
+import { i18n, type i18nT } from "$lib/scripts/i18n";
 
 const { t, language } = i18n();
 
-export function getTagData(tag: Tags, assetType: AssetFileFormat, shouldShowInternal: boolean = false): { translatedTag: string, category: string, outlineColor: ClassValue, disabled: boolean, animated: boolean } {
+export function getTagData(t: i18nT, tag: Tags, assetType: AssetFileFormat, shouldShowInternal: boolean = false): { translatedTag: string, category: string, outlineColor: ClassValue, disabled: boolean, animated: boolean } {
   let splitType = assetType.split("_");
   let type = splitType[0];
   let format = splitType[1];
@@ -152,9 +152,9 @@ export function getTagData(tag: Tags, assetType: AssetFileFormat, shouldShowInte
   };
 }
 
-export function getAllTagsData(assetType: AssetFileFormat, shouldShowInternal=false): { tag: Tags, data: ReturnType<typeof getTagData> }[] {
+export function getAllTagsData(t: i18nT, assetType: AssetFileFormat, shouldShowInternal=false): { tag: Tags, data: ReturnType<typeof getTagData> }[] {
   return Object.values(Tags).map((tag) => ({
     tag,
-    data: getTagData(tag, assetType, shouldShowInternal),
+    data: getTagData(t, tag, assetType, shouldShowInternal),
   }));
 }
