@@ -1,7 +1,5 @@
 <script lang="ts">
-  import { i18n } from "$lib/scripts/i18n";
-
-  const { t } = i18n();
+  import { m } from "$lib/paraglide/messages";
   import type { RequestMessage } from "$lib/scripts/from_backend/DBExtras";
   import { Button } from "$shadcn/components/ui/button";
   import { cn } from "$shadcn/utils";
@@ -49,8 +47,8 @@
     <p class="whitespace-pre-line">{message.message}</p>
     {#if message.initMessage}
       <div class="flex flex-row justify-center gap-4 mt-2">
-        <Button onclick={() => {reject()}} variant="secondary" class="w-1/4">{t(`dialogs.reject`)}</Button>
-        <Button onclick={() => {accept()}} class="w-1/4">{t(`dialogs.accept`)}</Button>
+        <Button onclick={() => {reject()}} variant="secondary" class="w-1/4">{m[`dialogs.reject`]()}</Button>
+        <Button onclick={() => {accept()}} class="w-1/4">{m[`dialogs.accept`]()}</Button>
       </div>
     {/if}
   </div>

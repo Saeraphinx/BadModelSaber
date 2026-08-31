@@ -16,9 +16,7 @@
   import ApprovalPopup from "$lib/components/dialogs/ApprovalDialog.svelte";
   import { toast } from "svelte-sonner";
   import { getAssetTypeCategories, getRenderingMethodString, getRenderingMethodSupportedGV, getStatusString } from "$lib/scripts/utils/stylizer.js";
-  import { i18n } from "$lib/scripts/i18n";
-
-  const { t } = i18n();
+  import { m } from "$lib/paraglide/messages";
   import MiniPagination from "$lib/components/generic/MiniPagination.svelte";
   import BigPagination from "$lib/components/generic/BigPagination.svelte";
   import { checkAllowApproval, checkRoles, getAllowedAssetStatuses } from "$lib/scripts/utils/checkRoles.js";
@@ -93,7 +91,7 @@
       })
       .catch((error) => {
         console.error("Error fetching assets:", error);
-        toast.error(t(`toasts.failedTo.loadAssets`), {
+        toast.error(m[`toasts.failedTo.loadAssets`](), {
           description: parseErrorMessage(error),
           closeButton: true,
           duration: 30000,
@@ -135,11 +133,11 @@
   <Collapsible.Root bind:open={filterFileFormatVisible}>
     <div class="flex flex-col bg-card rounded-2xl min-w-62 w-full py-2 px-4">
       <Collapsible.Trigger class="flex items-center justify-between w-full">
-        <span class="text-lg font-semibold">{t(`common.dataTable.type`)}</span>
+        <span class="text-lg font-semibold">{m[`common.dataTable.type`]()}</span>
         <ChevronRight class="h-4 w-4 transition-transform {filterFileFormatVisible ? `rotate-90` : ``}" />
       </Collapsible.Trigger>
       <Collapsible.Content class="my-2">
-        {#each getAssetTypeCategories(t) as type}
+        {#each getAssetTypeCategories() as type}
           <div class="pt-1">
             <span class="font-medium my-2">{type[0]}</span>
             <Separator class="my-1" />
@@ -173,7 +171,7 @@
   <Collapsible.Root bind:open={filterRenderingMethodVisible} class="mt-4">
     <div class="flex flex-col bg-card rounded-2xl min-w-62 w-full py-2 px-4">
       <Collapsible.Trigger class="flex items-center justify-between w-full">
-        <span class="text-lg font-semibold">{t(`common.dataTable.renderingMethod`)}</span>
+        <span class="text-lg font-semibold">{m[`common.dataTable.renderingMethod`]()}</span>
         <ChevronRight class="h-4 w-4 transition-transform {filterRenderingMethodVisible ? `rotate-90` : ``}" />
       </Collapsible.Trigger>
       <Collapsible.Content class="my-2">
@@ -184,7 +182,7 @@
               <RadioGroup.Item value={mode[1]} id={mode[1]} />
               <span class="flex flex-col">
                 <Label for={mode[1]}>
-                  {getRenderingMethodString(t, mode[1])}
+                  {getRenderingMethodString(mode[1])}
                 </Label>
                   <p class="text-xs text-gray-400">For {getRenderingMethodSupportedGV(mode[1])}</p>
               </span>
@@ -194,7 +192,7 @@
           <div class="flex items-center space-x-2">
             <RadioGroup.Item value="all" id="all" />
             <Label for="all">
-              {t(`common.all`)}
+              {m[`common.all`]()}
             </Label>
           </div>
         </RadioGroup.Root>
@@ -206,7 +204,7 @@
     <Collapsible.Root bind:open={filterStatusVisible} class="mt-4">
       <div class="flex flex-col bg-card rounded-2xl min-w-62 w-full py-2 px-4">
         <Collapsible.Trigger class="flex items-center justify-between w-full">
-          <span class="text-lg font-semibold">{t(`common.dataTable.status`)}</span>
+          <span class="text-lg font-semibold">{m[`common.dataTable.status`]()}</span>
           <ChevronRight class="h-4 w-4 transition-transform {filterStatusVisible ? `rotate-90` : ``}" />
         </Collapsible.Trigger>
         <Collapsible.Content class="my-2">
@@ -224,7 +222,7 @@
                 checked={selectedStatuses.includes(status)}
                 value={status}
                 id={status} />
-              <Label for={status}>{getStatusString(t, status)}</Label>
+              <Label for={status}>{getStatusString(status)}</Label>
             </div>
           {/each}
         </Collapsible.Content>
@@ -236,29 +234,29 @@
 {#snippet search(full = false)}
   <div class="flex flex-col bg-card rounded-2xl {full ? `max-w-md w-full` : `w-62`} p-4 mb-4 gap-2">
     <div class="flex flex-row w-full gap-2">
-      <Label for="asset-search" class="sr-only">{t(`search.search`)}</Label>
-      <Input type="text" placeholder={t(`search.searchAssets`)} id="asset-search" bind:value={searchQuery} />
+      <Label for="asset-search" class="sr-only">{m[`search.search`]()}</Label>
+      <Input type="text" placeholder={m[`search.searchAssets`]()} id="asset-search" bind:value={searchQuery} />
       {#if full}
         <Button variant="outline" onclick={() => (filterMobileDrawerVisible = true)}>
           <FunnelIcon class="h-4 w-4" />
-          <span class="sr-only">{t(`search.showFilters`)}</span>
+          <span class="sr-only">{m[`search.showFilters`]()}</span>
         </Button>
       {/if}
     </div>
     <div class="flex flex-row flex-wrap gap-2">
       <div class="grid grid-cols-[1fr_1.75fr] w-full items-center gap-2">
-        <Label for="per-page-select" class="text-sm">{t(`search.cardsPerPage`)}</Label>
+        <Label for="per-page-select" class="text-sm">{m[`search.cardsPerPage`]()}</Label>
         <Select.Root allowDeselect={false} bind:value={selectedPageSizeString} type="single" onValueChange={(value) => (currentPage = 1)}>
-          <Select.Trigger id="per-page-select" class="w-full">{t(`search.pagination.perPage`, { count: selectedPageSizeString })}</Select.Trigger>
+          <Select.Trigger id="per-page-select" class="w-full">{m[`search.pagination.perPage`]({ count: Number(selectedPageSizeString) })}</Select.Trigger>
           <Select.Content>
             {#each [24, 48, 72] as amount}
               <Select.Item value={amount.toString()}>
-                {t(`search.pagination.perPage`, { count: amount })}
+                {m[`search.pagination.perPage`]({ count: amount })}
               </Select.Item>
             {/each}
           </Select.Content>
         </Select.Root>
-        <Label for="size-select" class="text-sm">{t(`search.sizeHeader`)}</Label>
+        <Label for="size-select" class="text-sm">{m[`search.sizeHeader`]()}</Label>
         <Select.Root allowDeselect={false} bind:value={selectedCardSize} type="single" onValueChange={(value) => (currentPage = 1)}>
           <Select.Trigger id="size-select" class="w-full capitalize">{selectedCardSize}</Select.Trigger>
           <Select.Content>
@@ -299,7 +297,7 @@
           {/each}
         {:else}
           {#if filteredAssets.length === 0}
-            <span class="text-gray-500 dark:text-gray-400 w-full py-8 text-center">{t(`assets.noAssetsFound`)}</span>
+            <span class="text-gray-500 dark:text-gray-400 w-full py-8 text-center">{m[`assets.noAssetsFound`]()}</span>
           {/if}
           {#each currentAssetArray as asset (asset.id)}
             <AssetCard {asset} approvalDialog={checkAllowApproval(user, asset) ? dialog : undefined} size={selectedCardSize} />

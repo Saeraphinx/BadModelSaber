@@ -1,5 +1,5 @@
-import { type i18nT } from "$lib/scripts/i18n";
-
+import { m } from "../../paraglide/messages";
+import { getLocale } from "../../paraglide/runtime";
 import { AssetFileFormat, RenderingModes, Status, UserPermissions } from "../from_backend/DBExtras";
 
 // export function capitalizeFirstLetter(str: any): string {
@@ -8,8 +8,11 @@ import { AssetFileFormat, RenderingModes, Status, UserPermissions } from "../fro
 //   return str.charAt(0).toUpperCase() + str.slice(1);
 // }
 
-export function getStatusString(t: i18nT, status: Status): string {
-  return t(`enums.status.${status}`);
+export function getStatusString(status: Status): string {
+  if (status === Status.NonDefault_Testing) {
+    return m[`enums.status.non-default-testing`]();
+  }
+  return m[`enums.status.${status}`]();
 }
 
 export function getStatusAvailableThings(status: Status): string[] {
@@ -30,8 +33,17 @@ export function getStatusAvailableThings(status: Status): string[] {
 }
 
 
-export function getRenderingMethodString(t: i18nT, method: RenderingModes): string {
-  return t(`enums.renderingModes.${method}`);
+export function getRenderingMethodString(method: RenderingModes): string {
+  switch (method) {
+    case RenderingModes.BIRP_SinglePass:
+      return m[`enums.renderingModes.birp-sp`]();
+    case RenderingModes.BIRP_SinglePassInstanced:
+      return m[`enums.renderingModes.birp-spi`]();
+    case RenderingModes.URP_Unity6:
+      return m[`enums.renderingModes.urp-u6`]();
+    default:
+      return m[`enums.renderingModes.unknown`]();
+  }
 }
 
 export function getRenderingMethodSupportedGV(method: RenderingModes): string {
@@ -99,7 +111,7 @@ export function sortCategoriesPublic(a: { category: string }, b: { category: str
 //   }
 // }
 
-export function getAssetTypeData(t: i18nT, format: AssetFileFormat): {
+export function getAssetTypeData(format: AssetFileFormat): {
   rawString: AssetFileFormat;
   formatString: string;
   typeString: string;
@@ -109,8 +121,8 @@ export function getAssetTypeData(t: i18nT, format: AssetFileFormat): {
   let type = format.split('_')[0]//.replaceAll('-', ' ');
   let translatedType = type;
   try {
-    // @ts-expect-error
-    translatedType = t(`enums.assetTypes.${type}`);
+    // @ts-expect-error string can't be typed properly this way
+    translatedType = m[`enums.assetTypes.${type}`]();
   } catch (e) {
     console.debug(`Translation for asset type ${type} not found current for locale.`);
     translatedType = type;
@@ -137,10 +149,10 @@ export function getAssetTypeData(t: i18nT, format: AssetFileFormat): {
   }
 }
 
-export function getAssetTypeCategories(t: i18nT): Map<string, ReturnType<typeof getAssetTypeData>[]> {
+export function getAssetTypeCategories(): Map<string, ReturnType<typeof getAssetTypeData>[]> {
   let categories: Map<string, ReturnType<typeof getAssetTypeData>[]> = new Map();
   for (let format in AssetFileFormat) {
-    let assetTypeData = getAssetTypeData(t, AssetFileFormat[format as keyof typeof AssetFileFormat]);
+    let assetTypeData = getAssetTypeData(AssetFileFormat[format as keyof typeof AssetFileFormat]);
     let category = categories.get(assetTypeData.typeString) ?? [];
     category.push(assetTypeData);
     categories.set(assetTypeData.typeString, category);
@@ -173,33 +185,33 @@ export function getAssetTypeCategories(t: i18nT): Map<string, ReturnType<typeof 
   let sabers = categories.get('saber');
   if (sabers) {
     categories.delete('saber');
-    categories.set(t(`enums.assetTypes.plurals.saber`), sabers);
+    categories.set(m[`enums.assetTypes.plurals.saber`](), sabers);
   }
   let notes = categories.get('note');
   if (notes) {
     categories.delete('note');
-    categories.set(t(`enums.assetTypes.plurals.note`), notes);
+    categories.set(m[`enums.assetTypes.plurals.note`](), notes);
   }
   let walls = categories.get('wall');
   if (walls) {
     categories.delete('wall');
-    categories.set(t(`enums.assetTypes.plurals.wall`), walls);
+    categories.set(m[`enums.assetTypes.plurals.wall`](), walls);
   }
   let configs = categories.get('config');
   if (configs) {
     categories.delete('config');
-    categories.set(t(`enums.assetTypes.plurals.config`), configs);
+    categories.set(m[`enums.assetTypes.plurals.config`](), configs);
   }
   let other = categories.get('other');
   if (other) {
     categories.delete('other');
-    categories.set(t(`enums.assetTypes.plurals.other`), other);
+    categories.set(m[`enums.assetTypes.plurals.other`](), other);
   }
 
   return categories;
 }
 
-export function getRoleData(t: i18nT, role: string): {
+export function getRoleData(role: string): {
   bgColor: string;
   badgeBorder: string;
   textColor: string;
@@ -213,7 +225,7 @@ export function getRoleData(t: i18nT, role: string): {
         bgColor: 'bg-red-500',
         badgeBorder: 'border-red-500',
         textColor: 'text-white',
-        text: t(`enums.roles.admin`),
+        text: m[`enums.roles.admin`](),
         value: UserPermissions.C_Admin,
         hidden: false,
       }
@@ -222,7 +234,7 @@ export function getRoleData(t: i18nT, role: string): {
         bgColor: 'bg-pink-500',
         badgeBorder: 'border-pink-500',
         textColor: 'text-white',
-        text: t(`enums.roles.developer`),
+        text: m[`enums.roles.developer`](),
         value: UserPermissions.C_Developer,
         hidden: false,
       }
@@ -231,7 +243,7 @@ export function getRoleData(t: i18nT, role: string): {
         bgColor: 'bg-blue-500',
         badgeBorder: 'border-blue-500',
         textColor: 'text-black',
-        text: t(`enums.roles.moderator`),
+        text: m[`enums.roles.moderator`](),
         value: UserPermissions.C_Moderator,
         hidden: false,
       }
@@ -240,7 +252,7 @@ export function getRoleData(t: i18nT, role: string): {
         bgColor: 'bg-[#3b397a]',
         badgeBorder: 'border-[#3b397a]',
         textColor: 'text-white',
-        text: t(`enums.roles.bsmgStaff`),
+        text: m[`enums.roles.bsmgStaff`](),
         value: UserPermissions.C_BSMG_Staff,
         hidden: false,
       }
@@ -249,7 +261,7 @@ export function getRoleData(t: i18nT, role: string): {
         bgColor: 'bg-[#f56b1f]',
         badgeBorder: 'border-[#f56b1f]',
         textColor: 'text-black',
-        text: t(`enums.roles.modder`),
+        text: m[`enums.roles.modder`](),
         value: UserPermissions.C_Modder,
         hidden: false,
       }
@@ -258,7 +270,7 @@ export function getRoleData(t: i18nT, role: string): {
         bgColor: 'bg-[#59d8f0]',
         badgeBorder: 'border-[#59d8f0]',
         textColor: 'text-black',
-        text: t(`enums.roles.3dArtist`),
+        text: m[`enums.roles.3dArtist`](),
         value: UserPermissions.C_Modeler,
         hidden: false,
       }
@@ -267,7 +279,7 @@ export function getRoleData(t: i18nT, role: string): {
         bgColor: 'bg-gray-800',
         badgeBorder: 'border-gray-800',
         textColor: 'text-white',
-        text: t(`enums.roles.system`),
+        text: m[`enums.roles.system`](),
         value: UserPermissions.C_System,
         hidden: false,
       }
@@ -276,7 +288,7 @@ export function getRoleData(t: i18nT, role: string): {
         bgColor: 'bg-gray-500',
         badgeBorder: 'border-gray-500',
         textColor: 'text-white',
-        text: t(`enums.roles.unknown`),
+        text: m[`enums.roles.unknown`](),
         value: undefined,
         hidden: true,
       }; // Default color for unknown roles
@@ -304,7 +316,7 @@ export function getSponserUrlData(sponsorUrl: string | string[] | null) {
 
 }
 
-export function getRelativeTimeString(date: Date, lang: string): string {
+export function getRelativeTimeString(date: Date, lang: string = getLocale()): string {
   // Allow dates or times to be passed
   const timeMs = typeof date === "number" ? date : date.getTime();
   const diff = timeMs - Date.now();

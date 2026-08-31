@@ -9,9 +9,12 @@
     "preview": "vite preview",
     "prepare": "svelte-kit sync || echo ''",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
-    "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch"
+    "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
+    "i18n": "paraglide-js compile --project ./project.inlang --outdir ./src/lib/paraglide",
+    "postinstall": "yarn run i18n"
   },
   "devDependencies": {
+    "@inlang/paraglide-js": "^2.18.2",
     "@internationalized/date": "^3.12.0",
     "@lucide/lab": "^0.1.2",
     "@lucide/svelte": "^0.561.0",
@@ -29,7 +32,7 @@
     "embla-carousel-svelte": "^8.6.0",
     "flexsearch": "^0.8.205",
     "highlight.js": "^11.11.1",
-    "i18next": "^26.4.0",
+    "i18next-browser-languagedetector": "^8.2.1",
     "marked": "^17.0.5",
     "marked-alert": "^2.1.2",
     "marked-highlight": "^2.2.3",
@@ -37,7 +40,6 @@
     "superjson": "^2.2.2",
     "svelte": "^5.56.5",
     "svelte-check": "^4.7.3",
-    "svelte-i18next": "^2.2.2",
     "svelte-sonner": "^1.0.5",
     "tailwind-merge": "^3.0.2",
     "tailwind-variants": "^3.2.2",

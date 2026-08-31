@@ -8,9 +8,7 @@
   import type { ClassValue } from "svelte/elements";
   import * as Dialog from "$shadcn/components/ui/dialog";
   import { ScrollArea } from "$shadcn/components/ui/scroll-area";
-  import { i18n } from "$lib/scripts/i18n";
-
-  const { t } = i18n();
+  import { m } from "$lib/paraglide/messages";
 
   let {
     type = AssetFileFormat.Note_Bloq,
@@ -42,7 +40,7 @@
   });
   let typeCount = $derived.by(() => {
     let count = 0;
-    let typeSpecificTags = allTags.filter(({ data }) => data.category === t(`enums.tagCategories.typeSpecific`)).map(({ tag }) => tag);
+    let typeSpecificTags = allTags.filter(({ data }) => data.category === m[`enums.tagCategories.typeSpecific`]()).map(({ tag }) => tag);
     selectedTags.forEach((tag) => {
       if (typeSpecificTags.includes(tag)) count++;
     });
@@ -107,7 +105,7 @@
       {/each}
     </ScrollArea>
     <Dialog.Footer>
-      <Button variant="secondary" class="w-full" onclick={() => open = false}>{t(`dialogs.close`)}</Button>
+      <Button variant="secondary" class="w-full" onclick={() => open = false}>{m[`dialogs.close`]()}</Button>
     </Dialog.Footer>
   </Dialog.Content>
 </Dialog.Root>

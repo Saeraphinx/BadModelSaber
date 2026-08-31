@@ -56,7 +56,7 @@ storage/
 
 
 ## Translations
-The frontend uses i18next for translations. All translation files are located in `frontend/messages/`.
+The frontend uses paraglide for translations. All translation files are located in `frontend/messages/`.
 > [!NOTE]
 > The frontend and backend both need to know which translations are available, so if you add a new translation, you must also add it to the `availableLocales` object array in DB extras file found in the frontend and backend.
 

@@ -1,7 +1,5 @@
 <script lang="ts">
-  import { i18n } from "$lib/scripts/i18n";
-
-  const { t } = i18n();
+  import { m } from "$lib/paraglide/messages";
   import { zProject } from "$lib/scripts/from_backend/validators.js";
   import { Button } from "$shadcn/components/ui/button";
   import { Input } from "$shadcn/components/ui/input";
@@ -33,7 +31,7 @@
     categories: string[];
     platforms: string[];
     webhooks: any;
-    default: boolean;
+    isDefault: boolean;
   }[] = $state([]);
 
   let selectedGame = $derived.by(() => {
@@ -83,7 +81,7 @@
 
   onMount(async () => {
     await trpc.v3.games.getGames.query().then((games) => {
-      let defaultGame = games.find((game) => game.default === true);
+      let defaultGame = games.find((game) => game.isDefault === true);
       if (defaultGame) {
         projectGameName = defaultGame.name;
         projectCategory = defaultGame.categories[0] == `Core` ? `Other` : defaultGame.categories[1] || `Other`;
@@ -123,12 +121,12 @@
     }
     console.log("Submitting asset with data:", formData.get("data"));
     let newProject = await trpc.v3.upload.projectCreate.mutate(formData).then((p) => {
-      toast.success(t(`toasts.success.submit`));
+      toast.success(m[`toasts.success.submit`]());
       localStorage.removeItem(`createProjectData`);
       return p;
     }).catch((error) => {
       console.error("Failed to create project:", error);
-      toast.error(t(`toasts.error.generic`), {
+      toast.error(m[`toasts.error.generic`](), {
         description: parseErrorMessage(error),
       });
     });
@@ -139,33 +137,33 @@
 </script>
 
 <div class="flex flex-col text-center w-full p-4">
-  <h1 class="text-2xl font-bold mb-4">{t(`mods.createProject.title`)}</h1>
-  <p class="text-base mb-4">{t(`mods.createProject.subtitle`)}</p>
+  <h1 class="text-2xl font-bold mb-4">{m[`mods.createProject.title`]()}</h1>
+  <p class="text-base mb-4">{m[`mods.createProject.subtitle`]()}</p>
 </div>
 <div class="flex flex-row flex-wrap justify-center p-4 gap-4" oninput={saveDataToLocalStorage}>
   <div class="flex flex-col w-full max-w-sm">
     <!-- left side -->
     <div class="flex flex-col justify-center w-full max-w-md p-4 gap-2 bg-card rounded-lg shadow-md">
       <span>
-        <Label class="p-1 pb-2" for="name">{t(`common.dataTable.name`)}</Label>
+        <Label class="p-1 pb-2" for="name">{m[`common.dataTable.name`]()}</Label>
         <Input bind:value={projectName} aria-invalid={!isNameValid} id="name" />
       </span>
       <span>
         <Label class="p-1 pb-2" for="summary">
-          {t(`common.dataTable.nameId`)}
+          {m[`common.dataTable.nameId`]()}
           <HoverCard.Root>
             <HoverCard.Trigger class="">
               <InfoIcon class="h-4 w-4 text-gray-500" />
             </HoverCard.Trigger>
             <HoverCard.Content class="bg-card p-2 rounded shadow-md">
-              <p class="text-sm text-foreground">{t(`mods.nameIdExplanation`)}</p>
+              <p class="text-sm text-foreground">{m[`mods.nameIdExplanation`]()}</p>
             </HoverCard.Content>
           </HoverCard.Root>
         </Label>
         <Input bind:value={projectNameId} aria-invalid={!isNameIdValid} id="summary" placeholder={projectName.replaceAll(` `, ``)} />
       </span>
       <span>
-        <Label class="p-1 pb-2" for="game">{t(`common.dataTable.game`)}</Label>
+        <Label class="p-1 pb-2" for="game">{m[`common.dataTable.game`]()}</Label>
         <Select.Root type="single" bind:value={projectGameName}>
           <Select.Trigger class="w-full">
             {selectedGame ? selectedGame.displayName : ""}
@@ -178,7 +176,7 @@
         </Select.Root>
       </span>
       <span>
-        <Label class="p-1 pb-2" for="category">{t(`common.dataTable.category`)}</Label>
+        <Label class="p-1 pb-2" for="category">{m[`common.dataTable.category`]()}</Label>
         <Select.Root type="single" bind:value={projectCategory}>
           <Select.Trigger class="w-full">
             {projectCategory}
@@ -191,40 +189,40 @@
         </Select.Root>
       </span>
       <span>
-        <Label class="p-1 pb-2" for="gitUrl">{t(`common.dataTable.sourceUrl`)}</Label>
+        <Label class="p-1 pb-2" for="gitUrl">{m[`common.dataTable.sourceUrl`]()}</Label>
         <Input bind:value={projectGitUrl} aria-invalid={!isGitUrlValid} id="gitUrl" />
       </span>
     </div>
     <div class="flex flex-col justify-center w-full max-w-md p-4 bg-card rounded-lg shadow-md mt-4">
-      <p>{t(`mods.createProject.thumbnailRileListHeader`)}</p>
+      <p>{m[`mods.createProject.thumbnailRuleListHeader`]()}</p>
       <ul class="list-disc ml-6">
-        <li>{t(`mods.createProject.thumbnailRuleList1`)}</li>
-        <li>{t(`mods.createProject.thumbnailRuleList2`)}</li>
-        <li>{t(`mods.createProject.thumbnailRuleList3`)}</li>
-        <li>{t(`mods.createProject.thumbnailRuleList4`)}</li>
+        <li>{m[`mods.createProject.thumbnailRuleList1`]()}</li>
+        <li>{m[`mods.createProject.thumbnailRuleList2`]()}</li>
+        <li>{m[`mods.createProject.thumbnailRuleList3`]()}</li>
+        <li>{m[`mods.createProject.thumbnailRuleList4`]()}</li>
       </ul>
     </div>
     <div class="flex flex-col justify-center w-full max-w-md p-4 bg-card rounded-lg shadow-md mt-4">
       <!-- value is the first file in the files array -->
-      <Label class="p-1 pb-2" for="thumbnail">{t(`common.dataTable.icon`)}</Label>
+      <Label class="p-1 pb-2" for="thumbnail">{m[`common.dataTable.icon`]()}</Label>
       <Input id="thumbnail" aria-invalid={!isThumbnailValid} type="file" bind:files={projectThumbnail} accept=".png,.jpeg,.webp,.gif" />
-      <p class="text-sm text-muted-foreground mt-2 pl-1">{t(`mods.createProject.thumbnailFooter`)}</p>
+      <p class="text-sm text-muted-foreground mt-2 pl-1">{m[`mods.createProject.thumbnailFooter`]()}</p>
     </div>
   </div>
   <div class="flex flex-col w-full max-w-2xl">
     <!-- right side -->
     <div class="flex flex-col justify-center w-full max-w-2xl p-4 gap-2 bg-card rounded-lg shadow-md">
       <span>
-        <Label class="p-1 pb-2" for="summary">{t(`common.dataTable.summary`)}</Label>
+        <Label class="p-1 pb-2" for="summary">{m[`common.dataTable.summary`]()}</Label>
         <Textarea class="min-h-10 max-h-27 h-10" bind:value={projectSummary} aria-invalid={!isSummaryValid} id="summary" />
       </span>
       <span>
-        <Label class="p-1 pb-2" for="description">{t(`common.dataTable.description`)}</Label>
+        <Label class="p-1 pb-2" for="description">{m[`common.dataTable.description`]()}</Label>
         <Textarea class="min-h-64" bind:value={projectDescription} aria-invalid={!isDescriptionValid} id="description" />
       </span>
     </div>
     <div class="flex flex-col justify-center w-full max-w-2xl p-4 bg-card rounded-lg shadow-md mt-4">
-      <Button class="w-full" onclick={submitProject} disabled={!isAllValid}>{t(`dialogs.submit`)}</Button>
+      <Button class="w-full" onclick={submitProject} disabled={!isAllValid}>{m[`dialogs.submit`]()}</Button>
     </div>
   </div>
 </div>

@@ -1,7 +1,5 @@
 <script lang="ts">
-  import { i18n } from "$lib/scripts/i18n";
-
-  const { t } = i18n();
+  import { m } from "$lib/paraglide/messages";
   import { AssetFileFormat, type AssetApiV3 } from "$lib/scripts/from_backend/DBExtras";
   import { getAssetDownloadUrl } from "$lib/scripts/utils/api";
   import Button from "$shadcn/components/ui/button/button.svelte";
@@ -63,17 +61,17 @@
   {:else if previewType === "audio"}
     <audio controls class="w-full">
       <source src={getAssetDownloadUrl(props.asset)} />
-      {t(`assets.preview.noAudioSupport`)}
+      {m[`assets.preview.noAudioSupport`]()}
     </audio>
   {:else if previewType === "json" || previewType === "hsv"}
     {#if previewType === "hsv"}
       <Button variant="outline" href={`https://hsv-preview.netlify.app/?url=${encodeURIComponent(downloadUrl)}`} target="_blank">
-        {t(`assets.preview.openHSVPreviewer`)}
+        {m[`assets.preview.openHSVPreviewer`]()}
       </Button>
     {/if}
     {#if isPreviewLoaded}
       {#await fetchPreviewData()}
-        {t(`assets.preview.waitingForData`)}
+        {m[`assets.preview.waitingForData`]()}
       {:then data} 
         <p class="sr-only">{@html t(`assets.preview.textOnlySr`, { downloadUrl })}</p>
         <ol class="text-sm max-h-96 w-full overflow-auto p-2 bg-muted rounded-2xl whitespace-pre font-mono list-decimal" aria-hidden="true">
@@ -86,10 +84,10 @@
       {/await}
     {:else}
       <Button variant="outline" onclick={() => isPreviewLoaded = true}>
-        {t(`assets.preview.downloadAndLoadPreview`)}
+        {m[`assets.preview.downloadAndLoadPreview`]()}
       </Button>
     {/if}
   {:else}
-    <p class="text-muted-foreground">{t(`assets.preview.noPreviewAvailable`)}</p>
+    <p class="text-muted-foreground">{m[`assets.preview.noPreviewAvailable`]()}</p>
   {/if}
 </div>

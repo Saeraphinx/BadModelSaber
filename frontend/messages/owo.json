@@ -1,7 +1,7 @@
 {
   "name": "ModewSabew",
   "loading": "Woading...",
-  "homepage.title": "$(name)",
+  "homepage.title": "$t(name)",
   "homepage.subtitle": "A cowwection of vawious assets fow use within Beat Sabew.",
   "homepage.browseButton": "Bwowse Assets",
   "homepage.wikiButton": "Modew Wiki",
@@ -239,7 +239,7 @@
   "enums.status.queue": "In Queue",
   "enums.status.unverified": "Unvewified",
   "enums.status.testing": "Testing",
-  "enums.status.non_default_testing": "ND Testing",
+  "enums.status.non_default_testing": "Non-Suppowted Testing",
   "enums.status.verified": "Vewified",
   "enums.status.public": "Pubwic",
   "enums.status.removed": "Wemoved",
@@ -394,5 +394,7 @@
   "toasts.failedTo.loadMods": "Faiwed to woad mods. Pwease twy again watew.",
   "toasts.failedTo.loadAlerts": "Faiwed to woad awewts. Pwease twy again watew.",
   "toasts.failedTo.loadRequests": "Faiwed to woad wequests. Pwease twy again watew.",
-  "toasts.failedTo.submit": "Faiwed to submit. Pwease twy again watew."
+  "toasts.failedTo.submit": "Faiwed to submit. Pwease twy again watew.",
+  "$schema": "https://inlang.com/schema/inlang-message-format",
+  "hello_world": "Hello, {name} from owo!"
 }

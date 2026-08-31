@@ -1,9 +1,7 @@
 <script lang="ts">
   import DependencySelector from "$lib/components/forms/ProjectSelector.svelte";
   import GameVersionSelector from "$lib/components/forms/GameVersionSelector.svelte";
-  import { i18n } from "$lib/scripts/i18n";
-
-  const { t } = i18n();
+  import { m } from "$lib/paraglide/messages";
   import { Status, type GameVersionApiV3, type GameVersionApiV3_full } from "$lib/scripts/from_backend/DBExtras.js";
   import { getManifestFromFile, getManifestFromZip, type Manifest } from "$lib/scripts/from_backend/modParser.js";
   import { manifestAllDependenciesExist, manifestGameVersionIsLowestSupportedVersion } from "$lib/scripts/utils/checkManifest.js";
@@ -44,7 +42,7 @@
   let manifest: Manifest | null = $state(null);
   let manifestIssues: { str: string; issueType: `warn` | `error`; majorIssue: boolean }[] = $derived.by(() => {
     if (gameVersions === null) return [];
-    if (!manifest) return [{ issueType: `error`, str: t(`mods.manifestChecks.couldNotReadManifest`), majorIssue: false }];
+    if (!manifest) return [{ issueType: `error`, str: m[`mods.manifestChecks.couldNotReadManifest`](), majorIssue: false }];
 
     let issues: { str: string; issueType: `warn` | `error`; majorIssue: boolean }[] = [];
     if (
@@ -129,14 +127,14 @@
     }
     if (!manifest) {
       console.error("Failed to read manifest from file");
-      toast.error(t(`mods.manifestChecks.couldNotReadManifest`));
+      toast.error(m[`mods.manifestChecks.couldNotReadManifest`]());
     }
   }
 
   async function submit() {
     let file = files && files.length > 0 ? files[0] : null;
     if (!file) {
-      toast.error(t(`toasts.error.validationTitle`), { description: t(`toasts.error.validation.invalidFile`) });
+      toast.error(m[`toasts.error.validationTitle`](), { description: m[`toasts.error.validation.invalidFile`]() });
       return;
     }
 
@@ -166,13 +164,13 @@
     let response = await trpc.v3.upload.versionUpload
       .mutate(formData)
       .then((res) => {
-        toast.success(t(`toasts.success.submit`));
+        toast.success(m[`toasts.success.submit`]());
         localStorage.removeItem(`createVersionData-${project.id}`);
         return res;
       })
       .catch((error) => {
         console.error("Error submitting version:", error);
-        toast.error(t(`toasts.error.generic`), {
+        toast.error(m[`toasts.error.generic`](), {
           description: parseErrorMessage(error),
         });
       });
@@ -197,7 +195,7 @@
         });
       })
       .catch(() => {
-        toast.error(t(`toasts.error.generic`));
+        toast.error(m[`toasts.error.generic`]());
       });
   }
   async function importAllFromManifest() {
@@ -220,16 +218,16 @@
     <!-- left side -->
     <div class="flex flex-col justify-center w-full max-w-md p-4 gap-2 bg-card rounded-lg shadow-md">
       <span>
-        <Label class="p-1 pb-2" for="semver">{t(`common.dataTable.semver`)}</Label>
+        <Label class="p-1 pb-2" for="semver">{m[`common.dataTable.semver`]()}</Label>
         <Input bind:value={semverString} aria-invalid={!parse(semverString)} id="semver" />
-        <p class="text-sm text-muted-foreground mt-2 pl-1">{t(`mods.createVersion.semverShouldMatchManifest`)}</p>
+        <p class="text-sm text-muted-foreground mt-2 pl-1">{m[`mods.createVersion.semverShouldMatchManifest`]()}</p>
       </span>
       <span>
-        <Label class="p-1 pb-2" for="platform">{t(`common.dataTable.platform`)}</Label>
+        <Label class="p-1 pb-2" for="platform">{m[`common.dataTable.platform`]()}</Label>
         <Select.Root type="single" bind:value={platform}>
           <Select.Trigger class="w-full capitalize">
             {#if platform === ""}
-              {t(`common.dataTable.platform`)}
+              {m[`common.dataTable.platform`]()}
             {:else}
               {platform}
             {/if}
@@ -244,44 +242,44 @@
         </Select.Root>
       </span>
       <span>
-        <Label class="p-1 pb-2" for="supportedGameVersions">{t(`common.dataTable.supportedGameVersions`)}</Label>
+        <Label class="p-1 pb-2" for="supportedGameVersions">{m[`common.dataTable.supportedGameVersions`]()}</Label>
         <GameVersionSelector bind:selectedGameVersionIds={supportedGameVersionIds} {gameVersions} />
       </span>
     </div>
     <!-- dependencies -->
     <div class="flex flex-col justify-center w-full max-w-md p-4 bg-card rounded-lg shadow-md gap-2 mt-4">
-      <Label class="p-1 pb-2" for="dependencies">{t(`common.dataTable.dependencies`)}</Label>
+      <Label class="p-1 pb-2" for="dependencies">{m[`common.dataTable.dependencies`]()}</Label>
       <div id="dependencies" class="grid grid-cols-[2fr_1fr_0.4fr] col-gap-1 gap-2 items-center">
         {#each webDependencies as dep, i}
           <DependencySelector gameName={project.gameName} bind:selectedProjectId={webDependencies[i].pId} bind:selectedProjectName={webDependencies[i].pName} bind:selectedProjectNameId={webDependencies[i].pNameId} />
           <Input bind:value={webDependencies[i].sv} placeholder={`SemVer`} aria-invalid={validRange(dep.sv, false) ? false : true} />
           <Button variant="destructive" onclick={() => (webDependencies = webDependencies.filter((_, _i) => _i !== i))}>
-            {t(`dialogs.remove`)}
+            {m[`dialogs.remove`]()}
           </Button>
         {/each}
       </div>
       <Button variant="outline" class="mt-2" onclick={() => (webDependencies = [...webDependencies, { pId: -1, pName: ``, pNameId: ``, sv: "" }])}>
-        {t(`mods.createVersion.addDependency`)}
+        {m[`mods.createVersion.addDependency`]()}
       </Button>
-      <Button variant="ghost" class="w-full" onclick={() => (openDepCloneDialog = true)}>{t(`mods.createVersion.importFromOtherVersion`)}</Button>
-      <Button variant="ghost" class="w-full" onclick={importDepsFromManifest} disabled={!allowManifestImport}>{t(`mods.createVersion.importDepsFromManifest`)}</Button>
-      <Button variant="ghost" class="w-full" onclick={importAllFromManifest} disabled={!allowManifestImport}>{t(`mods.createVersion.importAllFromManifest`)}</Button>
+      <Button variant="ghost" class="w-full" onclick={() => (openDepCloneDialog = true)}>{m[`mods.createVersion.importFromOtherVersion`]()}</Button>
+      <Button variant="ghost" class="w-full" onclick={importDepsFromManifest} disabled={!allowManifestImport}>{m[`mods.createVersion.importDepsFromManifest`]()}</Button>
+      <Button variant="ghost" class="w-full" onclick={importAllFromManifest} disabled={!allowManifestImport}>{m[`mods.createVersion.importAllFromManifest`]()}</Button>
     </div>
   </div>
   <div class="flex flex-col w-full max-w-md">
     <!-- right side -->
     <div class="flex flex-col justify-center w-full max-w-md p-4 bg-card rounded-lg shadow-md">
       <span>
-        <Label class="p-1 pb-2" for="zip">{t(`mods.version`)}</Label>
+        <Label class="p-1 pb-2" for="zip">{m[`common.version`]()}</Label>
         <Input bind:files class="" type="file" id="zip" accept=".zip,.dll" />
       </span>
       {#if files && files[0] && files[0].name.endsWith(`.dll`)}
-        <p class="text-sm text-muted-foreground mt-2 pl-1">{t(`mods.createVersion.packingFileIntoZip`)}</p>
+        <p class="text-sm text-muted-foreground mt-2 pl-1">{m[`mods.createVersion.packingFileIntoZip`]()}</p>
       {/if}
     </div>
     <div class="flex flex-col justify-center w-full max-w-md p-4 bg-card rounded-lg shadow-md mt-4">
       <div class="flex flex-col gap-2">
-        <h2 class="text-lg font-bold">{t(`mods.manifestChecks.manifestData`)}</h2>
+        <h2 class="text-lg font-bold">{m[`mods.manifestChecks.manifestData`]()}</h2>
         {#if manifest}
           <ol class="text-sm max-h-64 w-full overflow-auto p-2 bg-muted rounded-2xl whitespace-pre font-mono list-decimal" aria-hidden="true">
             {#each JSON.stringify(manifest, null, 2).split(`\n`) as line}
@@ -301,10 +299,10 @@
               </ul>
             </div>
           {:else}
-            <p class="text-sm text-green-500">{t(`mods.manifestChecks.noIssuesFound`)}</p>
+            <p class="text-sm text-green-500">{m[`mods.manifestChecks.noIssuesFound`]()}</p>
           {/if}
         {:else}
-          <Button class="w-full" variant="outline" onclick={loadManifest} disabled={!files || files.length === 0}>{t(`mods.manifestChecks.loadManifest`)}</Button>
+          <Button class="w-full" variant="outline" onclick={loadManifest} disabled={!files || files.length === 0}>{m[`mods.manifestChecks.loadManifest`]()}</Button>
         {/if}
       </div>
     </div>
@@ -321,7 +319,7 @@
           files.length > 1 ||
           manifestIssues.some((i) => i.majorIssue) ||
           submissionIssues.length > 0}
-        onclick={submit}>{t(`dialogs.submit`)}</Button>
+        onclick={submit}>{m[`dialogs.submit`]()}</Button>
       {#if submissionIssues.length > 0}
         <div class="flex flex-col gap-2">
           <ul class="list-disc list-outside text-sm mt-2">
@@ -347,9 +345,9 @@
     </DialogHeader>
     <div class="flex flex-row gap-4">
       <Command.Root>
-        <Command.Input placeholder={t(`mods.createVersion.searchVersion`)} />
+        <Command.Input placeholder={m[`mods.createVersion.searchVersion`]()} />
         <Command.List>
-          <Command.Empty>{t(`mods.noVersionsFound`)}</Command.Empty>
+          <Command.Empty>{m[`mods.noVersionsFound`]()}</Command.Empty>
           {#if versions.length !== 0}
             {#each Object.values(Status).filter((s) => {
               return versions.some((v) => v.status === s);
@@ -374,7 +372,7 @@
       </Command.Root>
     </div>
     <DialogFooter>
-      <Button variant="outline" onclick={() => (openDepCloneDialog = false)}>{t(`dialogs.cancel`)}</Button>
+      <Button variant="outline" onclick={() => (openDepCloneDialog = false)}>{m[`dialogs.cancel`]()}</Button>
       <Button
         onclick={() => {
           if (versionIdToCloneFrom === -1) return;
@@ -390,10 +388,10 @@
               openDepCloneDialog = false;
             })
             .catch(() => {
-              toast.error(t(`toasts.error.generic`));
+              toast.error(m[`toasts.error.generic`]());
             });
         }}>
-        {t(`dialogs.submit`)}</Button>
+        {m[`dialogs.submit`]()}</Button>
     </DialogFooter>
   </DialogContent>
 </Dialog>

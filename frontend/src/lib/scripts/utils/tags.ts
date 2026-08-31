@@ -1,10 +1,9 @@
 import type { ClassValue } from "svelte/elements";
 import { AssetFileFormat, Tags } from "../from_backend/DBExtras";
-import { i18n, type i18nT } from "$lib/scripts/i18n";
+import { m } from "$lib/paraglide/messages";
+import { getLocale } from "$lib/paraglide/runtime";
 
-const { t, language } = i18n();
-
-export function getTagData(t: i18nT, tag: Tags, assetType: AssetFileFormat, shouldShowInternal: boolean = false): { translatedTag: string, category: string, outlineColor: ClassValue, disabled: boolean, animated: boolean } {
+export function getTagData(tag: Tags, assetType: AssetFileFormat, shouldShowInternal: boolean = false): { translatedTag: string, category: string, outlineColor: ClassValue, disabled: boolean, animated: boolean } {
   let splitType = assetType.split("_");
   let type = splitType[0];
   let format = splitType[1];
@@ -94,25 +93,25 @@ export function getTagData(t: i18nT, tag: Tags, assetType: AssetFileFormat, shou
         disabled = true;
       }
     case Tags.NSFW:
-      category = t(`enums.tagCategories.features`);
+      category = m[`enums.tagCategories.features`]();
       break;
 
     case Tags.Hitsound:
     case Tags.BadHitsound:
     case Tags.MenuClick:
-      category = t(`enums.tagCategories.typeSpecific`);
+      category = m[`enums.tagCategories.typeSpecific`]();
       if (type !== `sound`) disabled = true;
       break;
 
     case Tags.FirstPerson:
     case Tags.ThirdPerson:
       if (type !== `camera2`) disabled = true;
-      category = t(`enums.tagCategories.typeSpecific`);
+      category = m[`enums.tagCategories.typeSpecific`]();
       break;
 
     case Tags.Featured:
     case Tags.Contest:
-      category = t(`enums.tagCategories.internal`);
+      category = m[`enums.tagCategories.internal`]();
       disabled = !shouldShowInternal;
       break;
     case Tags.Pride:
@@ -131,30 +130,30 @@ export function getTagData(t: i18nT, tag: Tags, assetType: AssetFileFormat, shou
     case Tags.Underswing:
     case Tags.TimeDependence:
     default:
-      category = t(`enums.tagCategories.general`);
+      category = m[`enums.tagCategories.general`]();
       break;
   }
   // #endregion categories & disabled
   let translatedTag:string;
   try {
-    translatedTag = t(`enums.tags.${tag}`);
+    translatedTag = m[`enums.tags.${tag}`]();
   } catch (e) {
     // Fallback to tag key if translation not found
-    console.warn(`Translation for tag ${tag} not found for locale ${language}.`);
+    console.warn(`Translation for tag ${tag} not found for locale ${getLocale()}.`);
     translatedTag = tag;
   }
   return {
-    translatedTag: translatedTag,
+    translatedTag,
     category,
     outlineColor: intClass,
-    animated, 
+    animated,
     disabled,
   };
 }
 
-export function getAllTagsData(t: i18nT, assetType: AssetFileFormat, shouldShowInternal=false): { tag: Tags, data: ReturnType<typeof getTagData> }[] {
+export function getAllTagsData(assetType: AssetFileFormat, shouldShowInternal = false): { tag: Tags, data: ReturnType<typeof getTagData> }[] {
   return Object.values(Tags).map((tag) => ({
     tag,
-    data: getTagData(t, tag, assetType, shouldShowInternal),
+    data: getTagData(tag, assetType, shouldShowInternal),
   }));
 }

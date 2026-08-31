@@ -3,9 +3,7 @@
   import { cn } from "$shadcn/utils";
   import { MessageSquareTextIcon } from "@lucide/svelte";
   import type { HTMLAttributes } from "svelte/elements";
-  import { i18n } from "$lib/scripts/i18n";
-
-  const { t } = i18n();
+  import { m } from "$lib/paraglide/messages";
 
   let {
     request,

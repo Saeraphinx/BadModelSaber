@@ -1,7 +1,7 @@
 import { AssetFileFormat, RenderingModes, Status } from '$lib/scripts/from_backend/DBExtras';
 import type { PageLoad } from './$types';
 
-export const load = (async (data) => {
+export const load:PageLoad = (async (data) => {
   let fileFormat = data.url.searchParams.get('type')?.split(',') || ['all'];
   let renderingMethod = data.url.searchParams.get('renderingMethod');
   let status = data.url.searchParams.get('status');

@@ -1,8 +1,6 @@
 <script lang="ts">
   import { env } from "$env/dynamic/public";
-  import { i18n } from "$lib/scripts/i18n";
-
-  const { t } = i18n();
+  import { m } from "$lib/paraglide/messages";
   import { LinkedAssetLinkType } from "$lib/scripts/from_backend/DBExtras";
   import { parseErrorMessage, trpc } from "$lib/scripts/utils/api";
   import { Button } from "$shadcn/components/ui/button";
@@ -21,14 +19,14 @@
   let selectedLinkType = $state<LinkedAssetLinkType>(LinkedAssetLinkType.Alternate);
   
   let linkTypes = [
-    { value: LinkedAssetLinkType.AltFormat, label: t(`dialogs.linkAssetDialog.linkTypes.altFormat.title`), description: t(`dialogs.linkAssetDialog.linkTypes.altFormat.description`) },
-    { value: LinkedAssetLinkType.Alternate, label: t(`dialogs.linkAssetDialog.linkTypes.altDesign.title`), description: t(`dialogs.linkAssetDialog.linkTypes.altDesign.description`) },
-    { value: LinkedAssetLinkType.Newer, label: t(`dialogs.linkAssetDialog.linkTypes.newerVersion.title`), description: t(`dialogs.linkAssetDialog.linkTypes.newerVersion.description`) },
-    { value: LinkedAssetLinkType.Older, label: t(`dialogs.linkAssetDialog.linkTypes.olderVersion.title`), description: t(`dialogs.linkAssetDialog.linkTypes.olderVersion.description`) }
+    { value: LinkedAssetLinkType.AltFormat, label: m[`dialogs.linkAssetDialog.linkTypes.altFormat.title`](), description: m[`dialogs.linkAssetDialog.linkTypes.altFormat.description`]() },
+    { value: LinkedAssetLinkType.Alternate, label: m[`dialogs.linkAssetDialog.linkTypes.altDesign.title`](), description: m[`dialogs.linkAssetDialog.linkTypes.altDesign.description`]() },
+    { value: LinkedAssetLinkType.Newer, label: m[`dialogs.linkAssetDialog.linkTypes.newerVersion.title`](), description: m[`dialogs.linkAssetDialog.linkTypes.newerVersion.description`]() },
+    { value: LinkedAssetLinkType.Older, label: m[`dialogs.linkAssetDialog.linkTypes.olderVersion.title`](), description: m[`dialogs.linkAssetDialog.linkTypes.olderVersion.description`]() }
   ]
   let selectedLinkTypeObj = $derived.by(() => {
     let found = linkTypes.find(lt => lt.value === selectedLinkType);
-    return found ? found : { value: undefined, label: t(`dialogs.linkAssetDialog.selectLinkType`), description: `` };
+    return found ? found : { value: undefined, label: m[`dialogs.linkAssetDialog.selectLinkType`](), description: `` };
   });
   
   export function showDialog(id: number) {
@@ -41,7 +39,7 @@
     let id = -1;
     if (!assetId || assetId <= 0) {
       console.error("Invalid asset ID, this is very bad:", assetId);
-      toast.error(t(`toasts.error.generic`));
+      toast.error(m[`toasts.error.generic`]());
       return;
     }
     if (idToLinkTo.startsWith("https://") || idToLinkTo.startsWith("http://")) {
@@ -51,7 +49,7 @@
       id = parseInt(idToLinkTo, 10);
     }
     if (isNaN(id) || id <= 0) {
-      toast.error(t(`toasts.error.validationTitle`), { description: t(`toasts.error.validation.invalidUrl`) });
+      toast.error(m[`toasts.error.validationTitle`](), { description: m[`toasts.error.validation.invalidUrl`]() });
       return;
     }
     showLoading = true;
@@ -60,11 +58,11 @@
       type: selectedLinkType,
       linkToId: id
     }).then((response) => {
-      toast.success(t(`toasts.success.assetLink`));
+      toast.success(m[`toasts.success.assetLink`]());
       showLoading = false;
       visible = false;
     }).catch((err) => {
-      toast.error(t(`toasts.error.generic`), {description: `${parseErrorMessage(err)}` });
+      toast.error(m[`toasts.error.generic`](), {description: `${parseErrorMessage(err)}` });
       showLoading = false;
     });
   }
@@ -73,12 +71,12 @@
 <Dialog.Root bind:open={visible}>
   <Dialog.Content class="sm:max-w-[425px]">
     <Dialog.Header>
-      <Dialog.Title>{t(`dialogs.linkAssetDialog.title`)}</Dialog.Title>
-      <Dialog.Description>{t(`dialogs.linkAssetDialog.description`)}</Dialog.Description>
+      <Dialog.Title>{m[`dialogs.linkAssetDialog.title`]()}</Dialog.Title>
+      <Dialog.Description>{m[`dialogs.linkAssetDialog.description`]()}</Dialog.Description>
     </Dialog.Header>
     <div class="flex flex-col">
       <Select.Root type="single" bind:value={selectedLinkType}>
-        <Label class="mb-2">{t(`dialogs.linkAssetDialog.linkType`)}</Label>
+        <Label class="mb-2">{m[`dialogs.linkAssetDialog.linkType`]()}</Label>
         <Select.Trigger class="w-full">{selectedLinkTypeObj.label}</Select.Trigger>
         <Select.Content>
           {#each linkTypes as item}
@@ -88,7 +86,7 @@
       </Select.Root>
       <span class="text-xs text-secondary-foreground/50 mt-1 mx-1">{selectedLinkTypeObj.description}</span>
       <div class="flex flex-col mt-4">
-        <Label class="mb-2">{t(`dialogs.linkAssetDialog.assetUrl`)}</Label>
+        <Label class="mb-2">{m[`dialogs.linkAssetDialog.assetUrl`]()}</Label>
         <Input bind:value={idToLinkTo} type="text" placeholder="{env.PUBLIC_BASE_URL}/asset/1234" class="w-full" />
       </div>
     </div>
@@ -97,7 +95,7 @@
         {#if showLoading}
           <LoaderIcon class="animate-spin mr-2" />
         {/if}
-        <Button type="submit" disabled={showLoading} onclick={handleSubmit}>{t(`dialogs.saveChanges`)}</Button>
+        <Button type="submit" disabled={showLoading} onclick={handleSubmit}>{m[`dialogs.saveChanges`]()}</Button>
       </div>
     </Dialog.Footer>
   </Dialog.Content>

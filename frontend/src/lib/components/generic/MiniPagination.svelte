@@ -1,7 +1,5 @@
 <script lang="ts">
-  import { i18n } from "$lib/scripts/i18n";
-
-  const { t } = i18n();
+  import { m } from "$lib/paraglide/messages";
   import { Button } from "$shadcn/components/ui/button";
   import { ChevronLeft, ChevronRight } from "@lucide/svelte";
 
@@ -16,10 +14,10 @@
   } = $props();
 
   let pageString = $derived.by(() => {
-    return t("search.pagination.summary", {
+    return m[`search.pagination.summary`]({
       start: (currentPage - 1) * selectedPageSize + 1,
       end: selectedPageSize * currentPage > totalCount ? totalCount : selectedPageSize * currentPage,
-      total: totalCount
+      total: totalCount,
     });
   });
 </script>

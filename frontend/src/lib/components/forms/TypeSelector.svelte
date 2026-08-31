@@ -9,7 +9,6 @@
   import { AssetFileFormat } from "$lib/scripts/from_backend/DBExtras";
   import { getAssetTypeData } from "$lib/scripts/utils/stylizer";
   import type { ClassValue } from "svelte/elements";
-  import { i18n } from "$lib/scripts/i18n";
 
   let { 
     value = $bindable(""), 
@@ -22,10 +21,9 @@
     id?: string;
     class?: ClassValue;
   } = $props();
-  let { t } = i18n();
 
   let types = Object.values(AssetFileFormat).map((type) => {
-    let typeData = getAssetTypeData(t, type);
+    let typeData = getAssetTypeData(type);
     return {
       label: typeData.combinedString,
       value: type,

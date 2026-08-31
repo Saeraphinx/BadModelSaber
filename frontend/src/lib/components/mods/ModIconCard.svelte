@@ -9,9 +9,7 @@
   import { page } from "$app/state";
   import { cn } from "$shadcn/utils";
   import StatusHoverCard from "../generic/StatusHoverCard.svelte";
-  import { i18n } from "$lib/scripts/i18n";
-
-  const { t } = i18n();
+  import { m } from "$lib/paraglide/messages";
 
   let props: {
     project: ProjectApiV3;
@@ -86,7 +84,7 @@
         </div>
         <!-- Buttons -->
         <div class="absolute flex bottom-2 right-2 transition-[backdrop-filter] backdrop-blur-none hover:backdrop-blur-md duration-300 bg-gray-800/20 rounded-md text-white">
-          <Button variant="ghost" data-sveltekit-reload href="/mods/{props.project.id}" size="icon" title={t(`common.hover.goToMod`)}>
+          <Button variant="ghost" data-sveltekit-reload href="/mods/{props.project.id}" size="icon" title={m[`common.hover.goToMod`]()}>
             <InfoIcon />
           </Button>
         </div>

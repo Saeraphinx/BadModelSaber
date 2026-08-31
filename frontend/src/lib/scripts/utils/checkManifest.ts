@@ -1,9 +1,7 @@
 import { parse, Range, SemVer } from "semver";
 import type { GameVersionApiV3 } from "../from_backend/DBExtras";
 import type { Manifest } from "../from_backend/modParser";
-import { i18n } from "$lib/scripts/i18n";
-
-const { t } = i18n();
+import { m } from "$lib/paraglide/messages";
 
 export function manifestGameVersionIsLowestSupportedVersion(manifest: Manifest, supportedGameVersions: GameVersionApiV3[]): boolean {
   if (supportedGameVersions.length <= 0) {
@@ -21,21 +19,20 @@ export function manifestGameVersionIsLowestSupportedVersion(manifest: Manifest, 
 }
 
 export function manifestAllDependenciesExist(manifest: Manifest, webDependencies: {pNameId: string, sv: string}[]): string[] {
-  //debugger;
   let issues: string[] = [];
   if (!manifest.dependsOn) {
     if (webDependencies.length > 0) {
-      return [t(`mods.manifestChecks.dependencies.manifestMissingdependsOn`)];
+      return [m[`mods.manifestChecks.dependencies.manifestMissingdependsOn`]()];
     } else {
       return [];
     }
-  };
+  }
 
   for (const webDep of webDependencies) {
     let found = false;
     let webDepSVR = new Range(webDep.sv, true);
     if (!webDepSVR) {
-      issues.push(t(`mods.manifestChecks.dependencies.webInvalidRange`, { depName: webDep.pNameId, sv: webDep.sv }));
+      issues.push(m[`mods.manifestChecks.dependencies.webInvalidRange`]({ depName: webDep.pNameId, sv: webDep.sv }));
       continue;
     }
 
@@ -48,31 +45,31 @@ export function manifestAllDependenciesExist(manifest: Manifest, webDependencies
       }
     }
     if (!found) {
-      issues.push(t(`mods.manifestChecks.dependencies.webDependencyNotFound`, { depName: webDep.pNameId, sv: webDep.sv }));
+      issues.push(m[`mods.manifestChecks.dependencies.webDependencyNotFound`]({ depName: webDep.pNameId, sv: webDep.sv }));
     }
-  };
+  }
 
   // do the same check but the other way around, to catch any dependencies that are in the manifest but not in the provided dependencies
   for (const [manDepName, manDepVersion] of Object.entries(manifest.dependsOn)) {
     let manifestDepVersion = new Range(manDepVersion, true);
     if (!manifestDepVersion) {
-      issues.push(t(`mods.manifestChecks.dependencies.manifestInvalidRange`, { depName: manDepName, sv: manDepVersion }));
+      issues.push(m[`mods.manifestChecks.dependencies.manifestInvalidRange`]({ depName: manDepName, sv: manDepVersion }));
       continue;
     }
 
     let wDep = webDependencies.find(d => d.pNameId === manDepName)
     if (!wDep) {
-      issues.push(t(`mods.manifestChecks.dependencies.manifestDependencyNotFound`, { depName: manDepName, sv: manDepVersion }));
+      issues.push(m[`mods.manifestChecks.dependencies.manifestDependencyNotFound`]({ depName: manDepName, sv: manDepVersion }));
       continue;
     }
 
     let wDepVersion = new Range(wDep.sv, true);
     if (!wDepVersion || wDepVersion.raw != manifestDepVersion.raw) {
-      issues.push(t(`mods.manifestChecks.dependencies.webInvalidRange`, { depName: wDep.pNameId, sv: wDep.sv }));
+      issues.push(m[`mods.manifestChecks.dependencies.webInvalidRange`]({ depName: wDep.pNameId, sv: wDep.sv }));
       continue;
     }
   }
 
   return issues;
 }
-    
+

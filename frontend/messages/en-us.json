@@ -241,7 +241,7 @@
       "noIssuesFound": "No issues found.",
       "couldNotReadManifest": "Could not read manifest from file. Please ensure it is a valid .dll or .zip file containing a manifest.json.",
       "manifestProjectNameMismatch": "The name specified in your manifest ({{manifestName}}) doesn't match the name of the project you're uploading to ({{expectedName}}). Please ensure the 'name' field in your manifest matches the name of your project on ModelSaber.",
-      "manifestProjectIdMismatch" : "The manifest ID specified in your manifest ({{manifestId}}) doesn't match the manifest ID of the project you're uploading to ({{expectedManifestId}}). Please ensure the 'id' field in your manifest matches the manifest ID of your project on ModelSaber.",
+      "manifestProjectIdMismatch": "The manifest ID specified in your manifest ({{manifestId}}) doesn't match the manifest ID of the project you're uploading to ({{expectedManifestId}}). Please ensure the 'id' field in your manifest matches the manifest ID of your project on ModelSaber.",
       "dependencies": {
         "manifestMissingdependsOn": "Your manifest is missing the 'dependsOn' field, which is required to specify your mod's dependencies. Please add this field to your manifest and try again.",
         "webInvalidRange": "Dependency {{depName}} has an invalid game version range specified: {{sv}}. Please ensure all dependencies have valid semantic version ranges.",
@@ -317,7 +317,7 @@
       "queue": "In Queue",
       "unverified": "Unverified",
       "testing": "Testing",
-      "non_default_testing": "Non-Supported Testing",
+      "non-default-testing": "Non-Supported Testing",
       "verified": "Verified",
       "public": "Public",
       "removed": "Removed"
@@ -403,18 +403,18 @@
       }
     },
     "renderingModes": {
-      "birp_sp": "BIRP Single Pass",
-      "birp_spi": "BIRP Single Pass Instanced",
-      "urp_u6": "URP Unity 6",
+      "birp-sp": "BIRP Single Pass",
+      "birp-spi": "BIRP Single Pass Instanced",
+      "urp-u6": "URP Unity 6",
       "unknown": "Unknown"
     },
     "requestTypes": {
-      "asset_credit": "Credit",
-      "asset_link": "Link",
-      "asset_report": "Asset Report",
-      "project_report": "Project Report",
-      "version_report": "Version Report",
-      "user_report": "User Report"
+      "asset-credit": "Credit",
+      "asset-link": "Link",
+      "asset-report": "Asset Report",
+      "project-report": "Project Report",
+      "version-report": "Version Report",
+      "user-report": "User Report"
     }
   },
   "dialogs": {
@@ -520,5 +520,6 @@
       "loadRequests": "Failed to load requests. Please try again later.",
       "submit": "Failed to submit. Please try again later."
     }
-  }
+  },
+  "$schema": "https://inlang.com/schema/inlang-message-format"
 }

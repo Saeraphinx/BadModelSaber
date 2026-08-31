@@ -4,7 +4,6 @@
   import CodeDialog from "$lib/components/dialogs/CodeDialog.svelte";
   import Markdown from "$lib/components/generic/Markdown.svelte";
   import VersionCard from "$lib/components/mods/VersionCard.svelte";
-  import { i18n } from "$lib/scripts/i18n";
   import { availableLocales, Status, type UserApiV3, UserPermissions } from "$lib/scripts/from_backend/DBExtras.js";
   import { checkRoles, getAllowedVersionStatuses, checkAllowApproval, checkAllowStatusHistory, checkAllowEdit, checkAllowTranslate } from "$lib/scripts/utils/checkRoles";
   import { getRelativeTimeString, getStatusString } from "$lib/scripts/utils/stylizer.js";
@@ -25,8 +24,9 @@
   import { invalidateAll } from "$app/navigation";
   import ReportDialog from "../../../lib/components/dialogs/ReportDialog.svelte";
   import StatusHoverCard from "../../../lib/components/generic/StatusHoverCard.svelte";
+  import { m } from "../../../lib/paraglide/messages";
+  import { getLocale } from "../../../lib/paraglide/runtime";
 
-  const { t, language } = i18n();
   const { data: _internal } = $props();
   const {
     pageData: {
@@ -113,7 +113,7 @@
       });
 
     if (!parsed.success) {
-      toast.error(t(`toasts.error.validationTitle`), { description: t(`toasts.error.validation.missingFields`) });
+      toast.error(m[`toasts.error.validationTitle`](), { description: m[`toasts.error.validation.missingFields`]() });
       return;
     }
 
@@ -124,7 +124,7 @@
         data: parsed.data,
       })
       .then(() => {
-        toast.success(t(`toasts.success.savedChanges`));
+        toast.success(m[`toasts.success.savedChanges`]());
         invalidateAll().then(() => {
           isEditing = false;
           isSaving = false;
@@ -132,7 +132,7 @@
       })
       .catch((e) => {
         let error = handleTrpcError(false, `full`)(e);
-        toast.error(t(`toasts.error.save`), {
+        toast.error(m[`toasts.error.save`](), {
           description: error.formattedMessage,
         });
         isSaving = false;
@@ -146,7 +146,7 @@
     else if (type === `description`) stringToUse = translationDescription;
 
     if (!stringToUse || stringToUse.trim() === ``) {
-      toast.error(t(`toasts.error.validationTitle`), { description: t(`toasts.error.validation.missingFields`) });
+      toast.error(m[`toasts.error.validationTitle`](), { description: m[`toasts.error.validation.missingFields`]() });
       return;
     }
 
@@ -159,9 +159,9 @@
         translatedString: stringToUse,
       })
       .then(() => {
-        toast.success(t(`toasts.success.savedChanges`), {
+        toast.success(m[`toasts.success.savedChanges`](), {
           action: {
-            label: t(`dialogs.reload`),
+            label: m[`dialogs.reload`](),
             onClick: () => {
               invalidateAll();
             },
@@ -171,7 +171,7 @@
       })
       .catch((e) => {
         let error = handleTrpcError(false, `full`)(e);
-        toast.error(t(`toasts.error.save`), {
+        toast.error(m[`toasts.error.save`](), {
           description: error.formattedMessage,
         });
         isSaving = false;
@@ -197,13 +197,13 @@
 
   function fetchGithubReadme() {
     if (!project.gitUrl) {
-      toast.error(t(`toasts.error.validationTitle`), { description: t(`toasts.error.validation.invalidUrl`) });
+      toast.error(m[`toasts.error.validationTitle`](), { description: m[`toasts.error.validation.invalidUrl`]() });
       return;
     }
 
     let regex = project.gitUrl.match(/https:\/\/github.com[\/:]([^\/:]+)\/(.+)/i);
     if (!regex || regex.length === 0) {
-      toast.error(t(`toasts.error.validationTitle`), { description: t(`toasts.error.validation.invalidUrl`) });
+      toast.error(m[`toasts.error.validationTitle`](), { description: m[`toasts.error.validation.invalidUrl`]() });
       return;
     }
 
@@ -213,7 +213,7 @@
           // Try fetching from master branch if main branch doesn't exist
           return fetch(`https://raw.githubusercontent.com/${regex[1]}/${regex[2]}/refs/heads/master/README.md`).then((res) => {
             if (!res.ok) {
-              toast.error(t(`toasts.error.generic`), { description: `Could not fetch README from GitHub. Please make sure the repository has a README.md file in the root directory.` });
+              toast.error(m[`toasts.error.generic`](), { description: `Could not fetch README from GitHub. Please make sure the repository has a README.md file in the root directory.` });
               return;
             }
             return res.text().then((text) => {
@@ -228,7 +228,7 @@
         });
       })
       .catch((e) => {
-        toast.error(t(`toasts.error.generic`), {
+        toast.error(m[`toasts.error.generic`](), {
           description: parseErrorMessage(e),
         });
       });
@@ -257,13 +257,13 @@
     </div>
     <div class="grid grid-cols-1 not-md:grid-cols-2 not-md:w-full gap-2 ml-auto">
       {#if project.status === Status.Private && !isEditing && !isTranslating && shouldAllowEdit}
-        <Button variant="outline">{t(`mods.makePublic`)}</Button>
+        <Button variant="outline">{m[`mods.makePublic`]()}</Button>
       {/if}
       {#if shouldAllowEdit}
         {#if !isEditing && !isTranslating}
           <Button variant="outline" class="ml-auto w-full" onclick={() => (isEditing = true)}>
             <SquarePenIcon />
-            {t(`dialogs.edit`)}
+            {m[`dialogs.edit`]()}
           </Button>
         {/if}
       {/if}
@@ -271,14 +271,14 @@
         {#if !isTranslating && !isEditing}
           <Button variant="outline" class="ml-auto w-full" onclick={() => (isTranslating = true)}>
             <LanguagesIcon />
-            {t(`dialogs.translate`)}
+            {m[`dialogs.translate`]()}
           </Button>
         {/if}
       {/if}
       {#if shouldAllowApproval}
         <Button variant="outline" class="ml-auto w-full" onclick={() => approvalDialog?.showDialog(project.id, project.name, `project`, project.status)}>
           <BadgeInfoIcon />
-          {t(`common.buttons.approvalDialog`)}
+          {m[`common.buttons.approvalDialog`]()}
         </Button>
       {/if}
     </div>
@@ -289,14 +289,14 @@
     <div class="w-md md:max-w-sm not-md:max-w-full not-md:w-full">
       {#if checkRoles(user, [UserPermissions.Mods_UploadAll], project.gameName) || project.authors.some((a) => a.id === user?.id)}
         <div class="flex flex-row items-center justify-between mx-1">
-          <h2 class="text-xl font-bold">{t(`mods.uploadNewVersion`)}</h2>
-          <Button variant="outline" href="/create/project/{project.id}"><UploadIcon />{t(`mods.uploadNewVersionButton`)}</Button>
+          <h2 class="text-xl font-bold">{m[`mods.uploadNewVersion`]()}</h2>
+          <Button variant="outline" href="/create/project/{project.id}"><UploadIcon />{m[`mods.uploadNewVersionButton`]()}</Button>
         </div>
         <Separator class="my-4" />
       {/if}
       {#if allowedStatuses.length !== 1}
         <div class="flex flex-row items-center justify-between mx-1">
-          <p class="text-base font-bold">{t(`common.dataTable.status`)}</p>
+          <p class="text-base font-bold">{m[`common.dataTable.status`]()}</p>
           <div class="flex flex-row flex-wrap gap-x-2 justify-end">
             {#each allowedStatuses as status}
               <Button
@@ -329,7 +329,7 @@
             showUserQueueOptions={isAuthor || version.uploaderId == user?.id}
             reportDialog={shouldAllowEdit || !user ? undefined : reportDialog} />
         {:else}
-          <p class="text-center text-gray-500">{t(`mods.noVersionsFound`)}</p>
+          <p class="text-center text-gray-500">{m[`mods.noVersionsFound`]()}</p>
         {/each}
       </div>
     </div>
@@ -337,28 +337,28 @@
       <!-- Databar -->
       <div class="flex justify-evenly items-center bg-card rounded-md p-4 mb-4">
         <div class="flex flex-col items-center text-center justify-center">
-          <p class="text-sm text-gray-500">{t(`common.dataTable.status`)}</p>
+          <p class="text-sm text-gray-500">{m[`common.dataTable.status`]()}</p>
           <StatusHoverCard status={project.status} type="mod" enableHover={false} textSize="base-bold" />
           <!-- <p class="text-base font-bold">{getStatusString(project.status)}</p> -->
         </div>
         <div class="flex flex-col items-center text-center justify-center">
-          <p class="text-sm text-gray-500">{t(`common.dataTable.game`)}</p>
+          <p class="text-sm text-gray-500">{m[`common.dataTable.game`]()}</p>
           <p class="text-base font-bold">{game.displayName}</p>
         </div>
         <div class="flex flex-col items-center text-center justify-center">
-          <p class="text-sm text-gray-500">{t(`common.dataTable.category`)}</p>
+          <p class="text-sm text-gray-500">{m[`common.dataTable.category`]()}</p>
           <p class="text-base font-bold">{project.category}</p>
         </div>
         <div class="flex flex-col items-center text-center justify-center">
-          <p class="text-sm text-gray-500">{t(`common.dataTable.moreInfo`)}</p>
+          <p class="text-sm text-gray-500">{m[`common.dataTable.moreInfo`]()}</p>
           <a class="text-base font-bold hover:text-blue-400 transition-colors" href={project.gitUrl} target="_blank" rel="noopener noreferrer"
-            >{project.gitUrl.startsWith("https://github.com") ? t(`common.dataTable.sourceUrl`) : t(`common.dataTable.websiteUrl`)}</a>
+            >{project.gitUrl.startsWith("https://github.com") ? m[`common.dataTable.sourceUrl`]() : m[`common.dataTable.websiteUrl`]()}</a>
         </div>
         <div class="flex flex-col items-center text-center justify-center">
-          <p class="text-sm text-gray-500">{t(`common.dataTable.created`)}</p>
+          <p class="text-sm text-gray-500">{m[`common.dataTable.created`]()}</p>
           <Tooltip.Root>
             <Tooltip.Trigger class="text-base font-bold">
-              {getRelativeTimeString(new Date(project.createdAt), language)}
+              {getRelativeTimeString(new Date(project.createdAt))}
             </Tooltip.Trigger>
             <Tooltip.Content class="bg-card text-card-foreground rounded-md p-2 text-sm">
               {new Date(project.createdAt).toLocaleString()}
@@ -370,7 +370,7 @@
       {#if isEditing}
         <div class="flex flex-col gap-4 mx-2">
           <div class="grid grid-cols-[1fr_6fr] gap-2">
-            <Label for="icon">{t(`common.dataTable.icon`)}</Label>
+            <Label for="icon">{m[`common.dataTable.icon`]()}</Label>
             <div class="flex flex-row items-center gap-2">
               <Input id="icon" type="file" accept="image/*" bind:files={editedIconFile} />
               <Button
@@ -378,7 +378,7 @@
                 disabled={!editedIconFile || editedIconFile?.length === 0}
                 onclick={() => {
                   if (!editedIconFile || editedIconFile.length === 0) {
-                    toast.error(t(`toasts.error.validationTitle`), { description: t(`toasts.error.validation.invalidFile`) });
+                    toast.error(m[`toasts.error.validationTitle`](), { description: m[`toasts.error.validation.invalidFile`]() });
                     return;
                   }
                   let formData = new FormData();
@@ -387,24 +387,24 @@
                   trpc.internal.updateThings.project.updateProjectIcon
                     .mutate(formData)
                     .then(() => {
-                      toast.success(t(`toasts.success.iconUpload`));
+                      toast.success(m[`toasts.success.iconUpload`]());
                       invalidateAll();
                     })
                     .catch((e) => {
                       let error = handleTrpcError(false, `full`)(e);
-                      toast.error(t(`toasts.error.save`), {
+                      toast.error(m[`toasts.error.save`](), {
                         description: error.formattedMessage,
                       });
                     });
                 }}>
-                {t(`mods.uploadAndSaveIcon`)}
+                {m[`mods.uploadAndSaveIcon`]()}
               </Button>
             </div>
-            <Label for="summary">{t(`common.dataTable.summary`)}</Label>
+            <Label for="summary">{m[`common.dataTable.summary`]()}</Label>
             <Input id="summary" bind:value={editedSummary} />
-            <Label for="sourceurl">{t(`common.dataTable.sourceUrl`)}</Label>
+            <Label for="sourceurl">{m[`common.dataTable.sourceUrl`]()}</Label>
             <Input id="sourceurl" bind:value={editedGitUrl} />
-            <Label for="category">{t(`common.dataTable.category`)}</Label>
+            <Label for="category">{m[`common.dataTable.category`]()}</Label>
             <Select.Root type="single" bind:value={editedCategory}>
               <Select.Trigger class="w-full" id="category">
                 {editedCategory}
@@ -424,7 +424,7 @@
                 {/each}
               </Select.Content>
             </Select.Root>
-            <Label for="authors">{t(`common.dataTable.authors`)}</Label>
+            <Label for="authors">{m[`common.dataTable.authors`]()}</Label>
             <div class="flex flex-row justify-start items-center gap-2" id="authors">
               {#each editedAuthors as author, index (author.id)}
                 <UserBadge user={author} onClick={() => (editedAuthors = editedAuthors.filter((_, i) => i !== index))} />
@@ -444,9 +444,9 @@
           <div>
             <Tabs.Root value="edit" class="w-full">
               <Tabs.List class="border-b w-full">
-                <Tabs.Trigger value="edit">{t(`dialogs.edit`)}</Tabs.Trigger>
-                <Tabs.Trigger value="preview">{t(`dialogs.preview`)}</Tabs.Trigger>
-                <Button variant="outline" size="sm" class="ml-auto" onclick={fetchGithubReadme}>{t(`mods.createProject.fetchReadme`)}</Button>
+                <Tabs.Trigger value="edit">{m[`dialogs.edit`]()}</Tabs.Trigger>
+                <Tabs.Trigger value="preview">{m[`dialogs.preview`]()}</Tabs.Trigger>
+                <Button variant="outline" size="sm" class="ml-auto" onclick={fetchGithubReadme}>{m[`mods.createProject.fetchReadme`]()}</Button>
               </Tabs.List>
               <Tabs.Content value="edit">
                 <Textarea class="w-full h-64 mt-2" bind:value={editedDescription} />
@@ -459,7 +459,7 @@
           </div>
         </div>
         <div class="flex justify-end gap-2">
-          <Button variant="outline" onclick={() => (isEditing = false)} disabled={isSaving}>{t(`dialogs.cancel`)}</Button>
+          <Button variant="outline" onclick={() => (isEditing = false)} disabled={isSaving}>{m[`dialogs.cancel`]()}</Button>
           <Button
             disabled={!zProject
               .pick({
@@ -480,18 +480,18 @@
             {#if isSaving}
               Saving...
             {:else}
-              {t(`dialogs.saveChanges`)}
+              {m[`dialogs.saveChanges`]()}
             {/if}
           </Button>
         </div>
       {:else if isTranslating}
         <div class="flex flex-col gap-4 mx-2">
           <div class="grid grid-cols-[1fr_6fr] gap-2">
-            <Label for="language">{t(`mods.translation.language`)}</Label>
+            <Label for="language">{m[`mods.translation.language`]()}</Label>
             <div class="flex flex-row items-center gap-2">
               <Select.Root type="single" bind:value={translatingLanguage} onValueChange={() => getCurrentTranslation(false)}>
                 <Select.Trigger class="w-full" id="language">
-                  {availableLocales.find((l) => l.code == translatingLanguage)?.name || t(`mods.translation.language`)}
+                  {availableLocales.find((l) => l.code == translatingLanguage)?.name || m[`mods.translation.language`]()}
                 </Select.Trigger>
                 <Select.Content class="w-full">
                   {#each availableLocales.filter((l) => l.backend) as locale}
@@ -499,27 +499,27 @@
                   {/each}
                 </Select.Content>
               </Select.Root>
-              <Button variant="outline" size="sm" onclick={() => getCurrentTranslation(true)}>{t(`dialogs.reload`)}</Button>
+              <Button variant="outline" size="sm" onclick={() => getCurrentTranslation(true)}>{m[`dialogs.reload`]()}</Button>
             </div>
-            <Label for="name">{t(`common.dataTable.name`)}</Label>
+            <Label for="name">{m[`common.dataTable.name`]()}</Label>
             <div class="flex flex-row items-center gap-2">
               <Input id="name" bind:value={translationName} />
               <Button disabled={!translatingLanguage || translatingLanguage.trim() === "" || isSaving} onclick={() => onSaveChangesTranslating(`name`)}>
                 {#if isSaving}
-                  {t(`dialogs.saving`)}
+                  {m[`dialogs.saving`]()}
                 {:else}
-                  {t(`dialogs.save`)}
+                  {m[`dialogs.save`]()}
                 {/if}
               </Button>
             </div>
-            <Label for="summary">{t(`common.dataTable.summary`)}</Label>
+            <Label for="summary">{m[`common.dataTable.summary`]()}</Label>
             <div class="flex flex-row items-center gap-2">
               <Input id="summary" bind:value={translationSummary} />
               <Button disabled={!translatingLanguage || translatingLanguage.trim() === "" || isSaving} onclick={() => onSaveChangesTranslating(`summary`)}>
                 {#if isSaving}
-                  {t(`dialogs.saving`)}
+                  {m[`dialogs.saving`]()}
                 {:else}
-                  {t(`dialogs.save`)}
+                  {m[`dialogs.save`]()}
                 {/if}
               </Button>
             </div>
@@ -527,10 +527,10 @@
           <div class="flex flex-col gap-2">
             <Tabs.Root value="edit" class="w-full">
               <Tabs.List class="border-b w-full">
-                <Tabs.Trigger value="edit">{t(`dialogs.edit`)}</Tabs.Trigger>
-                <Tabs.Trigger value="preview">{t(`dialogs.preview`)}</Tabs.Trigger>
-                <Tabs.Trigger value="viewOriginal">{t(`mods.translation.viewOriginal`)}</Tabs.Trigger>
-                <Tabs.Trigger value="viewOriginalPreview">{t(`mods.translation.viewOriginalMarkdown`)}</Tabs.Trigger>
+                <Tabs.Trigger value="edit">{m[`dialogs.edit`]()}</Tabs.Trigger>
+                <Tabs.Trigger value="preview">{m[`dialogs.preview`]()}</Tabs.Trigger>
+                <Tabs.Trigger value="viewOriginal">{m[`mods.translation.viewOriginal`]()}</Tabs.Trigger>
+                <Tabs.Trigger value="viewOriginalPreview">{m[`mods.translation.viewOriginalMarkdown`]()}</Tabs.Trigger>
               </Tabs.List>
               <Tabs.Content value="edit">
                 <Textarea class="w-full h-64 mt-2" bind:value={translationDescription} />
@@ -547,22 +547,22 @@
               </Tabs.Content>
             </Tabs.Root>
             <div class="flex flex-row justify-end gap-2">
-              <Button variant="outline" onclick={() => (isTranslating = false)} disabled={isSaving}>{t(`dialogs.cancel`)}</Button>
+              <Button variant="outline" onclick={() => (isTranslating = false)} disabled={isSaving}>{m[`dialogs.cancel`]()}</Button>
               <Button disabled={!translatingLanguage || translatingLanguage.trim() === "" || isSaving} onclick={() => onSaveChangesTranslating(`description`)}>
                 {#if isSaving}
-                  {t(`dialogs.saving`)}
+                  {m[`dialogs.saving`]()}
                 {:else}
-                  {t(`dialogs.save`)} ({t(`common.dataTable.description`)})
+                  {m[`dialogs.save`]()} ({m[`common.dataTable.description`]()})
                 {/if}
               </Button>
             </div>
           </div>
         </div>
       {:else}
-        <Tabs.Root value={language !== "en" && project.translation?.description ? "translation" : "original"}>
-          {#if language != "en"}
+        <Tabs.Root value={getLocale().startsWith("en") && project.translation?.description ? "translation" : "original"}>
+          {#if !getLocale().startsWith("en")}
             <Tabs.List class="mb-2">
-              <Tabs.Trigger disabled={!project.translation?.description} value="translation">{availableLocales.find((l) => l.code == language)?.name || language}</Tabs.Trigger>
+              <Tabs.Trigger disabled={!project.translation?.description} value="translation">{availableLocales.find((l) => l.code == getLocale())?.name || getLocale()}</Tabs.Trigger>
               <Tabs.Trigger value="original">Original</Tabs.Trigger>
             </Tabs.List>
           {/if}

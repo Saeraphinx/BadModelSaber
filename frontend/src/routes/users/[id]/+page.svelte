@@ -22,9 +22,9 @@
   import z from "zod/v4";
   import * as Select from "../../../lib/shadcn/components/ui/select";
   import { XIcon } from "@lucide/svelte";
-  import { i18n } from "../../../lib/scripts/i18n";
+  import { m } from "$lib/paraglide/messages";
 
-  const { t } = i18n();
+  
   const { data: _internal } = $props();
   const { pageData, trpc, user } = $derived(_internal);
   const pdUser = $derived(pageData.user);
@@ -82,10 +82,10 @@
     trpc.internal.updateThings.user.updateUser.mutate(editData).then(() => {
       isEditing = false;
       tabsValue = "mods";
-      toast.success(t(`toasts.success.savedChanges`));
+      toast.success(m[`toasts.success.savedChanges`]());
       invalidate((url) => url.pathname.includes(`v3.user.getUserById`));
     }).catch((err) => {
-      toast.error(t(`toasts.error.generic`), { description: parseErrorMessage(err) });
+      toast.error(m[`toasts.error.generic`](), { description: parseErrorMessage(err) });
     });
   }
 
@@ -138,7 +138,7 @@
                 isEditing = true
                 tabsValue = "edit";
               }}>
-                {t(`dialogs.edit`)}
+                {m[`dialogs.edit`]()}
               </Button>
             {/if}
             {#if isEditing}
@@ -146,7 +146,7 @@
                 isEditing = false;
                 tabsValue = "mods";
               }}>
-                {t(`dialogs.cancel`)}
+                {m[`dialogs.cancel`]()}
               </Button>
             {/if}
             <!-- Ban button section -->
@@ -157,7 +157,7 @@
                     trpc.internal.admin.user.banUser.mutate({ userId: pdUser.id, ban: false}).then(() => {
                       toast.success("User unbanned.");
                     }).catch((err) => {
-                      toast.error(t(`toasts.error.generic`), { description: parseErrorMessage(err) });
+                      toast.error(m[`toasts.error.generic`](), { description: parseErrorMessage(err) });
                     });
                   }
                 }}>
@@ -169,7 +169,7 @@
                     trpc.internal.admin.user.banUser.mutate({ userId: pdUser.id, ban: true}).then(() => {
                       toast.success("User banned.");
                     }).catch((err) => {
-                      toast.error(t(`toasts.error.generic`), { description: parseErrorMessage(err) });
+                      toast.error(m[`toasts.error.generic`](), { description: parseErrorMessage(err) });
                     });
                   }
                 }}>
@@ -193,18 +193,18 @@
   <Tabs.Root bind:value={tabsValue} class="w-full">
     <Tabs.List variant="line" class="justify-center items-center m-auto">
       {#if !isEditing}
-        <Tabs.Trigger value="mods">{t(`common.mods`)}</Tabs.Trigger>
-        <Tabs.Trigger value="assets">{t(`common.assets`)}</Tabs.Trigger>
+        <Tabs.Trigger value="mods">{m[`common.mods`]()}</Tabs.Trigger>
+        <Tabs.Trigger value="assets">{m[`common.assets`]()}</Tabs.Trigger>
       {/if}
       {#if isEditing}
-        <Tabs.Trigger value="edit">{t(`dialogs.edit`)}</Tabs.Trigger>
+        <Tabs.Trigger value="edit">{m[`dialogs.edit`]()}</Tabs.Trigger>
       {/if}
     </Tabs.List>
       <Tabs.Content value="mods" class="w-full mt-4 flex flex-row flex-wrap justify-center gap-8 m-auto">
         {#each mods as mod}
           <ModCard project={mod} />
         {:else}
-          <p class="text-base text-muted-foreground">{t(`mods.noModsFound`)}</p>
+          <p class="text-base text-muted-foreground">{m[`mods.noModsFound`]()}</p>
         {/each}
       </Tabs.Content>
       <Tabs.Content value="assets" class="w-full mt-4 flex flex-row flex-wrap justify-evenly gap-8 m-auto">
@@ -217,20 +217,20 @@
       <Tabs.Content value="edit" class="w-full mt-4 flex flex-col items-center gap-4 m-auto">
         <div class="flex flex-col justify-center w-full max-w-md p-4 gap-4 bg-card rounded-lg">
           <div class="w-full max-w-lg">
-            <Label class="p-1 pb-2" for="displayName">{t(`users.displayName`)}</Label>
+            <Label class="p-1 pb-2" for="displayName">{m[`users.displayName`]()}</Label>
             <Input placeholder="Display Name" bind:value={editDisplayName} class="w-full" />
           </div>
           <div class="w-full max-w-lg">
-            <Label class="p-1 pb-2" for="bio">{t(`users.bio`)}</Label>
+            <Label class="p-1 pb-2" for="bio">{m[`users.bio`]()}</Label>
             <Textarea placeholder="Bio" bind:value={editBio} class="w-full" />
           </div>
           <!-- UserPlatforms Linking -->
         <div class="w-full max-w-lg">
           <div class="flex flex-row justify-between items-center pb-2">
-            <p class="text-sm font-semibold ml-1">{t(`users.donationLinks`)}</p>
+            <p class="text-sm font-semibold ml-1">{m[`users.donationLinks`]()}</p>
             <Button size="sm" variant="outline" class="h-6" onclick={() => {
               editUserPlatforms = [...(editUserPlatforms ?? []), { platform: PlatformType.GitHub, username: "" }];
-            }}>{t(`dialogs.add`)}</Button>
+            }}>{m[`dialogs.add`]()}</Button>
           </div>
           <div class="flex flex-col gap-2">
             {#each editUserPlatforms as eUP}
@@ -245,7 +245,7 @@
                     {/each}
                   </Select.Content>
                 </Select.Root>
-                <Input placeholder={t(`users.username`)} bind:value={eUP.username} aria-invalid={!z.string().regex(/^[a-zA-Z0-9_-]{3,16}$/).safeParse(eUP.username).success} class="w-full" />
+                <Input placeholder={m[`users.username`]()} bind:value={eUP.username} aria-invalid={!z.string().regex(/^[a-zA-Z0-9_-]{3,16}$/).safeParse(eUP.username).success} class="w-full" />
                 <Button variant="destructive" size="icon" onclick={() => {
                   editUserPlatforms = editUserPlatforms ? editUserPlatforms.filter((up) => up !== eUP) : [];
                 }}><XIcon /></Button>
@@ -257,15 +257,15 @@
             <div class="flex flex-row justify-center items-center gap-4">
               <div class="flex flex-row justify-center items-center gap-2">
                 <Checkbox bind:checked={editHideDiscordId} />
-                <Label for="hideDiscordId">{t(`users.hideDiscordId`)}</Label>
+                <Label for="hideDiscordId">{m[`users.hideDiscordId`]()}</Label>
               </div>
               <div class="flex flex-row justify-center items-center gap-2">
                 <Checkbox bind:checked={editHideGithubId} />
-                <Label for="hideGithubId">{t(`users.hideGithubId`)}</Label>
+                <Label for="hideGithubId">{m[`users.hideGithubId`]()}</Label>
               </div>
             </div>
           {/if}
-          <Button onclick={onEditSubmit}>{t(`dialogs.saveChanges`)}</Button>
+          <Button onclick={onEditSubmit}>{m[`dialogs.saveChanges`]()}</Button>
         </div>
         {#if allowEditingConfidentials}
           <div class="flex flex-col justify-center w-full max-w-md p-4 gap-2 bg-card rounded-lg">
@@ -274,16 +274,16 @@
                 trpc.internal.auth.linkGitHubToaccount.query({}).then(({ url }) => {
                   window.open(url, "_blank");
                 }).catch((err) => {
-                  toast.error(t(`toasts.error.generic`), { description: parseErrorMessage(err) });
+                  toast.error(m[`toasts.error.generic`](), { description: parseErrorMessage(err) });
                 })
-              }}>{t(`users.linkToGithub`)}</Button>
+              }}>{m[`users.linkToGithub`]()}</Button>
               <Button variant="outline" disabled={user?.discordId !== null} onclick={() => {
                 trpc.internal.auth.linkDiscordToAccount.query({}).then(({ url }) => {
                   window.open(url, "_blank");
                 }).catch((err) => {
-                  toast.error(t(`toasts.error.generic`), { description: parseErrorMessage(err) });
+                  toast.error(m[`toasts.error.generic`](), { description: parseErrorMessage(err) });
                 })
-              }}>{t(`users.linkToDiscord`)}</Button>
+              }}>{m[`users.linkToDiscord`]()}</Button>
             </div>
           </div>
         {/if}

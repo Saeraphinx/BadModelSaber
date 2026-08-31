@@ -1,7 +1,5 @@
 <script lang="ts">
-  import { i18n } from "$lib/scripts/i18n";
-
-  const { t } = i18n();
+  import { m } from "$lib/paraglide/messages";
   import type { ProjectApiV3, VersionApiV3 } from "$lib/scripts/from_backend/DBExtras";
   import { getProjectThumbnailUrl, getVersionDownloadUrl } from "$lib/scripts/utils/api";
   import Button from "$shadcn/components/ui/button/button.svelte";
@@ -55,11 +53,11 @@
   <div class="flex-1 flex flex-col justify-between">
     <p class="text-base line-clamp-3">{project.summary}</p>
     <div class="grid grid-cols-2 gap-2 mt-2">
-      <Button variant="secondary" href="/mods/{project.id}" class="">{t(`common.buttons.viewDetails`)}</Button>
+      <Button variant="secondary" href="/mods/{project.id}" class="">{m[`common.buttons.viewDetails`]()}</Button>
       {#if version}
-        <DownloadButton variant="outline" downloadType="mod" status={version.status} href={getVersionDownloadUrl(version)} class="">{t(`common.buttons.download`)}</DownloadButton>
+        <DownloadButton variant="outline" downloadType="mod" status={version.status} href={getVersionDownloadUrl(version)} class="">{m[`common.buttons.download`]()}</DownloadButton>
       {:else}
-        <Button variant="outline" disabled class="">{t(`common.buttons.download`)}</Button>
+        <Button variant="outline" disabled class="">{m[`common.buttons.download`]()}</Button>
       {/if}
     </div>
   </div>

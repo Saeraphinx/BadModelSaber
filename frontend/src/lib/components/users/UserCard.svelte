@@ -4,7 +4,6 @@
   import { Badge } from '$shadcn/components/ui/badge';
   import { cn } from '$shadcn/utils';
   import type { HTMLAttributes } from 'svelte/elements';
-  import { i18n } from '$lib/scripts/i18n.js';
 
   let {
     user,
@@ -13,9 +12,8 @@
   }:{
     user: UserApiV3;
   } & HTMLAttributes<HTMLDivElement> = $props();
-  const { t } = i18n();
   const roleData = $derived.by(() => {
-    return user.permissions.sitewide.map(r => getRoleData(t, r));
+    return user.permissions.sitewide.map(r => getRoleData(r));
   });
 </script>
 

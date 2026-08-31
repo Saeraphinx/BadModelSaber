@@ -10,9 +10,7 @@
   import { cn } from "$shadcn/utils";
   import StatusHoverCard from "../generic/StatusHoverCard.svelte";
   import DownloadButton from "../generic/DownloadButton.svelte";
-  import { i18n } from "../../../lib/scripts/i18n";
-
-  const { t } = i18n();
+   import { m } from "$lib/paraglide/messages";
 
   let props: {
     asset: AssetApiV3;
@@ -89,17 +87,17 @@
         <!-- Buttons -->
         <div class="absolute flex bottom-2 right-2 transition-[backdrop-filter] backdrop-blur-none hover:backdrop-blur-md duration-300 bg-gray-800/20 rounded-md text-white">
           {#if props.approvalDialog}
-            <Button variant="ghost" size="icon" title={t(`common.hover.openApprovalDialog`)} onclick={() => props.approvalDialog?.showDialog(props.asset.id, props.asset.name, `asset`, props.asset.status)}>
+            <Button variant="ghost" size="icon" title={m[`common.hover.openApprovalDialog`]()} onclick={() => props.approvalDialog?.showDialog(props.asset.id, props.asset.name, `asset`, props.asset.status)}>
               <BadgeAlert />
             </Button>
           {/if}
-          <Button variant="ghost" data-sveltekit-reload href="/assets/{props.asset.id}" size="icon" title={t(`common.hover.goToAsset`)}>
+          <Button variant="ghost" data-sveltekit-reload href="/assets/{props.asset.id}" size="icon" title={m[`common.hover.goToAsset`]()}>
             <InfoIcon />
           </Button>
-          <DownloadButton variant="ghost" href={downloadUrl} status={props.asset.status} size="icon" downloadType="asset" title={t(`common.buttons.download`)}>
+          <DownloadButton variant="ghost" href={downloadUrl} status={props.asset.status} size="icon" downloadType="asset" title={m[`common.buttons.download`]()}>
             <Download />
           </DownloadButton>
-          <DownloadButton variant="ghost" href={oneClickUrl} status={props.asset.status} size="icon" downloadType="asset" title={t(`common.buttons.oneClickInstall`)}>
+          <DownloadButton variant="ghost" href={oneClickUrl} status={props.asset.status} size="icon" downloadType="asset" title={m[`common.buttons.oneClickInstall`]()}>
             <DownloadCloud />
           </DownloadButton>
         </div>

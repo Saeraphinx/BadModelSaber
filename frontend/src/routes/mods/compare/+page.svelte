@@ -1,7 +1,5 @@
 <script lang="ts">
-  import { i18n } from "$lib/scripts/i18n";
-
-  const { t } = i18n();
+  import { m } from "$lib/paraglide/messages";
   import type { GameVersionApiV3, ProjectApiV3, VersionApiV3 } from "$lib/scripts/from_backend/DBExtras";
   import { Label } from "$lib/shadcn/components/ui/label";
   import * as Select from "$lib/shadcn/components/ui/select";
@@ -119,7 +117,7 @@
   <div class="flex flex-row gap-2 bg-card rounded-lg p-4">
     <div class="grid grid-cols-3 not-sm:grid-rows-3 not-sm:grid-cols-1 not-sm:w-64 w-sm gap-2">
       <div class="flex flex-col gap-2">
-        <Label class="ml-1">{t(`mods.game`)}</Label>
+        <Label class="ml-1">{m[`common.game`]()}</Label>
         <Select.Root type="single" bind:value={selectedGameName} onValueChange={fetchGameVersions}>
           <Select.Trigger class="w-full">{selectedGame?.displayName}</Select.Trigger>
           <Select.Content>

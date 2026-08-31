@@ -3,7 +3,8 @@
         {
             "name": "frontend",
             "path": "./frontend",
-        }, {
+        },
+        {
             "name": "backend",
             "path": "./backend",
         },
@@ -26,13 +27,27 @@
             "**/Thumbs.db": true,
             "**/.svelte-kit": true,
             "backend/": true,
-            "frontend/":true
+            "frontend/": true
         },
         "js/ts.experimental.useTsgo": true,
-        "i18n-ally.localesPaths": [
-            "messages"
-        ],
-        "i18n-ally.enabledFrameworks": ["i18next"]
+    },
+    "tasks": {
+        "version": "2.0.0",
+        "tasks": [
+            {
+                "label": "Typecheck (Single Run)",
+                "type": "shell",
+                "command": "npx tsc --noEmit",
+                "problemMatcher": [
+                    "$tsc"
+                ],
+                "group": "build",
+                "presentation": {
+                    "reveal": "silent",
+                    "panel": "shared"
+                }
+            }
+        ]
     },
     "launch": {
         "version": "0.2.0",
@@ -57,12 +72,14 @@
                 "command": "yarn run dev",
             }
         ],
-        "compounds": [{
-            "name": "Run Backend & Frontend",
-            "configurations": [
-                "Run backend yarn script: dev",
-                "Run frontend yarn script: dev"
-            ]
-        }]
+        "compounds": [
+            {
+                "name": "Run Backend & Frontend",
+                "configurations": [
+                    "Run backend yarn script: dev",
+                    "Run frontend yarn script: dev"
+                ]
+            }
+        ]
     }
 }

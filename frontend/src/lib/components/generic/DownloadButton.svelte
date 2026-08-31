@@ -1,7 +1,5 @@
 <script lang="ts">
-  import { i18n } from "$lib/scripts/i18n";
-
-  const { t } = i18n();
+  import { m } from "$lib/paraglide/messages";
   import { Button, type ButtonProps } from "$shadcn/components/ui/button";
   import * as Dialog from "$shadcn/components/ui/dialog";
   import { onMount, type Snippet } from "svelte";
@@ -80,7 +78,7 @@
   {#if children}
     {@render children()}
   {:else}
-    {t(`common.buttons.download`)}
+    {m[`common.buttons.download`]()}
   {/if}
 </Button>
 
@@ -93,29 +91,29 @@
     <Dialog.Content class="">
       <Dialog.Header>
         {#if dialogToUse === `assetNonverified`}
-          <Dialog.Title>{t(`dialogs.downloadDialog.assetTitle`)}</Dialog.Title>
+          <Dialog.Title>{m[`dialogs.downloadDialog.assetTitle`]()}</Dialog.Title>
         {:else if dialogToUse === `modNonverified`}
-          <Dialog.Title>{t(`dialogs.downloadDialog.nonVerifiedModTitle`)}</Dialog.Title>
+          <Dialog.Title>{m[`dialogs.downloadDialog.nonVerifiedModTitle`]()}</Dialog.Title>
         {:else if dialogToUse === `modTesting`}
-          <Dialog.Title>{t(`dialogs.downloadDialog.testingModTitle`)}</Dialog.Title>
+          <Dialog.Title>{m[`dialogs.downloadDialog.testingModTitle`]()}</Dialog.Title>
         {/if}
       </Dialog.Header>
       {#if dialogToUse === `assetNonverified`}
-        <p class="text-md">{@html t(`dialogs.downloadDialog.assetDescription`)}</p>
+        <p class="text-md">{@html m[`dialogs.downloadDialog.assetDescription`]()}</p>
       {:else if dialogToUse === `modNonverified`}
-        <p class="text-md">{@html t(`dialogs.downloadDialog.nonVerifiedModDescription`)}</p>
+        <p class="text-md">{@html m[`dialogs.downloadDialog.nonVerifiedModDescription`]()}</p>
       {:else if dialogToUse === `modTesting`}
-        <p class="text-md">{@html t(`dialogs.downloadDialog.testingModDescription`)}</p>
+        <p class="text-md">{@html m[`dialogs.downloadDialog.testingModDescription`]()}</p>
       {/if}
-      <p class="text-sm text-muted-foreground">{t(`dialogs.downloadDialog.neverShowAgain`)}</p>
+      <p class="text-sm text-muted-foreground">{m[`dialogs.downloadDialog.neverShowAgain`]()}</p>
       <Dialog.Footer>
         <Button disabled={ignoreCountdown >= 1} variant="ghost" onclick={() => {
           localStorage.setItem(`suppressUnverifiedDownloadWarning-${downloadType}-${status}`, "true");
           dialogVisible = false;
           showWarning = false;
-        }}>{t(`dialogs.dontShowAgain`)}</Button>
-        <Button href={href} variant="outline" disabled={dlCountdown >= 1} onclick={() => (dialogVisible = false)}>{t(`common.buttons.download`)}{dlCountdown >= 1 ? ` (${dlCountdown})` : ``}</Button>
-        <Button onclick={() => (dialogVisible = false)}>{t(`dialogs.cancel`)}</Button>
+        }}>{m[`dialogs.dontShowAgain`]()}</Button>
+        <Button href={href} variant="outline" disabled={dlCountdown >= 1} onclick={() => (dialogVisible = false)}>{m[`common.buttons.download`]()}{dlCountdown >= 1 ? ` (${dlCountdown})` : ``}</Button>
+        <Button onclick={() => (dialogVisible = false)}>{m[`dialogs.cancel`]()}</Button>
       </Dialog.Footer>
     </Dialog.Content>
   </Dialog.Root>
