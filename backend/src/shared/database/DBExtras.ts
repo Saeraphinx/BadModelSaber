@@ -23,7 +23,7 @@ export const availableLocales: {
   backend: boolean; // whether this translation is used in mod/asset translations (e.g. backend things) or just text translations (e.g. frontend things)
 }[] = [
   {
-    code: "en-us",
+    code: "en-US",
     name: "English",
     secret: false,
     backend: false, // English is the default language and is used as a fallback for missing translations, so it should not be marked as a backend translation

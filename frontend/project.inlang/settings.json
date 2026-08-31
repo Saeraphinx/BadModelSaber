@@ -7,9 +7,9 @@
   "plugin.inlang.i18next": {
     "pathPattern": "./messages/{locale}.json"
   },
-  "baseLocale": "en-us",
+  "baseLocale": "en-US",
   "locales": [
-    "en-us",
+    "en-US",
     "owo"
   ]
 }
