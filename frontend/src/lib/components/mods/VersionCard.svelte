@@ -7,7 +7,7 @@
   import CodeDialog from "../dialogs/CodeDialog.svelte";
   import ReportDialog from "../dialogs/ReportDialog.svelte";
   import StatusHoverCard from "../generic/StatusHoverCard.svelte";
-  import { getVersionDecompUrl, getVersionDownloadUrl, getVersionManifestUrl, parseErrorMessage, trpc } from "$lib/scripts/utils/api";
+  import { getVersionDecompUrl, getVersionDownloadUrl, getVersionManifestUrl, handleTrpcErrorWithToast, handleTrpcSuccessWithToast, parseErrorMessage, trpc } from "$lib/scripts/utils/api";
   import Spinner from "$shadcn/components/ui/spinner/spinner.svelte";
   import Button from "$shadcn/components/ui/button/button.svelte";
   import DownloadButton from "../generic/DownloadButton.svelte";
@@ -75,44 +75,26 @@
       data: {
         supportedGameVersionIds: editedGameVersionIds.map(id => parseInt(id)),
       }
-    }).then(() => {
-      toast.success(m[`toasts.success.savedChanges`]());
+    }).then(handleTrpcSuccessWithToast(m[`toasts.success.savedChanges`](), false, () => {
       isEditing = false;
       version.supportedGameVersions = gameVersions.filter(gv => editedGameVersionIds.includes(gv.id.toString()));
-    }).catch(err => {
-      // handle error, maybe show a toast or something
-      console.error(err);
-      toast.error(m[`toasts.error.save`](), {
-        description: parseErrorMessage(err),
-      });
-    });
+    })).catch(handleTrpcErrorWithToast(m[`toasts.save.error`]()));
   }
 
   // #region Approval Actions
   function submitForApproval() {
     trpc.internal.updateThings.version.submitForApproval.mutate({
       id: version.id
-    }).then(() => {
-      toast.success(m[`toasts.success.submit`]());
-    }).catch(err => {
-      console.error(err);
-      toast.error(m[`toasts.failedTo.submit`](), {
-        description: parseErrorMessage(err),
-      });
-    });
+    })
+    .then(handleTrpcSuccessWithToast(m[`toasts.submit.success`]()))
+    .catch(handleTrpcErrorWithToast(m[`toasts.submit.error`]()));
   }
 
   function removeFromQueue() {
     trpc.internal.updateThings.version.removeFromQueue.mutate({
       id: version.id
-    }).then(() => {
-      toast.success(m[`toasts.success.savedChanges`]());
-    }).catch(err => {
-      console.error(err);
-      toast.error(m[`toasts.failedTo.submit`](), {
-        description: parseErrorMessage(err),
-      });
-    });
+    }).then(handleTrpcSuccessWithToast(m[`toasts.save.success`]()))
+    .catch(handleTrpcErrorWithToast(m[`toasts.save.error`]()));
   }
   // #endregion Approval Actions
 

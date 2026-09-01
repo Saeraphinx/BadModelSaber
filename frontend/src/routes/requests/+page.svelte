@@ -11,7 +11,7 @@
   import * as Select from "$shadcn/components/ui/select/index.js";
   import { Label } from "../../lib/shadcn/components/ui/label";
   import { toast } from "svelte-sonner";
-  import { parseErrorMessage } from "../../lib/scripts/utils/api";
+  import { handleTrpcErrorWithToast, parseErrorMessage } from "../../lib/scripts/utils/api";
 
   let { data: _internal } = $props();
   const { requestCounts, trpc, user } = $derived(_internal);
@@ -34,10 +34,7 @@
         outgoingRequests = res.outgoing || [];
         isLoading = false;
       })
-      .catch((err) => {
-        console.error("Failed to fetch requests:", err);
-        isLoading = false;
-      });
+      .catch(handleTrpcErrorWithToast(undefined, () => isLoading = false));
   }
 
   let reportsGameName: string | undefined = $state(undefined);
@@ -56,13 +53,8 @@
       .then((reps) => {
         reports = reps;
         isLoading = false;
-        toast.success("Reports fetched successfully.");
       })
-      .catch((err) => {
-        console.error("Failed to fetch reports:", err);
-        toast.error("Failed to fetch reports.", { description: parseErrorMessage(err) });
-        isLoading = false;
-      });
+      .catch(handleTrpcErrorWithToast(undefined, () => isLoading = false));
   }
 </script>
 

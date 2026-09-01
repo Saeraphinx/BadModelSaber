@@ -1,6 +1,6 @@
 <script lang="ts">
   import { m } from "$lib/paraglide/messages";
-  import { parseErrorMessage, trpc } from "$lib/scripts/utils/api";
+  import { parseErrorMessage, trpc, handleTrpcSuccessWithToast, handleTrpcErrorWithToast } from "$lib/scripts/utils/api";
   import { Button } from "$shadcn/components/ui/button";
   import * as Dialog from "$shadcn/components/ui/dialog";
   import { Textarea } from "$shadcn/components/ui/textarea";
@@ -26,27 +26,16 @@
       thingId: id,
       thingType: type,
       reason: reason,
-    }).then((res) => {
-      console.log(`Successfully reported ${type} ${id}`);
-      toast.success(m[`toasts.success.reportSubmitted`](), {
-        dismissable: true,
-      });
+    }).then(handleTrpcSuccessWithToast(m[`toasts.success.reportSubmitted`](), false, () => {
       visible = false;
-    }).catch((err) => {
-      console.error(`Error reporting ${type} ${id}:`, err);
-      toast.error(m[`toasts.error.generic`](), {
-        description: parseErrorMessage(err),
-        dismissable: true,
-        duration: 30000
-      });
-    });
+    })).catch(handleTrpcErrorWithToast(m[`toasts.error.save`]()));
   }
 </script>
 
 <Dialog.Root bind:open={visible}>
   <Dialog.Content class="sm:max-w-[425px]">
     <Dialog.Header>
-      <Dialog.Title>{t(`dialogs.reportDialog.title`, { name })}</Dialog.Title>
+      <Dialog.Title>{m[`dialogs.reportDialog.title`]({ name })}</Dialog.Title>
       <Dialog.Description>{m[`dialogs.reportDialog.description`]()}</Dialog.Description>
     </Dialog.Header>
     <div class="flex flex-row">

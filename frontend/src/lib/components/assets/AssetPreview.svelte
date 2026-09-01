@@ -73,14 +73,14 @@
       {#await fetchPreviewData()}
         {m[`assets.preview.waitingForData`]()}
       {:then data} 
-        <p class="sr-only">{@html t(`assets.preview.textOnlySr`, { downloadUrl })}</p>
+        <p class="sr-only">{@html m[`assets.preview.textOnlySr`]({ downloadUrl })}</p>
         <ol class="text-sm max-h-96 w-full overflow-auto p-2 bg-muted rounded-2xl whitespace-pre font-mono list-decimal" aria-hidden="true">
           {#each data?.split(`\n`) as line}
             <li>{line}</li>
           {/each} 
         </ol>
       {:catch error}
-        <p class="text-red-500">{t(`assets.preview.failedToLoadError`, { error: error.message })}</p>
+        <p class="text-red-500">{m[`assets.preview.failedToLoadError`]({ error: error.message })}</p>
       {/await}
     {:else}
       <Button variant="outline" onclick={() => isPreviewLoaded = true}>

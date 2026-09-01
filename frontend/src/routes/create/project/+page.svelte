@@ -7,8 +7,7 @@
   import * as Select from "$shadcn/components/ui/select/index.js";
   import { Textarea } from "$shadcn/components/ui/textarea";
   import { onMount } from "svelte";
-  import { parseErrorMessage } from "../../../lib/scripts/utils/api.js";
-  import { toast } from "svelte-sonner";
+  import { handleTrpcSuccessWithToast, handleTrpcErrorWithToast } from "../../../lib/scripts/utils/api.js";
   import * as HoverCard from "../../../lib/shadcn/components/ui/hover-card/index.js";
   import { InfoIcon } from "@lucide/svelte";
   import { goto } from "$app/navigation";
@@ -119,20 +118,12 @@
     if (projectThumbnail && projectThumbnail.length > 0) {
       formData.append("icon_1", projectThumbnail[0]);
     }
+
     console.log("Submitting asset with data:", formData.get("data"));
-    let newProject = await trpc.v3.upload.projectCreate.mutate(formData).then((p) => {
-      toast.success(m[`toasts.success.submit`]());
+    let newProject = await trpc.v3.upload.projectCreate.mutate(formData).then(handleTrpcSuccessWithToast(m[`toasts.submit.success`](), false, (newProject) => {
       localStorage.removeItem(`createProjectData`);
-      return p;
-    }).catch((error) => {
-      console.error("Failed to create project:", error);
-      toast.error(m[`toasts.error.generic`](), {
-        description: parseErrorMessage(error),
-      });
-    });
-    if (newProject) {
       goto(`/mods/${newProject.id}`);
-    }
+    })).catch(handleTrpcErrorWithToast(m[`toasts.submit.error`]()));
   }
 </script>
 

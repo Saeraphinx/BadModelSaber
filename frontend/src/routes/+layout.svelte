@@ -22,7 +22,7 @@
   import { invalidateAll, beforeNavigate, afterNavigate } from "$app/navigation";
   import { Spinner } from "$shadcn/components/ui/spinner";
   import { checkRoles } from "$lib/scripts/utils/checkRoles";
-  import { parseErrorMessage } from "$lib/scripts/utils/api";
+  import { handleTrpcErrorWithToast, parseErrorMessage } from "$lib/scripts/utils/api";
   import { m } from "$lib/paraglide/messages";
   import { getLocale, setLocale } from "$lib/paraglide/runtime";
 
@@ -90,11 +90,7 @@
                   });
                   window.location.reload(); // do a full-on reload due to the role changes potentially breaking stuff
                 })
-                .catch((error) => {
-                  toast.error(m[`toasts.error.generic`](), {
-                    description: parseErrorMessage(error),
-                  });
-                });
+                .catch(handleTrpcErrorWithToast(m[`toasts.error.generic`]()));
               console.log("Secret features enabled!");
             },
           },
@@ -119,11 +115,7 @@
         });
         invalidateAll(); // Refresh user data
       })
-      .catch((error) => {
-        toast.error(m[`toasts.error.generic`](), {
-          description: parseErrorMessage(error),
-        });
-      });
+      .catch(handleTrpcErrorWithToast(m[`toasts.error.generic`]()));
   }
   // #endregion KonamiListener
 
@@ -145,10 +137,7 @@
         allAlerts = data;
         return data;
       })
-      .catch((err) => {
-        toast.error(m[`toasts.error.generic`]({ description: parseErrorMessage(err) }));
-        return [];
-      })
+      .catch(handleTrpcErrorWithToast(m[`toasts.error.generic`]()))
       .finally(() => {
         isLoadingAlerts = false;
       });

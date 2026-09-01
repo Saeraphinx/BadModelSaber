@@ -1,6 +1,6 @@
 <script lang="ts">
   import { AlertType, type AlertApiV3 } from '$lib/scripts/from_backend/DBExtras';
-  import { parseErrorMessage, trpc } from '$lib/scripts/utils/api';
+  import { parseErrorMessage, trpc, handleTrpcErrorWithToast } from '$lib/scripts/utils/api';
   import Button from '$shadcn/components/ui/button/button.svelte';
   import { cn } from '$shadcn/utils';
   import { ExternalLinkIcon } from '@lucide/svelte';
@@ -50,12 +50,7 @@
       }
       isPendingHidden = false;
     }, 500);
-    trpc.internal.alerts.markAlertRead.mutate({ id: alert.id }).catch((error) => {
-      console.error('Failed to mark alert as read:', error);
-      toast.error(m[`toasts.error.generic`](), {
-        description: parseErrorMessage(error),
-      });
-    });
+    trpc.internal.alerts.markAlertRead.mutate({ id: alert.id }).catch(handleTrpcErrorWithToast());
   }
 
   function deleteAlert() {
@@ -68,12 +63,7 @@
       }
       isPendingHidden = false;
     }, 500);
-     trpc.internal.alerts.deleteAlert.mutate({ id: alert.id }).catch((error) => {
-      console.error('Failed to delete alert:', error);
-      toast.error(m[`toasts.error.generic`](), {
-        description: parseErrorMessage(error),
-      });
-    });
+    trpc.internal.alerts.deleteAlert.mutate({ id: alert.id }).catch(handleTrpcErrorWithToast());
   }
 </script>
 

@@ -2,7 +2,7 @@
   import { env } from "$env/dynamic/public";
   import { m } from "$lib/paraglide/messages";
   import { LinkedAssetLinkType } from "$lib/scripts/from_backend/DBExtras";
-  import { parseErrorMessage, trpc } from "$lib/scripts/utils/api";
+  import { parseErrorMessage, trpc, handleTrpcSuccessWithToast, handleTrpcErrorWithToast } from "$lib/scripts/utils/api";
   import { Button } from "$shadcn/components/ui/button";
   import * as Dialog from "$shadcn/components/ui/dialog";
   import Input from "$shadcn/components/ui/input/input.svelte";
@@ -57,14 +57,12 @@
       id: assetId,
       type: selectedLinkType,
       linkToId: id
-    }).then((response) => {
-      toast.success(m[`toasts.success.assetLink`]());
+    }).then(handleTrpcSuccessWithToast(m[`toasts.success.assetLink`](), false, () => {
       showLoading = false;
       visible = false;
-    }).catch((err) => {
-      toast.error(m[`toasts.error.generic`](), {description: `${parseErrorMessage(err)}` });
+    })).catch(handleTrpcErrorWithToast(m[`toasts.error.save`](), () => {
       showLoading = false;
-    });
+    }));
   }
 </script>
 

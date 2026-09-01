@@ -1,13 +1,14 @@
 <script lang="ts">
   import { toast } from "svelte-sonner";
   import { UserPermissions, type UserApiV3 } from "../../scripts/from_backend/DBExtras";
-  import { parseErrorMessage, trpc } from "../../scripts/utils/api";
+  import { parseErrorMessage, trpc, handleTrpcSuccessWithToast, handleTrpcErrorWithToast } from "../../scripts/utils/api";
   import * as Accordion from "../../shadcn/components/ui/accordion";
   import { Button } from "../../shadcn/components/ui/button";
   import { Checkbox } from "../../shadcn/components/ui/checkbox";
   import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "../../shadcn/components/ui/dialog";
   import { Label } from "../../shadcn/components/ui/label";
   import { getRolesCategories } from "../../scripts/utils/stylizer";
+  import { m } from "../../paraglide/messages";
 
   let isOpen = $state(false);
   let roleAddGameDialogOpen = $state(false);
@@ -28,9 +29,7 @@
     } else {
       await trpc.v3.games.getGames.query().then((games) => {
         availableGameNames = games.map((g) => ({ name: g.name, displayName: g.displayName }));
-      }).catch((err) => {
-        toast.error(`Failed to fetch available games: ${parseErrorMessage(err)}`);
-      });
+      }).catch(handleTrpcErrorWithToast(m[`toasts.failedTo.loadGameData`]()));
     }
     permObj = user.permissions;
     isOpen = true;
@@ -42,14 +41,10 @@
         userId: user?.id as number,
         permissions: permObj,
       })
-      .then(() => {
-        toast.success("Roles updated successfully");
+      .then(handleTrpcSuccessWithToast(`Successfully updated roles for ${user?.displayName}`, false, () => {
         isOpen = false;
-        user = null;
-      })
-      .catch((err) => {
-        toast.error(`Failed to update roles: ${parseErrorMessage(err)}`);
-      });
+      }))
+      .catch(handleTrpcErrorWithToast(`Failed to update roles`));
   }
 </script>
 

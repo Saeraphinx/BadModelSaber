@@ -20,7 +20,7 @@
   import UserSelectionDialog from "$lib/components/dialogs/UserSelectionDialog.svelte";
   import { zProject } from "$lib/scripts/from_backend/validators.js";
   import { toast } from "svelte-sonner";
-  import { getProjectThumbnailUrl, handleTrpcError, parseErrorMessage, trpc } from "$lib/scripts/utils/api.js";
+  import { getProjectThumbnailUrl, handleTrpcError, handleTrpcErrorWithToast, handleTrpcSuccessWithToast, parseErrorMessage, trpc } from "$lib/scripts/utils/api.js";
   import { invalidateAll } from "$app/navigation";
   import ReportDialog from "../../../lib/components/dialogs/ReportDialog.svelte";
   import StatusHoverCard from "../../../lib/components/generic/StatusHoverCard.svelte";
@@ -123,20 +123,13 @@
         id: project.id,
         data: parsed.data,
       })
-      .then(() => {
-        toast.success(m[`toasts.success.savedChanges`]());
+      .then(handleTrpcSuccessWithToast(m[`toasts.save.success`](), false, () => {
         invalidateAll().then(() => {
           isEditing = false;
           isSaving = false;
         });
-      })
-      .catch((e) => {
-        let error = handleTrpcError(false, `full`)(e);
-        toast.error(m[`toasts.error.save`](), {
-          description: error.formattedMessage,
-        });
-        isSaving = false;
-      });
+      }))
+      .catch(handleTrpcErrorWithToast(m[`toasts.save.error`]()));
   }
 
   function onSaveChangesTranslating(type: `name` | `summary` | `description`) {
@@ -158,24 +151,13 @@
         language: translatingLanguage,
         translatedString: stringToUse,
       })
-      .then(() => {
-        toast.success(m[`toasts.success.savedChanges`](), {
-          action: {
-            label: m[`dialogs.reload`](),
-            onClick: () => {
-              invalidateAll();
-            },
-          },
+      .then(handleTrpcSuccessWithToast(m[`toasts.save.success`](), false, () => {
+        invalidateAll().then(() => {
+          isTranslating = false;
+          isSaving = false;
         });
-        isSaving = false;
-      })
-      .catch((e) => {
-        let error = handleTrpcError(false, `full`)(e);
-        toast.error(m[`toasts.error.save`](), {
-          description: error.formattedMessage,
-        });
-        isSaving = false;
-      });
+      }))
+      .catch(handleTrpcErrorWithToast(m[`toasts.error.save`](), () => isSaving = false));
   }
 
   let allTranslations: Awaited<ReturnType<typeof trpc.internal.translation.getTranslationsForProject.query>> = [];
@@ -386,16 +368,8 @@
                   formData.append("icon", editedIconFile[0]);
                   trpc.internal.updateThings.project.updateProjectIcon
                     .mutate(formData)
-                    .then(() => {
-                      toast.success(m[`toasts.success.iconUpload`]());
-                      invalidateAll();
-                    })
-                    .catch((e) => {
-                      let error = handleTrpcError(false, `full`)(e);
-                      toast.error(m[`toasts.error.save`](), {
-                        description: error.formattedMessage,
-                      });
-                    });
+                    .then(handleTrpcSuccessWithToast(m[`toasts.save.success`](), true))
+                    .catch(handleTrpcErrorWithToast(m[`toasts.save.error`]()));
                 }}>
                 {m[`mods.uploadAndSaveIcon`]()}
               </Button>

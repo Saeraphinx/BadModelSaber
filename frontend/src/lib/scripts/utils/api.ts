@@ -1,5 +1,6 @@
 import { env } from "$env/dynamic/public";
 import type { AssetApiV3, ProjectApiV3, VersionApiV3 } from "../from_backend/DBExtras";
+import { toast } from 'svelte-sonner';
 
 export function getThumbnailUrl(id: number | string, thumbnailName: string): string {
   return `${env.PUBLIC_FILE_URL}/${id}/${thumbnailName}`;
@@ -55,6 +56,8 @@ import type { AppRouter } from '../../../../../backend/src/api/routers';
 import SuperJSON from "superjson";
 import { error } from "@sveltejs/kit";
 import z from "zod";
+import { m, type LocalizedString } from "../../paraglide/messages";
+import { invalidateAll } from "$app/navigation";
 
 export const trpc = createTRPC();
 
@@ -149,9 +152,9 @@ export function parseErrorMessage(err: unknown): string {
   }
 }
 
-export function handleTrpcError(shouldThrow: false, shouldLog?: `full` | `minimal` | `none`): (err: unknown) => ReturnType<typeof parseTRPCError>
-export function handleTrpcError(shouldThrow?: true, shouldLog?: `full` | `minimal` | `none`): (err: unknown) => never
-export function handleTrpcError(shouldThrow = true, shouldLog = `minimal`): (err: unknown) => ReturnType<typeof parseTRPCError> | never {
+export function handleTrpcError(shouldSvelteThrow: false, shouldLog?: `full` | `minimal` | `none`): (err: unknown) => ReturnType<typeof parseTRPCError>
+export function handleTrpcError(shouldSvelteThrow?: true, shouldLog?: `full` | `minimal` | `none`): (err: unknown) => never
+export function handleTrpcError(shouldSvelteThrow = true, shouldLog = `minimal`): (err: unknown) => ReturnType<typeof parseTRPCError> | never {
   return (err) => {
     if (shouldLog === `full`) {
       console.error(err);
@@ -176,7 +179,7 @@ export function handleTrpcError(shouldThrow = true, shouldLog = `minimal`): (err
     }
 
     let isZodError = parsedError.zodError !== undefined;
-    if (shouldThrow) {
+    if (shouldSvelteThrow) {
       if (parsedError.formattedMessage === `fetch failed`) {
         parsedError.formattedMessage = `Network error: Unable to reach the server. Please check your internet connection and try again.`;
         parsedError.httpCode = 503;
@@ -193,3 +196,39 @@ export function handleTrpcError(shouldThrow = true, shouldLog = `minimal`): (err
     }
   }
 }
+
+export function handleTrpcErrorWithToast(overrideTitle?: LocalizedString | string, afterAction: () => void = () => {}, shouldLog: `full` | `minimal` | `none` = `minimal`) {
+  return (err: unknown) => {
+    let parsedError = handleTrpcError(false, shouldLog)(err);  
+    
+    let title = `Unknown Error`;
+    if (overrideTitle) {
+      title = overrideTitle;
+    } else if (parsedError.zodError) {
+      title = m[`toasts.error.validation.title`]();
+    } else {
+      title = m[`toasts.error.generic`]();
+    }
+    let description = parsedError.zodError ? z.prettifyError(parsedError.zodError) : parsedError.formattedMessage;
+    toast.error(title, {
+      description: description,
+      closeButton: true,
+    });
+    afterAction();
+  }
+}
+
+export function handleTrpcSuccessWithToast<T>(successMessage: LocalizedString | string, shouldInvalidate: boolean = false, additionalCode: (val: T) => void = () => {}) {
+  return (returnValue: T) => {
+    toast.success(successMessage, {
+      dismissible: !shouldInvalidate,
+      duration: shouldInvalidate ? 30000 : 10000,
+      closeButton: true,
+    });
+    additionalCode(returnValue);
+    if (shouldInvalidate) {
+      invalidateAll();
+    }
+  };
+}
+

@@ -2,7 +2,7 @@
   import { invalidateAll } from "$app/navigation";
   import { m } from "$lib/paraglide/messages";
   import { Status } from "$lib/scripts/from_backend/DBExtras";
-  import { parseErrorMessage, trpc } from "$lib/scripts/utils/api";
+  import { handleTrpcErrorWithToast, handleTrpcSuccessWithToast, parseErrorMessage, trpc } from "$lib/scripts/utils/api";
   import { getStatusAvailableThings, getStatusString } from "$lib/scripts/utils/stylizer";
   import { Button } from "$shadcn/components/ui/button/index.js";
   import * as Dialog from "$shadcn/components/ui/dialog/index.js";
@@ -74,23 +74,10 @@
       });
     }
     res
-      .then((res) => {
-        console.log(`Successfully updated thing ${id} (${name}) to status ${selectedStatus}`);
-        toast.success(`Successfully updated thing ${name} to ${selectedStatus}`, {
-          description: "The thing status has been updated successfully.",
-          dismissable: false,
-        });
+      .then(handleTrpcSuccessWithToast(m[`toasts.save.success`](), true, () => {
         visible = false;
-        invalidateAll();
-      })
-      .catch((err) => {
-        console.error(`Error updating thing ${id} (${name}):`, err);
-        toast.error(m[`toasts.error.save`](), {
-          description: parseErrorMessage(err),
-          dismissable: true,
-          duration: 30000,
-        });
-      });
+      }))
+      .catch(handleTrpcErrorWithToast());
   }
 </script>
 

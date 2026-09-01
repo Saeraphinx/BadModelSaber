@@ -9,7 +9,7 @@
   import { TagIcon } from "@lucide/svelte";
   import TagBadge from "$lib/components/assets/TagBadge.svelte";
   import TypeSelector from "$lib/components/forms/TypeSelector.svelte";
-  import { parseErrorMessage, trpc } from "$lib/scripts/utils/api";
+  import { parseErrorMessage, trpc, handleTrpcSuccessWithToast, handleTrpcErrorWithToast } from "$lib/scripts/utils/api";
   import { toast } from "svelte-sonner";
   import { zAsset } from "$lib/scripts/from_backend/validators";
   import { m } from "$lib/paraglide/messages";
@@ -34,14 +34,14 @@
   let isAbleToSubmit: boolean = $derived.by(() => {
     return Boolean(
       zAsset.shape.name.safeParse(name).success &&
-      zAsset.shape.description.safeParse(description).success &&
-      zAsset.shape.licenseUrl.safeParse(customLicense).success &&
-      !!asset &&
-      asset.length > 0 &&
-      !!thumbnails &&
-      thumbnails.length > 0 &&
-      (license !== "custom" || customLicense.length > 0) &&
-      (!AssetTypesWithRenderingMethod.includes(type) || renderingMethod.length > 0)
+        zAsset.shape.description.safeParse(description).success &&
+        zAsset.shape.licenseUrl.safeParse(customLicense).success &&
+        !!asset &&
+        asset.length > 0 &&
+        !!thumbnails &&
+        thumbnails.length > 0 &&
+        (license !== "custom" || customLicense.length > 0) &&
+        (!AssetTypesWithRenderingMethod.includes(type) || renderingMethod.length > 0),
     );
   });
 
@@ -78,37 +78,31 @@
       return;
     }
 
-    // needs to be awaited since redirect is an error throw
-    let newAsset = await trpc.v3.upload.assetUpload
+    await trpc.v3.upload.assetUpload
       .mutate(formData)
-      .then((asset) => {
-        if (asset) {
+      .then(
+        handleTrpcSuccessWithToast(m[`toasts.submit.success`](), false, (newAsset) => {
           localStorage.removeItem(`createAssetData`);
-          toast.success(m[`toasts.success.submit`]());
-          return asset;
-        }
-      })
-      .catch((err) => {
-        toast.error(m[`toasts.error.generic`](), { description: parseErrorMessage(err) });
-        console.error(err);
-      });
-
-    if (newAsset) {
-      goto(`/assets/${newAsset.id}`);
-    }
+          goto(`/assets/${newAsset.id}`);
+      }),
+      )
+      .catch(handleTrpcErrorWithToast(m[`toasts.submit.error`]()));
   }
 
   function saveDataToLocalStorage() {
-    localStorage.setItem(`createAssetData`, JSON.stringify({ 
-      name, 
-      type,
-      description,
-      license,
-      customLicense,
-      tags,
-      credits,
-      renderingMethod,
-    }));
+    localStorage.setItem(
+      `createAssetData`,
+      JSON.stringify({
+        name,
+        type,
+        description,
+        license,
+        customLicense,
+        tags,
+        credits,
+        renderingMethod,
+      }),
+    );
   }
   onMount(() => {
     // on load, try to load saved data from local storage
@@ -126,14 +120,15 @@
     }
   });
   $effect(() => {
-    tags; renderingMethod; //oninput doesn't grab these
+    tags;
+    renderingMethod; //oninput doesn't grab these
     saveDataToLocalStorage();
   });
 </script>
 
 <div class="flex flex-col text-center w-full p-4">
-  <h1 class="text-2xl font-bold mb-4">{m[`assets.upload.createAsset`]()}</h1>
-  <p class="text-base mb-4">{m[`assets.upload.createAssetSubtitle`]()}</p>
+  <h1 class="text-2xl font-bold mb-4">{m[`assets.upload.title`]()}</h1>
+  <p class="text-base mb-4">{m[`assets.upload.subtitle`]()}</p>
 </div>
 
 <div class="flex flex-row flex-wrap justify-center p-4 gap-4">
@@ -158,7 +153,7 @@
                   <RadioGroup.Item value={mode[1]} id={mode[1]} />
                   <span class="flex flex-col">
                     <Label for={mode[1]}>
-                      {getRenderingMethodString(t, mode[1])}
+                      {getRenderingMethodString(mode[1])}
                     </Label>
                     <p class="text-xs text-gray-400">For {getRenderingMethodSupportedGV(mode[1])}</p>
                   </span>
@@ -217,7 +212,7 @@
       <Input id="thumbnail" type="file" bind:files={thumbnails} accept=".png,.jpeg,.webp,.gif" multiple />
       <p class="text-sm text-muted-foreground mt-2 pl-1">{m[`assets.upload.thumbnailFooter`]()}</p>
       <span class="h-4"></span>
-      <Label class="p-1 pb-2" for="zip">{m[`assets.asset`]()}</Label>
+      <Label class="p-1 pb-2" for="zip">{m[`common.asset`]()}</Label>
       <Input
         bind:files={asset}
         class=""

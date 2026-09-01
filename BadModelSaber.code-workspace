@@ -30,6 +30,7 @@
             "frontend/": true
         },
         "js/ts.experimental.useTsgo": true,
+        "elementaryWatson.defaultLocale": "en-US",
     },
     "tasks": {
         "version": "2.0.0",

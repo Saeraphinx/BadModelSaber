@@ -6,7 +6,7 @@
   import Separator from "$shadcn/components/ui/separator/separator.svelte";
   import Markdown from "$lib/components/generic/Markdown.svelte";
   import { toast } from "svelte-sonner";
-  import { parseErrorMessage } from "$lib/scripts/utils/api.js";
+  import { handleTrpcErrorWithToast, handleTrpcSuccessWithToast, parseErrorMessage } from "$lib/scripts/utils/api.js";
   import { navigating } from "$app/state";
   import { PlatformType, UserPermissions, type UserApiV3 } from "$lib/scripts/from_backend/DBExtras.js";
   import { checkRoles } from "$lib/scripts/utils/checkRoles.js";
@@ -79,14 +79,12 @@
       editData.hideGithubId = editHideGithubId;
     }
 
-    trpc.internal.updateThings.user.updateUser.mutate(editData).then(() => {
+    trpc.internal.updateThings.user.updateUser.mutate(editData)
+    .then(handleTrpcSuccessWithToast(m[`toasts.save.success`](), true, () => {
       isEditing = false;
       tabsValue = "mods";
-      toast.success(m[`toasts.success.savedChanges`]());
-      invalidate((url) => url.pathname.includes(`v3.user.getUserById`));
-    }).catch((err) => {
-      toast.error(m[`toasts.error.generic`](), { description: parseErrorMessage(err) });
-    });
+    }))
+    .catch(handleTrpcErrorWithToast(m[`toasts.save.error`]()));
   }
 
   $effect(() => {
@@ -156,9 +154,7 @@
                   if (confirm("Are you sure you want to unban this user?")) {
                     trpc.internal.admin.user.banUser.mutate({ userId: pdUser.id, ban: false}).then(() => {
                       toast.success("User unbanned.");
-                    }).catch((err) => {
-                      toast.error(m[`toasts.error.generic`](), { description: parseErrorMessage(err) });
-                    });
+                    }).catch(handleTrpcErrorWithToast());
                   }
                 }}>
                   Unban
@@ -168,9 +164,7 @@
                   if (confirm("Are you sure you want to ban this user?")) {
                     trpc.internal.admin.user.banUser.mutate({ userId: pdUser.id, ban: true}).then(() => {
                       toast.success("User banned.");
-                    }).catch((err) => {
-                      toast.error(m[`toasts.error.generic`](), { description: parseErrorMessage(err) });
-                    });
+                    }).catch(handleTrpcErrorWithToast());
                   }
                 }}>
                   Ban
@@ -211,7 +205,7 @@
         {#each assets as asset}
           <AssetCard {asset} size="large" approvalDialog={dialog} />
         {:else}
-          <p class="text-base text-muted-foreground">{t(`assets.noAssetsFound`, { name: pdUser.displayName })}</p>
+          <p class="text-base text-muted-foreground">{m[`assets.noAssetsFound`]({ name: pdUser.displayName })}</p>
         {/each}
       </Tabs.Content>
       <Tabs.Content value="edit" class="w-full mt-4 flex flex-col items-center gap-4 m-auto">
@@ -273,16 +267,12 @@
               <Button variant="outline" disabled={user?.githubId !== null} onclick={() => {
                 trpc.internal.auth.linkGitHubToaccount.query({}).then(({ url }) => {
                   window.open(url, "_blank");
-                }).catch((err) => {
-                  toast.error(m[`toasts.error.generic`](), { description: parseErrorMessage(err) });
-                })
+                }).catch(handleTrpcErrorWithToast())
               }}>{m[`users.linkToGithub`]()}</Button>
               <Button variant="outline" disabled={user?.discordId !== null} onclick={() => {
                 trpc.internal.auth.linkDiscordToAccount.query({}).then(({ url }) => {
                   window.open(url, "_blank");
-                }).catch((err) => {
-                  toast.error(m[`toasts.error.generic`](), { description: parseErrorMessage(err) });
-                })
+                }).catch(handleTrpcErrorWithToast());
               }}>{m[`users.linkToDiscord`]()}</Button>
             </div>
           </div>

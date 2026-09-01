@@ -17,8 +17,9 @@
   import { parse, validRange } from "semver";
   import { onMount } from "svelte";
   import { toast } from "svelte-sonner";
-  import { parseErrorMessage } from "$lib/scripts/utils/api.js";
+  import { handleTrpcErrorWithToast, handleTrpcSuccessWithToast, parseErrorMessage } from "$lib/scripts/utils/api.js";
   import { goto } from "$app/navigation";
+  import { getStatusString } from "../../../../lib/scripts/utils/stylizer.js";
 
   const { data: _internal } = $props();
   const {
@@ -28,6 +29,7 @@
       gav: { game, gameVersions: _gv },
     },
   } = $derived(_internal);
+  // svelte-ignore state_referenced_locally
   const gameVersions = _gv as GameVersionApiV3_full[];
 
   let semverString = $state("");
@@ -53,18 +55,18 @@
     ) {
       issues.push({
         issueType: `error`,
-        str: t(`mods.manifestChecks.manifestGameVersionIsntLowest`, { manifestGameVersion: manifest.gameVersion }),
+        str: m[`mods.manifestChecks.manifestGameVersionIsntLowest`]({ manifestGameVersion: manifest.gameVersion }),
         majorIssue: true,
       });
     }
     if (manifest.name !== project.name) {
-      issues.push({ issueType: `warn`, str: t(`mods.manifestChecks.manifestProjectNameMismatch`, { manifestName: manifest.name, expectedName: project.name }), majorIssue: false });
+      issues.push({ issueType: `warn`, str: m[`mods.manifestChecks.manifestProjectNameMismatch`]({ manifestName: manifest.name, expectedName: project.name }), majorIssue: false });
     }
     if (manifest.id !== project.nameId) {
-      issues.push({ issueType: `error`, str: t(`mods.manifestChecks.manifestProjectIdMismatch`, { manifestId: manifest.id ?? ``, expectedManifestId: project.nameId }), majorIssue: false });
+      issues.push({ issueType: `error`, str: m[`mods.manifestChecks.manifestProjectIdMismatch`]({ manifestId: manifest.id ?? ``, expectedManifestId: project.nameId }), majorIssue: false });
     }
     if (manifest.version !== semverString) {
-      issues.push({ issueType: `error`, str: t(`mods.manifestChecks.manifestSemVerDoesntMatch`, { manifestSemVer: manifest.version, expectedSemVer: semverString }), majorIssue: false });
+      issues.push({ issueType: `error`, str: m[`mods.manifestChecks.manifestSemVerDoesntMatch`]({ manifestSemVer: manifest.version, expectedSemVer: semverString }), majorIssue: false });
     }
     //console.log(webDependencies);
     let depIssues = manifestAllDependenciesExist(manifest, webDependencies);
@@ -84,7 +86,7 @@
     let seenIds = new Set<number>();
     for (let dep of webDependencies) {
       if (seenIds.has(dep.pId)) {
-        issues.push({ issueType: `warn`, str: t(`mods.manifestChecks.duplicateDependency`, { depName: dep.pName }) });
+        issues.push({ issueType: `warn`, str: m[`mods.manifestChecks.duplicateDependency`]({ depName: dep.pName }) });
       } else {
         seenIds.add(dep.pId);
       }
@@ -161,22 +163,13 @@
     );
     formData.append("modZip", file);
     formData.append("immidateSubmit", `on`); // omit to not submit immidately, include to submit immidately
-    let response = await trpc.v3.upload.versionUpload
+    await trpc.v3.upload.versionUpload
       .mutate(formData)
-      .then((res) => {
-        toast.success(m[`toasts.success.submit`]());
+      .then(handleTrpcSuccessWithToast(m[`toasts.submit.success`](), false, (newVersion) => {
         localStorage.removeItem(`createVersionData-${project.id}`);
-        return res;
-      })
-      .catch((error) => {
-        console.error("Error submitting version:", error);
-        toast.error(m[`toasts.error.generic`](), {
-          description: parseErrorMessage(error),
-        });
-      });
-    if (response) {
-      goto(`/mods/${project.id}`);
-    }
+        goto(`/mods/${project.id}`);
+      }))
+      .catch(handleTrpcErrorWithToast(m[`toasts.submit.error`]()));
   }
 
   // @ts-ignore sometimes typescript forgets its not real
@@ -194,9 +187,7 @@
           webDependencies.push({ pId: project.id, pName: project.name, pNameId: project.nameId, sv: manifestDepVersion });
         });
       })
-      .catch(() => {
-        toast.error(m[`toasts.error.generic`]());
-      });
+      .catch(handleTrpcErrorWithToast());
   }
   async function importAllFromManifest() {
     if (!allowManifestImport) return;
@@ -209,8 +200,8 @@
 </script>
 
 <div class="flex flex-col text-center w-full p-4">
-  <h1 class="text-2xl font-bold mb-4">{t(`mods.createVersion.title`, { projectName: project.name })}</h1>
-  <p class="text-base mb-4">{t(`mods.createVersion.subtitle`, { projectName: project.name })}</p>
+  <h1 class="text-2xl font-bold mb-4">{m[`mods.createVersion.title`]({ projectName: project.name })}</h1>
+  <p class="text-base mb-4">{m[`mods.createVersion.subtitle`]({ projectName: project.name })}</p>
 </div>
 
 <div class="flex flex-row flex-wrap justify-center p-4 gap-4">
@@ -340,8 +331,8 @@
 <Dialog bind:open={openDepCloneDialog}>
   <DialogContent class="sm:max-w-[425px]">
     <DialogHeader>
-      <DialogTitle>{t(`mods.createVersion.importFromOtherVersionDialogTitle`, { projectName: project.name })}</DialogTitle>
-      <DialogDescription>{t(`mods.createVersion.importFromOtherVersionDialogDescription`, { projectName: project.name })}</DialogDescription>
+      <DialogTitle>{m[`mods.createVersion.importFromOtherVersionDialogTitle`]({ projectName: project.name })}</DialogTitle>
+      <DialogDescription>{m[`mods.createVersion.importFromOtherVersionDialogDescription`]({ projectName: project.name })}</DialogDescription>
     </DialogHeader>
     <div class="flex flex-row gap-4">
       <Command.Root>
@@ -352,7 +343,7 @@
             {#each Object.values(Status).filter((s) => {
               return versions.some((v) => v.status === s);
             }) as status}
-              <Command.Group heading={t(`enums.status.${status}`)}>
+              <Command.Group heading={getStatusString(status)}>
                 {#each versions.filter((v) => v.status === status) as version}
                   <Command.Item
                     value={version.id.toString()}
@@ -387,9 +378,7 @@
               });
               openDepCloneDialog = false;
             })
-            .catch(() => {
-              toast.error(m[`toasts.error.generic`]());
-            });
+            .catch(handleTrpcErrorWithToast());
         }}>
         {m[`dialogs.submit`]()}</Button>
     </DialogFooter>

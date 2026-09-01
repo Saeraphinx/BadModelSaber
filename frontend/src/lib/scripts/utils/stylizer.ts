@@ -15,6 +15,11 @@ export function getStatusString(status: Status): string {
   return m[`enums.status.${status}`]();
 }
 
+export function getRequestTypeString(requestType: string): string {
+  // @ts-expect-error
+  return m[`enums.requestTypes.${requestType.replaceAll(`_`, `-`)}`]();
+}
+
 export function getStatusAvailableThings(status: Status): string[] {
   switch (status) {
     case Status.Public:
@@ -304,16 +309,6 @@ export function getRolesCategories(supportedUserPermissions = Object.values(User
     categories.set(category, arr);
   }
   return categories;
-}
-
-export enum KnownSponsorUrls {
-  Pixiv,
-  Patreon,
-  KoFi
-}
-
-export function getSponserUrlData(sponsorUrl: string | string[] | null) {
-
 }
 
 export function getRelativeTimeString(date: Date, lang: string = getLocale()): string {

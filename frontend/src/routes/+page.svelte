@@ -34,9 +34,10 @@
   <img src="/modelsaber-logo-web.svg" alt="ModelSaber Logo" class="h-24 w-24" />
   <h1 class="text-4xl font-bold">{ m[`homepage.title`]() }</h1>
   <p class="text-lg text-gray-500">{ subtitle }</p>
-  <div>
-    <Button class="mt-2" href="/assets">{ m[`homepage.browseButton`]()}</Button>
-    <Button class="mt-2 ml-2" variant="outline" href="https://bsmg.wiki/models">{m[`homepage.wikiButton`]()} <ExternalLinkIcon /></Button>
+  <div class="flex flex-row justify-center gap-2 mt-2">
+    <Button href="/mods">{ m[`homepage.buttons.browseMods`]() }</Button>
+    <Button variant="outline" href="/assets">{ m[`homepage.buttons.browseAssets`]() }</Button>
+    <Button variant="outline" href="https://bsmg.wiki">{ m[`homepage.buttons.wiki`]() } <ExternalLinkIcon /></Button>
   </div>
   <Separator class="my-6 mx-[25%]" />
   <div class="max-w-screen">

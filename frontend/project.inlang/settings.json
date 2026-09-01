@@ -7,6 +7,8 @@
   "plugin.inlang.i18next": {
     "pathPattern": "./messages/{locale}.json"
   },
+  "sourceLanguageTag": "en-US",
+  "languageTags": ["en-US", "owo"],
   "baseLocale": "en-US",
   "locales": [
     "en-US",

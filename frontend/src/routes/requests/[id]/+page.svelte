@@ -2,7 +2,7 @@
   import AssetCard from "$lib/components/assets/AssetCard.svelte";
   import RequestMessage from "$lib/components/requests/RequestMessage.svelte";
   import { RequestType, UserPermissions, type UserApiV3 } from "$lib/scripts/from_backend/DBExtras.js";
-  import { parseErrorMessage } from "$lib/scripts/utils/api.js";
+  import { handleTrpcErrorWithToast, parseErrorMessage } from "$lib/scripts/utils/api.js";
   import type { RequestMessage as ReqMessage } from "$lib/scripts/from_backend/DBExtras.js";
   import Textarea from "$shadcn/components/ui/textarea/textarea.svelte";
   import Button from "$shadcn/components/ui/button/button.svelte";
@@ -13,6 +13,7 @@
   import { checkRoles } from "$lib/scripts/utils/checkRoles.js";
   import ModCard from "../../../lib/components/mods/ModCard.svelte";
   import VersionCard from "../../../lib/components/mods/VersionCard.svelte";
+  import { getRequestTypeString } from "../../../lib/scripts/utils/stylizer";
 
   const { data: _internal } = $props();
   const { trpc, user, pageData } = $derived(_internal);
@@ -34,18 +35,18 @@
   onMount(() => {
     let initialString = "";
     if (pageData.requestType === RequestType.Asset_Credit) {
-      initialString = t(`requests.initialMessageCredit`, {
+      initialString = m[`requests.initialMessageCredit`]({
         name: pageData?.requester?.displayName || "Unknown User",
         assetName: pageData.refrencedThingName ?? "Unknown Asset",
       });
     } else if (pageData.requestType === RequestType.Asset_Link) {
-      initialString = t(`requests.initialMessageLink`, {
+      initialString = m[`requests.initialMessageLink`]({
         name: pageData?.requester?.displayName || "Unknown User",
         assetName: (pageData.refrencedThing && typeInfo.nameProp in pageData.refrencedThing ? pageData.refrencedThing[typeInfo.nameProp as keyof typeof pageData.refrencedThing] : null) ?? "Unknown Asset",
         toLinkAssetName: "Unknown Asset",
       });
     } else {
-      initialString = t(`requests.initialMessageReport`, {
+      initialString = m[`requests.initialMessageReport`]({
         name: pageData.requester?.displayName || "Unknown User",
         assetName: pageData.refrencedThingName,
       });
@@ -135,10 +136,7 @@
         messageBox = "";
         isSending = false;
       })
-      .catch((err) => {
-        console.error("Failed to send message:", err);
-        toast.error(m[`toasts.error.generic`](), { description: parseErrorMessage(err) });
-      });
+      .catch(handleTrpcErrorWithToast());
   }
 
   async function handleRequest(accepted: boolean) {
@@ -147,9 +145,7 @@
       id: pageData.id
     }).then(r => {
       return r.message
-    }).catch(e => {
-      return toast.error(m[`toasts.error.generic`](), { description: parseErrorMessage(e) });
-    })
+    }).catch(handleTrpcErrorWithToast());
   }
 </script>
 
@@ -166,12 +162,12 @@
       <VersionCard version={pageData.refrencedThing} />
     {/if}
     <div class="flex flex-col items-start gap-2 bg-card p-4 rounded-lg shadow-md w-full">
-      <h1 class="text-2xl font-bold">{t(`requests.tableTitle`, { type: t(`enums.requestTypes.${pageData.requestType}`) })}</h1>
-      <p class="text-gray-500">{t(`requests.requestID`, { id: pageData.id })}</p>
-      <p class="text-gray-500">{t(`requests.status`, { status: pageData.accepted ?? m[`requests.notResolved`]() })}</p>
-      <p class="text-gray-500">{t(`requests.resolvedBy`, { name: pageData.resolvedBy ?? m[`requests.notResolved`]() })}</p>
-      <p class="text-gray-500">{t(`requests.createdBy`, { name: users.get(pageData.requesterId)?.displayName || "Unknown User" })}</p>
-      <p class="text-gray-500">{t(`requests.createdAt`, { date: new Date(pageData.createdAt).toLocaleDateString() })}</p>
+      <h1 class="text-2xl font-bold">{m[`requests.tableTitle`]({ type: getRequestTypeString(pageData.requestType) })}</h1>
+      <p class="text-gray-500">{m[`requests.requestID`]({ id: pageData.id })}</p>
+      <p class="text-gray-500">{m[`requests.status`]({ status: pageData.accepted ?? m[`requests.notResolved`]() })}</p>
+      <p class="text-gray-500">{m[`requests.resolvedBy`]({ name: pageData.resolvedBy ?? m[`requests.notResolved`]() })}</p>
+      <p class="text-gray-500">{m[`requests.createdBy`]({ name: users.get(pageData.requesterId)?.displayName || "Unknown User" })}</p>
+      <p class="text-gray-500">{m[`requests.createdAt`]({ date: new Date(pageData.createdAt).toLocaleDateString() })}</p>
     </div>
   </div>
   <div class="flex flex-col w-full max-w-2xl">

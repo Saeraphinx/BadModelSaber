@@ -20,7 +20,7 @@
   import { navigating } from "$app/state";
   import Skeleton from "$shadcn/components/ui/skeleton/skeleton.svelte";
   import CarouselNavigator from "$lib/components/generic/CarouselNavigator.svelte";
-  import { getOneClickUrl, getAssetDownloadUrl, getThumbnailUrl, parseErrorMessage } from "$lib/scripts/utils/api.js";
+  import { getOneClickUrl, getAssetDownloadUrl, getThumbnailUrl, parseErrorMessage, handleTrpcErrorWithToast, handleTrpcSuccessWithToast } from "$lib/scripts/utils/api.js";
   import ApprovalPopup from "$lib/components/dialogs/ApprovalDialog.svelte";
   import { onMount } from "svelte";
   import { toast } from "svelte-sonner";
@@ -44,7 +44,7 @@
 
   const { data: _internal } = $props();
   const { trpc, user, pageData } = $derived(_internal);
-  const typeData = $derived.by(() => getAssetTypeData(t, pageData.type));
+  const typeData = $derived.by(() => getAssetTypeData(pageData.type));
 
   let mobileView = new MediaQuery("max-width: 767px"); // something something inclusivity
   let iconApi = $state<CarouselAPI>();
@@ -104,16 +104,12 @@
           tags: editTags,
         },
       })
-      .then((res) => {
-        toast.success(m[`toasts.success.savedChanges`]());
+      .then(handleTrpcSuccessWithToast(m[`toasts.success.savedChanges`](), false, () => {
         invalidateAll().then(() => {
           isEditing = false;
         });
-      })
-      .catch((err) => {
-        console.error("Error saving changes:", err);
-        toast.error(m[`toasts.error.generic`](), { description: parseErrorMessage(err) });
-      });
+      }))
+      .catch(handleTrpcErrorWithToast(m[`toasts.save.error`]()));
   }
   // #endregion
 
@@ -132,10 +128,9 @@
           relatedAssets = res ? Object.values(res) : [];
           isRelatedLoading = false;
         })
-        .catch((err) => {
-          toast.error(m[`toasts.failedTo.loadAssets`]());
+        .catch(handleTrpcErrorWithToast(m[`toasts.failedTo.loadAssets`](), () => {
           isRelatedLoading = false;
-        });
+        }));
     } else {
       isRelatedLoading = false;
     }
@@ -145,10 +140,9 @@
         authorAssets = res.assets.filter((i) => i.id !== pageData.id) || [];
         isAuthorLoading = false;
       })
-      .catch((err) => {
-        toast.error(m[`toasts.failedTo.loadAssets`]());
+      .catch(handleTrpcErrorWithToast(m[`toasts.failedTo.loadAssets`](), () => {
         isAuthorLoading = false;
-      });
+      }));
     await Promise.all([pa, pb]);
   });
 
@@ -219,16 +213,14 @@
         <div class="flex justify-between items-center">
           <span class="text-muted-foreground pr-1">{m[`common.dataTable.renderingMethod`]()}</span>
           <span class="font-medium text-right text-primary">
-            {getRenderingMethodString(t, pageData.renderingMethod)}
+            {getRenderingMethodString(pageData.renderingMethod)}
             <p class="text-xs text-muted-foreground">{getRenderingMethodSupportedGV(pageData.renderingMethod)}</p>
           </span>
         </div>
       {/if}
       <div class="flex justify-between items-center">
         <span class="text-muted-foreground pr-2">{m[`common.dataTable.status`]()}</span>
-        <StatusHoverCard status={pageData.status} type="asset">
-          <Badge variant={pageData.status ? `outline` : `default`} class="capitalize">{getStatusString(t, pageData.status)}</Badge>
-        </StatusHoverCard>
+        <StatusHoverCard status={pageData.status} type="asset" />
       </div>
       {#if pageData.license}
         <div class="flex justify-between items-center">
@@ -378,12 +370,8 @@
             onclick={() => {
               trpc.internal.updateThings.asset.submitAssetForApproval
                 .mutate({ id: pageData.id })
-                .then(() => {
-                  toast.success(m[`toasts.success.assetSubmittedForApproval`]());
-                })
-                .catch((err) => {
-                  toast.error(m[`toasts.error.generic`](), { description: parseErrorMessage(err) });
-                });
+                .then(handleTrpcSuccessWithToast(m[`toasts.submit.success`]()))
+                .catch(handleTrpcErrorWithToast(m[`toasts.submit.error`]()));
             }}>
             <BadgeAlert />
             {m[`common.buttons.submitForApproval`]()}
@@ -503,12 +491,12 @@
         <Separator class="my-4 w-full" />
         {@render description()}
         <Separator class="my-4 w-full" />
-        <span class="text-lg font-semibold">{ m[`assets.previewTitle`]()}</span>
+        <span class="text-lg font-semibold">{ m[`assets.preview.previewTitle`]()}</span>
         <AssetPreview asset={pageData} />
         <Separator class="my-4 w-full" />
         {@render assetCarousel(relatedAssets, isRelatedLoading, `related`, m[`assets.carousels.relatedAssets`](), m[`assets.carousels.relatedAssetsNoneFound`]())}
         <Separator class="my-4 w-full" />
-        {@render assetCarousel(authorAssets, isAuthorLoading, `author`, t(`assets.carousels.authorAssets`, { name: pageData.uploader?.displayName ?? ``}), t(`assets.carousels.authorAssetsNoneFound`, { name: pageData.uploader?.displayName ?? ``}))}
+        {@render assetCarousel(authorAssets, isAuthorLoading, `author`, m[`assets.carousels.authorAssets`]({ name: pageData.uploader?.displayName ?? ``}), m[`assets.carousels.authorAssetsNoneFound`]({ name: pageData.uploader?.displayName ?? ``}))}
         {#if mobileView.current}
           {@render dataTable()}
         {/if}

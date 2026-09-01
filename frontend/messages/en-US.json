@@ -1,11 +1,14 @@
 {
-  "name": "ModelSaber",
+  "name": "BeatMods",
   "loading": "Loading...",
   "homepage": {
-    "title": "$t(name)",
-    "subtitle": "A collection of various assets for use within Beat Saber.",
-    "browseButton": "Browse Assets",
-    "wikiButton": "Model Wiki"
+    "title": "BeatMods",
+    "subtitle": "A collection of various mods and assets for use within Beat Saber.",
+    "buttons": {
+      "browseMods": "Browse Mods",
+      "browseAssets": "Browse Assets",
+      "wiki": "Wiki"
+    }
   },
   "common": {
     "all": "All",
@@ -84,7 +87,7 @@
     "navbar": {
       "home": "Home",
       "mods": {
-        "modsHeader": "Mods",
+        "title": "Mods",
         "browseMods": "Browse Mods",
         "compareVersions": "Compare Versions",
         "beatsaberBeginnersGuide": "Beat Saber Beginner's Guide",
@@ -92,7 +95,7 @@
         "pcApprovalGuide": "Approval Guidelines"
       },
       "assets": {
-        "assetsHeader": "Assets",
+        "title": "Assets",
         "browseAssets": "Browse Assets",
         "creationGuide": "Creation Guide",
         "installationGuide": "Installation Guide"
@@ -118,7 +121,7 @@
       "logout": "Logout",
       "loginDiscord": "Login with Discord",
       "loginGitHub": "Login with GitHub",
-      "modelsaberOpenSource": "ModelSaber is Open Source!"
+      "modelsaberOpenSource": "BeatMods is Open Source!"
     },
     "alertSidebar": {
       "markAllRead": "Mark all as read",
@@ -132,7 +135,7 @@
     "unreadAlerts_other": "You have {{count}} unread alerts."
   },
   "search": {
-    "search": "Search",
+    "title": "Search",
     "searchAssets": "Search Assets...",
     "searchMods": "Search Mods...",
     "sizeHeader": "Size",
@@ -155,8 +158,8 @@
       "authorAssetsNoneFound": "No other assets found by {{name}}."
     },
     "upload": {
-      "createAssetTitle": "Create Asset",
-      "createAssetSubtitle": "Please fill out the form below to upload a new asset to ModelSaber.",
+      "title": "Create Asset",
+      "subtitle": "Please fill out the form below to upload a new asset to BeatMods.",
       "selectTags": "Select Tags",
       "thumbnailRuleListHeader": "Thumbnail Rules:",
       "thumbnailRuleList1": "Must be a square image (1:1 aspect ratio).",
@@ -165,10 +168,10 @@
       "thumbnailRuleList4": "Should be tasteful and appropriate",
       "thumbnail": "Thumbnail",
       "thumbnailFooter": "Please ensure your thumbnail follows the rules listed above.",
-      "ensureRights": "Please ensure that you have the rights to upload this asset to ModelSaber."
+      "ensureRights": "Please ensure that you have the rights to upload this asset to BeatMods."
     },
     "preview": {
-      "previewTitle": "Asset Preview",
+      "header": "Asset Preview",
       "noAudioSupport": "Your browser does not support the audio element.",
       "waitingForData": "Waiting for preview data...",
       "openHSVPreviewer": "Open in HitScoreVisualizer Previewer",
@@ -179,11 +182,11 @@
     },
     "statusHover": {
       "verified": {
-        "title": "This asset has been verified by the ModelSaber team and <span class=\"text-green-600\">is safe to use!</span>",
+        "title": "This asset has been verified by the BeatMods team and <span class=\"text-green-600\">is safe to use!</span>",
         "description": "Verified assets have been checked for malware and are safe to use. Look for the green checkmark!"
       },
       "unverified": {
-        "title": "This asset has <b>not</b> been verified by the ModelSaber team. <span class=\"text-orange-400\">Use at your own risk!</span>",
+        "title": "This asset has <b>not</b> been verified by the BeatMods team. <span class=\"text-orange-400\">Use at your own risk!</span>",
         "description": "Unverified assets have not been checked for malware. Be cautious when downloading and using these assets."
       },
       "queue": {
@@ -240,14 +243,14 @@
       "loadManifest": "Load Manifest",
       "noIssuesFound": "No issues found.",
       "couldNotReadManifest": "Could not read manifest from file. Please ensure it is a valid .dll or .zip file containing a manifest.json.",
-      "manifestProjectNameMismatch": "The name specified in your manifest ({{manifestName}}) doesn't match the name of the project you're uploading to ({{expectedName}}). Please ensure the 'name' field in your manifest matches the name of your project on ModelSaber.",
-      "manifestProjectIdMismatch": "The manifest ID specified in your manifest ({{manifestId}}) doesn't match the manifest ID of the project you're uploading to ({{expectedManifestId}}). Please ensure the 'id' field in your manifest matches the manifest ID of your project on ModelSaber.",
+      "manifestProjectNameMismatch": "The name specified in your manifest ({{manifestName}}) doesn't match the name of the project you're uploading to ({{expectedName}}). Please ensure the 'name' field in your manifest matches the name of your project on BeatMods.",
+      "manifestProjectIdMismatch": "The manifest ID specified in your manifest ({{manifestId}}) doesn't match the manifest ID of the project you're uploading to ({{expectedManifestId}}). Please ensure the 'id' field in your manifest matches the manifest ID of your project on BeatMods.",
       "dependencies": {
         "manifestMissingdependsOn": "Your manifest is missing the 'dependsOn' field, which is required to specify your mod's dependencies. Please add this field to your manifest and try again.",
         "webInvalidRange": "Dependency {{depName}} has an invalid game version range specified: {{sv}}. Please ensure all dependencies have valid semantic version ranges.",
         "manifestInvalidRange": "Dependency {{depName}} has an invalid game version range specified: {{sv}}. Please ensure all dependencies in your manifest have valid semantic version ranges.",
         "webDependencyNotFound": "Dependency {{depName}}@{{sv}} was not found in the manifest. Please ensure all dependencies listed are included in the manifest file.",
-        "manifestDependencyNotFound": "Dependency {{depName}}@{{sv}} specified in manifest not found. Please ensure all dependencies listed in your manifest are marked as dependencies on ModelSaber."
+        "manifestDependencyNotFound": "Dependency {{depName}}@{{sv}} specified in manifest not found. Please ensure all dependencies listed in your manifest are marked as dependencies on BeatMods."
       },
       "manifestGameVersionIsntLowest": "The game version specified in your manifest ({{manifestGameVersion}}) isn't the lowest game version specified among your supported game versions. Please ensure the 'gameVersion' field in your manifest specifies the lowest game version your mod supports, or update your supported game versions to match the game version specified in your manifest.",
       "manifestSemVerDoesntMatch": "The semantic version specified in your manifest ({{manifestSemVer}}) doesn't match the semantic version specified for your mod ({{expectedSemVer}}). Please ensure the 'semver' field in your manifest matches the version of your mod.",
@@ -323,8 +326,8 @@
       "removed": "Removed"
     },
     "roles": {
-      "admin": "ModelSaber Admin",
-      "developer": "ModelSaber Developer",
+      "admin": "BeatMods Admin",
+      "developer": "BeatMods Developer",
       "moderator": "Moderator",
       "bsmgStaff": "BSMG Staff",
       "3dArtist": "3D Artist",
@@ -435,7 +438,7 @@
     "remove": "Remove",
     "preview": "Preview",
     "reload": "Reload",
-    "approvalDialog": {
+    "approval": {
       "title": "Update Status for {{name}}",
       "description": "Select the new status for \"{{name}}\". Click save to apply the changes.",
       "reasonWillBeVisible": "This reason will be visible to the author(s) of {{name}}.",
@@ -443,7 +446,7 @@
       "presetReasons": "Preset Reasons",
       "autosetProject": "Autoset Project"
     },
-    "downloadDialog": {
+    "download": {
       "assetTitle": "Download Non-Verified Asset?",
       "assetDescription": "The asset you are trying to download has not been verified by the approval team. Unverified assets may cause issues or contain other harmful content. Are you sure you want to proceed with the download?",
       "nonVerifiedModTitle": "Download Non-Verified Mod?",
@@ -452,12 +455,12 @@
       "testingModDescription": "The mod you are trying to download is currently in testing and is awaiting full verification. Non-verified mods may be incompatible with the game or cause other issues. <b>These mods are not fully verified and you will not receive support for them.</b> That being said, please let the approval team know about any issues you experience using these mods. Are you sure you want to proceed with the download?",
       "neverShowAgain": "If you'd like to never see this warning again, please click the \"Don't show again\" button."
     },
-    "reportDialog": {
+    "report": {
       "title": "Report {{name}}",
       "description": "If you believe this item violates our rules, please provide a reason for reporting it. Our moderation team will review the report and take appropriate action if necessary.",
       "reasonPlaceholder": "Enter reason for your report."
     },
-    "linkAssetDialog": {
+    "linkAsset": {
       "title": "Add a Related Asset",
       "description": "Link another asset as related to this one by entering the link to the asset's page below.",
       "linkType": "Link Type",
@@ -484,29 +487,26 @@
     }
   },
   "toasts": {
+    "save": {
+      "success": "Saved Changes.",
+      "error": "Failed to save changes."
+    },
     "error": {
       "generic": "An error occurred. Please try again later.",
-      "save": "Failed to save changes.",
-      "validationTitle": "Validation Error",
       "validation": {
-        "missingFields": "Please fill out all required fields.",
-        "invalidUrl": "Please enter a valid URL.",
-        "invalidFile": "The selected file is invalid. Please select a valid file."
+        "title": "Validation Error",
+        "invalidUrl": "The URL provided is invalid. Please ensure it is a valid URL."
       }
     },
-    "success": {
-      "assetLink": "Asset linked successfully.",
-      "reportSubmitted": "Report submitted.",
-      "assetSubmittedForApproval": "Asset submitted for approval!",
-      "iconUpload": "Icon uploaded & saved.",
-      "savedChanges": "Saved changes.",
-      "submit": "Submission successful!"
+    "submit": {
+      "success": "Submission successful!",
+      "error": "Failed to submit. Please try again later."
     },
     "secretFeatures": {
       "unlocked": "Secret features unlocked!",
-      "unlockedDescription": "If you enable these features, you will be able to access hidden content and features on ModelSaber. ModelSaber is not responsible for any damage caused by this content. You will not receive support for any issues caused by this content.",
+      "unlockedDescription": "If you enable these features, you will be able to access hidden content and features on BeatMods. BeatMods is not responsible for any damage caused by this content. You will not receive support for any issues caused by this content.",
       "enabled": "Secret features enabled!",
-      "enabledDescription": "You can now access hidden content and features on ModelSaber. Use responsibly!",
+      "enabledDescription": "You can now access hidden content and features on BeatMods. Use responsibly!",
       "mustBeLoggedIn": "You must be logged in to activate this feature.",
       "alreadyEnabled": "You have already activated the secret features.",
       "alreadyEnabledDescription": "If you want to disable them, disable them in your user settings.",
@@ -514,11 +514,11 @@
       "disabledDescription": "Access to hidden content and features has been revoked."
     },
     "failedTo": {
+      "loadGameData": "Failed to load game data. Please try again later.",
       "loadAssets": "Failed to load assets. Please try again later.",
       "loadMods": "Failed to load mods. Please try again later.",
       "loadAlerts": "Failed to load alerts. Please try again later.",
-      "loadRequests": "Failed to load requests. Please try again later.",
-      "submit": "Failed to submit. Please try again later."
+      "loadRequests": "Failed to load requests. Please try again later."
     }
   },
   "$schema": "https://inlang.com/schema/inlang-message-format"

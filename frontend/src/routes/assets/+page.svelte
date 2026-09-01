@@ -21,7 +21,7 @@
   import BigPagination from "$lib/components/generic/BigPagination.svelte";
   import { checkAllowApproval, checkRoles, getAllowedAssetStatuses } from "$lib/scripts/utils/checkRoles.js";
   import * as Drawer from "$shadcn/components/ui/drawer";
-  import { parseErrorMessage } from "../../lib/scripts/utils/api.js";
+  import { handleTrpcErrorWithToast, parseErrorMessage } from "../../lib/scripts/utils/api.js";
   import * as RadioGroup from "../../lib/shadcn/components/ui/radio-group";
   import { navigating, page } from "$app/state";
   import { replaceState } from "$app/navigation";
@@ -89,15 +89,9 @@
       .then((response) => {
         return response.assets;
       })
-      .catch((error) => {
-        console.error("Error fetching assets:", error);
-        toast.error(m[`toasts.failedTo.loadAssets`](), {
-          description: parseErrorMessage(error),
-          closeButton: true,
-          duration: 30000,
-        });
-        return undefined;
-      });
+      .catch(handleTrpcErrorWithToast(m[`toasts.failedTo.loadAssets`](), () => {
+        assetsLoading = false;
+      }));
 
     assetArray = assets ?? [];
     searchEngine = generateAssetSearchEngine(assets ?? []);
