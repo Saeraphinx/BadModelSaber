@@ -234,7 +234,7 @@
     { href: "/", label: m[`layout.navbar.home`](), target: undefined },
     {
       href: "",
-      label: m[`layout.navbar.mods.modsHeader`](),
+      label: m[`layout.navbar.mods.title`](),
       target: undefined,
       children: [
         { href: "/mods", label: m[`layout.navbar.mods.browseMods`]() },
@@ -246,7 +246,7 @@
     },
     {
       href: "",
-      label: m[`layout.navbar.assets.assetsHeader`](),
+      label: m[`layout.navbar.assets.title`](),
       target: undefined,
       children: [
         { href: "/assets", label: m[`layout.navbar.assets.browseAssets`]() },

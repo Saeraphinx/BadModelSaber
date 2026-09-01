@@ -22,7 +22,7 @@ export const load: PageLoad = async ({ fetch, url }) => {
     includeExtras: true,
   });
   // @ts-expect-error trust me
-  let selectedGameVersionId: string = gameVersion && selectedGame.gameVersions.some(v => v.id.toString() === gameVersion) ? gameVersion : selectedGame.gameVersions.find(v => v.defaultVersion)?.id.toString() || selectedGame.gameVersions[0]?.id.toString();
+  let selectedGameVersionId: string = gameVersion && selectedGame.gameVersions.some(v => v.id.toString() === gameVersion) ? gameVersion : selectedGame.gameVersions.find(v => v.isDefault)?.id.toString() || selectedGame.gameVersions[0]?.id.toString();
 
   return {
     pageMetadata: {

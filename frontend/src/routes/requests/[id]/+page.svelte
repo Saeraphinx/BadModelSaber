@@ -2,7 +2,7 @@
   import AssetCard from "$lib/components/assets/AssetCard.svelte";
   import RequestMessage from "$lib/components/requests/RequestMessage.svelte";
   import { RequestType, UserPermissions, type UserApiV3 } from "$lib/scripts/from_backend/DBExtras.js";
-  import { handleTrpcErrorWithToast, parseErrorMessage } from "$lib/scripts/utils/api.js";
+  import { handleTrpcErrorWithToast, handleTrpcSuccessWithToast, parseErrorMessage } from "$lib/scripts/utils/api.js";
   import type { RequestMessage as ReqMessage } from "$lib/scripts/from_backend/DBExtras.js";
   import Textarea from "$shadcn/components/ui/textarea/textarea.svelte";
   import Button from "$shadcn/components/ui/button/button.svelte";
@@ -14,6 +14,7 @@
   import ModCard from "../../../lib/components/mods/ModCard.svelte";
   import VersionCard from "../../../lib/components/mods/VersionCard.svelte";
   import { getRequestTypeString } from "../../../lib/scripts/utils/stylizer";
+  import { invalidateAll } from "$app/navigation";
 
   const { data: _internal } = $props();
   const { trpc, user, pageData } = $derived(_internal);
@@ -30,7 +31,7 @@
   });
 
   // Message Content
-  let users = $state<Map<number, { id: number; displayName: string; avatarUrl: string; useSystemAvatar: boolean }>>(new Map());
+  let users = $state<Map<number, { id: number; displayName: string; avatarUrl: string; useSystemAvatar: boolean, displayRole?: UserPermissions }>>(new Map());
   let messages: (ReqMessage & { initMessage?: boolean })[] = $state([]);
   onMount(() => {
     let initialString = "";
@@ -69,20 +70,33 @@
       ...pageData.messages,
     ];
   });
+
+  function getRoleToDisplay(roles: { sitewide: UserPermissions[] }): UserPermissions | undefined {
+    if (roles.sitewide.includes(UserPermissions.C_System)) {
+      return UserPermissions.C_System;
+    } else if (roles.sitewide.includes(UserPermissions.C_Admin)) {
+      return UserPermissions.C_Admin;
+    } else if (roles.sitewide.includes(UserPermissions.C_Moderator)) {
+      return UserPermissions.C_Moderator;
+    } else {
+      return undefined;
+    }
+  }
+
   async function populateUsers() {
     let userIds = new Set<number>();
-    users.set(5, { id: 5, displayName: `System User`, avatarUrl: "/system_pfp.svg", useSystemAvatar: true });; // system user
+    users.set(5, { id: 5, displayName: `System User`, avatarUrl: "/system_pfp.svg", useSystemAvatar: true, displayRole: UserPermissions.C_System }); // system user
     pageData.messages.forEach((message) => {
       if (message.userId && !users.has(message.userId) && message.userId !== user.id) {
         userIds.add(message.userId);
       }
     });
-    users.set(user.id, {...user, useSystemAvatar: false});
+    users.set(user.id, {...user, displayRole: getRoleToDisplay(user.permissions), useSystemAvatar: false});
     if (pageData.refrencedThing && `uploader` in pageData.refrencedThing && !users.has(pageData.refrencedThing.uploader!.id)) {
-      users.set(pageData.refrencedThing.uploader!.id, {...pageData.refrencedThing.uploader!, useSystemAvatar: false});
+      users.set(pageData.refrencedThing.uploader!.id, {...pageData.refrencedThing.uploader!, displayRole: getRoleToDisplay(pageData.refrencedThing.uploader!.permissions), useSystemAvatar: false});
     }
     if (pageData.requesterId && !users.has(pageData.requesterId)) {
-      users.set(pageData.requester!.id, {...pageData.requester!, useSystemAvatar: false});
+      users.set(pageData.requester!.id, {...pageData.requester!, displayRole: getRoleToDisplay(pageData.requester!.permissions), useSystemAvatar: false});
     }
     let promises = [];
     if (userIds.size > 0) {
@@ -91,7 +105,17 @@
         promises.push(
           trpc.v3.user.getUserById
             .query({ id: userId })
-            .then((res) => users.set(userId, {...res, useSystemAvatar: false}))
+            .then((res) => {
+              let roleToUse = undefined;
+              if (res.permissions.sitewide.includes(UserPermissions.C_System)) {
+                roleToUse = UserPermissions.C_System;
+              } else if (res.permissions.sitewide.includes(UserPermissions.C_Admin)) {
+                roleToUse = UserPermissions.C_Admin;
+              } else if (res.permissions.sitewide.includes(UserPermissions.C_Moderator)) {
+                roleToUse = UserPermissions.C_Moderator;
+              }
+              users.set(userId, { ...res, useSystemAvatar: false, displayRole: roleToUse });
+            })
             .catch((err) => {
               console.error(`Failed to fetch user ${userId}:`, err);
               users.set(userId, { id: userId, displayName: `Unknown User ${userId}`, avatarUrl: "/default-avatar.png", useSystemAvatar: true });
@@ -143,9 +167,7 @@
     await trpc.internal.requests.handleRequest.mutate({
       action: accepted ? `accept` : `decline`,
       id: pageData.id
-    }).then(r => {
-      return r.message
-    }).catch(handleTrpcErrorWithToast());
+    }).then(() => invalidateAll()).catch(handleTrpcErrorWithToast());
   }
 </script>
 
@@ -181,7 +203,7 @@
           <p class="text-muted-foreground">{m[`requests.noMessagesFound`]()}</p>
         {/each}
       {/key}
-      {#if isAllowedToSend}
+      {#if isAllowedToSend && pageData.accepted}
         <div class="flex flex-col items-end">
           <Textarea bind:value={messageBox} placeholder={m[`requests.typeYourMessageHere`]()} class="w-full" rows={5} />
           <Button disabled={isSending || messageBox.trim() == ""} variant="default" class="mt-2 w-32" onclick={sendMessage}>

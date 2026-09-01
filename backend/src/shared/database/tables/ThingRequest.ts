@@ -222,12 +222,12 @@ export class ThingRequest extends Model<InferAttributes<ThingRequest>, InferCrea
     public canMessage(user: User): boolean {
         switch (this.requestType) {
             case RequestType.User_Report:
-                return user.id === this.requestResponseBy || user.checkRoles([UserPermissions.Requests_ManageUsers, UserPermissions.Requests_ManageAll], this.refrencedGameName ?? undefined);
+                return user.id === this.requesterId || user.checkRoles([UserPermissions.Requests_ManageUsers, UserPermissions.Requests_ManageAll], this.refrencedGameName ?? undefined);
             case RequestType.Asset_Report:
-                return user.id === this.requestResponseBy || user.checkRoles([UserPermissions.Requests_ManageAssets, UserPermissions.Requests_ManageAll], this.refrencedGameName ?? undefined);
+                return user.id === this.requesterId || user.checkRoles([UserPermissions.Requests_ManageAssets, UserPermissions.Requests_ManageAll], this.refrencedGameName ?? undefined);
             case RequestType.Project_Report:
             case RequestType.Version_Report:
-                return user.id === this.requestResponseBy || user.checkRoles([UserPermissions.Requests_ManageMods, UserPermissions.Requests_ManageAll], this.refrencedGameName ?? undefined);
+                return user.id === this.requesterId || user.checkRoles([UserPermissions.Requests_ManageMods, UserPermissions.Requests_ManageAll], this.refrencedGameName ?? undefined);
             default:
                 return false;
         }
@@ -333,6 +333,14 @@ export class ThingRequest extends Model<InferAttributes<ThingRequest>, InferCrea
 
         this.accepted = true;
         this.resolvedBy = acceptedBy.id;
+        this.messages = [
+            ...this.messages,
+            { 
+                userId: 5, 
+                message: `Request accepted by ${acceptedBy.username}`, 
+                timestamp: new Date(Date.now()).toISOString() 
+            }
+        ]
         Logger.log(`Request ${this.id} accepted by user ${acceptedBy.id}`);
         return await this.save();
     }
@@ -349,6 +357,14 @@ export class ThingRequest extends Model<InferAttributes<ThingRequest>, InferCrea
                 Logger.warn(`Unable to alert requester: ${parseErrorMessage(e)}`)
             });
         }
+        this.messages = [
+            ...this.messages,
+            { 
+                userId: 5, 
+                message: `Request declined by ${declinedBy.username}`, 
+                timestamp: new Date(Date.now()).toISOString() 
+            }
+        ]
         Logger.log(`Request ${this.id} declined by user ${declinedBy.id}`);
         return await this.save();
     }

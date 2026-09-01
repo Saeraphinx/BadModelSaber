@@ -1,9 +1,11 @@
 <script lang="ts">
   import { m } from "$lib/paraglide/messages";
-  import type { RequestMessage } from "$lib/scripts/from_backend/DBExtras";
+  import type { RequestMessage, UserPermissions } from "$lib/scripts/from_backend/DBExtras";
   import { Button } from "$shadcn/components/ui/button";
+  import { Badge } from "$shadcn/components/ui/badge";
   import { cn } from "$shadcn/utils";
   import type { ClassValue } from "svelte/elements";
+  import { getRoleData } from "../../scripts/utils/stylizer";
 
   let {
     message,
@@ -20,7 +22,7 @@
     accept: Function,
     reject: Function,
     message: RequestMessage & { initMessage?: boolean };
-    user?: { id:number, displayName: string; avatarUrl: string; useSystemAvatar: boolean } ;
+    user?: { id:number, displayName: string; avatarUrl: string; useSystemAvatar: boolean, displayRole?: UserPermissions } ;
     class?: ClassValue;
   } = $props();
 
@@ -37,9 +39,14 @@
 
 <div class={cn(`p-4 bg-card rounded-lg shadow`, className)}>
   <div class="flex items-center mb-2 justify-between">
-    <a href="/users/{user.id}" class="flex flex-row items-center">
-      <img src={userAvatarUrl} alt={user.displayName} class="w-8 h-8 rounded-full mr-2"/>
+    <a href="/users/{user.id}" class="flex flex-row items-center gap-2">
+      <img src={userAvatarUrl} alt={user.displayName} class="w-8 h-8 rounded-full"/>
       <span class="font-semibold">{user.displayName}</span>
+      {#if user.displayRole}
+        {const role = getRoleData(user.displayRole);}
+        <Badge class="mr-1 capitalize {role.textColor} {role.bgColor}">{role.text}</Badge>
+      {/if}
+
     </a>
     <span class="text-sm text-gray-500 ml-2">{new Date(message.timestamp).toLocaleString()}</span>
   </div>
