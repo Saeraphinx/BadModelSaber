@@ -3,7 +3,7 @@ import { anyProcedure, loggedInProcedure, router } from "../../trpc.ts";
 import { Alert, Asset, Project, User, UserPermissions, Version } from "../../../shared/Database.ts";
 import { TRPCError } from "@trpc/server";
 
-let permissionsObj = { hasAllOf: [UserPermissions.Administrative_Tasks, UserPermissions.Asset_ViewAll, UserPermissions.Mods_ViewAll, UserPermissions.Asset_EditAll, UserPermissions.Mods_EditAll] };
+let permissionsObj = { hasAllOf: [UserPermissions.Advanced_Admin_Tasks, UserPermissions.Administrative_Tasks, UserPermissions.Asset_ViewAll, UserPermissions.Mods_ViewAll, UserPermissions.Asset_EditAll, UserPermissions.Mods_EditAll] };
 
 export const AdminGetEditRouter = router({
     raw: {

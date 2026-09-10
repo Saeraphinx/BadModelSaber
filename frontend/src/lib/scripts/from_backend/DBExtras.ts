@@ -33,15 +33,15 @@ export const availableLocales: {
     code: "ja",
     name: "日本語", // Japanese
     secret: false,
-    backend: true,
-    frontend: true,
+    backend: false,
+    frontend: false,
   },
   {
     code: "cn",
     name: "中文", // Chinese (Written)
     secret: false,
-    frontend: true,
-    backend: true,
+    frontend: false,
+    backend: false,
   },
   {
     code: "owo",
@@ -51,7 +51,7 @@ export const availableLocales: {
     backend: false,
   },
   {
-    code: "cimode",
+    code: "keys",
     name: "Translation Keys",
     secret: true,
     frontend: true,
@@ -213,6 +213,7 @@ export enum UserPermissions {
   Mods_TranslateAll = "mods_translate_all", // User can translate all mods, including those created by other users
   Mods_UploadAll = "mods_upload_all", // User can upload new versions for all mods, including those created by other users
   Mods_Approval = "mods_approval", // User can approve/reject pending mods
+  Mods_InternalTags = "mods_internal_tags", // User can add/remove the featured flag for mods (e.g. featured mods)
 
   Asset_Create = "asset_create", // User can create/upload assets
   Asset_ViewAll = "asset_view_all", // User can view all assets, including private ones

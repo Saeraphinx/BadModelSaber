@@ -254,6 +254,24 @@ export const AdminRouter = router({
             return ctx.gameVersion.toApiV3_full();
         }),
     },
+    project: {
+        getFeaturedStatus: loggedInProjectProcedure([UserPermissions.Mods_InternalTags]).query(async ({ ctx }) => {
+            return ctx.project.isFeatured;
+        }),
+        setFeaturedStatus: loggedInProjectProcedure([UserPermissions.Mods_InternalTags]).input(z.object({
+            isFeatured: z.boolean(),
+        })).mutation(async ({ ctx, input }) => {
+            ctx.project.isFeatured = input.isFeatured;
+            await ctx.project.save().catch(handleCatch(`setting project featured status`));
+            Logger.log(`Set project ${ctx.project.id} featured status to ${input.isFeatured} by admin user ${ctx.userId}`);
+            return ctx.project.toApiV3();
+        }),
+    },
+    version: {
+        startDecompile: loggedInVersionProcedure({ hasOneOf: [UserPermissions.Mods_Approval] }).mutation(async ({ ctx }) => {
+            await ctx.version.dotnetDecompile().catch(handleCatch(`starting decompile for version`));
+        }),
+    },
     dev: {
         importOldModelSaberData: loggedInProcedure([UserPermissions.Advanced_Admin_Tasks])
             .mutation(async ({ input, ctx }) => {

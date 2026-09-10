@@ -3,7 +3,6 @@ import { Logger } from "./Logger.ts";
 import * as fs from "fs";
 import * as crypto from "crypto";
 import sharp from "sharp";
-import ffmpegPath from "ffmpeg-static";
 import ffmpeg from "ffmpeg";
 import path from "path";
 import { EnvConfig } from "./EnvConfig.ts";
@@ -15,6 +14,7 @@ import { getManifestFromZip } from "./ModParser.ts";
 import z from "zod";
 import { availableParallelism } from "os";
 import JSZip from "jszip";
+import { exec } from "child_process";
 
 type modelsaberasset = {
     [key: string]: AssetPublicAPIv2;
@@ -151,8 +151,9 @@ export async function importFromOldModelSaber(): Promise<void> {
                         const oldFilePath = `${conversionStorage}/${new Date().getTime()}.${format}`;
                         // if the thumbnail is a video, convert it to a webp image
                         fs.writeFileSync(oldFilePath, Buffer.from(arrayBuffer));
-                        if (ffmpegPath.default) {
-                            throw new Error(`ffmpeg-static is not available. Please install it to convert video thumbnails.`);
+                        // check if ffmpeg is on the system
+                        if (!(await checkIfFfmpegInstalled())) {
+                            throw new Error(`ffmpeg is not available on the system. Please install it to convert video thumbnails.`);
                         }
                         const ff = new ffmpeg(oldFilePath);
                         await ff.then(video => {
@@ -864,4 +865,20 @@ async function limitConcurrency(tasks: (() => Promise<any>)[], concurrency: numb
     // Start the specified number of parallel workers
     await Promise.all(Array.from({ length: concurrency }, worker));
     return results;
+}
+
+
+function checkIfFfmpegInstalled(): Promise<boolean> {
+  return new Promise((resolve) => {
+    // Run the 'ffmpeg -version' command
+    exec('ffmpeg -version', (error, stdout, stderr) => {
+      if (error) {
+        // Command failed or ffmpeg is not in the system PATH
+        resolve(false);
+      } else {
+        // Command succeeded, meaning FFmpeg is installed
+        resolve(true);
+      }
+    });
+  });
 }

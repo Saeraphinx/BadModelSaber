@@ -20,12 +20,14 @@
   import UserSelectionDialog from "$lib/components/dialogs/UserSelectionDialog.svelte";
   import { zProject } from "$lib/scripts/from_backend/validators.js";
   import { toast } from "svelte-sonner";
-  import { getProjectThumbnailUrl, handleTrpcError, handleTrpcErrorWithToast, handleTrpcSuccessWithToast, parseErrorMessage, trpc } from "$lib/scripts/utils/api.js";
+  import { getProjectThumbnailUrl, handleTrpcErrorWithToast, handleTrpcSuccessWithToast, parseErrorMessage } from "$lib/scripts/utils/api.js";
   import { invalidateAll } from "$app/navigation";
-  import ReportDialog from "../../../lib/components/dialogs/ReportDialog.svelte";
-  import StatusHoverCard from "../../../lib/components/generic/StatusHoverCard.svelte";
-  import { m } from "../../../lib/paraglide/messages";
-  import { getLocale } from "../../../lib/paraglide/runtime";
+  import ReportDialog from "$lib/components/dialogs/ReportDialog.svelte";
+  import StatusHoverCard from "$lib/components/generic/StatusHoverCard.svelte";
+  import { m } from "$lib/paraglide/messages";
+  import { getLocale } from "$lib/paraglide/runtime";
+  import Spinner from "../../../lib/shadcn/components/ui/spinner/spinner.svelte";
+  import Checkbox from "../../../lib/shadcn/components/ui/checkbox/checkbox.svelte";
 
   const { data: _internal } = $props();
   const {
@@ -34,6 +36,7 @@
       games: { game, gameVersions },
     },
     user,
+    trpc
   } = $derived(_internal);
 
   // svelte-ignore non_reactive_update
@@ -414,6 +417,28 @@
                 <PlusIcon class="w-2 h-2" />
               </Button>
             </div>
+            {#if checkRoles(user, [UserPermissions.Mods_InternalTags], project.gameName)}
+              <Label for="internalTags">Is Featured</Label>
+              <div class="flex flex-row items-center gap-2">
+                {#await trpc.internal.admin.project.getFeaturedStatus.query({ id: project.id })}
+                  <Spinner class="w-4 h-4" />
+                {:then _isFeatured}
+                  {let isFeatured = $state(_isFeatured)}
+                  <Checkbox id="internalTags" bind:checked={isFeatured} />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onclick={() => {
+                      trpc.internal.admin.project.setFeaturedStatus
+                        .mutate({ id: project.id, isFeatured: isFeatured })
+                        .then(handleTrpcSuccessWithToast(m[`toasts.save.success`](), false))
+                        .catch(handleTrpcErrorWithToast(m[`toasts.save.error`]()));
+                    }}>
+                    {m[`dialogs.save`]()}
+                  </Button>                  
+                {/await}
+              </div>
+            {/if}
           </div>
           <div>
             <Tabs.Root value="edit" class="w-full">

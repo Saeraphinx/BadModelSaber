@@ -10,15 +10,14 @@
     "prepare": "svelte-kit sync || echo ''",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
-    "i18n": "paraglide-js compile --project ./project.inlang --outdir ./src/lib/paraglide",
-    "postinstall": "yarn run i18n"
+    "i18n": "paraglide-js compile --project ./project.inlang --outdir ./src/lib/paraglide"
   },
   "devDependencies": {
     "@inlang/paraglide-js": "^2.18.2",
     "@internationalized/date": "^3.12.0",
     "@lucide/lab": "^0.1.2",
     "@lucide/svelte": "^0.561.0",
-    "@sveltejs/kit": "^2.16.0",
+    "@sveltejs/kit": "^2.56.0",
     "@sveltejs/vite-plugin-svelte": "^5.0.0",
     "@tailwindcss/typography": "^0.5.19",
     "@tailwindcss/vite": "^4.0.0",
@@ -28,6 +27,7 @@
     "bits-ui": "^2.16.3",
     "clsx": "^2.1.1",
     "debounce": "^3.0.0",
+    "embla-carousel": "^8.6.0",
     "embla-carousel-auto-scroll": "^8.6.0",
     "embla-carousel-svelte": "^8.6.0",
     "flexsearch": "^0.8.205",
@@ -50,7 +50,7 @@
     "vite": "^6.4.3",
     "zod": "^4.1.12"
   },
-  "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e",
+  "packageManager": "yarn@4.18.0",
   "dependencies": {
     "@sveltejs/adapter-node": "^5.5.4",
     "@trpc/client": "^11.6.0",

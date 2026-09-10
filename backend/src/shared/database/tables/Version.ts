@@ -565,13 +565,14 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
         let dllData = await (zipDllFile as JSZip.JSZipObject).async(`nodebuffer`);
         // write dll to file for decompilation & future diffing
         let dllFilePath = this.dllFilePath;
-        let dllFile = fs.writeFileSync(dllFilePath, dllData);
-        // @ts-expect-error
-        dllData = null; // free up memory
+        fs.writeFileSync(dllFilePath, dllData);
+
         // decompile dll with difflux
         Logger.debug(`Decompiling dll for version id ${this.id} at path ${dllFilePath} (prep ${startTime - Date.now()}ms)...`);
         await decompile({ assemblyPath: dllFilePath }, path.join(this.versionFolderPath, `decompiled`));
         Logger.info(`Decompilation completed for version id ${this.id}. Decompiled files saved to ${path.join(this.versionFolderPath, `decompiled`)}. Total Time: ${(Date.now() - startTime) / 1000}s`);
+        
+        fs.unlinkSync(dllFilePath); // delete dll after decompilation
     }
     // #endregion
     // #region Reports
