@@ -1,10 +1,13 @@
 import { Logger } from "../../../../shared/Logger.ts";
-import { availableBackendLocaleCodes, GameVersion, GameVersionWhereOptions, Project, ProjectApiV3, projectApiV3Schema, ProjectWhereOptions, Status, User, UserPermissions, Version, versionApiV3Schema } from "../../../../shared/Database.ts";
+import { availableBackendLocaleCodes, GameVersion, GameVersionWhereOptions, Project, ProjectApiV3, projectApiV3Schema, ProjectWhereOptions, Status, User, UserPermissions, Version, VersionApiV3, versionApiV3Schema } from "../../../../shared/Database.ts";
 import { anyGameProcedure, anyProcedure, gameProcedure, router } from "../../../trpc.ts";
 import z from "zod/v4";
 import { TRPCError } from "@trpc/server";
 import { Op, WhereOptions } from "sequelize";
 import { compare } from "semver";
+import { Sequelize } from "sequelize-typescript";
+
+const hashLookupSchema = z.string().trim().min(32).max(32).regex(/^[a-fA-F0-9]+$/);
 
 export const GetModsV3 = router({
     // #region getMods
@@ -184,6 +187,70 @@ export const GetModsV3 = router({
                 project: await project.toApiV3(input.language) as ProjectApiV3,
                 versions: outputVersions
             };
-        })
+        }),
     // #endregion
+    getVersionByHash: anyProcedure()
+        .meta({
+            openapi: {
+                method: `GET`,
+                path: `/v3/hashlookup/version`,
+                tags: ['Mods'],
+                summary: 'Get a version by its hash',
+            }
+        })
+        .input(z.object({
+            hash: z.union([hashLookupSchema, z.array(hashLookupSchema)]),
+            status: z.enum(Status).optional()
+        }))
+        .output(z.record(z.string(), z.object({
+            project: projectApiV3Schema,
+            version: versionApiV3Schema
+        })))
+        .query(async ({ ctx, input }) => {
+            let hashes = normalizeHashes(input.hash);
+            let hashesSqlArray = toSqlTextArrayLiteral(hashes);
+            let statusFilter: WhereOptions<Version> = {};
+            if (input.status) {
+                statusFilter.status = input.status;
+            }
+            // only compare against `zipHash` and the `hash` field of contentHashes
+            let versions = await Version.findAll({
+                where: {
+                    ...statusFilter,
+                    [Op.or]: [
+                        { zipHash: { [Op.in]: hashes } },
+                        Sequelize.where(
+                            Sequelize.literal(`EXISTS (SELECT 1 FROM unnest("contentHashes") AS ch WHERE ch->>'hash' = ANY(${hashesSqlArray}))`),
+                            Op.eq,
+                            true
+                        )
+                    ]
+                },
+                include: [GameVersion, Project]
+            });
+            if (versions.length === 0) {
+                throw new TRPCError({ code: 'NOT_FOUND', message: 'Version not found.' });
+            }
+            let output: Record<string, { project: ProjectApiV3, version: VersionApiV3 }> = {};
+            for (let v of versions) {
+                let p = await v.project;
+                if (!p) continue;
+                output[v.zipHash] = {
+                    project: await p.toApiV3(),
+                    version: await v.toApiV3()
+                };
+            }
+            return output;
+            
+        })
 })
+
+function normalizeHashes(input: string | string[]) {
+    let hashes = Array.isArray(input) ? input : [input];
+    return [...new Set(hashes)];
+}
+
+function toSqlTextArrayLiteral(hashes: string[]) {
+    // `hashLookupSchema` constrains values to hex chars only, so quoted literals are safe here.
+    return `ARRAY[${hashes.map(hash => `'${hash}'`).join(`,`)}]::text[]`;
+}
