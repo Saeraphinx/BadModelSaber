@@ -368,7 +368,7 @@ export const OpenAPIUploadDocs: PathsObject = {
                     description: "Asset uploaded successfully",
                     content: {
                         "application/json": {
-                            schema: assetApiV3Schema,
+                            schema: z.toJSONSchema(assetApiV3Schema, { target: "openapi-3.0", unrepresentable: "any" }),
                         }
                     }
                 },
@@ -423,7 +423,7 @@ export const OpenAPIUploadDocs: PathsObject = {
                     description: "Version uploaded successfully",
                     content: {
                         "application/json": {
-                            schema: versionApiV3Schema,
+                            schema: z.toJSONSchema(versionApiV3Schema, { target: "openapi-3.0", unrepresentable: "any" }),
                         }
                     }
                 },
