@@ -525,14 +525,14 @@ export const authRouter = router({
             const { key, hash } = Keys.generateKey(ctx.user.id);
 
             await Keys.create({
-                key: key,
+                key: hash,
                 userId: ctx.user.id,
                 name: input.name,
             }).then(() => {
                 Logger.info(`User ${ctx.user.username} (${ctx.user.id}) generated a new API key.`);
             });
 
-            return { hash: hash, name: input.name }
+            return { key: key, name: input.name }
         }),
     listApiKeys: loggedInProcedure()
         .query(async ({ ctx }) => {

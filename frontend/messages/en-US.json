@@ -305,6 +305,7 @@
     "submitMessage": "Submit Message"
   },
   "users": {
+    "linkAccounts": "Link Accounts",
     "linkToGithub": "Link to GitHub",
     "linkToDiscord": "Link to Discord",
     "hideGithubId": "Hide GitHub Publicly",
@@ -312,7 +313,11 @@
     "username": "Username",
     "displayName": "Display Name",
     "bio": "Bio",
-    "donationLinks": "Donation Links"
+    "donationLinks": "Donation Links",
+    "apiKeys": "API Keys",
+    "generateApiKey": "Generate API Key",
+    "yourNewApiHasBeenGenerated": "Your new API key has been generated. Please copy it now as it will not be shown again.",
+    "revoke": "Revoke"
   },
   "enums": {
     "status": {

@@ -16,13 +16,13 @@
   import { Input } from "$lib/shadcn/components/ui/input";
   import { Textarea } from "$lib/shadcn/components/ui/textarea";
   import { Label } from "$lib/shadcn/components/ui/label";
-  import { invalidate } from "$app/navigation";
   import Checkbox from "../../../lib/shadcn/components/ui/checkbox/checkbox.svelte";
   import RolesEditorDialog from "../../../lib/components/dialogs/RolesEditorDialog.svelte";
   import z from "zod/v4";
   import * as Select from "../../../lib/shadcn/components/ui/select";
   import { XIcon } from "@lucide/svelte";
   import { m } from "$lib/paraglide/messages";
+  import Spinner from "../../../lib/shadcn/components/ui/spinner/spinner.svelte";
 
   
   const { data: _internal } = $props();
@@ -263,6 +263,7 @@
         </div>
         {#if allowEditingConfidentials}
           <div class="flex flex-col justify-center w-full max-w-md p-4 gap-2 bg-card rounded-lg">
+            <Label for="linkAccounts">{m[`users.linkAccounts`]()}</Label>
             <div class="grid grid-cols-2 gap-4">
               <Button variant="outline" disabled={user?.githubId !== null} onclick={() => {
                 trpc.internal.auth.linkGitHubToaccount.query({}).then(({ url }) => {
@@ -274,6 +275,44 @@
                   window.open(url, "_blank");
                 }).catch(handleTrpcErrorWithToast());
               }}>{m[`users.linkToDiscord`]()}</Button>
+            </div>
+            <Label for="apiKeys">{m[`users.apiKeys`]()}</Label>
+            <div class="flex flex-col justify-center items-center gap-4 mt-4">
+              {#await trpc.internal.auth.listApiKeys.query()}
+                <Spinner />
+              {:then apiKeys}
+                {#each apiKeys as apiKey}
+                  {let showKey = true}
+                  {#if showKey}
+                    <div class="flex flex-row justify-center items-center gap-2">
+                      <span>{apiKey.name}</span>
+                      <Button variant="destructive" onclick={() => {
+                        trpc.internal.auth.revokeApiKey.mutate({ 
+                          name: apiKey.name 
+                        }).then(handleTrpcSuccessWithToast(m[`toasts.save.success`](), false, () => {
+                          showKey = false;
+                        })).catch(handleTrpcErrorWithToast());
+                      }}>{m[`users.revoke`]()}</Button>
+                    </div>
+                  {/if}
+                {/each}
+                <Button variant="outline" onclick={() => {
+                  trpc.internal.auth.generateApiKey.mutate({ name: `New API Key` }).then((key) => {
+                    toast.success(m[`users.yourNewApiHasBeenGenerated`](), {
+                      description: key.key,
+                      descriptionClass: "font-mono bg-black/50 p-1 px-2 rounded-md",
+                      duration: 1000 * 60 * 60,
+                      closeButton: true,
+                      action: {
+                        label: "Copy",
+                        onClick: () => {
+                          navigator.clipboard.writeText(key.key);
+                        }
+                      }
+                    });
+                  }).catch(handleTrpcErrorWithToast());
+                }}>{m[`users.generateApiKey`]()}</Button>
+              {/await}
             </div>
           </div>
         {/if}
