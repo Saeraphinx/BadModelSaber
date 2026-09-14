@@ -4,6 +4,7 @@ import { Game, GameVersion, UserPermissions } from "../../../../shared/Database.
 import z from "zod";
 import { TRPCError } from "@trpc/server";
 import { compare } from "semver";
+import { addCacheHeaders } from "../../../../shared/Tools.ts";
 
 export const gameRouter = router({
   getGames: anyProcedure().input(z.boolean().default(false)).query(async ({ input, ctx }) => {
@@ -13,6 +14,7 @@ export const gameRouter = router({
             throw new TRPCError({ code: "FORBIDDEN", message: "You do not have permission to view extra details" });
         }
     }
+    addCacheHeaders(ctx, false);
     return games.map(game => game.toApiV3(input));
   }),
   getGameVersions: anyProcedure().input(z.object({ gameName: z.string(), includeExtras: z.boolean().default(false) })).query(async ({ input, ctx }) => {
@@ -31,7 +33,7 @@ export const gameRouter = router({
     }
 
     gameVersions.sort((b, a) => compare(a.version, b.version, { loose: true }));
-
+    addCacheHeaders(ctx)
     return {
         game: game.toApiV3(),
         gameVersions: gameVersions.map(version => input.includeExtras ? version.toApiV3_full() : version.toApiV3())

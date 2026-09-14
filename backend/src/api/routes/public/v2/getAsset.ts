@@ -3,6 +3,7 @@ import { Asset, AssetFileFormat, AssetInfer, assetPublicAPIv1Schema, Status } fr
 import { z } from "zod/v4";
 import { Op, WhereOptions } from "sequelize";
 import { anyProcedure, router } from "../../../trpc.ts";
+import { addCacheHeaders } from "../../../../shared/Tools.ts";
 
 export const GetAssetV2Router = router({
     getAssets: anyProcedure()
@@ -37,6 +38,7 @@ export const GetAssetV2Router = router({
             sortingData = { type: `id`, direction: input.sortDirection };
         }
 
+        addCacheHeaders(ctx);
         Asset.findAll({
             where: {
                 id: { [Op.gte]: input.start, [Op.lte]: input.end ?? Number.MAX_SAFE_INTEGER },

@@ -2,7 +2,7 @@ import { Router } from "express";
 import { Validator } from "../../../../shared/Validator.ts";
 import { Asset, AssetInfer, Project, User } from "../../../../shared/Database.ts";
 import { Op, WhereOptions } from "sequelize";
-import { parseErrorMessage } from "../../../../shared/Tools.ts";
+import { addCacheHeaders, parseErrorMessage } from "../../../../shared/Tools.ts";
 import { AssetApiV3, userApiV3Schema } from "../../../../shared/database/DBExtras.ts";
 import { anyProcedure, loggedInProcedure, router } from "../../../trpc.ts";
 import z from "zod/v4";
@@ -74,6 +74,7 @@ export const userRouterV3 = router({
             include: { all: true }
         });
         let response = await Promise.all(assets.map(asset => asset.toApiV3()));
+        addCacheHeaders(ctx);
         return { assets: response, total: assets.length, page: input.page ?? null};
     }),
     getModsByUserId: anyProcedure().input(z.object({
@@ -90,6 +91,8 @@ export const userRouterV3 = router({
                 where: { id: user.id }
             }]
         });
+        
+        addCacheHeaders(ctx);
         
         return await Promise.all(projects.filter(async p => await p.canView(ctx.user)).map(p => p.toApiV3()));
     })

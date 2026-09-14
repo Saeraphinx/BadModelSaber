@@ -3,6 +3,7 @@ import { z } from "zod/v4";
 import { anyProcedure, router } from "../../../trpc.ts";
 import { coerce, compare } from "semver";
 import { Op, WhereOptions } from "sequelize";
+import { addCacheHeaders } from "../../../../shared/Tools.ts";
 
 export const getModsV1Router = router({
     getVersions: anyProcedure()
@@ -34,6 +35,8 @@ export const getModsV1Router = router({
                 }
             });
 
+            addCacheHeaders(ctx, false);
+
             return versions;
         }),
     getAliases: anyProcedure()
@@ -58,6 +61,7 @@ export const getModsV1Router = router({
             for (let version of versions) {
                 aliases[version] = [];
             }
+            addCacheHeaders(ctx, false);
             return aliases;
         }),
     getMods: anyProcedure()
@@ -106,6 +110,7 @@ export const getModsV1Router = router({
                 let project = await ver.project as Project;
                 apiOutput.push(ver.toApiV1(project, ver.supportedGameVersions[0], true));
             }
+            addCacheHeaders(ctx, false);
             return await Promise.allSettled(apiOutput).then(results => {
                 let fulfilledResults = results.filter(r => r.status === 'fulfilled') as PromiseFulfilledResult<ModApiV1>[];
                 return fulfilledResults.map(r => r.value);

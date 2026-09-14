@@ -46,9 +46,9 @@ export function createRandomString(byteCount: number): string {
     return key;
 }
 
-export function addCacheHeaders(ctx: { res: Context['res'], user?: any }, publicTime = "600", privateTime = "60") {
+export function addCacheHeaders(ctx: { res: Context['res'], user?: any }, checkUser = true, publicTime = "86400", privateTime = "600") {
     ctx.res.setHeader('Vary', 'Cookie');
-    if (ctx.user) {
+    if (checkUser && ctx.user) {
         ctx.res.setHeader('Cache-Control', `private, max-age=${privateTime}, no-cache`);
     } else {
         ctx.res.setHeader('Cache-Control', `public, max-age=${publicTime}`);

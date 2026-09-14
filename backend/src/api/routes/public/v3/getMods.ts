@@ -143,7 +143,7 @@ export const GetModsV3 = router({
                 ctx.res.setHeader('Server-Timing', timingString);
             }
 
-            addCacheHeaders(ctx, `1800`, `60`);
+            addCacheHeaders(ctx);
             return outputApi;
         }),
     // #endregion
@@ -185,7 +185,7 @@ export const GetModsV3 = router({
                 .sort((a, b) => compare(b.semver, a.semver)) // sort versions in descending order
                 .filter(async v => await v.canView(ctx.user, project));
             let outputVersions = await Promise.all(versions.map(async v => await v.toApiV3()));
-            addCacheHeaders(ctx, `600`, `60`);
+            addCacheHeaders(ctx);
             return {
                 project: await project.toApiV3(input.language) as ProjectApiV3,
                 versions: outputVersions
@@ -243,7 +243,7 @@ export const GetModsV3 = router({
                     version: await v.toApiV3()
                 };
             }
-            addCacheHeaders(ctx, `86400`, `60`);
+            addCacheHeaders(ctx);
             return output;
             
         })

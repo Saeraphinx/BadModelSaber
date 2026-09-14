@@ -3,6 +3,7 @@ import { z } from "zod/v4";
 import { Op, WhereOptions, Sequelize } from "sequelize";
 import { anyProcedure, router } from "../../../trpc.ts";
 import { compare, Range } from "semver";
+import { addCacheHeaders } from "../../../../shared/Tools.ts";
 
 const hashLookupSchema = z.string().trim().min(32).max(32).regex(/^[a-fA-F0-9]+$/);
 
@@ -118,6 +119,8 @@ export const getModsV2Router = router({
                 ctx.res.setHeader('Server-Timing', timingString);
             }
 
+            addCacheHeaders(ctx);
+
             return { mods: newOutput };
         }),
     hashLookup: anyProcedure()
@@ -135,7 +138,7 @@ export const getModsV2Router = router({
         .output(z.object({
             modVersions: ModVersionsApiv2Schema.array(),
         }))
-        .query(async ({ input }) => {
+        .query(async ({ input, ctx }) => {
             let hashes = normalizeHashes(input.hash);
             let hashesSqlArray = toSqlTextArrayLiteral(hashes);
             let statusFilter: WhereOptions<Version> = {};
@@ -158,7 +161,8 @@ export const getModsV2Router = router({
                 include: [User]
             });
 
-            let retObjs = await Promise.all(modVersions.map(mv => mv.toApiV2([])))
+            let retObjs = await Promise.all(modVersions.map(mv => mv.toApiV2([])));
+            addCacheHeaders(ctx, false);
             return {
                 modVersions: retObjs,
             };
@@ -178,7 +182,7 @@ export const getModsV2Router = router({
         .output(z.object({
             hashes: z.record(z.string(), ModVersionsApiv2Schema.array()),
         }))
-        .query(async ({ input }) => {
+        .query(async ({ input, ctx }) => {
             let statusFilter: WhereOptions<Version> = {};
             if (input.status) {
                 statusFilter.status = input.status;
@@ -215,6 +219,7 @@ export const getModsV2Router = router({
                     }
                 }
             }));
+            addCacheHeaders(ctx, false);
             return {
                 hashes: retObj,
             };

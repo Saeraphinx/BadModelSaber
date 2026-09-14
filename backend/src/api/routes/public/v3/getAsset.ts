@@ -4,6 +4,7 @@ import { assetFileFormatSchema, AssetApiV3, assetApiV3Schema, Status, statusSche
 import { anyProcedure, router } from "../../../trpc.ts";
 import { TRPCError } from "@trpc/server";
 import z from "zod/v4";
+import { addCacheHeaders } from "../../../../shared/Tools.ts";
 
 export const assetsRouterV3 = router({
     getAssets: anyProcedure()
@@ -55,6 +56,7 @@ export const assetsRouterV3 = router({
                 include: { all: true }
             });
             let response = await Promise.all(assets.map(asset => asset.toApiV3()));
+            addCacheHeaders(ctx);
             return { assets: response, total: await assetCount, page: input.page ?? null };
         }),
     getAssetById: anyProcedure()
@@ -84,6 +86,7 @@ export const assetsRouterV3 = router({
             if (!asset.canView(ctx.user)) {
                 throw new TRPCError({code: `FORBIDDEN`, message: `You are not allowed to view this asset.`} );
             }
+            addCacheHeaders(ctx);
             return await asset.toApiV3();
         }),
     getMultipleAssetsById: anyProcedure()
