@@ -4712,6 +4712,9 @@ __metadata:
     zod-form-data: "npm:^3.0.1"
     zod-openapi: "npm:^5.4.3"
     zod-validation-error: "npm:^4.0.1"
+  dependenciesMeta:
+    "@umbranoxio/difflux":
+      built: true
   languageName: unknown
   linkType: soft
 

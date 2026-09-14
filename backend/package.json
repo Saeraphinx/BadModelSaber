@@ -8,6 +8,11 @@
     "build:dev": "rimraf ./build && tsc",
     "build": "tsc"
   },
+  "dependenciesMeta": {
+    "@umbranoxio/difflux": {
+      "built": true
+    }
+  },
   "dependencies": {
     "@discordjs/core": "^2.6.0",
     "@octokit/oauth-app": "^8.0.3",

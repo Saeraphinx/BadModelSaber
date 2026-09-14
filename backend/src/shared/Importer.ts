@@ -6,7 +6,7 @@ import sharp from "sharp";
 import ffmpeg from "ffmpeg";
 import path from "path";
 import { EnvConfig } from "./EnvConfig.ts";
-import { Op } from "sequelize";
+import { Op, WhereOptions } from "sequelize";
 import { capitalizeWords, parseErrorMessage } from "./Tools.ts";
 import { APIUser, REST, Routes } from "discord.js";
 import { SemVer } from "semver";
@@ -20,7 +20,7 @@ type modelsaberasset = {
     [key: string]: AssetPublicAPIv2;
 }
 
-const totalBeatmodsMods = 450; // set this to the total number of mods on BeatMods to get accurate progress reporting. Currently set to 0 to avoid accidentally hitting the BeatMods API during testing.
+const totalBeatmodsMods = 457; // set this to the total number of mods on BeatMods to get accurate progress reporting. Currently set to 0 to avoid accidentally hitting the BeatMods API during testing.
 //const doModDownload = false; // set to true to download mod files from BeatMods, useful for testing the import process but not recommended for full imports due to the large number of mods and potential rate limits. Currently set to false to avoid accidentally hitting the BeatMods API during testing.
 const doThumbnailDownload = true;
 const doDecompile = true; // set to true to decompile mod files during import, which can help preserve metadata for mods that don't include a manifest but will significantly increase the time it takes to import each mod. Currently set to false to speed up testing.
@@ -29,8 +29,6 @@ const hashType = `md5`;
 const conversionStorage = `./storage/converts`;
 const doAssetDownload = true; // set to false to skip downloading assets, useful for testing
 const doTumbnailDownload = true; // set to false to skip downloading thumbnails, useful for testing
-
-const zipUrl = `https://files.sae.sh/public/bbm_import.zip`;
 
 export async function importFromOldModelSaber(): Promise<void> {
     if (!EnvConfig.auth.discord.token) {
@@ -792,10 +790,16 @@ export async function importFromBadBeatMods() {
 
 async function getNewUserFromOldUser(user: UserPublicApiV2): Promise<User> {
     let defaultPerms = await getDefaultPermissions();
+    let whereOptions: WhereOptions<User> = {
+        username: user.username
+    }
+    if (user.githubId) {
+        whereOptions = {
+            githubId: user.githubId
+        }
+    }
     return await User.findOrCreate({
-        where: {
-            username: user.username,
-        },
+        where: whereOptions,
         defaults: {
             username: user.username,
             displayName: user.displayName,

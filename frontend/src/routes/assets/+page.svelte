@@ -228,7 +228,7 @@
 {#snippet search(full = false)}
   <div class="flex flex-col bg-card rounded-2xl {full ? `max-w-md w-full` : `w-62`} p-4 mb-4 gap-2">
     <div class="flex flex-row w-full gap-2">
-      <Label for="asset-search" class="sr-only">{m[`search.search`]()}</Label>
+      <Label for="asset-search" class="sr-only">{m[`search.title`]()}</Label>
       <Input type="text" placeholder={m[`search.searchAssets`]()} id="asset-search" bind:value={searchQuery} />
       {#if full}
         <Button variant="outline" onclick={() => (filterMobileDrawerVisible = true)}>
