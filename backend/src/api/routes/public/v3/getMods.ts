@@ -6,6 +6,7 @@ import { TRPCError } from "@trpc/server";
 import { Op, WhereOptions } from "sequelize";
 import { compare } from "semver";
 import { Sequelize } from "sequelize-typescript";
+import { addCacheHeaders } from "../../../../shared/Tools.ts";
 
 const hashLookupSchema = z.string().trim().min(32).max(32).regex(/^[a-fA-F0-9]+$/);
 
@@ -142,6 +143,7 @@ export const GetModsV3 = router({
                 ctx.res.setHeader('Server-Timing', timingString);
             }
 
+            addCacheHeaders(ctx, `1800`, `60`);
             return outputApi;
         }),
     // #endregion
@@ -183,6 +185,7 @@ export const GetModsV3 = router({
                 .sort((a, b) => compare(b.semver, a.semver)) // sort versions in descending order
                 .filter(async v => await v.canView(ctx.user, project));
             let outputVersions = await Promise.all(versions.map(async v => await v.toApiV3()));
+            addCacheHeaders(ctx, `600`, `60`);
             return {
                 project: await project.toApiV3(input.language) as ProjectApiV3,
                 versions: outputVersions
@@ -240,6 +243,7 @@ export const GetModsV3 = router({
                     version: await v.toApiV3()
                 };
             }
+            addCacheHeaders(ctx, `86400`, `60`);
             return output;
             
         })

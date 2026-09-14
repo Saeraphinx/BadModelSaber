@@ -4,6 +4,7 @@ import * as fs from "fs";
 import { createHash, randomBytes } from "crypto";
 import { TRPCError } from "@trpc/server";
 import { Logger } from "./Logger.ts";
+import { Context } from "../api/trpc.ts";
 
 export type If<Value extends boolean, TrueResult, FalseResult = null> = Value extends true ? TrueResult : Value extends false  ? FalseResult  : TrueResult | FalseResult;
 
@@ -43,6 +44,15 @@ export function handleCatch(where?: string): (err: unknown) => never {
 export function createRandomString(byteCount: number): string {
     let key = randomBytes(byteCount).toString(`base64url`);
     return key;
+}
+
+export function addCacheHeaders(ctx: { res: Context['res'], user?: any }, publicTime = "600", privateTime = "60") {
+    ctx.res.setHeader('Vary', 'Cookie');
+    if (ctx.user) {
+        ctx.res.setHeader('Cache-Control', `private, max-age=${privateTime}, no-cache`);
+    } else {
+        ctx.res.setHeader('Cache-Control', `public, max-age=${publicTime}`);
+    }
 }
 
 export function getGitVersion(): string {
