@@ -146,7 +146,7 @@ export async function importFromOldModelSaber(): Promise<void> {
                     const format = asset.thumbnail.split('.').pop()?.toLowerCase() ?? 'png';
                     // convert to webp if video or too large
                     if (format === 'mp4' || format === 'webm' || (arrayBuffer.byteLength > 8 * 1024 * 1024 && format === 'gif')) {
-                        const oldFilePath = `${conversionStorage}/${new Date().getTime()}.${format}`;
+                        const oldFilePath = `${conversionStorage}/${asset.id}-${Date.now()}.${format}`;
                         // if the thumbnail is a video, convert it to a webp image
                         fs.writeFileSync(oldFilePath, Buffer.from(arrayBuffer));
                         // check if ffmpeg is on the system
@@ -885,4 +885,33 @@ function checkIfFfmpegInstalled(): Promise<boolean> {
       }
     });
   });
+}
+
+
+export async function fixMyFuckups() {
+    let allProblemAssets = await Asset.findAll({ where: { 
+        iconNames: [`default.png`]
+    }});
+
+    for (const asset of allProblemAssets) {
+        if (!asset.oldId) {
+            Logger.warn(`Asset ID ${asset.id} does not have an old ID, skipping.`);
+            continue;
+        }
+        Logger.debug(`Fetching data for asset ID ${asset.oldId}`);
+        let msApiData = await fetch(`https://modelsaber.com/api/v2/get.php?filter=id:${asset.oldId}`).then(async res => await res.json() as Promise<Record<string, AssetPublicAPIv2>>);
+        let assetData = msApiData[asset.oldId];
+        let iconUrl = assetData.thumbnail.startsWith(`http`) ? assetData.thumbnail : `https://modelsaber.com/files/${assetData.type}/${asset.oldId}/${assetData.thumbnail}`;
+        let iconFileExt = path.extname(iconUrl);
+        if (iconUrl && !iconUrl.startsWith(`http`)) {
+            Logger.warn(`Icon URL for asset ID ${asset.oldId} is not a valid HTTP URL: ${iconUrl}`);
+            continue; // skip if the icon URL is not a valid HTTP URL after fixing it
+        }
+        Logger.debug(`Downloading icon from URL: ${iconUrl}`);
+        await fetch(iconUrl).then(res => res.arrayBuffer()).then(buffer => {
+            fs.writeFileSync(path.join(asset.folderPath, `1${iconFileExt}`), Buffer.from(buffer), { flag: 'w' });
+        });
+        asset.iconNames = [`1${iconFileExt}`];
+        await asset.save();
+    }
 }

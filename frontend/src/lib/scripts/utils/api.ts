@@ -2,10 +2,6 @@ import { env } from "$env/dynamic/public";
 import type { AssetApiV3, ProjectApiV3, VersionApiV3 } from "../from_backend/DBExtras";
 import { toast } from 'svelte-sonner';
 
-export function getThumbnailUrl(id: number | string, thumbnailName: string): string {
-  return `${env.PUBLIC_FILE_URL}/${id}/${thumbnailName}`;
-}
-
 export function getAssetDownloadUrl(asset: AssetApiV3): string {
   return asset.downloadUrl;
   //return `${env.PUBLIC_ASSET_URL}/${assetId}/${fileName}`;

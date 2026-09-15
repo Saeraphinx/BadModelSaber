@@ -20,7 +20,7 @@
   import { navigating } from "$app/state";
   import Skeleton from "$shadcn/components/ui/skeleton/skeleton.svelte";
   import CarouselNavigator from "$lib/components/generic/CarouselNavigator.svelte";
-  import { getOneClickUrl, getAssetDownloadUrl, getThumbnailUrl, parseErrorMessage, handleTrpcErrorWithToast, handleTrpcSuccessWithToast } from "$lib/scripts/utils/api.js";
+  import { getOneClickUrl, getAssetDownloadUrl, parseErrorMessage, handleTrpcErrorWithToast, handleTrpcSuccessWithToast } from "$lib/scripts/utils/api.js";
   import ApprovalPopup from "$lib/components/dialogs/ApprovalDialog.svelte";
   import { onMount } from "svelte";
   import { toast } from "svelte-sonner";
@@ -274,7 +274,7 @@
       {#each pageData.iconUrls as icon}
         <Carousel.Item>
           <div class="overflow-hidden rounded-2xl mx-8 relative">
-            <img src={`${getThumbnailUrl(pageData.id, icon)}`} alt="Icon for {pageData.name}" class="w-full h-full rounded-2xl transition-all duration-300 {isBlurred ? `blur-2xl` : ``}" />
+            <img src={icon} alt="Icon for {pageData.name}" class="w-full h-full rounded-2xl transition-all duration-300 {isBlurred ? `blur-2xl` : ``}" />
             {#if isBlurred}
               <div class="flex flex-col absolute top-0 left-0 w-full h-full justify-center items-center">
                 <p class="text-green">{m[`assets.nsfwWarning`]()}</p>
@@ -491,7 +491,7 @@
         <Separator class="my-4 w-full" />
         {@render description()}
         <Separator class="my-4 w-full" />
-        <span class="text-lg font-semibold">{ m[`assets.preview.previewTitle`]()}</span>
+        <span class="text-lg font-semibold">{ m[`assets.preview.header`]()}</span>
         <AssetPreview asset={pageData} />
         <Separator class="my-4 w-full" />
         {@render assetCarousel(relatedAssets, isRelatedLoading, `related`, m[`assets.carousels.relatedAssets`](), m[`assets.carousels.relatedAssetsNoneFound`]())}

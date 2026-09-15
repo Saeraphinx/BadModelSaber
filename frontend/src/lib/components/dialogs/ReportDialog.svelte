@@ -35,11 +35,11 @@
 <Dialog.Root bind:open={visible}>
   <Dialog.Content class="sm:max-w-[425px]">
     <Dialog.Header>
-      <Dialog.Title>{m[`dialogs.reportDialog.title`]({ name })}</Dialog.Title>
-      <Dialog.Description>{m[`dialogs.reportDialog.description`]()}</Dialog.Description>
+      <Dialog.Title>{m[`dialogs.report.title`]({ name })}</Dialog.Title>
+      <Dialog.Description>{m[`dialogs.report.description`]()}</Dialog.Description>
     </Dialog.Header>
     <div class="flex flex-row">
-      <Textarea bind:value={reason} placeholder={m[`dialogs.reportDialog.reasonPlaceholder`]()} />
+      <Textarea bind:value={reason} placeholder={m[`dialogs.report.reasonPlaceholder`]()} />
     </div>
     <Dialog.Footer>
       <Button variant="ghost" onclick={() => (visible = false)}>{m[`dialogs.cancel`]()}</Button>

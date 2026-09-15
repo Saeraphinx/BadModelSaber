@@ -84,8 +84,8 @@
 <Dialog.Root bind:open={visible}>
   <Dialog.Content class="sm:max-w-[550px]">
     <Dialog.Header>
-      <Dialog.Title>{m[`dialogs.approvalDialog.title`]({ name })}</Dialog.Title>
-      <Dialog.Description>{m[`dialogs.approvalDialog.description`]({ name })}</Dialog.Description>
+      <Dialog.Title>{m[`dialogs.approval.title`]({ name })}</Dialog.Title>
+      <Dialog.Description>{m[`dialogs.approval.description`]({ name })}</Dialog.Description>
     </Dialog.Header>
     <div class="flex flex-row">
       <RadioGroup.Root bind:value={selectedStatus} >
@@ -99,9 +99,9 @@
         {/each}
       </RadioGroup.Root>
       <div class="flex flex-col w-full ml-4">
-        <Input type="text" placeholder={m[`dialogs.approvalDialog.reasonPlaceholder`]()} class="w-full" bind:value={reason} />
-        <p class="text-sm text-muted-foreground mt-1">{m[`dialogs.approvalDialog.reasonWillBeVisible`]({ name })}</p>
-        <Label class="mt-4">{m[`dialogs.approvalDialog.presetReasons`]()}</Label>
+        <Input type="text" placeholder={m[`dialogs.approval.reasonPlaceholder`]()} class="w-full" bind:value={reason} />
+        <p class="text-sm text-muted-foreground mt-1">{m[`dialogs.approval.reasonWillBeVisible`]({ name })}</p>
+        <Label class="mt-4">{m[`dialogs.approval.presetReasons`]()}</Label>
         <Select.Root type="single" >
           <Select.Trigger class="w-full mt-1">
             Select a preset...
@@ -118,7 +118,7 @@
       {#if type === `version`}
         <div class="flex items-center space-x-2">
           <Switch id="autosetProject" bind:checked={autosetProject} />
-          <Label for="autosetProject">{m[`dialogs.approvalDialog.autosetProject`]()}</Label>
+          <Label for="autosetProject">{m[`dialogs.approval.autosetProject`]()}</Label>
         </div>
       {/if}
       <Button variant="ghost" onclick={() => (visible = false)}>{m[`dialogs.cancel`]()}</Button>

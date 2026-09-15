@@ -91,21 +91,21 @@
     <Dialog.Content class="">
       <Dialog.Header>
         {#if dialogToUse === `assetNonverified`}
-          <Dialog.Title>{m[`dialogs.downloadDialog.assetTitle`]()}</Dialog.Title>
+          <Dialog.Title>{m[`dialogs.download.assetTitle`]()}</Dialog.Title>
         {:else if dialogToUse === `modNonverified`}
-          <Dialog.Title>{m[`dialogs.downloadDialog.nonVerifiedModTitle`]()}</Dialog.Title>
+          <Dialog.Title>{m[`dialogs.download.nonVerifiedModTitle`]()}</Dialog.Title>
         {:else if dialogToUse === `modTesting`}
-          <Dialog.Title>{m[`dialogs.downloadDialog.testingModTitle`]()}</Dialog.Title>
+          <Dialog.Title>{m[`dialogs.download.testingModTitle`]()}</Dialog.Title>
         {/if}
       </Dialog.Header>
       {#if dialogToUse === `assetNonverified`}
-        <p class="text-md">{@html m[`dialogs.downloadDialog.assetDescription`]()}</p>
+        <p class="text-md">{@html m[`dialogs.download.assetDescription`]()}</p>
       {:else if dialogToUse === `modNonverified`}
-        <p class="text-md">{@html m[`dialogs.downloadDialog.nonVerifiedModDescription`]()}</p>
+        <p class="text-md">{@html m[`dialogs.download.nonVerifiedModDescription`]()}</p>
       {:else if dialogToUse === `modTesting`}
-        <p class="text-md">{@html m[`dialogs.downloadDialog.testingModDescription`]()}</p>
+        <p class="text-md">{@html m[`dialogs.download.testingModDescription`]()}</p>
       {/if}
-      <p class="text-sm text-muted-foreground">{m[`dialogs.downloadDialog.neverShowAgain`]()}</p>
+      <p class="text-sm text-muted-foreground">{m[`dialogs.download.neverShowAgain`]()}</p>
       <Dialog.Footer>
         <Button disabled={ignoreCountdown >= 1} variant="ghost" onclick={() => {
           localStorage.setItem(`suppressUnverifiedDownloadWarning-${downloadType}-${status}`, "true");

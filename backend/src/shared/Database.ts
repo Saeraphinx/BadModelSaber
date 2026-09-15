@@ -237,6 +237,7 @@ export class DatabaseManager {
         Logger.log(`Importing database...`);
 
         let totalRows = 0;
+        let totalRowsGlobalIdSeq = 0;
         for (const model in data) {
             if (model.toLowerCase().includes(`sequalize`)) {
                 Logger.warn(`Skipping Sequelize internal model: ${model}`);
@@ -260,17 +261,32 @@ export class DatabaseManager {
                 Logger.log(`No data to import for table ${table.name}. Skipping.`);
             }
             totalRows += data[model].length;
+
+            // check if the table uses the global ID sequence
+            if (table.primaryKeyAttribute == `id` && 
+                table.getAttributes().id?.defaultValue &&
+                // @ts-ignore
+                typeof table.getAttributes().id?.defaultValue?.val === `string` &&
+                // @ts-ignore
+                table.getAttributes().id?.defaultValue?.val?.includes(`global_id_seq`)
+            ) {
+                totalRowsGlobalIdSeq += data[model].length;
+            }
         }
-        // set global_id_seq to the # of rows added
+        // set global_id_seq to the # of rows added, but only of the tables with the global ID sequence
         let currentId = await this.sequelize.query(`SELECT last_value FROM global_id_seq;`).then(([results]) => {
             // @ts-ignore
-            return results[0].last_value;
+            let lastValue = results[0].last_value;
+            if (typeof lastValue !== `number`) {
+                lastValue = parseInt(lastValue, 10);
+            }
+            return lastValue;
         }).catch((error) => {
             Logger.error(`Failed to get current value of global_id_seq: ${error.message}`);
             return 1000; // default starting value
         });
 
-        await this.sequelize.query(`SELECT setval('global_id_seq', ${totalRows != 0 ? totalRows+currentId : 1000}, true);`);
+        await this.sequelize.query(`SELECT setval('global_id_seq', ${totalRowsGlobalIdSeq != 0 ? totalRowsGlobalIdSeq+currentId : 1000}, true);`);
         Logger.log(`Database import complete. Imported a total of ${totalRows} rows.`);
     }
 

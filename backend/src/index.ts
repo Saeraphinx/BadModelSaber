@@ -11,6 +11,8 @@ import { createCaller, generateOpenAPIDoc, loadExpressMiddleware, loadOpenApiMid
 import swaggerUi from "swagger-ui-express";
 import { OpenAPIUploadDocs } from "./api/routes/public/v3/upload.ts";
 import { createContext, manualCreateContext } from "./api/trpc.ts";
+import { existsSync, renameSync } from "fs";
+import { fixMyFuckups } from "./shared/Importer.ts";
 
 // eslint-disable-next-line quotes
 declare module 'express-serve-static-core' {
@@ -27,6 +29,15 @@ export async function init(overrideDbName?: string) {
     const schemaToUse = overrideDbName ? overrideDbName : `${EnvConfig.database.schema}`;
     const db = new DatabaseManager(schemaToUse);
     await db.init();
+
+    if (existsSync(`./storage/importthisplease.json`)) {
+        Logger.log(`Found import file at ./storage/importthisplease.json, importing...`);
+        await db.importFromFile(`./storage/importthisplease.json`);
+        Logger.log(`Import complete.`);
+        renameSync(`./storage/importthisplease.json`, `./storage/importthisplease.json.bak`);
+    }
+
+    await fixMyFuckups();
 
     const app = express();
     //app.use(express.json());

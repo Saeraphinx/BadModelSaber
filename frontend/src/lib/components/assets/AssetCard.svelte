@@ -3,7 +3,7 @@
   import Button from "$shadcn/components/ui/button/button.svelte";
   import { BadgeAlert, BadgeCheck, BadgeX, Download, DownloadCloud, InfoIcon, CircleHelp } from "@lucide/svelte";
   import ApprovalDialog from "../dialogs/ApprovalDialog.svelte";
-  import { getAssetDownloadUrl, getOneClickUrl, getThumbnailUrl } from "$lib/scripts/utils/api";
+  import { getAssetDownloadUrl, getOneClickUrl } from "$lib/scripts/utils/api";
   import type { ClassValue } from "svelte/elements";
   import { invalidate, goto } from "$app/navigation";
   import { page } from "$app/state";

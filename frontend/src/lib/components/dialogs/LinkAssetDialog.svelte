@@ -19,14 +19,14 @@
   let selectedLinkType = $state<LinkedAssetLinkType>(LinkedAssetLinkType.Alternate);
   
   let linkTypes = [
-    { value: LinkedAssetLinkType.AltFormat, label: m[`dialogs.linkAssetDialog.linkTypes.altFormat.title`](), description: m[`dialogs.linkAssetDialog.linkTypes.altFormat.description`]() },
-    { value: LinkedAssetLinkType.Alternate, label: m[`dialogs.linkAssetDialog.linkTypes.altDesign.title`](), description: m[`dialogs.linkAssetDialog.linkTypes.altDesign.description`]() },
-    { value: LinkedAssetLinkType.Newer, label: m[`dialogs.linkAssetDialog.linkTypes.newerVersion.title`](), description: m[`dialogs.linkAssetDialog.linkTypes.newerVersion.description`]() },
-    { value: LinkedAssetLinkType.Older, label: m[`dialogs.linkAssetDialog.linkTypes.olderVersion.title`](), description: m[`dialogs.linkAssetDialog.linkTypes.olderVersion.description`]() }
+    { value: LinkedAssetLinkType.AltFormat, label: m[`dialogs.linkAsset.linkTypes.altFormat.title`](), description: m[`dialogs.linkAsset.linkTypes.altFormat.description`]() },
+    { value: LinkedAssetLinkType.Alternate, label: m[`dialogs.linkAsset.linkTypes.altDesign.title`](), description: m[`dialogs.linkAsset.linkTypes.altDesign.description`]() },
+    { value: LinkedAssetLinkType.Newer, label: m[`dialogs.linkAsset.linkTypes.newerVersion.title`](), description: m[`dialogs.linkAsset.linkTypes.newerVersion.description`]() },
+    { value: LinkedAssetLinkType.Older, label: m[`dialogs.linkAsset.linkTypes.olderVersion.title`](), description: m[`dialogs.linkAsset.linkTypes.olderVersion.description`]() }
   ]
   let selectedLinkTypeObj = $derived.by(() => {
     let found = linkTypes.find(lt => lt.value === selectedLinkType);
-    return found ? found : { value: undefined, label: m[`dialogs.linkAssetDialog.selectLinkType`](), description: `` };
+    return found ? found : { value: undefined, label: m[`dialogs.linkAsset.selectLinkType`](), description: `` };
   });
   
   export function showDialog(id: number) {
@@ -69,12 +69,12 @@
 <Dialog.Root bind:open={visible}>
   <Dialog.Content class="sm:max-w-[425px]">
     <Dialog.Header>
-      <Dialog.Title>{m[`dialogs.linkAssetDialog.title`]()}</Dialog.Title>
-      <Dialog.Description>{m[`dialogs.linkAssetDialog.description`]()}</Dialog.Description>
+      <Dialog.Title>{m[`dialogs.linkAsset.title`]()}</Dialog.Title>
+      <Dialog.Description>{m[`dialogs.linkAsset.description`]()}</Dialog.Description>
     </Dialog.Header>
     <div class="flex flex-col">
       <Select.Root type="single" bind:value={selectedLinkType}>
-        <Label class="mb-2">{m[`dialogs.linkAssetDialog.linkType`]()}</Label>
+        <Label class="mb-2">{m[`dialogs.linkAsset.linkType`]()}</Label>
         <Select.Trigger class="w-full">{selectedLinkTypeObj.label}</Select.Trigger>
         <Select.Content>
           {#each linkTypes as item}
@@ -84,7 +84,7 @@
       </Select.Root>
       <span class="text-xs text-secondary-foreground/50 mt-1 mx-1">{selectedLinkTypeObj.description}</span>
       <div class="flex flex-col mt-4">
-        <Label class="mb-2">{m[`dialogs.linkAssetDialog.assetUrl`]()}</Label>
+        <Label class="mb-2">{m[`dialogs.linkAsset.assetUrl`]()}</Label>
         <Input bind:value={idToLinkTo} type="text" placeholder="{env.PUBLIC_BASE_URL}/asset/1234" class="w-full" />
       </div>
     </div>
