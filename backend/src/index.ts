@@ -30,12 +30,12 @@ export async function init(overrideDbName?: string) {
     const db = new DatabaseManager(schemaToUse);
     await db.init();
 
-    if (existsSync(`./storage/importthisplease.json`)) {
+    /*if (existsSync(`./storage/importthisplease.json`)) {
         Logger.log(`Found import file at ./storage/importthisplease.json, importing...`);
         await db.importFromFile(`./storage/importthisplease.json`);
         Logger.log(`Import complete.`);
         renameSync(`./storage/importthisplease.json`, `./storage/importthisplease.json.bak`);
-    }
+    }*/
 
     await fixMyFuckups();
 
