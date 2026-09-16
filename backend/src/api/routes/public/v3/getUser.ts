@@ -79,6 +79,8 @@ export const userRouterV3 = router({
     }),
     getModsByUserId: anyProcedure().input(z.object({
         id: z.int().positive(),
+        limit: z.number().positive().optional(),
+        page: z.number().positive().optional(),
     })).query(async ({input, ctx}) => {
         const user = await User.findByPk(input.id);
         if (!user) {
@@ -86,6 +88,9 @@ export const userRouterV3 = router({
         }
 
         let projects = await Project.findAll({
+            limit: input.limit ?? undefined,
+            offset: input.page && input.limit ? ((input.page - 1) * input.limit) : undefined,
+            order: [["createdAt", "DESC"]],
             include: [{
                 model: User,
                 where: { id: user.id }

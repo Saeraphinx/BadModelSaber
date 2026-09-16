@@ -1,6 +1,6 @@
 import { Asset, AssetInfer, User } from "../../../../shared/Database.ts";
 import { Op, WhereOptions } from "sequelize";
-import { assetFileFormatSchema, AssetApiV3, assetApiV3Schema, Status, statusSchema, Tags } from "../../../../shared/database/DBExtras.ts";
+import { assetFileFormatSchema, AssetApiV3, assetApiV3Schema, statusSchema, Tags } from "../../../../shared/database/DBExtras.ts";
 import { anyProcedure, router } from "../../../trpc.ts";
 import { TRPCError } from "@trpc/server";
 import z from "zod/v4";
@@ -16,11 +16,12 @@ export const assetsRouterV3 = router({
             }
         })
         .input(z.object({
+                name: z.string().min(1).max(100).optional(),
                 type: assetFileFormatSchema.optional(),
                 status: statusSchema.optional(),
                 tags: z.array(z.enum(Tags)).optional(),
                 page: z.coerce.number().int().min(1).optional(),
-                limit: z.coerce.number().int().min(1).max(250).optional(),
+                limit: z.coerce.number().int().min(1).max(100).optional(),
             }).refine((data) => {
                 if (data.page || data.limit) {
                     if (!data.page || !data.limit) {
@@ -41,6 +42,9 @@ export const assetsRouterV3 = router({
             }
             let whereOptions: WhereOptions<AssetInfer> = {};
             whereOptions.status = input.status ? input.status : allowedStatuses;
+            if (input.name) {
+                whereOptions.name = { [Op.iLike]: `%${input.name}%` };
+            }
             if (input.type) {
                 whereOptions.type = input.type;
             }
@@ -98,7 +102,7 @@ export const assetsRouterV3 = router({
             }
         })
         .input(z.object({
-            id: z.array(z.int().positive()).min(1),
+            id: z.array(z.int().positive()).min(1).max(100),
         }))
         // Record keys as numbers doesn't exist in javascript, and zod errors on it because of that
         .output(z.record(z.string(), assetApiV3Schema))
@@ -118,3 +122,4 @@ export const assetsRouterV3 = router({
             return response;
         })
 });
+
