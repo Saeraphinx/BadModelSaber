@@ -11,7 +11,7 @@ export const DEFAULT_CONFIG = {
             token: null
         },
         github: {
-            autoAdminIds: [],
+            autoAdminIds: [`37343661`],
             clientId: ``,
             clientSecret: ``,
             token: null

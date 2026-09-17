@@ -5,9 +5,8 @@ A asset & mod hosting platform for Beat Saber.
 To run the server, you must have a instance of PostgreSQL & a database ready for the server to use. If you do not provide Discord OAuth2 credentials, the server will disable authentication and will not allow sign-ins. The importer also requires a Discord bot token in order to make API requests to get users when running the ModelSaber importer. This bot token will also be used to attempt to notify users when they receive an alert, so it is recommended to provide a bot token even if you do not plan on using the importer. GitHub OAuth2 credentials are not required, but the frontend will still show the option to sign in with GitHub, and if you do not provide credentials, users who attempt to sign in with GitHub will receive an error.
 ### Running with Docker
 1. Pull the frontend and backend images.
-2. Look at the `docker-compose.example.yml` file for an example of how to set up the server with Docker Compose.
-3. Copy the `docker-compose.example.yml` file to `docker-compose.yml` and fill in the environment variables.
-4. Run `docker-compose up -d` to start the server.
+2. Look at the `compose.yaml` file for an example of how to set up the server with Docker Compose.
+3. Run `docker-compose up -d` to start the server.
 ### Setting up the server locally
 Both the frontend and backend use `yarn` as their package manager. You can start both by running `yarn dev` in their respective folders.
 1. Clone the repository.
@@ -64,3 +63,45 @@ The backend uses a custom translation system for user generated content. Errors 
 
 ## Tests
 The backend uses Vitest for testing. Test files are located in the `test` folder. You can run the tests by executing `yarn test` in the backend folder. Docker is required for running the tests as it relies on a PostgreSQL container.
+
+## Config
+Both the frontend and backend are configured via Environment variables
+### Backend
+```sh
+DISCORD_AUTO_ADMIN_IDS="" # Comma seperated, these IDs will be automatically given limited admin privileges and be able to elevate themselves.
+DISCORD_CLIENT_ID=""
+DISCORD_CLIENT_SECRET=""
+DISCORD_TOKEN="" # Discord bot token
+GITHUB_AUTO_ADMIN_IDS="" # Comma seperated, these IDs will be automatically given limited admin privileges and be able to elevate themselves.
+GITHUB_CLIENT_ID=""
+GITHUB_CLIENT_SECRET=""
+GITHUB_IMPORT_TOKEN="" # GitHub personal access token (for auth against beatmods v2)
+
+PORT=6001 # The port the backend server will run on
+FRONTEND_URL="http://localhost:5173" # The URL of the frontend, used for redirects
+BACKEND_URL="http://localhost:6001" # The URL of the backend, used for internal API calls & potential redirects
+CORS_ORIGIN="default" # The origin(s) allowed for CORS requests, can be a string or a comma separated list of strings
+CORS_ALLOW_CREDENTIALS=false # Whether to allow credentials in CORS requests
+API_ROUTE="/api" # The base route for the API, no trailing slash
+FILE_ROUTE="/files" # The base route for the files, no trailing slash
+TRUST_PROXY=false # Set to true if behind a reverse proxy like nginx
+STORE_SESSIONS=true # Whether to store sessions in something other than memory
+STORED_SESSION_TIMEOUT=604800000 # How long to store sessions in milliseconds (default: 7 days)
+SESSION_COOKIE_NAME="bms_session" # The name of the session cookie
+SESSION_COOKIE_SAME_SITE="strict" # The SameSite attribute for the session cookie
+SESSION_COOKIE_SECRET="supersecretkey" # The secret for the session cookie
+AUTH_BYPASS=-1 # Whether to bypass authentication for the API (useful for development. always false in production)
+HIDE_FULL_QUERY_IN_LOGS=true # Whether to hide the full query in http logs
+
+STORAGE_UPLOADS="./storage/uploads" # The directory where uploads are stored
+STORAGE_LOGS="./storage/logs" # The directory where logs are stored
+
+DB_CONNECTION_STRING="" # The connection string for the database
+DB_SCHEMA="public" # The database schema to use
+```
+### Frontend
+```sh
+PUBLIC_BASE_URL="http://localhost:5173" # The base URL of the frontend
+LOCAL_API_URL="http://localhost:6001" # optional URL for api requests during ssr
+PUBLIC_API_URL="http://localhost:6001/api" # The base URL for API requests
+PUBLIC_FILE_URL="http://localhost:6001/files" # The base URL for file requests

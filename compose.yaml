@@ -1,0 +1,35 @@
+services:
+  bms-backend:
+    image: ghcr.io/saeraphinx/badmodelsaber-backend:latest
+    container_name: bms-be
+    environment:
+      - DISCORD_CLIENT_ID=
+      - DISCORD_CLIENT_SECRET=
+      - PORT=6001
+      - BASE_URL=http://localhost:6001
+      - FRONTEND_URL=http://localhost:5173
+      - CORS_ORIGIN=*
+      - CORS_ALLOW_CREDENTIALS=true
+
+      - TRUST_PROXY=false
+      - STORED_SESSION_TIMEOUT=604800 # 7 days in seconds
+      - SESSION_COOKIE_SECRET=your_session_cookie_secret
+      - STORAGE_SESSIONS=./storage/sessions.sqlite
+
+      - DB_CONNECTION_STRING="postgres://username:password@hostname:port/dbname"
+    volumes:
+      - ./storage:/app/storage
+    ports:
+      - 6001:6001
+    restart: unless-stopped
+  bms-frontend:
+    image: ghcr.io/saeraphinx/badmodelsaber-frontend:latest
+    container_name: bms-fe
+    environment:
+      - PUBLIC_BASE_URL="http://localhost:5173" 
+      - LOCAL_API_URL="http://localhost:6001" 
+      - PUBLIC_API_URL="http://localhost:6001/api"
+      - PUBLIC_FILE_URL="http://localhost:6001/files" 
+    ports:
+      - 6001:6001
+    restart: unless-stopped  
