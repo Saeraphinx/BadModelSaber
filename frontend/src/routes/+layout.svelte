@@ -335,7 +335,7 @@
   {/if}
   <div class="flex w-auto flex-row text-base justify-between">
     <!-- Logo -->
-    <a href="/" class="flex items-center justify-start h-16 md:ml-16 ml-4 md:p-4 gap-0.5">
+    <a href="/" class="flex items-center justify-start md:w-32 h-16 md:ml-16 ml-4 md:p-4 gap-0.5">
       <img src="/modelsaber-logo-web.svg" alt="ModelSaber Logo" class="h-8 w-8 mr-2" />
       <div class="flex flex-col items-center justify-center">
         <span class="text-xl font-bold">{m[`name`]()}</span>
