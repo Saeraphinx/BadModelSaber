@@ -208,4 +208,8 @@
   th:last-child {
     border-top-right-radius: 0.5rem;
   }
+
+  tr:nth-child(even) {
+    background-color: #2c2c2c40;
+  }
 </style>

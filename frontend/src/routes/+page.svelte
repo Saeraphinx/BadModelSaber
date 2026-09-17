@@ -1,6 +1,6 @@
 <script lang="ts">
   import AssetCard from "$lib/components/assets/AssetCard.svelte";
-  import { type AssetApiV3, type ProjectApiV3 } from "$lib/scripts/from_backend/DBExtras.js";
+  import { UserPermissions, type AssetApiV3, type ProjectApiV3 } from "$lib/scripts/from_backend/DBExtras.js";
   import { trpc } from "$lib/scripts/utils/api";
   import { Button } from "$shadcn/components/ui/button";
   import * as Carousel from "$shadcn/components/ui/carousel";
@@ -22,7 +22,15 @@
       recentlyUploadedVerified = data;
     });
 
-    if (user) {
+    const roll = Math.floor(Math.random() * 10)
+    const date = new Date();
+    console.log(`Rolled ${roll}`)
+    if (date.getMonth() === 6 && date.getDate() === 27) {
+      subtitle = "wysi";
+    } else if (date.getMonth() === 4 && date.getDate() === 1) {
+      let yearsSince2018 = date.getFullYear() - 2018;
+      subtitle = `Happy ${yearsSince2018}th Birthday BeatSaber!`;
+    } else if (user && (user.permissions.sitewide.includes(UserPermissions.Secret_Features) || roll < 2)) {
       fetch("https://cdn.saeraphinx.dev/splashtext").then((res) => res.text()).then((text) => {
         subtitle = text.split("\n")[Math.floor(Math.random() * text.split("\n").length)];
       });
@@ -33,7 +41,7 @@
 <div class="flex flex-col align-middle justify-center-safe items-center h-screen-nav min-h-[300px]">
   <img src="/modelsaber-logo-web.svg" alt="ModelSaber Logo" class="h-24 w-24" />
   <h1 class="text-4xl font-bold">{ m[`homepage.title`]() }</h1>
-  <p class="text-lg text-gray-500">{ subtitle }</p>
+  <p class="text-lg text-gray-500 text-center">{ subtitle }</p>
   <div class="flex flex-row justify-center gap-2 mt-2">
     <Button href="/mods">{ m[`homepage.buttons.browseMods`]() }</Button>
     <Button variant="outline" href="/assets">{ m[`homepage.buttons.browseAssets`]() }</Button>

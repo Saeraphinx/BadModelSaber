@@ -108,11 +108,11 @@
 <div class="flex flex-col items-center mx-4">
   <div class="flex flex-col md:flex-row gap-4 w-full">
     <UserCard user={pdUser} class="md:min-w-92" />
-    <div class="flex flex-row bg-card p-4 rounded-lg w-full">
+    <div class="flex flex-row not-md:flex-col not-md:items-center bg-card p-4 rounded-lg w-full">
       <Markdown bind:markdown={bio} class="text-base w-full prose-hr:m-2 prose-hr:pb-2" />
       <!-- User platforms and edit button section -->
       {#if showSomeLinkedButtons || showEditButton || showBanButton}
-        <Separator orientation="vertical" class="mx-4" />
+        <Separator orientation="vertical" class="mx-4 not-md:my-4" />
         <div class="flex flex-col w-64 max-w-64">
           <div class="flex flex-row flex-wrap gap-2">
             <!-- Sponsor buttons & user linked ids section -->
