@@ -6,7 +6,8 @@ import { TRPCError } from "@trpc/server";
 import { Op, WhereOptions } from "sequelize";
 import { compare } from "semver";
 import { Sequelize } from "sequelize-typescript";
-import { addCacheHeaders } from "../../../../shared/Tools.ts";
+import { addCacheHeaders, addTimingHeaders } from "../../../../shared/Tools.ts";
+import { QueryCache } from "../../../../shared/Cache.ts";
 
 const hashLookupSchema = z.string().trim().min(32).max(32).regex(/^[a-fA-F0-9]+$/);
 
@@ -22,11 +23,11 @@ export const GetModsV3 = router({
             }
         })
         .input(z.object({
-            gameVersion: z.string().optional(),
+            gameVersion: z.string().min(1).max(100).optional(),
             status: z.array(z.enum(Status)).max(Object.values(Status).length).optional().default([Status.Verified, Status.Unverified]),
-            name: z.string().optional(),
-            authors: z.array(z.int()).optional(),
-            platform: z.string().optional(),
+            name: z.string().min(1).max(100).optional(),
+            authors: z.array(z.int()).min(1).max(20).optional(),
+            platform: z.string().min(1).max(100).optional(),
             language: z.enum(availableBackendLocaleCodes).optional(),
         }))
         .output(z.array(z.object({
@@ -85,6 +86,16 @@ export const GetModsV3 = router({
                     throw new TRPCError({ code: 'FORBIDDEN', message: 'You do not have permission to view mods with the specified status.' });
                 }
             }
+            timingString = `start;dur=${Date.now() - startTime}`;
+            startTime = Date.now();
+
+            const alreadyCached = QueryCache.modV3Cache.get(JSON.stringify(input));
+            if (alreadyCached) {
+                timingString += `, cache;dur=${Date.now() - startTime}`
+                addTimingHeaders(ctx, timingString);
+                addCacheHeaders(ctx);
+                return alreadyCached;
+            }
             
             let versions = await Version.findAll({
                 where: versionFilters,
@@ -108,7 +119,7 @@ export const GetModsV3 = router({
                     },
                 }],
             }).then(v => {
-                timingString += `db;dur=${Date.now() - startTime}`;
+                timingString += `, db;dur=${Date.now() - startTime}`;
                 startTime = Date.now();
                 return v;
             });
@@ -139,11 +150,9 @@ export const GetModsV3 = router({
             })));
             timingString += `, map;dur=${Date.now() - startTime}`;
 
-            if (ctx.user && ctx.user.checkRoles({ hasOneOf: [UserPermissions.Administrative_Tasks]})) {
-                ctx.res.setHeader('Server-Timing', timingString);
-            }
-
+            addTimingHeaders(ctx, timingString);
             addCacheHeaders(ctx);
+            QueryCache.modV3Cache.set(JSON.stringify(input), outputApi);
             return outputApi;
         }),
     // #endregion

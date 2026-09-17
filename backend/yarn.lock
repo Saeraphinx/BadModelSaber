@@ -642,6 +642,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@isaacs/ttlcache@npm:^2.1.5":
+  version: 2.1.5
+  resolution: "@isaacs/ttlcache@npm:2.1.5"
+  checksum: 10c0/6a5e3e868e916e43bf7f25d2dbd50861c6aec1aea9349b2a87bf348fb12efa2bfa8cb2e94dc83a7b6287071c18efff7123c9cbb7d0da1f311330c7bd0b2351bf
+  languageName: node
+  linkType: hard
+
 "@jridgewell/sourcemap-codec@npm:^1.5.5":
   version: 1.6.0
   resolution: "@jridgewell/sourcemap-codec@npm:1.6.0"
@@ -4669,6 +4676,7 @@ __metadata:
   dependencies:
     "@discordjs/core": "npm:^2.6.0"
     "@faker-js/faker": "npm:^9.9.0"
+    "@isaacs/ttlcache": "npm:^2.1.5"
     "@octokit/oauth-app": "npm:^8.0.3"
     "@testcontainers/postgresql": "npm:^11.11.0"
     "@trpc/server": "npm:^11.6.0"

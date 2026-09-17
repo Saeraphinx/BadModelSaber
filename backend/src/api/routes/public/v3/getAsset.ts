@@ -5,6 +5,7 @@ import { anyProcedure, router } from "../../../trpc.ts";
 import { TRPCError } from "@trpc/server";
 import z from "zod/v4";
 import { addCacheHeaders } from "../../../../shared/Tools.ts";
+import { QueryCache } from "../../../../shared/Cache.ts";
 
 export const assetsRouterV3 = router({
     getAssets: anyProcedure()
@@ -51,6 +52,15 @@ export const assetsRouterV3 = router({
             if (input.tags) {
                 whereOptions.tags = { [Op.contains]: input.tags };
             }
+
+            if (!input.limit) {
+                const assetCache = QueryCache.assetV3Cache.get(JSON.stringify(whereOptions));
+                if (assetCache) {
+                    addCacheHeaders(ctx);
+                    return assetCache;
+                }
+            }
+
             const assetCount = Asset.count({ where: whereOptions });
             const assets = await Asset.findAll({
                 where: whereOptions,
@@ -61,7 +71,11 @@ export const assetsRouterV3 = router({
             });
             let response = await Promise.all(assets.map(asset => asset.toApiV3()));
             addCacheHeaders(ctx);
-            return { assets: response, total: await assetCount, page: input.page ?? null };
+            const responseObject = { assets: response, total: await assetCount, page: input.page ?? null };
+            if (!input.limit) {
+                QueryCache.assetV3Cache.set(JSON.stringify(whereOptions), responseObject);
+            }
+            return responseObject;
         }),
     getAssetById: anyProcedure()
         .meta({

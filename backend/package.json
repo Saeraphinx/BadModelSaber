@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@discordjs/core": "^2.6.0",
+    "@isaacs/ttlcache": "^2.1.5",
     "@octokit/oauth-app": "^8.0.3",
     "@trpc/server": "^11.6.0",
     "@umbranoxio/difflux": "^0.1.0",

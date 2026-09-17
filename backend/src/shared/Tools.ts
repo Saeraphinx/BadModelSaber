@@ -5,6 +5,7 @@ import { createHash, randomBytes } from "crypto";
 import { TRPCError } from "@trpc/server";
 import { Logger } from "./Logger.ts";
 import { Context } from "../api/trpc.ts";
+import { User, UserPermissions } from "./Database.ts";
 
 export type If<Value extends boolean, TrueResult, FalseResult = null> = Value extends true ? TrueResult : Value extends false  ? FalseResult  : TrueResult | FalseResult;
 
@@ -46,12 +47,29 @@ export function createRandomString(byteCount: number): string {
     return key;
 }
 
-export function addCacheHeaders(ctx: { res: Context['res'], user?: any }, checkUser = true, publicTime = "86400", privateTime = "600") {
-    ctx.res.setHeader('Vary', 'Cookie');
-    if (checkUser && ctx.user) {
+export function addCacheHeaders(ctx: { res: Context['res'], user: User|null}, options: {
+    checkUser?: boolean;
+    publicTime?: string;
+    privateTime?: string;
+} = {}) {
+    const { checkUser = true, publicTime = "86400", privateTime = "600" } = options;
+    if (checkUser) {
+        ctx.res.setHeader('Vary', 'Cookie');
+    }
+    if (checkUser && ctx.user && ctx.user.checkRoles({ hasOneOf: [
+        UserPermissions.Game_ViewExtras,
+        UserPermissions.Mods_ViewAll,
+        UserPermissions.Asset_ViewAll,
+    ]}, `any`)) {
         ctx.res.setHeader('Cache-Control', `private, max-age=${privateTime}, no-cache`);
-    } else {
+    } else { 
         ctx.res.setHeader('Cache-Control', `public, max-age=${publicTime}`);
+    }
+}
+
+export function addTimingHeaders(ctx: { res: Context['res'], user: User|null}, timingString?: string) {
+    if (ctx.user && ctx.user.checkRoles({ hasOneOf: [UserPermissions.Administrative_Tasks]})) {
+        ctx.res.setHeader('Server-Timing', timingString || '');
     }
 }
 

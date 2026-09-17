@@ -1,9 +1,10 @@
 import { LegacyValidator } from "../../../../shared/LegacyValidator.ts";
-import { Asset, AssetFileFormat, AssetInfer, assetPublicAPIv1Schema, Status } from "../../../../shared/Database.ts";
+import { Asset, AssetFileFormat, AssetInfer, assetPublicAPIv2Schema, Status } from "../../../../shared/Database.ts";
 import { z } from "zod/v4";
 import { Op, WhereOptions } from "sequelize";
 import { anyProcedure, router } from "../../../trpc.ts";
 import { addCacheHeaders } from "../../../../shared/Tools.ts";
+import { QueryCache } from "../../../../shared/Cache.ts";
 
 export const GetAssetV2Router = router({
     getAssets: anyProcedure()
@@ -15,51 +16,53 @@ export const GetAssetV2Router = router({
             }
         })
         .input(LegacyValidator.zFilterAssetv2)
-        .output(z.record(z.number(), assetPublicAPIv1Schema))
+        .output(z.record(z.number(), assetPublicAPIv2Schema))
         .query(async ({ input, ctx }) => {
-        let convertedType = convertAssetType(input.type);
-        let filterMap = parseFilter(input.filter);
-        let filterOptions: WhereOptions<AssetInfer> = {};
-        for (let [filterType, value] of filterMap.entries()) {
-            if (filterType === `author`) {
-                // author will be filtered later
-                continue;
+            let convertedType = convertAssetType(input.type);
+            let filterMap = parseFilter(input.filter);
+            let filterOptions: WhereOptions<AssetInfer> = {};
+            for (let [filterType, value] of filterMap.entries()) {
+                if (filterType === `author`) {
+                    // author will be filtered later
+                    continue;
+                }
+                let whereOptions = convertToWhereOptions(filterType, value);
+                Object.assign(filterOptions, whereOptions);
             }
-            let whereOptions = convertToWhereOptions(filterType, value);
-            Object.assign(filterOptions, whereOptions);
-        }
 
-        let sortingData: { type: string, direction: string };
-        if (input.sort === `date`) {
-            sortingData = { type: `createdAt`, direction: input.sortDirection };
-        } else if (input.sort === `name`) {
-            sortingData = { type: `name`, direction: input.sortDirection };
-        } else {
-            sortingData = { type: `id`, direction: input.sortDirection };
-        }
+            let sortingData: { type: string, direction: string };
+            if (input.sort === `date`) {
+                sortingData = { type: `createdAt`, direction: input.sortDirection };
+            } else if (input.sort === `name`) {
+                sortingData = { type: `name`, direction: input.sortDirection };
+            } else {
+                sortingData = { type: `id`, direction: input.sortDirection };
+            }
 
-        addCacheHeaders(ctx);
-        Asset.findAll({
-            where: {
-                id: { [Op.gte]: input.start, [Op.lte]: input.end ?? Number.MAX_SAFE_INTEGER },
-                type: convertedType,
-                status: Status.Verified,
-                ...filterOptions,
-            },
-            order: [[sortingData.type, sortingData.direction]],
-        }).then(async assets => {
-            let promises = assets.map(async asset => asset.toApiV2());
-            let repsonse = {} as { [key: number]: Awaited<ReturnType<Asset[`toApiV2`]>> };
-            await Promise.all(promises).then((values) => {
+            filterOptions.oldId = { [Op.gte]: input.start, [Op.lte]: input.end ?? Number.MAX_SAFE_INTEGER };
+            filterOptions.type = convertedType;
+            filterOptions.status = Status.Verified;
+
+            const cache = QueryCache.assetV2Cache.get(JSON.stringify(filterOptions));
+            if (cache) {
+                addCacheHeaders(ctx);
+                return cache;
+            }
+            addCacheHeaders(ctx);
+
+            return await Asset.findAll({
+                where: filterOptions,
+                order: [[sortingData.type, sortingData.direction]],
+            }).then(async assets => {
+                let values = await Promise.all(assets.map(async asset => asset.toApiV2()));
+                let repsonse = {} as { [key: number]: Awaited<ReturnType<Asset[`toApiV2`]>> };
                 for (let i = 0; i < values.length; i++) {
                     repsonse[assets[i].id] = values[i];
                 }
+                QueryCache.assetV2Cache.set(JSON.stringify(filterOptions), repsonse);
                 return repsonse;
             });
-        });
-
-        return {};
-    })
+        })
 })
 
 function convertAssetType(type: string): AssetFileFormat[] {

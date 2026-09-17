@@ -429,7 +429,7 @@ export type ModApiV1 = {
   _id: string,
 }
 
-const ModApiV1Schema: z.ZodType<ModApiV1> = z.lazy(() => z.object({
+export const ModApiV1Schema: z.ZodType<ModApiV1> = z.lazy(() => z.object({
   name: z.string(),
   version: z.string(),
   gameVersion: z.string(),

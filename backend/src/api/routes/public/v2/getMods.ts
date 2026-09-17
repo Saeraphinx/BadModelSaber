@@ -3,7 +3,8 @@ import { z } from "zod/v4";
 import { Op, WhereOptions, Sequelize } from "sequelize";
 import { anyProcedure, router } from "../../../trpc.ts";
 import { compare, Range } from "semver";
-import { addCacheHeaders } from "../../../../shared/Tools.ts";
+import { addCacheHeaders, addTimingHeaders } from "../../../../shared/Tools.ts";
+import { QueryCache } from "../../../../shared/Cache.ts";
 
 const hashLookupSchema = z.string().trim().min(32).max(32).regex(/^[a-fA-F0-9]+$/);
 
@@ -62,6 +63,14 @@ export const getModsV2Router = router({
                 platforms.push(`steam`);
             }
 
+            const cache = QueryCache.modV2Cache.get(JSON.stringify(input));
+            if (cache) {
+                timingString += `cache;dur=${Date.now() - startTime}`;
+                addTimingHeaders(ctx, timingString);
+                addCacheHeaders(ctx);
+                return cache;
+            }
+
             let versions = await Version.findAll({
                 where: {
                     status: allowedStatuses,
@@ -115,12 +124,10 @@ export const getModsV2Router = router({
                     return results;
                 });
 
-            if (ctx.user && ctx.user.checkRoles({ hasOneOf: [UserPermissions.Administrative_Tasks] })) {
-                ctx.res.setHeader('Server-Timing', timingString);
-            }
-
+           
+            addTimingHeaders(ctx, timingString);
             addCacheHeaders(ctx);
-
+            QueryCache.modV2Cache.set(JSON.stringify(input), { mods: newOutput });
             return { mods: newOutput };
         }),
     hashLookup: anyProcedure()
@@ -162,7 +169,7 @@ export const getModsV2Router = router({
             });
 
             let retObjs = await Promise.all(modVersions.map(mv => mv.toApiV2([])));
-            addCacheHeaders(ctx, false);
+            addCacheHeaders(ctx, { checkUser: false });
             return {
                 modVersions: retObjs,
             };
@@ -219,7 +226,7 @@ export const getModsV2Router = router({
                     }
                 }
             }));
-            addCacheHeaders(ctx, false);
+            addCacheHeaders(ctx, { checkUser: false});
             return {
                 hashes: retObj,
             };

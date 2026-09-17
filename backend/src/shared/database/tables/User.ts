@@ -287,7 +287,10 @@ export class User extends Model<InferAttributes<User>, InferCreationAttributes<U
     }, gameName?: string): boolean;
     public checkRoles(roles: UserPermissions[] | { hasAllOf?: UserPermissions[], hasOneOf?: UserPermissions[], denied?: UserPermissions[] }, gameName?: string): boolean {
         if (Array.isArray(roles)) {
-            if (gameName) {
+            if (gameName === `any`) {
+                return roles.some(role => this.permissions.sitewide.includes(role) || Object.values(this.permissions.perGame).some(gameRoles => gameRoles.includes(role)));
+            }
+            else if (gameName) {
                 return roles.some(role => (this.permissions.sitewide.includes(role) || (this.permissions.perGame[gameName] && this.permissions.perGame[gameName].includes(role))));
             } else {
                 return roles.some(role => this.permissions.sitewide.includes(role));
@@ -297,8 +300,15 @@ export class User extends Model<InferAttributes<User>, InferCreationAttributes<U
                 (roles.hasOneOf ? roles.hasOneOf.some(role => this.permissions.sitewide.includes(role)) : true) &&
                 (roles.denied ? roles.denied.every(role => !this.permissions.sitewide.includes(role)) : true);
 
-            if (gameName) {
-                const perGameCheck = (roles.hasAllOf ? roles.hasAllOf.every(role => this.permissions.perGame[gameName]?.includes(role) ?? false) : true) &&
+            if (gameName === `any`) {
+                const perGameCheck = 
+                    (roles.hasAllOf ? roles.hasAllOf.every(role => this.permissions.sitewide.includes(role) || Object.values(this.permissions.perGame).some(gameRoles => gameRoles.includes(role))) : true) &&
+                    (roles.hasOneOf ? roles.hasOneOf.some(role => this.permissions.sitewide.includes(role) || Object.values(this.permissions.perGame).some(gameRoles => gameRoles.includes(role))) : true) &&
+                    (roles.denied ? roles.denied.every(role => !this.permissions.sitewide.includes(role) && Object.values(this.permissions.perGame).every(gameRoles => !gameRoles.includes(role))) : true);
+                return sitewideCheck && perGameCheck;
+            } else if (gameName) {
+                const perGameCheck = 
+                    (roles.hasAllOf ? roles.hasAllOf.every(role => this.permissions.perGame[gameName]?.includes(role) ?? false) : true) &&
                     (roles.hasOneOf ? roles.hasOneOf.some(role => this.permissions.perGame[gameName]?.includes(role) ?? false) : true) &&
                     (roles.denied ? roles.denied.every(role => !(this.permissions.perGame[gameName]?.includes(role) ?? false)) : true);
                 return sitewideCheck && perGameCheck;

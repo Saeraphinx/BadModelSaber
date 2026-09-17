@@ -1,9 +1,10 @@
-import { GameVersion, ModApiV1, ModApiv2Schema, ModVersionsApiv2Schema, Project, Status, User, Version } from "../../../../shared/Database.ts";
+import { GameVersion, ModApiV1, ModApiV1Schema, ModApiv2Schema, ModVersionsApiv2Schema, Project, Status, User, Version } from "../../../../shared/Database.ts";
 import { z } from "zod/v4";
 import { anyProcedure, router } from "../../../trpc.ts";
 import { coerce, compare } from "semver";
 import { Op, WhereOptions } from "sequelize";
 import { addCacheHeaders } from "../../../../shared/Tools.ts";
+import { QueryCache } from "../../../../shared/Cache.ts";
 
 export const getModsV1Router = router({
     getVersions: anyProcedure()
@@ -35,7 +36,7 @@ export const getModsV1Router = router({
                 }
             });
 
-            addCacheHeaders(ctx, false);
+            addCacheHeaders(ctx, { checkUser: false });
 
             return versions;
         }),
@@ -61,7 +62,7 @@ export const getModsV1Router = router({
             for (let version of versions) {
                 aliases[version] = [];
             }
-            addCacheHeaders(ctx, false);
+            addCacheHeaders(ctx, { checkUser: false });
             return aliases;
         }),
     getMods: anyProcedure()
@@ -77,7 +78,7 @@ export const getModsV1Router = router({
             gameVersion: z.string().optional(),
             status: z.string().optional()
         }))
-        .output(z.array(z.any()))
+        .output(z.array(ModApiV1Schema))
         .query(async ({ input, ctx }) => {
             let showUnverified = input.status !== `approved`
             let gameVersionWhereOptions: WhereOptions<GameVersion> = {
@@ -86,6 +87,12 @@ export const getModsV1Router = router({
 
             if (input.gameVersion) {
                 gameVersionWhereOptions.version = input.gameVersion;
+            }
+
+            const cache = QueryCache.modV1Cache.get(JSON.stringify(input));
+            if (cache) {
+                addCacheHeaders(ctx, { checkUser: false });
+                return cache;
             }
 
             let versions = await Version.findAll({
@@ -110,10 +117,12 @@ export const getModsV1Router = router({
                 let project = await ver.project as Project;
                 apiOutput.push(ver.toApiV1(project, ver.supportedGameVersions[0], true));
             }
-            addCacheHeaders(ctx, false);
-            return await Promise.allSettled(apiOutput).then(results => {
+            let finalOutput = await Promise.allSettled(apiOutput).then(results => {
                 let fulfilledResults = results.filter(r => r.status === 'fulfilled') as PromiseFulfilledResult<ModApiV1>[];
                 return fulfilledResults.map(r => r.value);
             });
+            QueryCache.modV1Cache.set(JSON.stringify(input), finalOutput);
+            addCacheHeaders(ctx, { checkUser: false });
+            return finalOutput;
         })
 })
