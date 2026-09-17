@@ -23,6 +23,7 @@ jobs:
       with:
         node-version: 24  # or your preferred version
         cache: 'yarn'
+        cache-dependency-path: 'backend/yarn.lock' 
 
     - name: Install Packages
       run: yarn
@@ -49,6 +50,7 @@ jobs:
       with:
         node-version: 24  # or your preferred version
         cache: 'yarn'
+        cache-dependency-path: 'frontend/yarn.lock' 
     
     - name: Install Packages
       run: yarn
