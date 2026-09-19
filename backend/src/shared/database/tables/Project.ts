@@ -598,18 +598,25 @@ export class Project extends Model<InferAttributes<Project>, InferCreationAttrib
         switch (category) {
             case `mod loader`:
                 category = `core`;
+                break;
             case `ui enhancement`:
                 category = `ui`;
+                break;
             case `leaderboard`:
                 category = `other`;
+                break;
             case `practice & training`:
                 category = `practice`;
+                break;
             case `streaming tools`:
                 category = `streamtools`;
+                break;
             case `tweaks & tools`:
                 category = `tweaks`;
+                break;
             case `text replacement`:
                 category = `text`;
+                break;
         }
 
         return {
