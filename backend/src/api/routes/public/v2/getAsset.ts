@@ -39,11 +39,10 @@ export const GetAssetV2Router = router({
                 sortingData = { type: `id`, direction: input.sortDirection };
             }
 
-            filterOptions.oldId = { [Op.gte]: input.start, [Op.lte]: input.end ?? Number.MAX_SAFE_INTEGER };
             filterOptions.type = convertedType;
             filterOptions.status = Status.Verified;
 
-            const cache = QueryCache.assetV2Cache.get(JSON.stringify(filterOptions));
+            const cache = QueryCache.assetV2Cache.get(JSON.stringify(input));
             if (cache) {
                 addCacheHeaders(ctx);
                 return cache;
@@ -53,6 +52,8 @@ export const GetAssetV2Router = router({
             return await Asset.findAll({
                 where: filterOptions,
                 order: [[sortingData.type, sortingData.direction]],
+                limit: input.end ?? undefined,
+                offset: input.start ?? undefined,
             }).then(async assets => {
                 let values = await Promise.all(assets.map(async asset => asset.toApiV2()));
                 let repsonse = {} as { [key: number]: Awaited<ReturnType<Asset[`toApiV2`]>> };
