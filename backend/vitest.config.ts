@@ -3,7 +3,8 @@ import { parseErrorMessage } from './src/shared/Tools.ts';
 
 export default defineConfig({
     test: {
-        dir: './test/tests',
+        dir: './test',
+        include: ['./tests/**/*.test.ts'],
         globalSetup: './test/globalSetup.ts',
         reporters: process.env.GITHUB_ACTIONS ? [`github-actions`, [`verbose`, { summary: true }]] : [ [`default`, { summary: false }] ],
         mockReset: true,
