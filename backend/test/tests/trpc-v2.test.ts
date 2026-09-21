@@ -33,7 +33,7 @@ describe(`v3`, () => {
 
     beforeAll(async () => {
         // @ts-ignore
-        databaseManager = new DatabaseManager("test_trpc_v3", inject(`postgresUrl`));
+        databaseManager = new DatabaseManager("test_trpc_v2", inject(`postgresUrl`));
         await databaseManager.init();
         //await databaseManager.importFakeData();
 
@@ -52,20 +52,20 @@ describe(`v3`, () => {
             });
 
             modsGameVersion = await GameVersion.create({
-                gameName: `trpcmods`,
+                gameName: `beatsaber`,
                 version: `1.37.0`,
                 isDefault: true,
             });
 
             await GameVersion.create({
-                gameName: `trpcmods`,
+                gameName: `beatsaber`,
                 version: `1.36.0`,
                 isDefault: false,
             });
 
             const hiddenAuthor = await createDummyUser(123457).save();
 
-            const publicProject = await createDummyProject(`trpcmods`, undefined, {
+            const publicProject = await createDummyProject(`beatsaber`, undefined, {
                 name: `TRPC Visible Mod`,
                 nameId: `trpc-visible-mod`,
                 status: Status.Public,
@@ -122,7 +122,7 @@ describe(`v3`, () => {
 
         test(`/mods - gv only`, async () => {
             const response = await anonymousCaller.v2.mods.getMods({
-                gameVersion: `1.0.0`,
+                gameVersion: `1.37.0`,
             });
 
             expect(response).toBeDefined();
@@ -138,13 +138,13 @@ describe(`v3`, () => {
 
                 const dependencies = mods.filter((mod) => currentMod.latest.dependencies.includes(mod.latest.id));
                 expect(dependencies.length).toBe(currentMod.latest.dependencies.length);
-                expect(currentMod.latest.supportedGameVersions.find((gv) => gv.version === `1.0.0`)).toBeDefined();
+                expect(currentMod.latest.supportedGameVersions.find((gv) => gv.version === `1.37.0`)).toBeDefined();
             }
         });
 
         test(`/mods - gv and universal platform`, async () => {
             const response = await anonymousCaller.v2.mods.getMods({
-                gameVersion: `1.0.0`,
+                gameVersion: `1.37.0`,
                 platform: `universalpc`,
             });
 
@@ -161,7 +161,7 @@ describe(`v3`, () => {
 
                 const dependencies = mods.filter((mod) => currentMod.latest.dependencies.includes(mod.latest.id));
                 expect(dependencies.length).toBe(currentMod.latest.dependencies.length);
-                expect(currentMod.latest.supportedGameVersions.find((gv) => gv.version === `1.0.0`)).toBeDefined();
+                expect(currentMod.latest.supportedGameVersions.find((gv) => gv.version === `1.37.0`)).toBeDefined();
                 expect(currentMod.latest.platform).toBe(`universalpc`);
             }
         });

@@ -120,7 +120,7 @@ export class Logger {
         if (Logger.winston) {
             Logger.winston.log(level, typeof message === 'string' ? message : JSON.stringify(message));
         } else {
-            if (!EnvConfig.isTestMode || level === LogLevel.Error) {
+            if (!EnvConfig.isTestMode || level === LogLevel.Warn) {
                 console.log(`[BBM ${level.toUpperCase()}]`, message);
             }
         }
