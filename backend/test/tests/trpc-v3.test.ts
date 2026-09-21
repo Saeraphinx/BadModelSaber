@@ -17,6 +17,7 @@ const createTestCaller = (userId?: number) => createCaller({
     res: {
         setHeader: () => undefined,
     } as any,
+    isApiKey: false,
     db: {} as any,
 });
 

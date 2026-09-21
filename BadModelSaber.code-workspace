@@ -9,6 +9,10 @@
             "path": "./backend",
         },
         {
+            "name": "importer",
+            "path": "./importer"
+        },
+        {
             "name": "workspace-root",
             "path": "."
         }
@@ -27,7 +31,8 @@
             "**/Thumbs.db": true,
             "**/.svelte-kit": true,
             "backend/": true,
-            "frontend/": true
+            "frontend/": true,
+            "importer/": true
         },
         "js/ts.experimental.useTsgo": true,
         "elementaryWatson.defaultLocale": "en-US",

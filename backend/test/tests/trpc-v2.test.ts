@@ -17,6 +17,7 @@ const createTestCaller = (userId?: number) => createCaller({
     res: {
         setHeader: () => undefined,
     } as any,
+    isApiKey: false,
     db: {} as any,
 });
 
@@ -104,7 +105,7 @@ describe(`v3`, () => {
         await databaseManager.closeConnenction().catch(console.error);
     });
 
-    describe.sequential(`Get Mods`, () => {
+    describe(`Get Mods`, { concurrent: false }, () => {
         test(`/mods - no param`, async () => {
             const response = await anonymousCaller.v2.mods.getMods({});
 

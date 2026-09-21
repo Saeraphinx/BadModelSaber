@@ -95,7 +95,7 @@ export class EnvConfig {
     }
 
     public static get isTestMode(): boolean {
-        return process.env.NODE_ENV === `test`;
+        return process.env.VITEST !== undefined;
     }
 
     public static get logsPath(): string {

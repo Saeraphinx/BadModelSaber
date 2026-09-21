@@ -129,7 +129,7 @@ describe("assets", () => {
             expect(testAsset.status).toBe(Status.Unverified);
         });
     })
-    describe.sequential("requestCollab", () => {
+    describe("requestCollab", { concurrent: false }, () => {
         let uploader: User;
         let collaborator: User;
         let testAsset: Asset;

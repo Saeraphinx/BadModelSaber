@@ -23,10 +23,10 @@ export class Logger {
 
     public static init() {
         let transports: Winston.transport[] = [];
-
+        const isTest = EnvConfig.isTestMode
         let consoleLevel = `consoleInfo`;
-        if (EnvConfig.isTestMode) {
-           consoleLevel = `warn`;
+        if (isTest) {
+           consoleLevel = `error`;
         } else if (process.env.LOG_LEVEL) {
             if (!Object.values(LogLevel).includes(process.env.LOG_LEVEL as LogLevel)) {
                 console.warn(`Invalid LOG_LEVEL: ${process.env.LOG_LEVEL}. Defaulting to consoleInfo`);
@@ -53,9 +53,9 @@ export class Logger {
             //filename: `storage/logs/${new Date(Date.now()).toLocaleDateString(`en-US`, { year: `numeric`, month: `numeric`, day: `numeric`}).replaceAll(`/`, `-`)}.log`,
             zippedArchive: true,
             maxsize: 20 * 1024 * 1024,
-            silent: EnvConfig.isTestMode,
+            silent: isTest,
             maxFiles: 14,
-            level: EnvConfig.isDevMode ? `debug` : `info`,
+            level: isTest ? undefined : (EnvConfig.isDevMode ? `debug` : `info`),
             format: Winston.format.combine(
                 Winston.format.timestamp(),
                 Winston.format.json()
@@ -63,6 +63,7 @@ export class Logger {
         }));
 
         transports.push(new Winston.transports.Stream({
+            silent: isTest,
             stream: Logger.streamInstance = new Writable({
                 objectMode: true,
                 write(log, encoding, callback) {
@@ -119,7 +120,9 @@ export class Logger {
         if (Logger.winston) {
             Logger.winston.log(level, typeof message === 'string' ? message : JSON.stringify(message));
         } else {
-            console.log(`[BBM ${level.toUpperCase()}]`, message);
+            if (!EnvConfig.isTestMode || level === LogLevel.Error) {
+                console.log(`[BBM ${level.toUpperCase()}]`, message);
+            }
         }
     }
 

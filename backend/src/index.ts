@@ -12,7 +12,6 @@ import swaggerUi from "swagger-ui-express";
 import { OpenAPIUploadDocs } from "./api/routes/public/v3/upload.ts";
 import { createContext, manualCreateContext } from "./api/trpc.ts";
 import { existsSync, renameSync } from "fs";
-import { fixMyFuckups } from "./shared/Importer.ts";
 
 // eslint-disable-next-line quotes
 declare module 'express-serve-static-core' {
