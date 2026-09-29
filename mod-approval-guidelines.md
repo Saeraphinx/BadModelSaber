@@ -1,6 +1,6 @@
 <div align="center">
 <h1>BeatMods Verification Guidelines</h1>
-<h3>Last Updated: June 18 2026</h3>
+<h3>Last Updated: Sep 29 2026</h3>
 <h4>This date & the changelog will not be updated until the website is released.</h4>
 </div>
 
@@ -28,7 +28,7 @@ Your project should follow [Semantic Versioning](https://semver.org/) or use a S
 Your zip should only contain files in either the `Libs` or `Plugins` folder. Don't bundle files that are written to at runtime as they'll get overwritten whenever someone reinstalls your plugin/library. You should instead create those files at runtime with sensible defaults and error handling.
 
 ### 4\. Obfuscation
-While obfuscation is frowned upon, it is not strictly disallowed. If you choose to obfuscate your mod, you'll need to check in with Beatmods approval staff. In most cases, obfuscated mods will not be verified. 
+While obfuscation is heavily frowned upon, it is not strictly disallowed. If you choose to obfuscate your mod, you'll need to check in with Beatmods approval staff. In almost all cases, obfuscated mods will not be verified. 
 
 **Obfuscated mods must go through the full verification process and are not allowed to have a status of unverified.**
 
@@ -36,9 +36,9 @@ While obfuscation is frowned upon, it is not strictly disallowed. If you choose 
 In order for a mod to be verified, it must have a decent level of quality. If it doesn't quite get there, it may still be allowed on the platform but marked as unverified.
 
 1. **Your mod needs to work:** If your mod is missing core features or has bugs that stop it from doing what it's supposed to do, it'll be removed. [^1]  
-2. **Mods must not throw Unity Exceptions**: Unity exceptions are extremely difficult for regular users to debug as unity hides these from users. You can find information on how to check your mod using a debug build over on the [BSMG Wiki, under the modders guide](https://bsmg.wiki/modding/pc/testing.html).
+2. **Mods must not throw Unity Exceptions**: Unity exceptions are extremely difficult for regular users to troubleshoot as Unity hides these from users. You can find information on how to check your mod using a debug build over on the [BSMG Wiki, under the modders guide](https://bsmg.wiki/modding/pc/testing.html).
 3. **Low Effort Joke/Meme Mods:** Mods that exist purely as a joke are not eligible for verification. Mods that contain jokes, April Fools, or other timed event code that affect every user must be toggleable or able to be hidden within the game. [^2]  
-4. **External content:** If your mod talks to any external APIs, it must be over HTTPS/TLS with no exceptions. If your mod downloads non-executable content from somewhere outside the game, that source needs to be one you own, or a well-known public API with a decent security track record. Executable content can only be downloaded from BeatMods.
+4. **External content:** If your mod talks to any external APIs, it must be over HTTPS/TLS. No exceptions. If your mod downloads non-executable content from somewhere outside the game, that source needs to be one you own, or a well-known public API with a decent security track record. Executable content can only be downloaded from BeatMods.
 5. **Asset Bundles:** Mods that loading external asset bundles should only load them by using AssetBundleLoadingTools.
 6. **Compatibility:** Your mod needs to play nicely with the base game and every other approved mod on BeatMods, with exceptions to any mods that you've explicitly flagged as conflicting.  
 7. **Your code is your responsibility:** AI tools are fine to use, but you need to understand what your code actually does. If someone on the approval team asks why something works a certain way, "I don't know, the AI wrote it" isn't an acceptable answer.
@@ -48,8 +48,8 @@ Mods that are found to have issues after being approved can be either removed or
 ## Mods vs Libraries
 There are two types of code on BeatMods: **Plugins** and **Libraries**.
 
-- **Plugins** are loaded by IPA or BSIPA. They run independently, and are what actually do things. They live as a single DLL which is placed in the games Plugins folder.  
-- **Libraries** are the opposite. They're available for plugins to make use of and do very little or nothing on their own. Libraries are used by Plugins as a dependency, typically living outside the Plugins folder and in the Libs folder.
+- **Plugins** are loaded by IPA or BSIPA. They run independently, and are what actually do things. They live as a single DLL which is placed in the games Plugins folder.
+- **Libraries** are the opposite. They're available for plugins to make use of and do very little or nothing on their own. Libraries are used by Plugins as a dependency, typically living outside the Plugins folder and in the Libs folder. Libraries must be uploaded using a zip file and do not support direct DLL uploads.
 
 **Examples:**
 - Projects such as [BeatSaverSharp](https://beatmods.com/mods/101), [FFmpeg](https://beatmods.com/mods/196) and [Heck](https://beatmods.com/mods/338) are all considered Libraries.  
@@ -73,12 +73,12 @@ There are two types of code on BeatMods: **Plugins** and **Libraries**.
 
 [^1]: A score tracker that doesn't save scores, or a mod that causes a full game crash on certain map types are examples of mods that would get removed.
 
-[^2]: For example: a mod that crashes the game on a miss would not be verified under this rule, but a mod that has an option, that is disabled by default, to close the game gracefully on a miss is okay. Mods that randomly crash the game may be removed all together.
+[^2]: For example: a mod that crashes the game on a miss would not be verified under this rule, whereas a mod that has an option, that is disabled by default, to close the game gracefully on a miss could be verified. Mods that randomly crash the game may be removed all together.
 
 <details>
 <summary>Changelog</summary>
 
-### June 18 2026
+### Sep 29 2026
 - Revamped the guidelines for new service launch.
 
 </details>
