@@ -24,9 +24,9 @@ export async function generateFakeData(connectionString?: string): Promise<boole
     let users: User[] = []
 
     let sponserUrls: UserPlatform[] = [
-        { platform: PlatformType.Patreon, url: `https://www.patreon.com/beatsabermoddinggroup` },
-        { platform: PlatformType.KoFi, url: `https://ko-fi.com/BadModelSaber` },
-        { platform: PlatformType.GitHub, url: `https://github.com/Saeraphinx/support` },
+        { platform: PlatformType.Patreon, username: `beatsabermoddinggroup` },
+        { platform: PlatformType.KoFi, username: `BadModelSaber` },
+        { platform: PlatformType.GitHub, username: `Saeraphinx` },
     ]
 
     await Game.create({

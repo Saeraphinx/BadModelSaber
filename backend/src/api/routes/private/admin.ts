@@ -4,7 +4,6 @@ import z from "zod/v4";
 import { dedupeArray, handleCatch, parseErrorMessage } from "../../../shared/Tools.ts";
 import { gameProcedure, loggedInAssetProcedure, loggedInGameVersionProcedure, loggedInProcedure, loggedInProjectProcedure, loggedInVersionProcedure, router } from "../../trpc.ts";
 import { Logger, LogLevel } from "../../../shared/Logger.ts";
-import { importFromBadBeatMods, importFromOldModelSaber } from "../../../shared/Importer.ts";
 import { TRPCError } from "@trpc/server";
 import { EnvConfig } from "../../../shared/EnvConfig.ts";
 import { Op } from "sequelize";
@@ -273,22 +272,6 @@ export const AdminRouter = router({
         }),
     },
     dev: {
-        importOldModelSaberData: loggedInProcedure([UserPermissions.Advanced_Admin_Tasks])
-            .mutation(async ({ input, ctx }) => {
-                if (!EnvConfig.isDevMode) {
-                    throw new TRPCError({ code: `FORBIDDEN`, message: `Cannot import old ModelSaber data in a non-development environment.` });
-                }
-                Logger.log(`Starting import of old ModelSaber data by admin user ${ctx.userId}`);
-                importFromOldModelSaber();
-            }),
-        importFromBeatmods: loggedInProcedure([UserPermissions.Advanced_Admin_Tasks])
-            .mutation(async ({ input, ctx }) => {
-                if (!EnvConfig.isDevMode) {
-                    throw new TRPCError({ code: `FORBIDDEN`, message: `Cannot import from Beatmods in a non-development environment.` });
-                }
-                Logger.log(`Starting import from Beatmods by admin user ${ctx.userId}`);
-                importFromBadBeatMods();
-            }),
         importFromJson: loggedInProcedure([UserPermissions.Administrative_Tasks])
             .mutation(async ({ input, ctx }) => {
                 Logger.log(`Starting import from zip by admin user ${ctx.userId}`);

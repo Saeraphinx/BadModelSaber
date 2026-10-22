@@ -4,6 +4,7 @@ import { createDummyProject, createDummyUser, createDummyVersion, handleExceptio
 import { Webhooks } from "../../src/shared/Webhooks.ts";
 import { time } from "node:console";
 import { string } from "zod";
+import { EnvConfig } from "../../src/shared/EnvConfig.ts";
 
 describe("versions", () => {
     let databaseManager: DatabaseManager;
@@ -77,7 +78,7 @@ describe("versions", () => {
         });
     });
 
-    describe.sequential("setStatus", () => {
+    describe("setStatus", { concurrent: false }, () => {
         let webhookMock: MockInstance<any>;
         let alertMock: MockInstance<any>;
         beforeAll(async () => {

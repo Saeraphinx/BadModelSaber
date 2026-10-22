@@ -5,6 +5,7 @@ import {
     Alert,
     AlertType,
     Asset,
+    availableBackendLocaleCodes,
     DatabaseManager,
     Game,
     GameVersion,
@@ -34,6 +35,7 @@ const createTestCaller = (userId?: number) => createCaller({
     res: {
         setHeader: () => undefined,
     } as any,
+    isApiKey: false,
     db: {} as any,
 });
 
@@ -176,7 +178,7 @@ describe("trpc-internal", () => {
         });
     });
 
-    describe.sequential(`alerts`, () => {
+    describe(`alerts`, { concurrent: false }, () => {
         let unreadAlert: Alert;
         let readAlert: Alert;
 
@@ -485,7 +487,8 @@ describe("trpc-internal", () => {
         });
     });
 
-    describe(`translations`, () => {
+    describe.skipIf(availableBackendLocaleCodes.length <= 1)(`translations`, () => {
+
         test(`createOrUpdateTranslationForProject creates and then updates entries`, async () => {
             const created = await caller.internal.translation.createOrUpdateTranslationForProject({
                 id: testProject.id,

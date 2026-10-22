@@ -10,6 +10,7 @@ export function createTestContext(userId: number): Context {
         req: {} as any,
         res: {} as any,
         userId: userId,
+        isApiKey: false,
         db: {} as any,
     };
 }

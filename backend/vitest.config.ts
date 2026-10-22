@@ -1,9 +1,10 @@
 import { defineConfig } from 'vitest/config';
-import { parseErrorMessage } from './src/shared/Tools';
+import { parseErrorMessage } from './src/shared/Tools.ts';
 
 export default defineConfig({
     test: {
-        dir: './test/tests',
+        dir: './test',
+        include: ['./tests/**/*.test.ts'],
         globalSetup: './test/globalSetup.ts',
         reporters: process.env.GITHUB_ACTIONS ? [`github-actions`, [`verbose`, { summary: true }]] : [ [`default`, { summary: false }] ],
         mockReset: true,
@@ -16,10 +17,6 @@ export default defineConfig({
             postgresUrl: ""
         },
         passWithNoTests: true,
-        // for when this eventually moves to vitest 4
-        onUnhandledError: (error) => {
-            console.error(`Unhandled error in test: ${parseErrorMessage(error)}`);
-            return true; // Prevent Vitest from crashing on unhandled errors
-        },
+        dangerouslyIgnoreUnhandledErrors: true
     }
 });
