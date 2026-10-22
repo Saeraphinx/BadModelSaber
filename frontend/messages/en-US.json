@@ -3,10 +3,10 @@
   "loading": "Loading...",
   "homepage": {
     "title": "BeatMods",
-    "subtitle": "A collection of various mods and assets for use within Beat Saber.",
+    "subtitle": "A collection of various mods, models, and assets for use within Beat Saber.",
     "buttons": {
       "browseMods": "Browse Mods",
-      "browseAssets": "Browse Assets",
+      "browseAssets": "Browse Models & Assets",
       "wiki": "Wiki"
     }
   },
@@ -95,8 +95,8 @@
         "pcApprovalGuide": "Approval Guidelines"
       },
       "assets": {
-        "title": "Assets",
-        "browseAssets": "Browse Assets",
+        "title": "Models & Assets",
+        "browseAssets": "Browse Models",
         "creationGuide": "Creation Guide",
         "installationGuide": "Installation Guide"
       },
@@ -148,7 +148,7 @@
     }
   },
   "assets": {
-    "noAssetsFound": "No assets found.",
+    "noAssetsFound": "No models or assets found.",
     "nsfwWarning": "This asset is marked as NSFW.",
     "carousels": {
       "addRelatedAsset": "Add Related Asset",
