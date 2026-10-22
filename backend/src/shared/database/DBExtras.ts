@@ -358,6 +358,7 @@ export const linkedAssetSchema = z.object({
 // # region Enums
 export enum WebhookLogType {
   FirstVerificationAsset = "newly_verified_asset",
+  FirstVerificationAssetQuest = "newly_verified_asset_quest",
   FirstUnverificationAsset = "newly_unverified_asset",
   FirstVerificationProject = "newly_verified_project",
   FirstVerificationVersion = "newly_verified_version",

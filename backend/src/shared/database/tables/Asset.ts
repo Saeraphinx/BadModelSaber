@@ -567,6 +567,9 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
             Webhooks.sendWebhookLog(this.gameName, WebhookLogType.StatusUpdate, true, internalPayload);
             if (isFirstVerification) {
                 Webhooks.sendWebhookLog(this.gameName, WebhookLogType.FirstVerificationAsset, true, externalPayload);
+                if ([AssetFileFormat.Note_Cyoob, AssetFileFormat.Wall_Box, AssetFileFormat.Saber_Whacker].includes(this.type)) {
+                    Webhooks.sendWebhookLog(this.gameName, WebhookLogType.FirstVerificationAssetQuest, true, externalPayload);
+                }
             } else if (isFirstUnverification) {
                 Webhooks.sendWebhookLog(this.gameName, WebhookLogType.FirstUnverificationAsset, true, externalPayload);
             } else if (wasPlacedInQueue) {
