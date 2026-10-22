@@ -30,6 +30,8 @@ const conversionStorage = `./storage/converts`;
 const doAssetDownload = true; // set to false to skip downloading assets, useful for testing
 const doTumbnailDownload = true; // set to false to skip downloading thumbnails, useful for testing
 
+new EnvConfig();
+
 export async function importFromOldModelSaber(): Promise<void> {
     if (!EnvConfig.auth.discord.token) {
         Logger.error(`Discord token is not set in the environment variables. Please set DISCORD_TOKEN to import from old ModelSaber.`);
@@ -384,6 +386,33 @@ export async function importFromOldModelSaber(): Promise<void> {
         Logger.error(JSON.stringify(error));
         Logger.error(parseErrorMessage(error));
         throw error;
+    }
+}
+
+// funny php exploit
+export async function importAssetsFromBMSImport() {
+    Logger.log(`Starting asset import from BMS Import.`);
+    const existingData = fs.existsSync(`./storage/toBeImported.json`);
+    if (!existingData) {
+        Logger.error(`No data found to import from BMS Import.`);
+        return;
+    }
+    const data = JSON.parse(fs.readFileSync(`./storage/toBeImported.json`, `utf-8`));
+
+    for (const asset of data) {
+        let oldDbId = asset.id;
+        asset.id = undefined;
+        Asset.create(asset).catch(err => {
+            Logger.error(`Failed to create asset from BMS Import: ${err}`);
+            Logger.debug(err);
+            Logger.debug(parseErrorMessage(err));
+        }).then((asset) => {
+            if (asset) {
+                fs.renameSync(`./storage/import/${oldDbId}`, asset.folderPath);
+            } else {
+                Logger.error(`Failed to create asset from BMS Import with old ID: ${oldDbId}`);
+            }
+        });
     }
 }
 
@@ -888,7 +917,7 @@ function checkIfFfmpegInstalled(): Promise<boolean> {
 }
 
 
-export async function fixMyFuckups() {
+async function fixMyFuckups() {
     let allProblemAssets = await Asset.findAll({ where: { 
         iconNames: [`default.png`]
     }});
