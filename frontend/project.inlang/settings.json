@@ -8,10 +8,11 @@
     "pathPattern": "./messages/{locale}.json"
   },
   "sourceLanguageTag": "en-US",
-  "languageTags": ["en-US", "owo", "keys"],
+  "languageTags": ["en-US", "cn", "owo", "keys"],
   "baseLocale": "en-US",
   "locales": [
     "en-US",
+    "cn",
     "owo",
     "keys"
   ]

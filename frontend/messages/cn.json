@@ -1,0 +1,650 @@
+{
+  "name": "BeatMods",
+  "loading": "Loading...",
+  "loadingSite": "Loading BeatMods...",
+  "homepage": {
+    "title": "BeatMods",
+    "subtitle": "A collection of various mods, models, and assets for use within Beat Saber.",
+    "buttons": {
+      "browseMods": "Browse Mods",
+      "browseAssets": "Browse Models & Assets",
+      "wiki": "Wiki"
+    },
+    "birthday": "Happy {{years}}th Birthday BeatSaber!"
+  },
+  "common": {
+    "all": "All",
+    "mod": "Mod",
+    "mods": "Mods",
+    "asset": "Asset",
+    "assets": "Assets",
+    "version": "Version",
+    "versions": "Versions",
+    "project": "Project",
+    "projects": "Projects",
+    "game": "Game",
+    "games": "Games",
+    "gameVersion": "Game Version",
+    "gameVersions": "Game Versions",
+    "buttons": {
+      "download": "Download",
+      "oneClickInstall": "OneClick Install",
+      "approvalDialog": "Approval Menu",
+      "submitForApproval": "Submit for Approval",
+      "removeFromQueue": "Remove from Queue",
+      "report": "Report",
+      "unhide": "Unhide",
+      "viewDetails": "View Details"
+    },
+    "hover": {
+      "goToMod": "Go to Mod Page",
+      "goToAsset": "Go to Asset Page",
+      "updateStatus": "Update Status",
+      "openApprovalDialog": "Open Approval Menu"
+    },
+    "dataTable": {
+      "id": "ID",
+      "name": "Name",
+      "nameId": "Manifest ID",
+      "summary": "Summary",
+      "description": "Description",
+      "uploadedBy": "Uploaded by",
+      "game": "Game",
+      "category": "Category",
+      "status": "Status",
+      "moreInfo": "More Info",
+      "sourceUrl": "Source Code",
+      "websiteUrl": "Website",
+      "fileCount": "File Count",
+      "created": "Created",
+      "fileSize": "File Size",
+      "createdAt": "Created At",
+      "lastUpdated": "Last Updated",
+      "authors": "Authors",
+      "supportedGameVersions": "Supported Game Versions",
+      "semver": "Semantic Version",
+      "platform": "Platform",
+      "icon": "Icon",
+      "dependencies": "Dependencies",
+      "noDependencies": "No dependencies",
+      "loadingDependencies": "Loading dependencies...",
+      "filesAndManifest": "Files & Manifest",
+      "viewManifest": "View Manifest",
+      "viewCode": "View Code",
+      "viewFiles": "View Files",
+      "approvalHistory": "Approval History",
+      "details": "Details",
+      "tags": "Tags",
+      "noTags": "No Tags Selected.",
+      "type": "Type",
+      "renderingMethod": "Rendering Method",
+      "license": "License",
+      "customLicense": "Custom License...",
+      "source": "Source",
+      "viewSource": "View Source",
+      "uploadAt": "Upload at",
+      "fileHash": "File Hash"
+    },
+    "noResults": "No results found.",
+    "noDescription": "No description available.",
+    "idLabel": "ID: {{id}}",
+    "selectAll": "Select All",
+    "selectedCount": "{{count}} selected",
+    "ungrouped": "Ungrouped",
+    "defaultMarker": "(Default)",
+    "supportedFor": "For {{versions}}",
+    "markdownUnsupported": "Markdown rendering is not supported in your browser.",
+    "time": {
+      "days": "{{count}}d",
+      "hours": "{{count}}h",
+      "minutes": "{{count}}m",
+      "seconds": "{{count}}s"
+    },
+    "pagination": {
+      "previous": "Previous",
+      "next": "Next",
+      "goToPrevious": "Go to previous page",
+      "goToNext": "Go to next page"
+    }
+  },
+  "layout": {
+    "navbar": {
+      "home": "Home",
+      "mods": {
+        "title": "Mods",
+        "browseMods": "Browse Mods",
+        "compareVersions": "Compare Versions",
+        "beatsaberBeginnersGuide": "Beat Saber Beginner's Guide",
+        "moddersGuide": "Modder's Guide",
+        "pcApprovalGuide": "Approval Guidelines"
+      },
+      "assets": {
+        "title": "Models & Assets",
+        "browseAssets": "Browse Models",
+        "creationGuide": "Creation Guide",
+        "installationGuide": "Installation Guide"
+      },
+      "wiki": "Wiki",
+      "discord": "Discord"
+    },
+    "userMenu": {
+      "profile": "Profile",
+      "alerts": "Alerts",
+      "requests": "Requests",
+      "adminPanel": "Admin Panel",
+      "disableSecretFeatures": "Disable Secret Features",
+      "create": "Create",
+      "createProject": "Create Project",
+      "createAsset": "Create Asset",
+      "options": "Options",
+      "theme": "Theme",
+      "system": "System",
+      "light": "Light",
+      "dark": "Dark",
+      "language": "Language",
+      "logout": "Logout",
+      "loginDiscord": "Login with Discord",
+      "loginGitHub": "Login with GitHub",
+      "modelsaberOpenSource": "BeatMods is Open Source!",
+      "apiDocs": "API Docs"
+    },
+    "alertSidebar": {
+      "markAllRead": "Mark all as read",
+      "showRead": "Show read alerts",
+      "noAlertsAvailable": "No alerts available.",
+      "noUnreadAlerts": "No unread alerts.",
+      "viewAsset": "View Asset",
+      "viewRequest": "View Request",
+      "markAsRead": "Mark as Read"
+    },
+    "readAlerts_one": "You have {{count}} alert.",
+    "readAlerts_other": "You have {{count}} alerts.",
+    "unreadAlerts_one": "You have {{count}} unread alert.",
+    "unreadAlerts_other": "You have {{count}} unread alerts."
+  },
+  "search": {
+    "title": "Search",
+    "searchAssets": "Search Assets...",
+    "searchMods": "Search Mods...",
+    "sizeHeader": "Size",
+    "showFilters": "Show Filters",
+    "filters": "Filters",
+    "cardsPerPage": "# per page",
+    "pagination": {
+      "perPage": "{{count}} per page",
+      "summary": "{{start}}-{{end}} of {{total}} results"
+    },
+    "placeholder": "Search...",
+    "cardSizes": {
+      "linked": "Linked",
+      "small": "Small",
+      "normal": "Normal",
+      "large": "Large"
+    }
+  },
+  "assets": {
+    "noAssetsFound": "No models or assets found.",
+    "nsfwWarning": "This asset is marked as NSFW.",
+    "carousels": {
+      "addRelatedAsset": "Add Related Asset",
+      "relatedAssets": "Related Assets",
+      "relatedAssetsNoneFound": "No related assets found.",
+      "authorAssets": "Other assets by {{name}}",
+      "authorAssetsNoneFound": "No other assets found by {{name}}."
+    },
+    "upload": {
+      "title": "Create Asset",
+      "subtitle": "Please fill out the form below to upload a new asset to BeatMods.",
+      "selectTags": "Select Tags",
+      "thumbnailRuleListHeader": "Thumbnail Rules:",
+      "thumbnailRuleList1": "Must be a square image (1:1 aspect ratio).",
+      "thumbnailRuleList2": "Must be at least 512x512 pixels.",
+      "thumbnailRuleList3": "Must be in .png, .jpeg, .webp, or .gif.",
+      "thumbnailRuleList4": "Should be tasteful and appropriate",
+      "thumbnail": "Thumbnail",
+      "thumbnailFooter": "Please ensure your thumbnail follows the rules listed above.",
+      "ensureRights": "Please ensure that you have the rights to upload this asset to BeatMods."
+    },
+    "preview": {
+      "header": "Asset Preview",
+      "noAudioSupport": "Your browser does not support the audio element.",
+      "waitingForData": "Waiting for preview data...",
+      "openHSVPreviewer": "Open in HitScoreVisualizer Previewer",
+      "noPreviewAvailable": "No preview available for this asset.",
+      "downloadAndLoadPreview": "Download and Load Preview",
+      "textOnlySr": "This preview only shows the content within the file. If you wish to read it, please <a href=\"{{downloadUrl}}\">download the file</a> and open it with your system.",
+      "failedToLoadError": "Failed to load preview data: {{error}}"
+    },
+    "statusHover": {
+      "verified": {
+        "title": "This asset has been verified by the BeatMods team and <span class=\"text-green-600\">is safe to use!</span>",
+        "description": "Verified assets have been checked for malware and are safe to use. Look for the green checkmark!"
+      },
+      "unverified": {
+        "title": "This asset has <b>not</b> been verified by the BeatMods team. <span class=\"text-orange-400\">Use at your own risk!</span>",
+        "description": "Unverified assets have not been checked for malware. Be cautious when downloading and using these assets."
+      },
+      "queue": {
+        "title": "This asset is currently pending approval. <span class=\"text-red-600\">Use with caution!</span>",
+        "description": "Assets in the queue have not been reviewed by the approval team. They may contain malware or be incompatible with the game. Be cautious when downloading and using these assets. <b>You will not receive support for unverified assets.</b>"
+      },
+      "private": {
+        "title": "This asset is private.",
+        "description": "Private assets are not visible to the public"
+      },
+      "removed": {
+        "title": "This asset has been removed.",
+        "description": "Removed assets have been taken down by the approval team and are not visible to the public."
+      }
+    },
+    "copyFileHash": "Copy File Hash",
+    "fileHashCopied": "File hash copied to clipboard!",
+    "namePlaceholder": "Asset Name",
+    "descriptionPlaceholder": "Asset Description",
+    "tagSelector": "Tag Selector",
+    "typeSpecificCount": "{{count}}/1 selected",
+    "selectType": "Select a type...",
+    "searchTypes": "Search types...",
+    "noTypeFound": "No asset type found.",
+    "pcOnly": "PC Only",
+    "questOnly": "Quest Only",
+    "license": {
+      "select": "Select a license...",
+      "custom": "Custom...",
+      "heading": "Creative Commons License Selection",
+      "description": "Decide how others can use your asset.",
+      "moreInfo": "Visit {{link}} for more info.",
+      "attribution": "Attribution (BY)",
+      "nonCommercial": "Non-Commercial (NC)",
+      "noDerivatives": "No Derivatives (ND)",
+      "shareAlike": "Share Alike (SA)"
+    }
+  },
+  "mods": {
+    "noModsFound": "No mods found.",
+    "noProjectsFound": "No projects found.",
+    "noVersionsFound": "No versions found.",
+    "uploadNewVersion": "Upload New Version",
+    "uploadNewVersionButton": "Upload",
+    "uploadAndSaveIcon": "Upload & Save Icon",
+    "makePublic": "Make Public",
+    "nameIdExplanation": "The Manifest ID is a unique identifier for this project that is used in the manifest (e.g. the \"id\" field in a BSIPA manifest) of all of your versions. It is typically the same as the name. This cannot be changed after the project is created.",
+    "deprecatedVersionWarning": "Your selected game version is no longer supported.",
+    "deprecatedVersionWarningDescription": "This version is no longer community supported and may not receive mod updates. Please consider updating your game to a more recent or supported version.",
+    "createProject": {
+      "title": "Create Project",
+      "subtitle": "Please fill out the form below to create a new project.",
+      "thumbnailRuleListHeader": "Icon Rules:",
+      "thumbnailRuleList1": "Must be a square image (1:1 aspect ratio).",
+      "thumbnailRuleList2": "Should be at least 128x128 pixels.",
+      "thumbnailRuleList3": "Must be in .png, .jpeg, .webp, or .gif.",
+      "thumbnailRuleList4": "Should be tasteful and appropriate",
+      "thumbnailFooter": "Please ensure your icon follows the rules listed above.",
+      "fetchReadme": "Fetch Readme from GitHub",
+      "fetchReadmeError": "Could not fetch README from GitHub. Please make sure the repository has a README.md file in the root directory.",
+      "fetchReadmeSuccess": "Fetched README from GitHub successfully. You can now save it as the description translation."
+    },
+    "createVersion": {
+      "title": "Create Version for {{projectName}}",
+      "subtitle": "Please fill out the form below to create a new version for {{projectName}}.",
+      "addDependency": "Add Dependency",
+      "semverShouldMatchManifest": "The semantic version should match the version specified in your manifest.json file.",
+      "importFromOtherVersion": "Import dependencies from another version",
+      "importAllFromManifest": "Import all data from manifest",
+      "importDepsFromManifest": "Import dependencies from manifest",
+      "importFromOtherVersionDialogTitle": "Import Dependencies from Another Version",
+      "importFromOtherVersionDialogDescription": "Select another version of {{projectName}} to import dependencies from. This will copy all dependencies from the selected version to the new version you are creating.",
+      "searchVersion": "Search Versions...",
+      "packingFileIntoZip": "Your DLL file will be packed into a zip file upon upload in the Plugins folder. If you want to include additional files, or if your DLL should be placed in a different folder, please create a zip file with the correct structure and upload that instead."
+    },
+    "manifestChecks": {
+      "manifestData": "Manifest Data",
+      "loadManifest": "Load Manifest",
+      "noIssuesFound": "No issues found.",
+      "couldNotReadManifest": "Could not read manifest from file. Please ensure it is a valid .dll or .zip file containing a manifest.json.",
+      "manifestProjectNameMismatch": "The name specified in your manifest ({{manifestName}}) doesn't match the name of the project you're uploading to ({{expectedName}}). Please ensure the 'name' field in your manifest matches the name of your project on BeatMods.",
+      "manifestProjectIdMismatch": "The manifest ID specified in your manifest ({{manifestId}}) doesn't match the manifest ID of the project you're uploading to ({{expectedManifestId}}). Please ensure the 'id' field in your manifest matches the manifest ID of your project on BeatMods.",
+      "dependencies": {
+        "manifestMissingdependsOn": "Your manifest is missing the 'dependsOn' field, which is required to specify your mod's dependencies. Please add this field to your manifest and try again.",
+        "webInvalidRange": "Dependency {{depName}} has an invalid game version range specified: {{sv}}. Please ensure all dependencies have valid semantic version ranges.",
+        "manifestInvalidRange": "Dependency {{depName}} has an invalid game version range specified: {{sv}}. Please ensure all dependencies in your manifest have valid semantic version ranges.",
+        "webDependencyNotFound": "Dependency {{depName}}@{{sv}} was not found in the manifest. Please ensure all dependencies listed are included in the manifest file.",
+        "manifestDependencyNotFound": "Dependency {{depName}}@{{sv}} specified in manifest not found. Please ensure all dependencies listed in your manifest are marked as dependencies on BeatMods."
+      },
+      "manifestGameVersionIsntLowest": "The game version specified in your manifest ({{manifestGameVersion}}) isn't the lowest game version specified among your supported game versions. Please ensure the 'gameVersion' field in your manifest specifies the lowest game version your mod supports, or update your supported game versions to match the game version specified in your manifest.",
+      "manifestSemVerDoesntMatch": "The semantic version specified in your manifest ({{manifestSemVer}}) doesn't match the semantic version specified for your mod ({{expectedSemVer}}). Please ensure the 'semver' field in your manifest matches the version of your mod.",
+      "duplicateDependency": "The dependency {{depName}} appears more than once. Please ensure each dependency is listed only once."
+    },
+    "translation": {
+      "language": "Language",
+      "viewOriginal": "View Original",
+      "viewOriginalMarkdown": "View Original (Markdown)",
+      "original": "Original"
+    },
+    "statusHover": {
+      "verified": {
+        "title": "This mod has been verified by the approval team and <span class=\"text-green-600\">is safe to use!</span>",
+        "description": "Verified mods are safe and should not cause issues the game. Look for the green badge!"
+      },
+      "unverified": {
+        "title": "This mod has <b>not</b> been verified by the approval team. <span class=\"text-orange-400\">Use at your own risk!</span>",
+        "description": "Unverified mods have not been fully checked for issues and compatibility. While they may be fine, be cautious when downloading and using these mods. <b>You will not receive support for non-verified mods.</b>"
+      },
+      "testing": {
+        "title": "This mod is currently pending approval.",
+        "description": "Mods in the testing phase have been reviewed by the approval team and are currently in testing. It may be incompatible with the game or cause other issues. Be cautious when downloading and using these mods. <b>These mods are not fully verified and you will not receive support for them.</b> That being said, please let the approval team know about any issues you experience using these mods."
+      },
+      "queue": {
+        "title": "This mod is currently pending approval. <span class=\"text-red-600\">Use with caution!</span>",
+        "description": "Mods in the queue have not been fully reviewed by the approval team. They may cause issues or be incompatible with the game. Be cautious when downloading and using these mods. <b>You will not receive support for non-verified mods.</b>"
+      },
+      "private": {
+        "title": "This mod is private.",
+        "description": "Private mods are not visible to the public."
+      },
+      "removed": {
+        "title": "This mod has been removed.",
+        "description": "Removed mods have been taken down by the approval team and are not visible to the public."
+      }
+    },
+    "noSummary": "No summary provided.",
+    "uploadPageTitle": "Upload {{name}}",
+    "codeViewer": "Code Viewer",
+    "statusHistoryReason": "Reason: {{reason}}",
+    "noStatusHistory": "No status history available.",
+    "selectProject": "Select a project...",
+    "searchProjects": "Search projects...",
+    "noProjectFound": "No project found.",
+    "compare": {
+      "title": "Compare Game Versions",
+      "fetchError": "Error fetching game versions: {{error}}",
+      "gameVersion1": "Game Version 1",
+      "gameVersion2": "Game Version 2",
+      "modName": "Mod Name",
+      "availableFor": "Available for {{version}}",
+      "notAvailable": "No",
+      "unverifiedMarker": "[U]"
+    }
+  },
+  "requests": {
+    "wouldYouLikeToAcceptOrReject": "Would you like to accept or reject this request?",
+    "initialMessageCredit": "{{name}} would like to add you as a collaborator to the asset {{assetName}}.",
+    "initialMessageLink": "{{name}} would like to link your asset, {{toLinkAssetName}}, to their asset, {{assetName}}.",
+    "initialMessageReport": "{{name}} would like to report \"{{assetName}}\".",
+    "tableTitle": "{{type}} Request",
+    "requestID": "Request ID: {{id}}",
+    "status": "Request Status: {{status}}",
+    "resolvedBy": "Resolved By: {{name}}",
+    "notResolved": "Not Resolved",
+    "createdBy": "Created By: {{name}}",
+    "createdAt": "Created At: {{date}}",
+    "typeYourMessageHere": "Type your message here...",
+    "noMessagesFound": "No messages found for this request.",
+    "errorLoadingMessages": "Error loading messages: {{error}}",
+    "submitMessage": "Submit Message",
+    "pageTitle": "Request {{id}}",
+    "noRequests": "You have no requests.",
+    "outgoing": "My Outgoing Requests",
+    "incoming": "Incoming Requests",
+    "accepted": "Accepted",
+    "rejected": "Rejected"
+  },
+  "users": {
+    "linkAccounts": "Link Accounts",
+    "linkToGithub": "Link to GitHub",
+    "linkToDiscord": "Link to Discord",
+    "hideGithubId": "Hide GitHub Publicly",
+    "hideDiscordId": "Hide Discord Publicly",
+    "username": "Username",
+    "displayName": "Display Name",
+    "bio": "Bio",
+    "donationLinks": "Donation Links",
+    "apiKeys": "API Keys",
+    "generateApiKey": "Generate API Key",
+    "yourNewApiHasBeenGenerated": "Your new API key has been generated. Please copy it now as it will not be shown again.",
+    "revoke": "Revoke",
+    "systemUser": "System User",
+    "selectUser": "Select User",
+    "searchPlaceholder": "Search for a user...",
+    "sponsor": {
+      "githubSponsor": "GitHub Sponsor",
+      "discordProfile": "Discord Profile",
+      "githubProfile": "GitHub Profile"
+    }
+  },
+  "enums": {
+    "status": {
+      "private": "Private",
+      "queue": "In Queue",
+      "unverified": "Unverified",
+      "testing": "Testing",
+      "non-default-testing": "Non-Supported Testing",
+      "verified": "Verified",
+      "public": "Public",
+      "removed": "Removed"
+    },
+    "roles": {
+      "admin": "BeatMods Admin",
+      "developer": "BeatMods Developer",
+      "moderator": "Moderator",
+      "bsmgStaff": "BSMG Staff",
+      "3dArtist": "3D Artist",
+      "modder": "Modder",
+      "system": "System Account",
+      "unknown": "Unknown Role"
+    },
+    "tags": {
+      "CustomColors": "Custom Colors",
+      "CustomTrails": "Custom Trails",
+      "CustomBombs": "Custom Bombs",
+      "CustomArrows": "Custom Arrows",
+      "AudioLink": "AudioLink",
+      "Reactive": "Reactive",
+      "Animations": "Animations",
+      "Sounds": "Sounds",
+      "FBT": "FBT",
+      "Cloth": "Cloth",
+      "DynamicBones": "Dynamic Bones",
+      "ShaderReplacement": "Shader Replacement",
+      "NSFW": "NSFW",
+      "Meme": "Meme",
+      "Thin": "Thin",
+      "Large": "Large",
+      "Acc": "Acc",
+      "Particles": "Particles",
+      "Sword": "Sword",
+      "Simple": "Simple",
+      "VideoGame": "Video Game",
+      "Anime": "Anime",
+      "Pride": "Pride",
+      "Pro": "Pro",
+      "Halloween": "Halloween",
+      "Holiday": "Holiday",
+      "Christmas": "Christmas",
+      "Underswing": "Underswing",
+      "TimeDependence": "Time Dependence",
+      "Hitsound": "Hitsound",
+      "BadCutHitsound": "BadCut Hitsound",
+      "MenuClick": "Menu Click",
+      "FirstPerson": "First Person",
+      "ThirdPerson": "Third Person",
+      "Contest": "Contest",
+      "Featured": "Featured",
+      "Unknown": "Unknown"
+    },
+    "tagCategories": {
+      "features": "Features",
+      "general": "General",
+      "internal": "Protected / Internal",
+      "typeSpecific": "Type-Specific"
+    },
+    "assetTypes": {
+      "avatar": "Avatar",
+      "platform": "Platform",
+      "saber": "Saber",
+      "note": "Note",
+      "wall": "Wall",
+      "health-bar": "Health Bar",
+      "banner": "Banner",
+      "sound": "Sound",
+      "chroma-environment": "Chroma Environment",
+      "camera2-config": "Camera2 Config",
+      "counters-plus-config": "Counters+ Config",
+      "hitscorevisualizer-config": "HitScoreVisualizer Config",
+      "config": "Config",
+      "other": "Other",
+      "plurals": {
+        "avatar": "Avatars",
+        "platform": "Platforms",
+        "saber": "Sabers",
+        "note": "Notes",
+        "wall": "Walls",
+        "config": "Configs",
+        "other": "Other"
+      }
+    },
+    "renderingModes": {
+      "birp-sp": "BIRP Single Pass",
+      "birp-spi": "BIRP Single Pass Instanced",
+      "urp-u6": "URP Unity 6",
+      "unknown": "Unknown"
+    },
+    "requestTypes": {
+      "asset-credit": "Credit",
+      "asset-link": "Link",
+      "asset-report": "Asset Report",
+      "project-report": "Project Report",
+      "version-report": "Version Report",
+      "user-report": "User Report"
+    }
+  },
+  "dialogs": {
+    "edit": "Edit",
+    "translate": "Translate",
+    "save": "Save",
+    "saveChanges": "Save Changes",
+    "saving": "Saving...",
+    "discardChanges": "Discard Changes",
+    "dontShowAgain": "Don't show again",
+    "cancel": "Cancel",
+    "submit": "Submit",
+    "accept": "Accept",
+    "confirm": "Confirm",
+    "reject": "Reject",
+    "close": "Close",
+    "add": "Add",
+    "remove": "Remove",
+    "preview": "Preview",
+    "reload": "Reload",
+    "approval": {
+      "title": "Update Status for {{name}}",
+      "description": "Select the new status for \"{{name}}\". Click save to apply the changes.",
+      "reasonWillBeVisible": "This reason will be visible to the author(s) of {{name}}.",
+      "reasonPlaceholder": "Enter reason for status change (optional)",
+      "presetReasons": "Preset Reasons",
+      "autosetProject": "Autoset Project",
+      "sendAlert": "Send Alert"
+    },
+    "download": {
+      "assetTitle": "Download Non-Verified Asset?",
+      "assetDescription": "The asset you are trying to download has not been verified by the approval team. Unverified assets may cause issues or contain other harmful content. Are you sure you want to proceed with the download?",
+      "nonVerifiedModTitle": "Download Non-Verified Mod?",
+      "nonVerifiedModDescription": "The mod you are trying to download has not been fully verified by the approval team. Non-verified mods may be incompatible with the game or cause other issues. <b>You will not receive support in BSMG for unverified mods.</b> Are you sure you want to proceed with the download?",
+      "testingModTitle": "Download Non-Verified Mod?",
+      "testingModDescription": "The mod you are trying to download is currently in testing and is awaiting full verification. Non-verified mods may be incompatible with the game or cause other issues. <b>These mods are not fully verified and you will not receive support for them.</b> That being said, please let the approval team know about any issues you experience using these mods. Are you sure you want to proceed with the download?",
+      "neverShowAgain": "If you'd like to never see this warning again, please click the \"Don't show again\" button."
+    },
+    "report": {
+      "title": "Report {{name}}",
+      "description": "If you believe this item violates our rules, please provide a reason for reporting it. Our moderation team will review the report and take appropriate action if necessary.",
+      "reasonPlaceholder": "Enter reason for your report."
+    },
+    "linkAsset": {
+      "title": "Add a Related Asset",
+      "description": "Link another asset as related to this one by entering the link to the asset's page below.",
+      "linkType": "Link Type",
+      "selectLinkType": "Select Link Type",
+      "assetUrl": "Asset URL",
+      "linkTypes": {
+        "altFormat": {
+          "title": "Alternative Format",
+          "description": "Same asset in a different file format (e.g. a saber in the .saber and .whacker formats)"
+        },
+        "altDesign": {
+          "title": "Alternative Design",
+          "description": "A different design or version of the same asset (e.g. a saber with a different color scheme or model)"
+        },
+        "newerVersion": {
+          "title": "Newer Version",
+          "description": "A more recent version of the asset, typically with improvements or updates"
+        },
+        "olderVersion": {
+          "title": "Older Version",
+          "description": "A previous version of the asset released before the current one"
+        }
+      }
+    },
+    "enable": "Enable",
+    "view": "View",
+    "copy": "Copy",
+    "delete": "Delete"
+  },
+  "toasts": {
+    "save": {
+      "success": "Saved Changes.",
+      "error": "Failed to save changes."
+    },
+    "success": {
+      "assetLink": "Asset linked successfully.",
+      "reportSubmitted": "Report submitted."
+    },
+    "error": {
+      "generic": "An error occurred. Please try again later.",
+      "validation": {
+        "title": "Validation Error",
+        "invalidUrl": "The URL provided is invalid. Please ensure it is a valid URL.",
+        "missingFields": "Please fill out all required fields.",
+        "invalidFile": "The selected file is invalid. Please select a valid file."
+      },
+      "network": "Network error: Unable to reach the server. Please check your internet connection and try again."
+    },
+    "submit": {
+      "success": "Submission successful!",
+      "error": "Failed to submit. Please try again later."
+    },
+    "secretFeatures": {
+      "unlocked": "Secret features unlocked!",
+      "unlockedDescription": "If you enable these features, you will be able to access hidden content and features on BeatMods. BeatMods is not responsible for any damage caused by this content. You will not receive support for any issues caused by this content.",
+      "enabled": "Secret features enabled!",
+      "enabledDescription": "You can now access hidden content and features on BeatMods. Use responsibly!",
+      "mustBeLoggedIn": "You must be logged in to activate this feature.",
+      "alreadyEnabled": "You have already activated the secret features.",
+      "alreadyEnabledDescription": "If you want to disable them, disable them in your user settings.",
+      "disabled": "Secret features disabled!",
+      "disabledDescription": "Access to hidden content and features has been revoked."
+    },
+    "failedTo": {
+      "loadGameData": "Failed to load game data. Please try again later.",
+      "loadAssets": "Failed to load assets. Please try again later.",
+      "loadMods": "Failed to load mods. Please try again later.",
+      "loadAlerts": "Failed to load alerts. Please try again later.",
+      "loadRequests": "Failed to load requests. Please try again later.",
+      "fetchUserData": "Unable to fetch user data"
+    }
+  },
+  "errorPage": {
+    "title": "Error {{status}}",
+    "unauthorized": "You need to be logged in to view this page.",
+    "forbidden": "You do not have permission to view this page.",
+    "notFound": "We couldn't find this page :/",
+    "serverError": "Something went wrong on our end.",
+    "unexpected": "An unexpected error occurred. Please try again later.",
+    "profileLoginRequired": "You must be logged in to view your profile",
+    "copyDebugInfo": "Copy Debug Info",
+    "debugInfoCopied": "Debug info copied to clipboard",
+    "debugInfoCopiedDescription": "You can paste this in a GitHub issue or Discord for help. NOTE: This includes info about the current page & user data.",
+    "goToHome": "Go to Home",
+    "debugInfo": "Debug Info"
+  },
+  "$schema": "https://inlang.com/schema/inlang-message-format"
+}

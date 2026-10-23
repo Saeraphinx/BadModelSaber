@@ -41,7 +41,7 @@ export const availableLocales: {
     code: "cn",
     name: "中文", // Chinese (Written)
     secret: false,
-    frontend: false,
+    frontend: true,
     backend: false,
   },
   {
