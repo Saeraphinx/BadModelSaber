@@ -558,7 +558,7 @@
           </div>
         </div>
       {:else}
-        <Tabs.Root value={getLocale().startsWith("en") && project.translation?.description ? "translation" : "original"}>
+        <Tabs.Root value={!getLocale().startsWith("en") && project.translation?.description ? "translation" : "original"}>
           {#if !getLocale().startsWith("en")}
             <Tabs.List class="mb-2">
               <Tabs.Trigger disabled={!project.translation?.description} value="translation">{availableLocales.find((l) => l.code == getLocale())?.name || getLocale()}</Tabs.Trigger>
