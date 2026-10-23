@@ -213,11 +213,11 @@
         <div class="flex flex-col justify-center w-full max-w-md p-4 gap-4 bg-card rounded-lg">
           <div class="w-full max-w-lg">
             <Label class="p-1 pb-2" for="displayName">{m[`users.displayName`]()}</Label>
-            <Input placeholder="Display Name" bind:value={editDisplayName} class="w-full" />
+            <Input placeholder={m[`users.displayName`]()} bind:value={editDisplayName} class="w-full" />
           </div>
           <div class="w-full max-w-lg">
             <Label class="p-1 pb-2" for="bio">{m[`users.bio`]()}</Label>
-            <Textarea placeholder="Bio" bind:value={editBio} class="w-full" />
+            <Textarea placeholder={m[`users.bio`]()} bind:value={editBio} class="w-full" />
           </div>
           <!-- UserPlatforms Linking -->
         <div class="w-full max-w-lg">
@@ -305,7 +305,7 @@
                       duration: 1000 * 60 * 60,
                       closeButton: true,
                       action: {
-                        label: "Copy",
+                        label: m[`dialogs.copy`](),
                         onClick: () => {
                           navigator.clipboard.writeText(key.key);
                         }

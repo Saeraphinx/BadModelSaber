@@ -79,7 +79,7 @@
           duration: 60000,
           dismissable: true,
           action: {
-            label: "Enable",
+            label: m[`dialogs.enable`](),
             onClick: () => {
               trpc.internal.updateThings.user.toggleSecretFeatures
                 .mutate({ enabled: true })
@@ -159,7 +159,7 @@
         closeButton: true,
         dismissable: true,
         action: {
-          label: "View",
+          label: m[`dialogs.view`](),
           onClick: openAlertsSidebar,
         },
       });
@@ -527,7 +527,7 @@
           <DropdownMenu.Separator />
           <p class="text-xs text-muted-foreground text-center p-1"><a href="https://github.com/Saeraphinx/BadModelSaber" target="_blank">{m[`layout.userMenu.modelsaberOpenSource`]()}</a></p>
           {#if isLoggedIn}
-            <a class="text-xs text-muted-foreground text-center p-1" href="{env.PUBLIC_API_URL}/docs"> API Docs </a>
+            <a class="text-xs text-muted-foreground text-center p-1" href="{env.PUBLIC_API_URL}/docs"> {m[`layout.userMenu.apiDocs`]()} </a>
           {/if}
           {#if user && checkRoles(user, [UserPermissions.Administrative_Tasks, UserPermissions.Secret_Features])}
             <DropdownMenu.Separator />

@@ -85,7 +85,7 @@
 
   async function populateUsers() {
     let userIds = new Set<number>();
-    users.set(5, { id: 5, displayName: `System User`, avatarUrl: "/system_pfp.svg", useSystemAvatar: true, displayRole: UserPermissions.C_System }); // system user
+    users.set(5, { id: 5, displayName: m[`users.systemUser`](), avatarUrl: "/system_pfp.svg", useSystemAvatar: true, displayRole: UserPermissions.C_System }); // system user
     pageData.messages.forEach((message) => {
       if (message.userId && !users.has(message.userId) && message.userId !== user.id) {
         userIds.add(message.userId);
@@ -186,7 +186,7 @@
     <div class="flex flex-col items-start gap-2 bg-card p-4 rounded-lg shadow-md w-full">
       <h1 class="text-2xl font-bold">{m[`requests.tableTitle`]({ type: getRequestTypeString(pageData.requestType) })}</h1>
       <p class="text-gray-500">{m[`requests.requestID`]({ id: pageData.id })}</p>
-      <p class="text-gray-500">{m[`requests.status`]({ status: pageData.accepted ?? m[`requests.notResolved`]() })}</p>
+      <p class="text-gray-500">{m[`requests.status`]({ status: pageData.accepted === null ? m[`requests.notResolved`]() : pageData.accepted ? m[`requests.accepted`]() : m[`requests.rejected`]() })}</p>
       <p class="text-gray-500">{m[`requests.resolvedBy`]({ name: pageData.resolvedBy ?? m[`requests.notResolved`]() })}</p>
       <p class="text-gray-500">{m[`requests.createdBy`]({ name: users.get(pageData.requesterId)?.displayName || "Unknown User" })}</p>
       <p class="text-gray-500">{m[`requests.createdAt`]({ date: new Date(pageData.createdAt).toLocaleDateString() })}</p>

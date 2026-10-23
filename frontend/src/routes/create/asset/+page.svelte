@@ -155,7 +155,7 @@
                     <Label for={mode[1]}>
                       {getRenderingMethodString(mode[1])}
                     </Label>
-                    <p class="text-xs text-gray-400">For {getRenderingMethodSupportedGV(mode[1])}</p>
+                    <p class="text-xs text-gray-400">{m[`common.supportedFor`]({ versions: getRenderingMethodSupportedGV(mode[1]) })}</p>
                   </span>
                 </div>
               {/if}
@@ -188,7 +188,7 @@
             {/each}
           </div>
           <Button variant="secondary" onclick={() => (openTagPicker = true)}>
-            Select Tags
+            {m[`assets.upload.selectTags`]()}
             <TagIcon />
           </Button>
         </div>

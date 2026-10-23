@@ -2,6 +2,7 @@ import { type UserApiV3 } from '$lib/scripts/from_backend/DBExtras';
 import { error, redirect } from '@sveltejs/kit';
 import type { PageLoad } from './$types';
 import { handleTrpcError } from '$lib/scripts/utils/api';
+import { m } from "$lib/paraglide/messages";
 
 //export const ssr = false;
 export const load = (async ({ fetch, params, parent }) => {
@@ -12,7 +13,7 @@ export const load = (async ({ fetch, params, parent }) => {
     //console.log('User from parent:', user);
     //console.log('Full parent data:', parentData);
     if (!user) {
-      error(403, { message: 'Not logged in', subtitle: `You must be logged in to view your profile` });
+      error(403, { message: 'Not logged in', subtitle: m[`errorPage.profileLoginRequired`]() });
     }
     userData = user;
     throw redirect(307, `/users/${user.id}`);

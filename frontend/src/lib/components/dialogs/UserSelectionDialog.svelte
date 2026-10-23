@@ -30,13 +30,13 @@
 <Dialog.Root bind:open={open}>
   <Dialog.Content>
     <Dialog.Header>
-      <Dialog.Title>Select User</Dialog.Title>
+      <Dialog.Title>{m[`users.selectUser`]()}</Dialog.Title>
     </Dialog.Header>
     <div>
       <Command.Root shouldFilter={false} oninput={debounce(searchUsers, 500)}>
-        <Command.Input placeholder="Search for a user..." bind:value={searchQuery} />
+        <Command.Input placeholder={m[`users.searchPlaceholder`]()} bind:value={searchQuery} />
         <Command.List>
-          <Command.Empty>No results found.</Command.Empty>
+          <Command.Empty>{m[`common.noResults`]()}</Command.Empty>
           {#each searchResults as user (user.id)}
             <Command.Item onSelect={() => {onSubmit(user); open = false}}>
               <div class="flex items-center gap-2">

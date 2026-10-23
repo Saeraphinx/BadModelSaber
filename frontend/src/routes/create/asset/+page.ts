@@ -2,6 +2,7 @@ import { UserPermissions } from "$lib/scripts/from_backend/DBExtras";
 import { error } from "@sveltejs/kit";
 import type { PageLoad } from "../$types.js";
 import { checkRoles } from "$lib/scripts/utils/checkRoles.js";
+import { m } from "$lib/paraglide/messages";
 
 //export const ssr = false;
 export const load: PageLoad = async ({ parent }) => {
@@ -16,7 +17,7 @@ export const load: PageLoad = async ({ parent }) => {
 
   return {
     pageMetadata: {
-      title: 'Create Asset',
+      title: m[`assets.upload.title`](),
     },
     user: user,
   };
