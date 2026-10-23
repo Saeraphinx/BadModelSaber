@@ -49,7 +49,7 @@
       id = parseInt(idToLinkTo, 10);
     }
     if (isNaN(id) || id <= 0) {
-      toast.error(m[`toasts.error.validationTitle`](), { description: m[`toasts.error.validation.invalidUrl`]() });
+      toast.error(m[`toasts.error.validation.title`](), { description: m[`toasts.error.validation.invalidUrl`]() });
       return;
     }
     showLoading = true;
@@ -60,7 +60,7 @@
     }).then(handleTrpcSuccessWithToast(m[`toasts.success.assetLink`](), false, () => {
       showLoading = false;
       visible = false;
-    })).catch(handleTrpcErrorWithToast(m[`toasts.error.save`](), () => {
+    })).catch(handleTrpcErrorWithToast(m[`toasts.save.error`](), () => {
       showLoading = false;
     }));
   }

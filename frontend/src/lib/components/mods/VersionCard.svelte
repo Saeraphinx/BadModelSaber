@@ -75,7 +75,7 @@
       data: {
         supportedGameVersionIds: editedGameVersionIds.map(id => parseInt(id)),
       }
-    }).then(handleTrpcSuccessWithToast(m[`toasts.success.savedChanges`](), false, () => {
+    }).then(handleTrpcSuccessWithToast(m[`toasts.save.success`](), false, () => {
       isEditing = false;
       version.supportedGameVersions = gameVersions.filter(gv => editedGameVersionIds.includes(gv.id.toString()));
     })).catch(handleTrpcErrorWithToast(m[`toasts.save.error`]()));

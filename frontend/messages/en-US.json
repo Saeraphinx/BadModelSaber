@@ -499,11 +499,17 @@
       "success": "Saved Changes.",
       "error": "Failed to save changes."
     },
+    "success": {
+      "assetLink": "Asset linked successfully.",
+      "reportSubmitted": "Report submitted."
+    },
     "error": {
       "generic": "An error occurred. Please try again later.",
       "validation": {
         "title": "Validation Error",
-        "invalidUrl": "The URL provided is invalid. Please ensure it is a valid URL."
+        "invalidUrl": "The URL provided is invalid. Please ensure it is a valid URL.",
+        "missingFields": "Please fill out all required fields.",
+        "invalidFile": "The selected file is invalid. Please select a valid file."
       }
     },
     "submit": {
