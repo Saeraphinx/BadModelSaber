@@ -1,5 +1,6 @@
 import { error } from "@sveltejs/kit";
 import type { PageLoad } from "./$types.js";
+import { m } from "$lib/paraglide/messages";
 
 export const load: PageLoad = async ({ parent }) => {
   let parentData = await parent();
@@ -9,7 +10,7 @@ export const load: PageLoad = async ({ parent }) => {
 
   return {
     pageMetadata: {
-      title: 'Requests',
+      title: m[`layout.userMenu.requests`](),
     },
     user: parentData.user,
   };

@@ -1,6 +1,6 @@
 <script lang="ts">
   import { Status, type GameVersionApiV3, type VersionApiV3 } from "$lib/scripts/from_backend/DBExtras";
-  import { getRelativeTimeString } from "$lib/scripts/utils/stylizer";
+  import { getRelativeTimeString, getStatusString } from "$lib/scripts/utils/stylizer";
   import * as Accordion from "$shadcn/components/ui/accordion/index";
   import { BadgeInfoIcon, DownloadIcon, FileCodeIcon, FolderIcon, InfoIcon, Link2Icon, LinkIcon, MegaphoneIcon, ServerCogIcon, SquarePenIcon, XIcon } from "@lucide/svelte";
   import ApprovalDialog from "../dialogs/ApprovalDialog.svelte";
@@ -142,7 +142,7 @@
            <div>
             <Select.Root type="multiple" bind:value={editedGameVersionIds}>
               <Select.Trigger class="w-full">
-                {editedGameVersionIds.length} selected
+                {m[`common.selectedCount`]({ count: editedGameVersionIds.length })}
               </Select.Trigger>
               <Select.Content class="w-full">
                 {#each gameVersions as gv}
@@ -226,10 +226,10 @@
               <div class="flex flex-col gap-2">
                 {#each version.statusHistory as sh}
                   <div class="flex flex-row items-center gap-2 border-2 p-2 rounded-md">
-                    <p><span class="capitalize">{sh.status}</span> - {sh.userId} - {new Date(sh.timestamp).toLocaleString()}<br>Reason: {sh.reason}</p>
+                    <p><span>{getStatusString(sh.status as Status)}</span> - {sh.userId} - {new Date(sh.timestamp).toLocaleString()}<br>{m[`mods.statusHistoryReason`]({ reason: sh.reason })}</p>
                   </div>
                 {:else}
-                  <p class="text-sm text-gray-500 text-center">No status history available.</p>
+                  <p class="text-sm text-gray-500 text-center">{m[`mods.noStatusHistory`]()}</p>
                 {/each}
               </div>
             {/if}

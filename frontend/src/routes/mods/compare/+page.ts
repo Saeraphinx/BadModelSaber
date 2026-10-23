@@ -3,6 +3,7 @@ import { error } from "@sveltejs/kit";
 import type { PageLoad } from "./$types";
 import { checkRoles } from "$lib/scripts/utils/checkRoles.js";
 import { createTRPC, handleTrpcError } from "$lib/scripts/utils/api.js";
+import { m } from "$lib/paraglide/messages";
 
 //export const ssr = false;
 export const load: PageLoad = async ({ fetch }) => {
@@ -16,7 +17,7 @@ export const load: PageLoad = async ({ fetch }) => {
 
   return {
     pageMetadata: {
-      title: 'Compare Game Versions',
+      title: m[`mods.compare.title`](),
     },
     pageData: {
       games: games || [],

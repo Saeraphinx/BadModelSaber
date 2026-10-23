@@ -121,10 +121,10 @@
   let timeLeft = $derived.by(() => {
     if (countdownDate) {
       const diff = Math.max(0, Math.floor((new Date(countdownDate).getTime() - Date.now()) / 1000));
-      if (diff >= 86400) return `${Math.floor(diff / 86400)}d`;
-      if (diff >= 3600) return `${Math.floor(diff / 3600)}h`;
-      if (diff >= 60) return `${Math.floor(diff / 60)}m`;
-      if (diff > 0) return `${diff}s`;
+      if (diff >= 86400) return m[`common.time.days`]({ count: Math.floor(diff / 86400) });
+      if (diff >= 3600) return m[`common.time.hours`]({ count: Math.floor(diff / 3600) });
+      if (diff >= 60) return m[`common.time.minutes`]({ count: Math.floor(diff / 60) });
+      if (diff > 0) return m[`common.time.seconds`]({ count: diff });
     }
     return 0;
   });

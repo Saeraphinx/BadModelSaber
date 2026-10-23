@@ -1,6 +1,7 @@
 import { error } from "@sveltejs/kit";
 import type { PageLoad } from "./$types";
 import { handleTrpcError } from "$lib/scripts/utils/api";
+import { m } from "$lib/paraglide/messages";
 
 export const load: PageLoad = async ({ params, fetch, parent }) => {
   const { trpc, user } = await parent();
@@ -19,7 +20,7 @@ export const load: PageLoad = async ({ params, fetch, parent }) => {
     pageData: data,
     user: user,
     pageMetadata: {
-      title: `Request ${params.id}`,
+      title: m[`requests.pageTitle`]({ id: params.id }),
     },
   };
 };

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { m } from "$lib/paraglide/messages";
   import { page } from "$app/state";
   import * as Accordion from "$shadcn/components/ui/accordion";
   import { Button } from "$shadcn/components/ui/button";
@@ -34,15 +35,15 @@
     } else {
       switch (page.status) {
         case 401:
-          return `You need to be logged in to view this page.`;
+          return m[`errorPage.unauthorized`]();
         case 403:
-          return `You do not have permission to view this page.`;
+          return m[`errorPage.forbidden`]();
         case 404:
-          return `We couldn't find this page :/`;
+          return m[`errorPage.notFound`]();
         case 500:
-          return `Something went wrong on our end.`;
+          return m[`errorPage.serverError`]();
         default:
-          return `An unexpected error occurred. Please try again later.`;
+          return m[`errorPage.unexpected`]();
       }
     }
   });
@@ -62,23 +63,23 @@
 </script>
 
 <div class="flex flex-col min-h-screen-nav h-screen-nav items-center overflow-scroll justify-center">
-  <p class="text-3xl font-semibold mb-4">{page.error?.title ?? `Error ${page.status}`}</p>
+  <p class="text-3xl font-semibold mb-4">{page.error?.title ?? m[`errorPage.title`]({ status: page.status })}</p>
   <p class="text-lg text-muted-foreground mb-4">{subtitle}</p>
   <div>
     <Button
       variant="outline"
       onclick={() => {
         navigator.clipboard.writeText(JSON.stringify(page, null, 2));
-        toast.success("Debug info copied to clipboard", {
-          description: "You can paste this in a GitHub issue or Discord for help. NOTE: This includes info about the current page & user data.",
+        toast.success(m[`errorPage.debugInfoCopied`](), {
+          description: m[`errorPage.debugInfoCopiedDescription`](),
         });
       }}>
       <CodeXmlIcon />
-      Copy Debug Info
+      {m[`errorPage.copyDebugInfo`]()}
     </Button>
     <Button variant="default" class="ml-2" href="/" disabled={page.url.pathname === "/"}>
       <HomeIcon />
-      Go to Home 
+      {m[`errorPage.goToHome`]()}
       {#if timeTill !== null && page.error?.redirectToHome}
         ({timeTill})
       {/if}
@@ -87,7 +88,7 @@
   <Separator class="my-4 w-full max-w-md" />
     <Accordion.Root type="single" class="w-full max-w-md" value="">
       <Accordion.Item value="item-1">
-      <Accordion.Trigger>Debug Info</Accordion.Trigger>
+      <Accordion.Trigger>{m[`errorPage.debugInfo`]()}</Accordion.Trigger>
       <Accordion.Content>
         <pre class="bg-gray-100 dark:bg-gray-900 h-96 p-4 rounded-lg overflow-x-auto text-xs"><code>{JSON.stringify(pageUserOmitted, null, 2).trim()}</code></pre>
       </Accordion.Content>

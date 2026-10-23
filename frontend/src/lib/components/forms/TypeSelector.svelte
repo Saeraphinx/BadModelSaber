@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { m } from "$lib/paraglide/messages";
   import CheckIcon from "@lucide/svelte/icons/check";
   import ChevronsUpDownIcon from "@lucide/svelte/icons/chevrons-up-down";
   import { tick } from "svelte";
@@ -46,14 +47,14 @@
 
 <Popover.Root>
   <Popover.Trigger bind:ref={triggerRef} class={cn(buttonVariants({ variant: "outline", class: "w-full justify-between" }), className)} {id} aria-expanded={open}>
-        {selectedValue || "Select a type..."}
+        {selectedValue || m[`assets.selectType`]()}
         <ChevronsUpDownIcon class="ml-2 size-4 shrink-0 opacity-50" />
   </Popover.Trigger>
   <Popover.Content class="p-0">
     <Command.Root>
-      <Command.Input placeholder="Search types..." />
+      <Command.Input placeholder={m[`assets.searchTypes`]()} />
       <Command.List>
-        <Command.Empty>No asset type found.</Command.Empty>
+        <Command.Empty>{m[`assets.noTypeFound`]()}</Command.Empty>
         <Command.Group>
           {#each types as type}
             <Command.Item

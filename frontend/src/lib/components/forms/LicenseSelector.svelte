@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { m } from "$lib/paraglide/messages";
   import ChevronsUpDown from "@lucide/svelte/icons/chevrons-up-down";
   import * as Popover from "$shadcn/components/ui/popover/index.js";
   import { buttonVariants } from "$shadcn/components/ui/button/index.js";
@@ -8,7 +9,7 @@
   import Separator from "$shadcn/components/ui/separator/separator.svelte";
 
   let { value = $bindable(""), id = "license" } = $props();
-  let displayedValue = $state("Select a license...");
+  let displayedValue = $state<string>(m[`assets.license.select`]());
 
   const licenses = [
     { label: "Creative Commons Zero v1.0 Universal", value: "cc0-1.0" },
@@ -18,7 +19,7 @@
     { label: "Creative Commons BY-NC 4.0", value: "cc4.0-by-nc" },
     { label: "Creative Commons BY-NC-SA 4.0", value: "cc4.0-by-nc-sa" },
     { label: "Creative Commons BY-NC-ND 4.0", value: "cc4.0-by-nc-nd" },
-    { label: "Custom...", value: "custom" },
+    { label: m[`assets.license.custom`](), value: "custom" },
   ];
 
   function updateValues() {
@@ -63,10 +64,10 @@
 
 {#snippet checkboxes()}
   <div class="flex flex-col flex-wrap gap-1">
-    <p class="text-base">Creative Commons License Selection</p>
+    <p class="text-base">{m[`assets.license.heading`]()}</p>
     <p class="text-sm text-gray-500">
-      Decide how others can use your asset.<br>
-      Visit <a class="underline" href="https://creativecommons.org/share-your-work/cclicenses/" target="_blank">creativecommons.org</a> for more info. 
+      {m[`assets.license.description`]()}<br>
+      {@html m[`assets.license.moreInfo`]({ link: `<a class="underline" href="https://creativecommons.org/share-your-work/cclicenses/" target="_blank">creativecommons.org</a>` })}
     </p>
     <!-- Attribution -->
     <span class="flex flex-row items-center">
@@ -83,7 +84,7 @@
           }
           updateValues();
         }} />
-      <Label for="attribution" class="p-2">Attribution (BY)</Label>
+      <Label for="attribution" class="p-2">{m[`assets.license.attribution`]()}</Label>
     </span>
     <!-- Non-Commercial -->
     <span class="flex flex-row items-center">
@@ -97,7 +98,7 @@
           }
           updateValues();
         }} />
-      <Label for="nonCommercial" class="p-2">Non-Commercial (NC)</Label>
+      <Label for="nonCommercial" class="p-2">{m[`assets.license.nonCommercial`]()}</Label>
     </span>
     <!-- No Derivatives -->
     <span class="flex flex-row items-center">
@@ -112,7 +113,7 @@
           }
           updateValues();
         }} />
-      <Label for="noDerivatives" class="p-2">No Derivatives (ND)</Label>
+      <Label for="noDerivatives" class="p-2">{m[`assets.license.noDerivatives`]()}</Label>
     </span>
     <!-- Share Alike -->
     <span class="flex flex-row items-center">
@@ -128,7 +129,7 @@
           }
           updateValues();
         }} />
-      <Label for="shareAlike" class="p-2">Share Alike (SA)</Label>
+      <Label for="shareAlike" class="p-2">{m[`assets.license.shareAlike`]()}</Label>
     </span>
     <Separator />
     <!-- Custom -->
@@ -145,7 +146,7 @@
         }
         updateValues();
       }} />
-    <Label for="custom" class="p-2">Custom...</Label>
+    <Label for="custom" class="p-2">{m[`assets.license.custom`]()}</Label>
     </span>
   </div>
 {/snippet}

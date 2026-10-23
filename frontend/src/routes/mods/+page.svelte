@@ -118,7 +118,7 @@
 {#snippet searchFilter()}
   <div class="flex flex-col bg-card gap-2 p-4 rounded-md">
     <div class="flex flex-row w-full gap-2">
-      <Input bind:value={searchQuery} placeholder="Search..." />
+      <Input bind:value={searchQuery} placeholder={m[`search.placeholder`]()} />
       {#if tooSmall.current}
         <Button variant="outline" onclick={() => (filterMobileDrawerVisible = true)}>
           <FunnelIcon class="h-4 w-4" />

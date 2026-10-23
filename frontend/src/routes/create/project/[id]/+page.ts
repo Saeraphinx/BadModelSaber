@@ -3,6 +3,7 @@ import type { PageLoad } from './$types';
 import { handleTrpcError, parseTRPCError } from '$lib/scripts/utils/api';
 import { UserPermissions } from '$lib/scripts/from_backend/DBExtras';
 import { checkRoles } from '$lib/scripts/utils/checkRoles';
+import { m } from "$lib/paraglide/messages";
 
 export const load = (async ({ fetch, params, parent }) => {
   let id = parseInt(params.id, 10);
@@ -30,7 +31,7 @@ export const load = (async ({ fetch, params, parent }) => {
 
   return {
     pageMetadata: {
-      title: `Upload ${pnv.project.name || `Error`}`,
+      title: m[`mods.uploadPageTitle`]({ name: pnv.project.name || `Error` }),
     },
     pageData: {
       pnv: pnv,

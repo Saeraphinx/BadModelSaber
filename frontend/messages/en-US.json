@@ -9,7 +9,8 @@
       "browseMods": "Browse Mods",
       "browseAssets": "Browse Models & Assets",
       "wiki": "Wiki"
-    }
+    },
+    "birthday": "Happy {{years}}th Birthday BeatSaber!"
   },
   "common": {
     "all": "All",
@@ -83,6 +84,27 @@
       "viewSource": "View Source",
       "uploadAt": "Upload at",
       "fileHash": "File Hash"
+    },
+    "noResults": "No results found.",
+    "noDescription": "No description available.",
+    "idLabel": "ID: {{id}}",
+    "selectAll": "Select All",
+    "selectedCount": "{{count}} selected",
+    "ungrouped": "Ungrouped",
+    "defaultMarker": "(Default)",
+    "supportedFor": "For {{versions}}",
+    "markdownUnsupported": "Markdown rendering is not supported in your browser.",
+    "time": {
+      "days": "{{count}}d",
+      "hours": "{{count}}h",
+      "minutes": "{{count}}m",
+      "seconds": "{{count}}s"
+    },
+    "pagination": {
+      "previous": "Previous",
+      "next": "Next",
+      "goToPrevious": "Go to previous page",
+      "goToNext": "Go to next page"
     }
   },
   "layout": {
@@ -123,13 +145,17 @@
       "logout": "Logout",
       "loginDiscord": "Login with Discord",
       "loginGitHub": "Login with GitHub",
-      "modelsaberOpenSource": "BeatMods is Open Source!"
+      "modelsaberOpenSource": "BeatMods is Open Source!",
+      "apiDocs": "API Docs"
     },
     "alertSidebar": {
       "markAllRead": "Mark all as read",
       "showRead": "Show read alerts",
       "noAlertsAvailable": "No alerts available.",
-      "noUnreadAlerts": "No unread alerts."
+      "noUnreadAlerts": "No unread alerts.",
+      "viewAsset": "View Asset",
+      "viewRequest": "View Request",
+      "markAsRead": "Mark as Read"
     },
     "readAlerts_one": "You have {{count}} alert.",
     "readAlerts_other": "You have {{count}} alerts.",
@@ -147,6 +173,13 @@
     "pagination": {
       "perPage": "{{count}} per page",
       "summary": "{{start}}-{{end}} of {{total}} results"
+    },
+    "placeholder": "Search...",
+    "cardSizes": {
+      "linked": "Linked",
+      "small": "Small",
+      "normal": "Normal",
+      "large": "Large"
     }
   },
   "assets": {
@@ -203,6 +236,26 @@
         "title": "This asset has been removed.",
         "description": "Removed assets have been taken down by the approval team and are not visible to the public."
       }
+    },
+    "copyFileHash": "Copy File Hash",
+    "fileHashCopied": "File hash copied to clipboard!",
+    "namePlaceholder": "Asset Name",
+    "descriptionPlaceholder": "Asset Description",
+    "tagSelector": "Tag Selector",
+    "typeSpecificCount": "{{count}}/1 selected",
+    "selectType": "Select a type...",
+    "searchTypes": "Search types...",
+    "noTypeFound": "No asset type found.",
+    "license": {
+      "select": "Select a license...",
+      "custom": "Custom...",
+      "heading": "Creative Commons License Selection",
+      "description": "Decide how others can use your asset.",
+      "moreInfo": "Visit {{link}} for more info.",
+      "attribution": "Attribution (BY)",
+      "nonCommercial": "Non-Commercial (NC)",
+      "noDerivatives": "No Derivatives (ND)",
+      "shareAlike": "Share Alike (SA)"
     }
   },
   "mods": {
@@ -225,7 +278,9 @@
       "thumbnailRuleList3": "Must be in .png, .jpeg, .webp, or .gif.",
       "thumbnailRuleList4": "Should be tasteful and appropriate",
       "thumbnailFooter": "Please ensure your icon follows the rules listed above.",
-      "fetchReadme": "Fetch Readme from GitHub"
+      "fetchReadme": "Fetch Readme from GitHub",
+      "fetchReadmeError": "Could not fetch README from GitHub. Please make sure the repository has a README.md file in the root directory.",
+      "fetchReadmeSuccess": "Fetched README from GitHub successfully. You can now save it as the description translation."
     },
     "createVersion": {
       "title": "Create Version for {{projectName}}",
@@ -261,7 +316,8 @@
     "translation": {
       "language": "Language",
       "viewOriginal": "View Original",
-      "viewOriginalMarkdown": "View Original (Markdown)"
+      "viewOriginalMarkdown": "View Original (Markdown)",
+      "original": "Original"
     },
     "statusHover": {
       "verified": {
@@ -288,6 +344,24 @@
         "title": "This mod has been removed.",
         "description": "Removed mods have been taken down by the approval team and are not visible to the public."
       }
+    },
+    "noSummary": "No summary provided.",
+    "uploadPageTitle": "Upload {{name}}",
+    "codeViewer": "Code Viewer",
+    "statusHistoryReason": "Reason: {{reason}}",
+    "noStatusHistory": "No status history available.",
+    "selectProject": "Select a project...",
+    "searchProjects": "Search projects...",
+    "noProjectFound": "No project found.",
+    "compare": {
+      "title": "Compare Game Versions",
+      "fetchError": "Error fetching game versions: {{error}}",
+      "gameVersion1": "Game Version 1",
+      "gameVersion2": "Game Version 2",
+      "modName": "Mod Name",
+      "availableFor": "Available for {{version}}",
+      "notAvailable": "No",
+      "unverifiedMarker": "[U]"
     }
   },
   "requests": {
@@ -305,7 +379,13 @@
     "typeYourMessageHere": "Type your message here...",
     "noMessagesFound": "No messages found for this request.",
     "errorLoadingMessages": "Error loading messages: {{error}}",
-    "submitMessage": "Submit Message"
+    "submitMessage": "Submit Message",
+    "pageTitle": "Request {{id}}",
+    "noRequests": "You have no requests.",
+    "outgoing": "My Outgoing Requests",
+    "incoming": "Incoming Requests",
+    "accepted": "Accepted",
+    "rejected": "Rejected"
   },
   "users": {
     "linkAccounts": "Link Accounts",
@@ -320,7 +400,15 @@
     "apiKeys": "API Keys",
     "generateApiKey": "Generate API Key",
     "yourNewApiHasBeenGenerated": "Your new API key has been generated. Please copy it now as it will not be shown again.",
-    "revoke": "Revoke"
+    "revoke": "Revoke",
+    "systemUser": "System User",
+    "selectUser": "Select User",
+    "searchPlaceholder": "Search for a user...",
+    "sponsor": {
+      "githubSponsor": "GitHub Sponsor",
+      "discordProfile": "Discord Profile",
+      "githubProfile": "GitHub Profile"
+    }
   },
   "enums": {
     "status": {
@@ -492,7 +580,11 @@
           "description": "A previous version of the asset released before the current one"
         }
       }
-    }
+    },
+    "enable": "Enable",
+    "view": "View",
+    "copy": "Copy",
+    "delete": "Delete"
   },
   "toasts": {
     "save": {
@@ -510,7 +602,8 @@
         "invalidUrl": "The URL provided is invalid. Please ensure it is a valid URL.",
         "missingFields": "Please fill out all required fields.",
         "invalidFile": "The selected file is invalid. Please select a valid file."
-      }
+      },
+      "network": "Network error: Unable to reach the server. Please check your internet connection and try again."
     },
     "submit": {
       "success": "Submission successful!",
@@ -532,8 +625,23 @@
       "loadAssets": "Failed to load assets. Please try again later.",
       "loadMods": "Failed to load mods. Please try again later.",
       "loadAlerts": "Failed to load alerts. Please try again later.",
-      "loadRequests": "Failed to load requests. Please try again later."
+      "loadRequests": "Failed to load requests. Please try again later.",
+      "fetchUserData": "Unable to fetch user data"
     }
+  },
+  "errorPage": {
+    "title": "Error {{status}}",
+    "unauthorized": "You need to be logged in to view this page.",
+    "forbidden": "You do not have permission to view this page.",
+    "notFound": "We couldn't find this page :/",
+    "serverError": "Something went wrong on our end.",
+    "unexpected": "An unexpected error occurred. Please try again later.",
+    "profileLoginRequired": "You must be logged in to view your profile",
+    "copyDebugInfo": "Copy Debug Info",
+    "debugInfoCopied": "Debug info copied to clipboard",
+    "debugInfoCopiedDescription": "You can paste this in a GitHub issue or Discord for help. NOTE: This includes info about the current page & user data.",
+    "goToHome": "Go to Home",
+    "debugInfo": "Debug Info"
   },
   "$schema": "https://inlang.com/schema/inlang-message-format"
 }

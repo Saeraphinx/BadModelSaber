@@ -43,7 +43,7 @@
       fetchCompatibleMods();
     }).catch((err) => {
       selectedGame = previousSelectedGame;
-      toast.error(`Error fetching game versions: ${parseErrorMessage(err)}`);
+      toast.error(m[`mods.compare.fetchError`]({ error: parseErrorMessage(err) }));
     });
   }
 
@@ -128,7 +128,7 @@
         </Select.Root>
       </div>
       <div class="flex flex-col gap-2">
-        <Label for="gameVersion1"  class="ml-1">Game Version 1</Label>
+        <Label for="gameVersion1"  class="ml-1">{m[`mods.compare.gameVersion1`]()}</Label>
         <Select.Root bind:value={selectedGameVersionId1} type="single" onValueChange={fetchCompatibleMods}>
           <Select.Trigger id="gameVersion1" class="w-full sm:w-auto">
             {selectedGameVersion1?.version}
@@ -141,7 +141,7 @@
         </Select.Root>
       </div>
       <div class="flex flex-col gap-2">
-        <Label for="gameVersion2" class="ml-1">Game Version 2</Label>
+        <Label for="gameVersion2" class="ml-1">{m[`mods.compare.gameVersion2`]()}</Label>
         <Select.Root bind:value={selectedGameVersionId2} type="single" onValueChange={fetchCompatibleMods}>
           <Select.Trigger id="gameVersion2" class="w-full sm:w-auto">
             {selectedGameVersion2?.version}
@@ -161,9 +161,9 @@
       <table class="table-auto max-w-4xl w-[80%] md:table-fixed m-auto not-md:w-full">
         <thead>
           <tr>
-            <th class="">Mod Name</th>
-            <th class="">Available for {selectedGameVersion1?.version}</th>
-            <th class="">Available for {selectedGameVersion2?.version}</th>
+            <th class="">{m[`mods.compare.modName`]()}</th>
+            <th class="">{m[`mods.compare.availableFor`]({ version: selectedGameVersion1?.version ?? `` })}</th>
+            <th class="">{m[`mods.compare.availableFor`]({ version: selectedGameVersion2?.version ?? `` })}</th>
           </tr>
 
         </thead>
@@ -175,8 +175,8 @@
             {#each categoryArray as { projectId, projectName, version1, version2, v1Verified, v2Verified, isPresentIn1ButNot2, isPresentIn2ButNot1, isUpdatedIn2 }}
               <tr>
                 <td class="wrap-anywhere hover:underline"><a href="/mods/{projectId}">{projectName}</a></td>
-                <td class="wrap-anywhere {isPresentIn1ButNot2 ? `bg-red-400/60` : ``}">{version1 ?? `No`}{v1Verified ? `` : `[U]`}</td>
-                <td class="wrap-anywhere {isPresentIn2ButNot1 ? `bg-green-400/40` : ``} {isUpdatedIn2 ? `bg-purple-400/20` : ``}">{version2 ?? `No`}{v2Verified ? `` : `[U]`}</td>
+                <td class="wrap-anywhere {isPresentIn1ButNot2 ? `bg-red-400/60` : ``}">{version1 ?? m[`mods.compare.notAvailable`]()}{v1Verified ? `` : m[`mods.compare.unverifiedMarker`]()}</td>
+                <td class="wrap-anywhere {isPresentIn2ButNot1 ? `bg-green-400/40` : ``} {isUpdatedIn2 ? `bg-purple-400/20` : ``}">{version2 ?? m[`mods.compare.notAvailable`]()}{v2Verified ? `` : m[`mods.compare.unverifiedMarker`]()}</td>
               </tr>
             {/each}
           {/each}

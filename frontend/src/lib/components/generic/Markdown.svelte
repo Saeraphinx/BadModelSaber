@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { m } from "$lib/paraglide/messages";
   import { Marked } from "marked";
   import DOMPurify from "isomorphic-dompurify";
   import type { HTMLAttributes } from "svelte/elements";
@@ -119,6 +120,6 @@
   {#if isRenderable}
     {@html renderedHtml}
   {:else}
-    <p class="text-red-500 font-mono">Markdown rendering is not supported in your browser.</p>
+    <p class="text-red-500 font-mono">{m[`common.markdownUnsupported`]()}</p>
   {/if}
 </div>
