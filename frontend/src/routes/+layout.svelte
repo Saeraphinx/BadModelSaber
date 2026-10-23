@@ -562,7 +562,7 @@
           {:else}
             <div class="flex flex-row items-center justify-center gap-2">
               <Spinner class="text-gray-500" />
-              <p class="text-gray-500">Loading...</p>
+              <p class="text-gray-500">{m[`loading`]()}</p>
             </div>
           {/if}
         </Sheet.Description>

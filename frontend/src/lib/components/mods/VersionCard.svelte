@@ -173,7 +173,7 @@
               {#await getDependencyProjects()}
                 <div class="flex flex-row items-center justify-center p-2 gap-2">
                   <Spinner class="h-6 w-6" />
-                  <p class="text-sm text-gray-500 ml-2">Loading dependencies...</p>
+                  <p class="text-sm text-gray-500 ml-2">{m[`common.dataTable.loadingDependencies`]()}</p>
                 </div>
               {:then projects} 
                 {#each version.dependencies.sort((a,b) => a.pId - b.pId) as dep}

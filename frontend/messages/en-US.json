@@ -1,6 +1,7 @@
 {
   "name": "BeatMods",
   "loading": "Loading...",
+  "loadingSite": "Loading BeatMods...",
   "homepage": {
     "title": "BeatMods",
     "subtitle": "A collection of various mods, models, and assets for use within Beat Saber.",
@@ -65,6 +66,7 @@
       "icon": "Icon",
       "dependencies": "Dependencies",
       "noDependencies": "No dependencies",
+      "loadingDependencies": "Loading dependencies...",
       "filesAndManifest": "Files & Manifest",
       "viewManifest": "View Manifest",
       "viewCode": "View Code",
@@ -302,6 +304,7 @@
     "createdAt": "Created At: {{date}}",
     "typeYourMessageHere": "Type your message here...",
     "noMessagesFound": "No messages found for this request.",
+    "errorLoadingMessages": "Error loading messages: {{error}}",
     "submitMessage": "Submit Message"
   },
   "users": {
