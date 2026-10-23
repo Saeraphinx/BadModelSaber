@@ -344,7 +344,10 @@ export function getRelativeTimeString(date: Date, lang: string = getLocale()): s
     { unit: "second", ms: 1000 },
   ];
 
-  if (lang === `qaa` || lang === `qab`) {
+  // map app locale codes to ones Intl understands
+  if (lang === `cn`) {
+    lang = `zh-CN`;
+  } else if (lang === `owo` || lang === `keys`) {
     lang = `en`;
   }
 
