@@ -73,7 +73,7 @@
         <div class="mb-4">
           <div class="flex flex-row align-center items-center mb-2">
             <p class="text-sm font-semibold">{category}</p>
-            {#if category === "Type-Specific"}
+            {#if category === m[`enums.tagCategories.typeSpecific`]()}
               <span class="ml-2 text-xs text-gray-500">{typeCount}/1 selected</span>
             {/if}
           </div>
@@ -84,9 +84,9 @@
                   if (selectedTags.includes(tag)) {
                     selectedTags = selectedTags.filter((t) => t !== tag);
                   } else {
-                    if (category === "Type-Specific" && typeCount >= 1 && !selectedTags.includes(tag)) {
+                    if (category === m[`enums.tagCategories.typeSpecific`]() && typeCount >= 1 && !selectedTags.includes(tag)) {
                       // remove all other type-specific tags
-                      selectedTags = selectedTags.filter((t) => !filteredTags.get("Type-Specific")?.includes(t));
+                      selectedTags = selectedTags.filter((t) => !filteredTags.get(m[`enums.tagCategories.typeSpecific`]())?.includes(t));
                     }
                     selectedTags = [...selectedTags, tag];
                   }
