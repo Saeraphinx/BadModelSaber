@@ -195,7 +195,7 @@ export class EnvConfig {
         }
 
         EnvConfig.database = {
-            connectionString: process.env.DB_CONNECTION_STRING || DEFAULT_CONFIG.database.connectionString,
+            connectionString: process.env.DB_CONNECTION_STRING ? process.env.DB_CONNECTION_STRING.replaceAll(`"`, ``) : DEFAULT_CONFIG.database.connectionString,
             schema: process.env.DB_SCHEMA || DEFAULT_CONFIG.database.schema,
         };
     }

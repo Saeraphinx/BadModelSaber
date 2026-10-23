@@ -16,7 +16,7 @@ services:
       - SESSION_SECRET=your_session_cookie_secret
       - STORAGE_SESSIONS=./storage/sessions.sqlite
 
-      - DB_CONNECTION_STRING="postgres://username:password@hostname:port/dbname"
+      - DB_CONNECTION_STRING=postgres://username:password@hostname:port/dbname
     volumes:
       - ./storage:/app/storage
     ports:

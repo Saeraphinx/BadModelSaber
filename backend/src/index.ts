@@ -227,6 +227,7 @@ export async function init(overrideDbName?: string) {
 if (process.argv[1] === import.meta.filename) {
     const { stop } = await init().catch((err) => {
         Logger.error(`Failed to initialize BadModelSaber: ${err}`);
+        console.log(err);
         process.exit(1);
     });
 
