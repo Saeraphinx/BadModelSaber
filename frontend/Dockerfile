@@ -8,7 +8,6 @@ RUN apk add --no-cache python3 make g++ py3-pip
 RUN corepack enable
 # copy package info& install
 COPY package.json yarn.lock .yarnrc.yml ./
-COPY .yarn ./.yarn
 RUN yarn install --immutable
 
 
@@ -31,7 +30,6 @@ RUN yarn workspaces focus --production
 FROM base
 ENV NODE_ENV=production
 COPY package.json .yarnrc.yml ./
-COPY .yarn ./.yarn
 COPY --from=builder /app/build ./build
 COPY --from=builder /app/node_modules ./node_modules
 USER node

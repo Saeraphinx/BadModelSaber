@@ -8,7 +8,6 @@ FROM base AS deps
 RUN corepack enable
 # copy package info& install
 COPY package.json yarn.lock .yarnrc.yml ./
-COPY .yarn ./.yarn
 RUN yarn install --immutable
 
 
