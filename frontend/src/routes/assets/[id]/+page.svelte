@@ -91,7 +91,7 @@
     }
 
     if (!zAssetName.success && !zAssetDescription.success) {
-      toast.error(m[`toasts.error.validationTitle`]());
+      toast.error(m[`toasts.error.validation.title`]());
       return;
     }
 
@@ -104,7 +104,7 @@
           tags: editTags,
         },
       })
-      .then(handleTrpcSuccessWithToast(m[`toasts.success.savedChanges`](), false, () => {
+      .then(handleTrpcSuccessWithToast(m[`toasts.save.success`](), false, () => {
         invalidateAll().then(() => {
           isEditing = false;
         });

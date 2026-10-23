@@ -116,7 +116,7 @@
       });
 
     if (!parsed.success) {
-      toast.error(m[`toasts.error.validationTitle`](), { description: m[`toasts.error.validation.missingFields`]() });
+      toast.error(m[`toasts.error.validation.title`](), { description: m[`toasts.error.validation.missingFields`]() });
       return;
     }
 
@@ -142,7 +142,7 @@
     else if (type === `description`) stringToUse = translationDescription;
 
     if (!stringToUse || stringToUse.trim() === ``) {
-      toast.error(m[`toasts.error.validationTitle`](), { description: m[`toasts.error.validation.missingFields`]() });
+      toast.error(m[`toasts.error.validation.title`](), { description: m[`toasts.error.validation.missingFields`]() });
       return;
     }
 
@@ -160,7 +160,7 @@
           isSaving = false;
         });
       }))
-      .catch(handleTrpcErrorWithToast(m[`toasts.error.save`](), () => isSaving = false));
+      .catch(handleTrpcErrorWithToast(m[`toasts.save.error`](), () => isSaving = false));
   }
 
   let allTranslations: Awaited<ReturnType<typeof trpc.internal.translation.getTranslationsForProject.query>> = [];
@@ -182,13 +182,13 @@
 
   function fetchGithubReadme() {
     if (!project.gitUrl) {
-      toast.error(m[`toasts.error.validationTitle`](), { description: m[`toasts.error.validation.invalidUrl`]() });
+      toast.error(m[`toasts.error.validation.title`](), { description: m[`toasts.error.validation.invalidUrl`]() });
       return;
     }
 
     let regex = project.gitUrl.match(/https:\/\/github.com[\/:]([^\/:]+)\/(.+)/i);
     if (!regex || regex.length === 0) {
-      toast.error(m[`toasts.error.validationTitle`](), { description: m[`toasts.error.validation.invalidUrl`]() });
+      toast.error(m[`toasts.error.validation.title`](), { description: m[`toasts.error.validation.invalidUrl`]() });
       return;
     }
 
@@ -363,7 +363,7 @@
                 disabled={!editedIconFile || editedIconFile?.length === 0}
                 onclick={() => {
                   if (!editedIconFile || editedIconFile.length === 0) {
-                    toast.error(m[`toasts.error.validationTitle`](), { description: m[`toasts.error.validation.invalidFile`]() });
+                    toast.error(m[`toasts.error.validation.title`](), { description: m[`toasts.error.validation.invalidFile`]() });
                     return;
                   }
                   let formData = new FormData();

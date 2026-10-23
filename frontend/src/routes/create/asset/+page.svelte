@@ -63,7 +63,7 @@
     );
     console.log("Submitting asset with data:", formData.get("data"));
     if (!asset || !asset[0]) {
-      toast.error(m[`toasts.error.validationTitle`](), { description: m[`toasts.error.validation.invalidFile`]() });
+      toast.error(m[`toasts.error.validation.title`](), { description: m[`toasts.error.validation.invalidFile`]() });
       console.error("No asset file selected.");
       return;
     }
@@ -73,7 +73,7 @@
         formData.append(`icon_${i + 1}`, thumbnails[i]);
       }
     } else {
-      toast.error(m[`toasts.error.validationTitle`](), { description: m[`toasts.error.validation.invalidFile`]() });
+      toast.error(m[`toasts.error.validation.title`](), { description: m[`toasts.error.validation.invalidFile`]() });
       console.error("No thumbnail file(s) selected.");
       return;
     }

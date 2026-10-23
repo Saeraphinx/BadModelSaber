@@ -28,7 +28,7 @@
       reason: reason,
     }).then(handleTrpcSuccessWithToast(m[`toasts.success.reportSubmitted`](), false, () => {
       visible = false;
-    })).catch(handleTrpcErrorWithToast(m[`toasts.error.save`]()));
+    })).catch(handleTrpcErrorWithToast(m[`toasts.save.error`]()));
   }
 </script>
 
