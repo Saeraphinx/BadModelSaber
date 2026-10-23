@@ -6,15 +6,14 @@ services:
       - DISCORD_CLIENT_ID=
       - DISCORD_CLIENT_SECRET=
       - PORT=6001
-      - BASE_URL=http://localhost:6001
+      - BACKEND_URL=http://localhost:6001
       - FRONTEND_URL=http://localhost:5173
-      - CORS_ORIGIN=*
+      - CORS_ORIGIN=default
       - CORS_ALLOW_CREDENTIALS=true
 
       - TRUST_PROXY=false
-      - STORED_SESSION_TIMEOUT=604800 # 7 days in seconds
+      - STORED_SESSION_TIMEOUT=604800000 # 7 days in milliseconds
       - SESSION_SECRET=your_session_cookie_secret
-      - STORAGE_SESSIONS=./storage/sessions.sqlite
 
       - DB_CONNECTION_STRING=postgres://username:password@hostname:port/dbname
     volumes:
@@ -26,10 +25,10 @@ services:
     image: git.sae.sh/saeraphinx/badmodelsaber-frontend:latest
     container_name: bms-fe
     environment:
-      - PUBLIC_BASE_URL="http://localhost:3000" 
-      - LOCAL_API_URL="http://localhost:6001" 
-      - PUBLIC_API_URL="http://localhost:6001/api"
-      - PUBLIC_FILE_URL="http://localhost:6001/files" 
+      - PUBLIC_BASE_URL=http://localhost:3000
+      - LOCAL_API_URL=http://localhost:6001
+      - PUBLIC_API_URL=http://localhost:6001/api
+      - PUBLIC_FILE_URL=http://localhost:6001/files
     ports:
       - 3000:3000
     restart: unless-stopped  
