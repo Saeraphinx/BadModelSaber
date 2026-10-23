@@ -89,7 +89,7 @@ STORE_SESSIONS=true # Whether to store sessions in something other than memory
 STORED_SESSION_TIMEOUT=604800000 # How long to store sessions in milliseconds (default: 7 days)
 SESSION_COOKIE_NAME="bms_session" # The name of the session cookie
 SESSION_COOKIE_SAME_SITE="strict" # The SameSite attribute for the session cookie
-SESSION_COOKIE_SECRET="supersecretkey" # The secret for the session cookie
+SESSION_SECRET="supersecretkey" # The secret for the session cookie
 AUTH_BYPASS=-1 # Whether to bypass authentication for the API (useful for development. always false in production)
 HIDE_FULL_QUERY_IN_LOGS=true # Whether to hide the full query in http logs
 
