@@ -59,6 +59,7 @@
           {#each types as type}
             <Command.Item
               value={type.value}
+              keywords={[type.label]}
               onSelect={() => {
                 value = type.value;
                 closeAndFocusTrigger();
