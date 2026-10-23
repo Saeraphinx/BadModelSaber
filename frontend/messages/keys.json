@@ -1,6 +1,7 @@
 {
   "name": "name",
   "loading": "loading",
+  "loadingSite": "loadingSite",
   "homepage.title": "homepage.title",
   "homepage.subtitle": "homepage.subtitle",
   "homepage.buttons.browseMods": "homepage.buttons.browseMods",

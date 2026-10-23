@@ -194,7 +194,7 @@
   </div>
   <div class="flex flex-col w-full max-w-2xl">
     {#await populateUsers()}
-      <p>Loading...</p>
+      <p>{m[`loading`]()}</p>
     {:then}
       {#key messages}
         {#each messages as message}
@@ -215,7 +215,7 @@
         </div>
       {/if}
     {:catch error}
-      <p class="text-red-500">Error loading messages: {error.message}</p>
+      <p class="text-red-500">{m[`requests.errorLoadingMessages`]({ error: error.message })}</p>
     {/await}
   </div>
 </div>

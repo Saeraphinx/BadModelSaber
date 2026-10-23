@@ -1,5 +1,6 @@
 import { getTextDirection } from '$lib/paraglide/runtime';
 import { paraglideMiddleware } from '$lib/paraglide/server';
+import { m } from '$lib/paraglide/messages';
 import type { Handle, HandleFetch, ServerInit } from '@sveltejs/kit';
 import { env } from '$env/dynamic/public';
 import { env as penv } from '$env/dynamic/private';
@@ -61,7 +62,7 @@ const handleParaglide: Handle = ({ event, resolve }) => paraglideMiddleware(even
   event.request = request;
 
   return resolve(event, {
-    transformPageChunk: ({ html }) => html.replace('%paraglide.lang%', locale).replace('%paraglide.dir%', getTextDirection(locale))
+    transformPageChunk: ({ html }) => html.replace('%paraglide.lang%', locale).replace('%paraglide.dir%', getTextDirection(locale)).replace('%bms.loadingSite%', m.loadingSite({}, { locale }))
   });
 });
 
