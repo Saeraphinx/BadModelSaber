@@ -1,6 +1,7 @@
 import { Status } from "$lib/scripts/from_backend/DBExtras";
 import type { PageLoad } from "./$types";
 import { createTRPC, handleTrpcError } from "$lib/scripts/utils/api.js";
+import { m } from "$lib/paraglide/messages";
 
 //export const ssr = false;
 export const load: PageLoad = async ({ fetch, url }) => {
@@ -26,7 +27,7 @@ export const load: PageLoad = async ({ fetch, url }) => {
 
   return {
     pageMetadata: {
-      title: 'Mods',
+      title: m[`common.mods`](),
     },
     pageData: {
       games: games || [],

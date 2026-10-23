@@ -76,23 +76,23 @@
   <div class="mt-2 flex justify-end gap-2">
     {#if alert.assetId}
       <Button href={`/assets/${alert.assetId}`}>
-        View Asset
+        {m[`layout.alertSidebar.viewAsset`]()}
         <ExternalLinkIcon class="h-4 w-4" />
       </Button>
     {/if}
     {#if alert.requestId}
       <Button href={`/requests/${alert.requestId}`}>
-        View Request
+        {m[`layout.alertSidebar.viewRequest`]()}
         <ExternalLinkIcon class="h-4 w-4" />
       </Button>
     {/if}
     {#if !alert.read}
     <Button variant="outline" onclick={markRead}>
-      Mark as Read
+      {m[`layout.alertSidebar.markAsRead`]()}
     </Button>
     {:else}
     <Button variant="destructive" onclick={deleteAlert}>
-      Delete
+      {m[`dialogs.delete`]()}
     </Button>
     {/if}
   </div>

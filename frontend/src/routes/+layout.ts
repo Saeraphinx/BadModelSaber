@@ -1,5 +1,6 @@
 import type { LayoutLoad } from "./$types";
 import { createTRPC, handleTrpcError, parseTRPCError } from "$lib/scripts/utils/api";
+import { m } from "$lib/paraglide/messages";
 
 export const load: LayoutLoad = async ({ fetch }) => {
   let pendingToasts: Awaited<ReturnType<LayoutLoad>>['pendingToasts'] = [];
@@ -20,7 +21,7 @@ export const load: LayoutLoad = async ({ fetch }) => {
     if (error.httpCode !== 401) {
       pendingToasts.push({
         type: 'error',
-        title: `Unable to fetch user data`,
+        title: m[`toasts.failedTo.fetchUserData`](),
         description: `${error.message}`,
       });
     }

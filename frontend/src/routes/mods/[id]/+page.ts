@@ -4,6 +4,7 @@ import { handleTrpcError } from "$lib/scripts/utils/api";
 import { getProjectThumbnailUrl } from "$lib/scripts/utils/api";
 import { availableLocales } from "../../../lib/scripts/from_backend/DBExtras";
 import { getLocale } from "../../../lib/paraglide/runtime";
+import { m } from "$lib/paraglide/messages";
 
 //export const ssr = false;
 export const load: PageLoad = async ({ parent, params }) => {
@@ -26,7 +27,7 @@ export const load: PageLoad = async ({ parent, params }) => {
   return {
     pageMetadata: {
       title: `${pnv.project.name} - ${games.game.displayName}`,
-      description: `${pnv.project.summary || 'No summary provided.'}`,
+      description: `${pnv.project.summary || m[`mods.noSummary`]()}`,
       imageUrl: getProjectThumbnailUrl(pnv.project),
     },
     pageData: {

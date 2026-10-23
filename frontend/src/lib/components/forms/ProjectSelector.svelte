@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { m } from "$lib/paraglide/messages";
   import ChevronsUpDownIcon from "@lucide/svelte/icons/chevrons-up-down";
   import { tick } from "svelte";
   import * as Command from "$shadcn/components/ui/command/index.js";
@@ -50,7 +51,7 @@
 
 <Popover.Root>
   <Popover.Trigger bind:ref={triggerRef} class={cn(buttonVariants({ variant: "outline", class: "justify-between" }), className)} {id} aria-expanded={open}>
-        {selectedProjectName || "Select a project..."}
+        {selectedProjectName || m[`mods.selectProject`]()}
         <ChevronsUpDownIcon class="ml-2 size-4 shrink-0 opacity-50" />
   </Popover.Trigger>
   <Popover.Content class="p-0">
@@ -60,9 +61,9 @@
             searchResults = res;
           });
         }, 500)
-      } placeholder="Search projects..." />
+      } placeholder={m[`mods.searchProjects`]()} />
       <Command.List>
-        <Command.Empty>No project found.</Command.Empty>
+        <Command.Empty>{m[`mods.noProjectFound`]()}</Command.Empty>
         {#each searchResults as project}
           <Command.Item
             value={project.id.toString()}
@@ -75,7 +76,7 @@
             }}
           >
             {project.name}
-            <p class="text-xs text-gray-500">{`ID: ${project.id}`}</p>
+            <p class="text-xs text-gray-500">{m[`common.idLabel`]({ id: project.id })}</p>
           </Command.Item>
         {/each}
       </Command.List>

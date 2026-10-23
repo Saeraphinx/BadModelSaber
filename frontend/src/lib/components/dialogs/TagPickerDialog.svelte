@@ -51,7 +51,7 @@
 <Dialog.Root bind:open={open}>
   <Dialog.Content class={className}>
     <Dialog.Header>
-      <Dialog.Title class="text-lg font-semibold">Tag Selector</Dialog.Title>
+      <Dialog.Title class="text-lg font-semibold">{m[`assets.tagSelector`]()}</Dialog.Title>
     </Dialog.Header>
     <ScrollArea class="max-h-[70vh]">
       <div class="flex flex-wrap gap-2">
@@ -65,7 +65,7 @@
             </TagBadge>
           </button>
         {:else}
-          <span class="text-muted-foreground">No tags selected.</span>
+          <span class="text-muted-foreground">{m[`common.dataTable.noTags`]()}</span>
         {/each}
       </div>
       <Separator class="my-2" />
@@ -74,7 +74,7 @@
           <div class="flex flex-row align-center items-center mb-2">
             <p class="text-sm font-semibold">{category}</p>
             {#if category === m[`enums.tagCategories.typeSpecific`]()}
-              <span class="ml-2 text-xs text-gray-500">{typeCount}/1 selected</span>
+              <span class="ml-2 text-xs text-gray-500">{m[`assets.typeSpecificCount`]({ count: typeCount })}</span>
             {/if}
           </div>
           <div class="flex flex-wrap gap-2">

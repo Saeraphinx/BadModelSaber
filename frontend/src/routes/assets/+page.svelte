@@ -178,7 +178,7 @@
                 <Label for={mode[1]}>
                   {getRenderingMethodString(mode[1])}
                 </Label>
-                  <p class="text-xs text-gray-400">For {getRenderingMethodSupportedGV(mode[1])}</p>
+                  <p class="text-xs text-gray-400">{m[`common.supportedFor`]({ versions: getRenderingMethodSupportedGV(mode[1]) })}</p>
               </span>
             </div>
             {/if}
@@ -252,11 +252,11 @@
         </Select.Root>
         <Label for="size-select" class="text-sm">{m[`search.sizeHeader`]()}</Label>
         <Select.Root allowDeselect={false} bind:value={selectedCardSize} type="single" onValueChange={(value) => (currentPage = 1)}>
-          <Select.Trigger id="size-select" class="w-full capitalize">{selectedCardSize}</Select.Trigger>
+          <Select.Trigger id="size-select" class="w-full">{m[`search.cardSizes.${selectedCardSize}`]()}</Select.Trigger>
           <Select.Content>
-            {#each [`linked`, `small`, `normal`, `large`] as size}
-              <Select.Item class="capitalize" value={size.toString()}>
-                {size}
+            {#each [`linked`, `small`, `normal`, `large`] as const as size}
+              <Select.Item value={size.toString()}>
+                {m[`search.cardSizes.${size}`]()}
               </Select.Item>
             {/each}
           </Select.Content>

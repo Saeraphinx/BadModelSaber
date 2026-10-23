@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { m } from "$lib/paraglide/messages";
   import RequestCard from "$lib/components/requests/RequestCard.svelte";
   import { RequestType, type ThingRequestApiV3 } from "$lib/scripts/from_backend/DBExtras.js";
   import Badge from "$shadcn/components/ui/badge/badge.svelte";
@@ -66,7 +67,7 @@
       {/each}
     </div>
   {:else}
-    <p class="text-gray-500">You have no requests.</p>
+    <p class="text-gray-500">{m[`requests.noRequests`]()}</p>
   {/if}
 {/snippet}
 
@@ -74,13 +75,13 @@
   <Tabs.Root class="w-full items-center" value="incoming">
     <Tabs.List>
       <Tabs.Trigger value="outgoing">
-        My Outgoing Requests
+        {m[`requests.outgoing`]()}
         <Badge variant="outline">
           {requestCounts.outgoing}
         </Badge>
       </Tabs.Trigger>
       <Tabs.Trigger value="incoming">
-        Incoming Requests
+        {m[`requests.incoming`]()}
         <Badge variant="outline">
           {requestCounts.incoming}
         </Badge>

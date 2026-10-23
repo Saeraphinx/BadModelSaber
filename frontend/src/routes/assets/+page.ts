@@ -1,5 +1,6 @@
 import { AssetFileFormat, RenderingModes, Status } from '$lib/scripts/from_backend/DBExtras';
 import type { PageLoad } from './$types';
+import { m } from "$lib/paraglide/messages";
 
 export const load:PageLoad = (async (data) => {
   let fileFormat = data.url.searchParams.get('type')?.split(',') || ['all'];
@@ -40,7 +41,7 @@ export const load:PageLoad = (async (data) => {
       searchQuery: searchQuery as string,
     },
     pageMetadata: {
-      title: `Assets`,
+      title: m[`common.assets`](),
     },
   };
 });

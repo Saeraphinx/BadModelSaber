@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { m } from "$lib/paraglide/messages";
   import type { GameVersionApiV3_full } from "../../scripts/from_backend/DBExtras";
   import * as Accordion from "$shadcn/components/ui/accordion/index.js";
   import Button from "../../shadcn/components/ui/button/button.svelte";
@@ -47,7 +48,7 @@
     {#each Object.entries(sortedVersions) as [groupName, versions]}
       <Accordion.Item value={groupName} class="border rounded-md">
         <Accordion.Trigger class="flex flex-row align-center w-full px-4 py-2 font-semibold">
-          <span>{groupName}</span>
+          <span>{groupName === "Ungrouped" ? m[`common.ungrouped`]() : groupName}</span>
           <Button variant={versions.every(gv => selectedGameVersionIds?.includes(gv.id)) ? "default" : "outline"} size="sm" class="ml-auto p-2 py-0 h-6" onclick={(e) => {
             e.stopPropagation();
             if (versions.every(gv => selectedGameVersionIds?.includes(gv.id))) {
@@ -56,7 +57,7 @@
               selectedGameVersionIds = [...(selectedGameVersionIds ?? []), ...versions.map(v => v.id)];
             }
           }}>
-            Select All
+            {m[`common.selectAll`]()}
           </Button>
         </Accordion.Trigger>
         <Accordion.Content class="px-4 py-2">
@@ -75,7 +76,7 @@
               >
                 {version.version}
                 {#if version.isDefault}
-                  <span class="text-sm text-green-500">(Default)</span>
+                  <span class="text-sm text-green-500">{m[`common.defaultMarker`]()}</span>
                 {/if}
               </Button>
             {/each}

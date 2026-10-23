@@ -198,18 +198,18 @@
           // Try fetching from master branch if main branch doesn't exist
           return fetch(`https://raw.githubusercontent.com/${regex[1]}/${regex[2]}/refs/heads/master/README.md`).then((res) => {
             if (!res.ok) {
-              toast.error(m[`toasts.error.generic`](), { description: `Could not fetch README from GitHub. Please make sure the repository has a README.md file in the root directory.` });
+              toast.error(m[`toasts.error.generic`](), { description: m[`mods.createProject.fetchReadmeError`]() });
               return;
             }
             return res.text().then((text) => {
               editedDescription = text || "";
-              toast.success("Fetched README from GitHub successfully. You can now save it as the description translation.");
+              toast.success(m[`mods.createProject.fetchReadmeSuccess`]());
             });
           });
         }
         return res.text().then((text) => {
           editedDescription = text || "";
-          toast.success("Fetched README from GitHub successfully. You can now save it as the description translation.");
+          toast.success(m[`mods.createProject.fetchReadmeSuccess`]());
         });
       })
       .catch((e) => {
@@ -477,7 +477,7 @@
               isSaving}
             onclick={onSaveChangesEditing}>
             {#if isSaving}
-              Saving...
+              {m[`dialogs.saving`]()}
             {:else}
               {m[`dialogs.saveChanges`]()}
             {/if}
@@ -562,7 +562,7 @@
           {#if !getLocale().startsWith("en")}
             <Tabs.List class="mb-2">
               <Tabs.Trigger disabled={!project.translation?.description} value="translation">{availableLocales.find((l) => l.code == getLocale())?.name || getLocale()}</Tabs.Trigger>
-              <Tabs.Trigger value="original">Original</Tabs.Trigger>
+              <Tabs.Trigger value="original">{m[`mods.translation.original`]()}</Tabs.Trigger>
             </Tabs.List>
           {/if}
           <Tabs.Content value="translation">
