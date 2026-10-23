@@ -1,0 +1,34 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+name: Build and Push Docker Image
+
+on:
+  push:
+    branches: [ "main", "master" ]
+    tags: [ "v*.*.*" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  docker-frontend:
+    runs-on: ubuntu-latest
+    enable-openid-connect: true
+    steps:
+      - name: Build Frontend Container
+        id: build-frontend
+        uses: https://git.sae.sh/saeraphinx/build-push-docker-forgejo@main
+        with:
+          image-name: badmodelsaber-frontend
+          aud: u:3:6340a61f-2f6a-42da-9756-c2cd24520bc4
+          context: ./frontend
+  docker-backend:
+    runs-on: ubuntu-latest
+    enable-openid-connect: true
+    steps:
+      - name: Build Backend Container
+        id: build-backend
+        uses: https://git.sae.sh/saeraphinx/build-push-docker-forgejo@main
+        with:
+          image-name: badmodelsaber-backend
+          aud: u:3:6340a61f-2f6a-42da-9756-c2cd24520bc4
+          context: ./backend
