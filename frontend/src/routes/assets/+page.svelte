@@ -149,7 +149,7 @@
                   }}
                   value={format.rawString}
                   id={format.rawString} />
-                {#if type[0] == `Configs` || type[0] == `Other`}
+                {#if type[0] == m[`enums.assetTypes.plurals.config`]() || type[0] == m[`enums.assetTypes.plurals.other`]()}
                   <Label for={format.rawString}>{format.combinedString}</Label>
                 {:else}
                   <Label for={format.rawString}>{format.formatString}</Label>
