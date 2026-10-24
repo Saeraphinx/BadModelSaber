@@ -166,6 +166,10 @@ export class EnvConfig {
             hideFullQueryInLogs: process.env.HIDE_FULL_QUERY_IN_LOGS === `true` || DEFAULT_CONFIG.server.hideFullQueryInLogs,
         };
 
+        if (EnvConfig.server.storeSessions && EnvConfig.server.sessionCookieSecret == DEFAULT_CONFIG.server.sessionCookieSecret) {
+            throw new Error(`Session secret must be set.`);
+        }
+
         console.log(`Using CORS Origin: ${EnvConfig.server.corsOrigin}`);
         if (EnvConfig.server.corsOrigin === `default` || (Array.isArray(EnvConfig.server.corsOrigin) && EnvConfig.server.corsOrigin[0] == `default`)) {
             console.log(`CORS origin is set to 'default'. This may cause issues in production. Please set CORS_ORIGIN in your environment variables.`);
