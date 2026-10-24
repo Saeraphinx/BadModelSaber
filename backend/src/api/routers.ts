@@ -24,7 +24,7 @@ import { AdminGetEditRouter } from './routes/private/adminRaw.ts';
 const appRouter = router({
     internal: {
         admin: AdminRouter,
-        adminRaw: AdminGetEditRouter,
+        //adminRaw: AdminGetEditRouter,
         alerts: alertsRouter,
         requests: RequestRouter,
         getThings: getThingsInternalRouter,
