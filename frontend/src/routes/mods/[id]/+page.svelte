@@ -116,7 +116,7 @@
       });
 
     if (!parsed.success) {
-      toast.error(m[`toasts.error.validationTitle`](), { description: m[`toasts.error.validation.missingFields`]() });
+      toast.error(m[`toasts.error.validation.title`](), { description: m[`toasts.error.validation.missingFields`]() });
       return;
     }
 
@@ -142,7 +142,7 @@
     else if (type === `description`) stringToUse = translationDescription;
 
     if (!stringToUse || stringToUse.trim() === ``) {
-      toast.error(m[`toasts.error.validationTitle`](), { description: m[`toasts.error.validation.missingFields`]() });
+      toast.error(m[`toasts.error.validation.title`](), { description: m[`toasts.error.validation.missingFields`]() });
       return;
     }
 
@@ -160,7 +160,7 @@
           isSaving = false;
         });
       }))
-      .catch(handleTrpcErrorWithToast(m[`toasts.error.save`](), () => isSaving = false));
+      .catch(handleTrpcErrorWithToast(m[`toasts.save.error`](), () => isSaving = false));
   }
 
   let allTranslations: Awaited<ReturnType<typeof trpc.internal.translation.getTranslationsForProject.query>> = [];
@@ -182,13 +182,13 @@
 
   function fetchGithubReadme() {
     if (!project.gitUrl) {
-      toast.error(m[`toasts.error.validationTitle`](), { description: m[`toasts.error.validation.invalidUrl`]() });
+      toast.error(m[`toasts.error.validation.title`](), { description: m[`toasts.error.validation.invalidUrl`]() });
       return;
     }
 
     let regex = project.gitUrl.match(/https:\/\/github.com[\/:]([^\/:]+)\/(.+)/i);
     if (!regex || regex.length === 0) {
-      toast.error(m[`toasts.error.validationTitle`](), { description: m[`toasts.error.validation.invalidUrl`]() });
+      toast.error(m[`toasts.error.validation.title`](), { description: m[`toasts.error.validation.invalidUrl`]() });
       return;
     }
 
@@ -198,18 +198,18 @@
           // Try fetching from master branch if main branch doesn't exist
           return fetch(`https://raw.githubusercontent.com/${regex[1]}/${regex[2]}/refs/heads/master/README.md`).then((res) => {
             if (!res.ok) {
-              toast.error(m[`toasts.error.generic`](), { description: `Could not fetch README from GitHub. Please make sure the repository has a README.md file in the root directory.` });
+              toast.error(m[`toasts.error.generic`](), { description: m[`mods.createProject.fetchReadmeError`]() });
               return;
             }
             return res.text().then((text) => {
               editedDescription = text || "";
-              toast.success("Fetched README from GitHub successfully. You can now save it as the description translation.");
+              toast.success(m[`mods.createProject.fetchReadmeSuccess`]());
             });
           });
         }
         return res.text().then((text) => {
           editedDescription = text || "";
-          toast.success("Fetched README from GitHub successfully. You can now save it as the description translation.");
+          toast.success(m[`mods.createProject.fetchReadmeSuccess`]());
         });
       })
       .catch((e) => {
@@ -363,7 +363,7 @@
                 disabled={!editedIconFile || editedIconFile?.length === 0}
                 onclick={() => {
                   if (!editedIconFile || editedIconFile.length === 0) {
-                    toast.error(m[`toasts.error.validationTitle`](), { description: m[`toasts.error.validation.invalidFile`]() });
+                    toast.error(m[`toasts.error.validation.title`](), { description: m[`toasts.error.validation.invalidFile`]() });
                     return;
                   }
                   let formData = new FormData();
@@ -477,7 +477,7 @@
               isSaving}
             onclick={onSaveChangesEditing}>
             {#if isSaving}
-              Saving...
+              {m[`dialogs.saving`]()}
             {:else}
               {m[`dialogs.saveChanges`]()}
             {/if}
@@ -562,7 +562,7 @@
           {#if !getLocale().startsWith("en")}
             <Tabs.List class="mb-2">
               <Tabs.Trigger disabled={!project.translation?.description} value="translation">{availableLocales.find((l) => l.code == getLocale())?.name || getLocale()}</Tabs.Trigger>
-              <Tabs.Trigger value="original">Original</Tabs.Trigger>
+              <Tabs.Trigger value="original">{m[`mods.translation.original`]()}</Tabs.Trigger>
             </Tabs.List>
           {/if}
           <Tabs.Content value="translation">

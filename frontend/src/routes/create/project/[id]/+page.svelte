@@ -136,7 +136,7 @@
   async function submit() {
     let file = files && files.length > 0 ? files[0] : null;
     if (!file) {
-      toast.error(m[`toasts.error.validationTitle`](), { description: m[`toasts.error.validation.invalidFile`]() });
+      toast.error(m[`toasts.error.validation.title`](), { description: m[`toasts.error.validation.invalidFile`]() });
       return;
     }
 

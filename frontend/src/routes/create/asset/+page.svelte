@@ -63,7 +63,7 @@
     );
     console.log("Submitting asset with data:", formData.get("data"));
     if (!asset || !asset[0]) {
-      toast.error(m[`toasts.error.validationTitle`](), { description: m[`toasts.error.validation.invalidFile`]() });
+      toast.error(m[`toasts.error.validation.title`](), { description: m[`toasts.error.validation.invalidFile`]() });
       console.error("No asset file selected.");
       return;
     }
@@ -73,7 +73,7 @@
         formData.append(`icon_${i + 1}`, thumbnails[i]);
       }
     } else {
-      toast.error(m[`toasts.error.validationTitle`](), { description: m[`toasts.error.validation.invalidFile`]() });
+      toast.error(m[`toasts.error.validation.title`](), { description: m[`toasts.error.validation.invalidFile`]() });
       console.error("No thumbnail file(s) selected.");
       return;
     }
@@ -155,7 +155,7 @@
                     <Label for={mode[1]}>
                       {getRenderingMethodString(mode[1])}
                     </Label>
-                    <p class="text-xs text-gray-400">For {getRenderingMethodSupportedGV(mode[1])}</p>
+                    <p class="text-xs text-gray-400">{m[`common.supportedFor`]({ versions: getRenderingMethodSupportedGV(mode[1]) })}</p>
                   </span>
                 </div>
               {/if}
@@ -188,7 +188,7 @@
             {/each}
           </div>
           <Button variant="secondary" onclick={() => (openTagPicker = true)}>
-            Select Tags
+            {m[`assets.upload.selectTags`]()}
             <TagIcon />
           </Button>
         </div>

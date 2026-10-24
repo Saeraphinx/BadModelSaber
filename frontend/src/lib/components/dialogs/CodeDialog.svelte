@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { m } from "$lib/paraglide/messages";
   import * as Dialog from "$shadcn/components/ui/dialog";
   import { Button } from "$shadcn/components/ui/button";
   import Markdown from "../generic/Markdown.svelte";
@@ -43,7 +44,7 @@
 <Dialog.Root bind:open={open}>
   <Dialog.Content class="w-[90%] min-w-[90%]">
     <Dialog.Header class="min-w-0">
-      <Dialog.Title>Code Viewer</Dialog.Title>
+      <Dialog.Title>{m[`mods.codeViewer`]()}</Dialog.Title>
     </Dialog.Header>
       <div class="max-h-[70vh] overflow-y-scroll overflow-x-scroll mt-4 bg-black/50 rounded-lg">
         <Markdown markdown={markdown} enableCodeBg={false}/>

@@ -91,7 +91,7 @@
     }
 
     if (!zAssetName.success && !zAssetDescription.success) {
-      toast.error(m[`toasts.error.validationTitle`]());
+      toast.error(m[`toasts.error.validation.title`]());
       return;
     }
 
@@ -104,7 +104,7 @@
           tags: editTags,
         },
       })
-      .then(handleTrpcSuccessWithToast(m[`toasts.success.savedChanges`](), false, () => {
+      .then(handleTrpcSuccessWithToast(m[`toasts.save.success`](), false, () => {
         invalidateAll().then(() => {
           isEditing = false;
         });
@@ -249,10 +249,10 @@
           <Button
             variant="ghost"
             size="icon"
-            title="Copy File Hash"
+            title={m[`assets.copyFileHash`]()}
             onclick={() => {
               navigator.clipboard.writeText(pageData.fileHash);
-              toast.success("File hash copied to clipboard!");
+              toast.success(m[`assets.fileHashCopied`]());
             }}>
             <ClipboardCopyIcon />
           </Button>
@@ -429,7 +429,7 @@
   <div class={cn("mb-2 w-full text-center", center ? "text-center" : "text-left")}>
     {#if isEditing}
       <div class="flex flex-col w-full">
-        <Input aria-invalid={!zAssetName.success} type="text" bind:value={editName} placeholder="Asset Name" class="w-full mb-2" />
+        <Input aria-invalid={!zAssetName.success} type="text" bind:value={editName} placeholder={m[`assets.namePlaceholder`]()} class="w-full mb-2" />
         {#if !zAssetName.success}
           <span class="text-sm text-red-500 mt-1">{parseErrorMessage(zAssetName.error)}</span>
         {/if}
@@ -452,20 +452,20 @@
         </Tabs.Trigger>
       </Tabs.List>
       <Tabs.Content value="edit">
-         <Textarea aria-invalid={!zAssetDescription.success} bind:value={editDescription} placeholder="Asset Description" class="w-full mb-2 min-h-64" />
+         <Textarea aria-invalid={!zAssetDescription.success} bind:value={editDescription} placeholder={m[`assets.descriptionPlaceholder`]()} class="w-full mb-2 min-h-64" />
         {#if !zAssetDescription.success}
           <span class="text-sm text-red-500 mt-1">{parseErrorMessage(zAssetDescription.error)}</span>
         {/if}
       </Tabs.Content>
       <Tabs.Content value="preview">
-        <Markdown markdown={editDescription || "No description available."} class="text-lg text-gray-500 dark:text-gray-400 whitespace-pre-line text-wrap wrap-anywhere" />
+        <Markdown markdown={editDescription || m[`common.noDescription`]()} class="text-lg text-gray-500 dark:text-gray-400 whitespace-pre-line text-wrap wrap-anywhere" />
       </Tabs.Content>
     </Tabs.Root>
   {:else}
     {#if pageData.status === Status.Verified}
-      <Markdown markdown={pageData.description || "No description available."} class="text-lg text-gray-500 dark:text-gray-400 whitespace-pre-line text-wrap wrap-anywhere" />
+      <Markdown markdown={pageData.description || m[`common.noDescription`]()} class="text-lg text-gray-500 dark:text-gray-400 whitespace-pre-line text-wrap wrap-anywhere" />
     {:else}
-      <span class="text-lg text-gray-500 dark:text-gray-400 whitespace-pre-line text-wrap wrap-anywhere">{pageData.description || "No description available."}</span>
+      <span class="text-lg text-gray-500 dark:text-gray-400 whitespace-pre-line text-wrap wrap-anywhere">{pageData.description || m[`common.noDescription`]()}</span>
     {/if}
   {/if}
 {/snippet}

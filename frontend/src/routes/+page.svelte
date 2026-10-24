@@ -29,7 +29,7 @@
       subtitle = "wysi";
     } else if (date.getMonth() === 4 && date.getDate() === 1) {
       let yearsSince2018 = date.getFullYear() - 2018;
-      subtitle = `Happy ${yearsSince2018}th Birthday BeatSaber!`;
+      subtitle = m[`homepage.birthday`]({ years: yearsSince2018 });
     } else if (user && (user.permissions.sitewide.includes(UserPermissions.Secret_Features) || roll < 2)) {
       fetch("https://cdn.saeraphinx.dev/splashtext").then((res) => res.text()).then((text) => {
         subtitle = text.split("\n")[Math.floor(Math.random() * text.split("\n").length)];

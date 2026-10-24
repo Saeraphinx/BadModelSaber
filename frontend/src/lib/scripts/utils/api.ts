@@ -177,13 +177,13 @@ export function handleTrpcError(shouldSvelteThrow = true, shouldLog = `minimal`)
     let isZodError = parsedError.zodError !== undefined;
     if (shouldSvelteThrow) {
       if (parsedError.formattedMessage === `fetch failed`) {
-        parsedError.formattedMessage = `Network error: Unable to reach the server. Please check your internet connection and try again.`;
+        parsedError.formattedMessage = m[`toasts.error.network`]();
         parsedError.httpCode = 503;
       }
       throw error(parsedError.httpCode, {
         message: parsedError.formattedMessage,
         additionalInfo: parsedError.zodError ? z.prettifyError(parsedError.zodError) : undefined,
-        title: isZodError ? "Validation Error" : undefined,
+        title: isZodError ? m[`toasts.error.validation.title`]() : undefined,
         subtitle: parsedError.formattedMessage,
         parsedErrorObj: JSON.stringify(parsedError),
       });
