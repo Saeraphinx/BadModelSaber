@@ -8,6 +8,7 @@ import { parseErrorMessage } from '../shared/Tools.ts';
 import z, { ZodError } from 'zod/v4';
 import { Session, SessionData } from 'express-session';
 import { Keys } from '../shared/database/tables/Keys.ts';
+import { EnvConfig } from '../shared/EnvConfig.ts';
 
 
 // eslint-disable-next-line quotes
@@ -178,7 +179,7 @@ export function loggedInProcedure(roles?: UserPermissions[] | { hasAllOf?: UserP
         });
     });
 }
-export function anyGameProcedure(roles?: UserPermissions[] | { hasAllOf?: UserPermissions[], hasOneOf?: UserPermissions[], denied?: UserPermissions[] }) {
+export function anyGameProcedure() {
     return t.procedure.input(z.object({
         gameName: z.string()
     })).use(async ({ ctx, next, input }) => {
