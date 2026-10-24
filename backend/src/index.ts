@@ -233,5 +233,6 @@ if (process.argv[1] === import.meta.filename) {
 
     process.on('SIGINT', async () => {
         await stop();
+        process.exit(0);
     });
 }

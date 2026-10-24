@@ -1,4 +1,4 @@
-import { AlertType, Asset, AssetFileFormat, AssetPublicAPIv2, DatabaseManager, Game, GameVersion, License, LinkedAssetLinkType, ModApiv2, ModVersionsApiv2, Project, Status, Tags, User, UserPermissions, UserPublicApiV2, Version, VersionValidStatuses, RenderingModes, getDefaultPermissions } from "../../backend/src/shared/Database.ts";
+import { AlertType, Asset, AssetFileFormat, AssetPublicAPIv2, Game, GameVersion, License, LinkedAssetLinkType, ModApiv2, ModVersionsApiv2, Project, Status, Tags, User, UserPermissions, UserPublicApiV2, Version, VersionValidStatuses, RenderingModes, getDefaultPermissions, Alert } from "../../backend/src/shared/Database.ts";
 import { Logger } from "../../backend/src/shared/Logger.ts";
 import * as fs from "fs";
 import * as crypto from "crypto";
@@ -20,7 +20,7 @@ type modelsaberasset = {
     [key: string]: AssetPublicAPIv2;
 }
 
-const totalBeatmodsMods = 457; // set this to the total number of mods on BeatMods to get accurate progress reporting. Currently set to 0 to avoid accidentally hitting the BeatMods API during testing.
+const totalBeatmodsMods = 465; // set this to the total number of mods on BeatMods to get accurate progress reporting. Currently set to 0 to avoid accidentally hitting the BeatMods API during testing.
 //const doModDownload = false; // set to true to download mod files from BeatMods, useful for testing the import process but not recommended for full imports due to the large number of mods and potential rate limits. Currently set to false to avoid accidentally hitting the BeatMods API during testing.
 const doThumbnailDownload = true;
 const doDecompile = true; // set to true to decompile mod files during import, which can help preserve metadata for mods that don't include a manifest but will significantly increase the time it takes to import each mod. Currently set to false to speed up testing.
@@ -29,8 +29,6 @@ const hashType = `md5`;
 const conversionStorage = `./storage/converts`;
 const doAssetDownload = true; // set to false to skip downloading assets, useful for testing
 const doTumbnailDownload = true; // set to false to skip downloading thumbnails, useful for testing
-
-new EnvConfig();
 
 export async function importFromOldModelSaber(): Promise<void> {
     if (!EnvConfig.auth.discord.token) {
@@ -91,7 +89,7 @@ export async function importFromOldModelSaber(): Promise<void> {
                     newType = AssetFileFormat.Note_Bloq;
                     break;
                 default:
-                    
+
                     Logger.warn(`Unknown asset type ${asset.type} for asset ${asset.id}, skipping...`);
                     continue;
             }
@@ -165,7 +163,7 @@ export async function importFromOldModelSaber(): Promise<void> {
                                 .setDisableAudio()
                                 .save(path.join(thumbnailOutputDir, `1.webp`), (error, file) => {
                                     if (error) {
-                                        
+
                                         Logger.error(`Failed to convert video thumbnail for asset ${asset.id}: ${JSON.stringify(error)}`);
                                     }
                                     thumbnailName = `1.webp`;
@@ -204,7 +202,7 @@ export async function importFromOldModelSaber(): Promise<void> {
             // #endregion
 
             // #region user
-            let user = await User.findOne({ where: { discordId : asset.discordid }}).then(async u => {
+            let user = await User.findOne({ where: { discordId: asset.discordid } }).then(async u => {
                 if (!u && asset.discordid) {
                     // create user
                     if (asset.discordid === `-1`) {
@@ -398,11 +396,37 @@ export async function importAssetsFromBMSImport() {
         return;
     }
     const data = JSON.parse(fs.readFileSync(`./storage/toBeImported.json`, `utf-8`));
+    let userIds: string[] = [];
 
-    for (const asset of data) {
+    for (const asset of data[`Asset`]) {
+        // check and see if the user for this asset exists. if not, import them
+
+        let user = null;
+        const jsonUser = data[`User`].find((u: any) => u.id === asset.uploaderId);
+        const existing = userIds.find(u => u.startsWith(`${asset.uploaderId}:`));
+
+        if (existing) {
+            user = await User.findOne({ where: { id: existing.split(':')[1] } });
+        } else if (jsonUser) {
+            jsonUser.id = undefined;
+            user = await User.create(jsonUser);
+        } else {
+            Logger.error(`User not found for asset ${asset.id}`);
+            continue;
+        }
+
+        if (!user) {
+            Logger.error(`User not created or found for asset ${asset.id}`);
+            continue;
+        }
+
+        userIds.push(`${asset.uploaderId}:${user.id}`);
+
         let oldDbId = asset.id;
         asset.id = undefined;
-        Asset.create(asset).catch(err => {
+        asset.uploaderId = user.id;
+        asset.linkedId = [];
+        await Asset.create(asset).catch(err => {
             Logger.error(`Failed to create asset from BMS Import: ${err}`);
             Logger.debug(err);
             Logger.debug(parseErrorMessage(err));
@@ -414,6 +438,19 @@ export async function importAssetsFromBMSImport() {
             }
         });
     }
+
+    for (const id of Array.from(new Set(userIds))) {
+        //grab user alert
+        const oldUserId = id.split(':')[0];
+        const newId = id.split(':')[1];
+        let alerts = data[`Alert`].filter((a: any) => a.userId == oldUserId);
+        for (const alert of alerts) {
+            alert.userId = parseInt(newId);
+            await Alert.create(alert);
+        }
+    }
+
+    //import users
 }
 
 export async function importFromBadBeatMods() {
@@ -502,7 +539,7 @@ export async function importFromBadBeatMods() {
             displayName: `Beat Saber`,
             default: true,
             categories: [
-                `Mod Loader`, 
+                `Mod Loader`,
                 `Core`,
                 `Essential`,
                 `Lighting`,
@@ -736,7 +773,7 @@ export async function importFromBadBeatMods() {
         for (const version of awaitedVersions.reverse()) {
             Logger.debug(`Downloading and processing files for version ${version.id} of mod ${mod.id} (${mod.name} ${version.semver.raw})...`);
             // download files & process dlls
-            
+
             // check if the zip file already exists locally
             let zipBuffer: Buffer<ArrayBuffer> | undefined
             let alreadyExists = fs.existsSync(path.join(version.versionFolderPath, version.zipFileName));
@@ -769,7 +806,7 @@ export async function importFromBadBeatMods() {
 
             // Ensure the project is loaded before processing the zip
             let projectInstance = await version.project
-            
+
             zipParsingPromises.push(async () => {
                 await getManifestFromZip(zipBuffer!, null/*, Logger*/).then(async m => {
                     fs.writeFileSync(path.join(version.versionFolderPath, version.manifestName), JSON.stringify(m));
@@ -902,25 +939,27 @@ async function limitConcurrency(tasks: (() => Promise<any>)[], concurrency: numb
 
 
 function checkIfFfmpegInstalled(): Promise<boolean> {
-  return new Promise((resolve) => {
-    // Run the 'ffmpeg -version' command
-    exec('ffmpeg -version', (error, stdout, stderr) => {
-      if (error) {
-        // Command failed or ffmpeg is not in the system PATH
-        resolve(false);
-      } else {
-        // Command succeeded, meaning FFmpeg is installed
-        resolve(true);
-      }
+    return new Promise((resolve) => {
+        // Run the 'ffmpeg -version' command
+        exec('ffmpeg -version', (error, stdout, stderr) => {
+            if (error) {
+                // Command failed or ffmpeg is not in the system PATH
+                resolve(false);
+            } else {
+                // Command succeeded, meaning FFmpeg is installed
+                resolve(true);
+            }
+        });
     });
-  });
 }
 
 
 async function fixMyFuckups() {
-    let allProblemAssets = await Asset.findAll({ where: { 
-        iconNames: [`default.png`]
-    }});
+    let allProblemAssets = await Asset.findAll({
+        where: {
+            iconNames: [`default.png`]
+        }
+    });
 
     for (const asset of allProblemAssets) {
         if (!asset.oldId) {
