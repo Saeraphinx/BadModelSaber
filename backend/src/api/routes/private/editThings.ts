@@ -208,14 +208,13 @@ export const updateThingsRouter = router({
     },
     user: {
         updateUser: loggedInProcedure([UserPermissions.Users_EditSelf]).input(z.object({
-            id: dbId,
             displayName: User.validator.shape.displayName.optional(),
             bio: User.validator.shape.bio.optional(),
             userPlatforms: User.validator.shape.userPlatforms.optional(),
             hideDiscordId: User.validator.shape.hideDiscordId.optional(),
             hideGithubId: User.validator.shape.hideGithubId.optional(),
         })).mutation(async ({ input, ctx }) => {
-            const user = await User.findByPk(input.id);
+            const user = ctx.user;
             if (!user) {
                 throw new TRPCError({ code: 'NOT_FOUND', message: `User not found` });
             }
