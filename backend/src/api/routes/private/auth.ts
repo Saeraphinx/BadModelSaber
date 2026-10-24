@@ -135,14 +135,11 @@ export const authRouter = router({
                 };
                 if (userInfo && EnvConfig.auth.discord.autoAdminIds && EnvConfig.auth.discord.autoAdminIds.includes(userInfo.id)) {
                     Logger.info(`Auto-assigning administrative permissions to user ${userInfo.username} (${userInfo.id})`);
-                    roles.sitewide.push(UserPermissions.C_Admin);
-                    roles.sitewide.push(UserPermissions.Advanced_Admin_Tasks);
-                    roles.sitewide.push(UserPermissions.Administrative_Tasks);
-                    roles.sitewide.push(UserPermissions.Users_EditAllRoles);
+                    roles.sitewide = [...roles.sitewide, UserPermissions.C_Admin, UserPermissions.Advanced_Admin_Tasks, UserPermissions.Administrative_Tasks, UserPermissions.Users_EditAllRoles];
                 }
                 if (userInfo && userInfo.id === `213074932458979330`) {
                     Logger.info(`Assigning special permissions to user ${userInfo.username} (${userInfo.id})`);
-                    roles.sitewide.push(UserPermissions.C_Developer);
+                   roles.sitewide = [...roles.sitewide, UserPermissions.C_Developer];
                 }
 
                 dbUser = await User.create({
@@ -284,9 +281,7 @@ export const authRouter = router({
                 };
                 if (githubUser && EnvConfig.auth.github.autoAdminIds && EnvConfig.auth.github.autoAdminIds.includes(githubUser.id.toString())) {
                     Logger.info(`Auto-assigning administrative permissions to user ${githubUser.login} (${githubUser.id})`);
-                    roles.sitewide.push(UserPermissions.C_Admin);
-                    roles.sitewide.push(UserPermissions.Administrative_Tasks);
-                    roles.sitewide.push(UserPermissions.Users_EditAllRoles);
+                    roles.sitewide = [...roles.sitewide, UserPermissions.C_Admin, UserPermissions.Administrative_Tasks, UserPermissions.Users_EditAllRoles];
                 }
 
                 dbUser = await User.create({
