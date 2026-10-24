@@ -6,7 +6,7 @@ import { TRPCError } from "@trpc/server";
 import { Op, WhereOptions } from "sequelize";
 import { compare } from "semver";
 import { Sequelize } from "sequelize-typescript";
-import { addCacheHeaders, addTimingHeaders } from "../../../../shared/Tools.ts";
+import { addCacheHeaders, addTimingHeaders, asyncFilter } from "../../../../shared/Tools.ts";
 import { QueryCache } from "../../../../shared/Cache.ts";
 
 const hashLookupSchema = z.string().trim().min(32).max(32).regex(/^[a-fA-F0-9]+$/);
@@ -126,10 +126,9 @@ export const GetModsV3 = router({
 
             // filter to unique projects and versions that the user can view
             let filter1Start = Date.now();
-            let output = await Promise.all(versions
+            let unique = await Promise.all(versions
                 .sort((a, b) => compare(b.semver, a.semver)) // sort versions in descending order
                 .filter((v, i, arr) => arr.findIndex(other => other.projectId === v.projectId) === i) // filter to unique projects
-                .filter(async v => await v.canView(ctx.user)) // filter to versions the user can view
                 .map(async v => ({
                     project: await v.project as Project,
                     version: v
@@ -142,6 +141,8 @@ export const GetModsV3 = router({
                 timingString += `, filterp1;dur=${Date.now() - filter1Start}`;
                 return v;
             });
+
+            let output = await asyncFilter(unique, async u => await u.version.canView(ctx.user, u.project));
 
             startTime = Date.now();
             let outputApi = await Promise.all(output.map(async o => ({
@@ -190,9 +191,9 @@ export const GetModsV3 = router({
                 order: [['semver', 'DESC']],
                 include: [GameVersion, Project],
             });
-            versions = versions
-                .sort((a, b) => compare(b.semver, a.semver)) // sort versions in descending order
-                .filter(async v => await v.canView(ctx.user, project));
+            versions = versions.sort((a, b) => compare(b.semver, a.semver)) // sort versions in descending order
+            versions = await asyncFilter(versions, async v => await v.canView(ctx.user, project));
+            
             let outputVersions = await Promise.all(versions.map(async v => await v.toApiV3()));
             addCacheHeaders(ctx);
             return {

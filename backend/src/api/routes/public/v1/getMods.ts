@@ -3,7 +3,7 @@ import { z } from "zod/v4";
 import { anyProcedure, router } from "../../../trpc.ts";
 import { coerce, compare } from "semver";
 import { Op, WhereOptions } from "sequelize";
-import { addCacheHeaders } from "../../../../shared/Tools.ts";
+import { addCacheHeaders, asyncFilter } from "../../../../shared/Tools.ts";
 import { QueryCache } from "../../../../shared/Cache.ts";
 
 export const getModsV1Router = router({
@@ -109,8 +109,9 @@ export const getModsV1Router = router({
 
             let output = await Promise.all(versions.sort((a, b) => compare(b.semver, a.semver)) // sort versions in descending order
                 .filter((v, i, arr) => arr.findIndex(other => other.projectId === v.projectId) === i) // filter to unique projects
-                .filter(async v => await v.canView(ctx.user)) // filter to versions the user can view
             );
+
+            output = await asyncFilter(output, async v => await v.canView(ctx.user));  // filter to versions the user can view
 
             let apiOutput: Promise<ModApiV1>[] = [];
             for (let ver of output) {

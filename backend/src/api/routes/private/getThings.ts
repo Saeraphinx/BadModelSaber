@@ -2,11 +2,11 @@ import { TRPCError } from "@trpc/server";
 import { Op } from "sequelize";
 import z from "zod";
 import { Project, ProjectApiV3, versionApiV3Schema, Version, User, GameVersion, UserPermissions, Status, assetApiV3Schema, projectApiV3Schema, Asset, Tags, AssetApiV3 } from "../../../shared/Database.ts";
-import { anyGameProcedure, anyProcedure, loggedInProcedure, router } from "../../trpc.ts";
+import { anyGameProcedure, anyProcedure, gameProcedure, loggedInProcedure, router } from "../../trpc.ts";
 import fs from "fs";
 import { createPatch, diffLines, lineDiff } from "diff";
 import { Sequelize } from "sequelize-typescript";
-import { parseErrorMessage } from "../../../shared/Tools.ts";
+import { asyncFilter, parseErrorMessage } from "../../../shared/Tools.ts";
 
 export const getThingsInternalRouter = router({
     // #region getProject
@@ -37,7 +37,7 @@ export const getThingsInternalRouter = router({
                 },
                 include: [{ all: true }]
             });
-            projects = projects.filter(async p => await p.canView(ctx.user));
+            projects = await asyncFilter(projects, async p => await p.canView(ctx.user));
             return await Promise.all(projects.map(async p => await p.toApiV3() as ProjectApiV3));
         }),
     // #endregion
@@ -62,7 +62,7 @@ export const getThingsInternalRouter = router({
                 }]
             });
 
-            projects = projects.filter(async p => await p.canView(ctx.user));
+            projects = await asyncFilter(projects, async p => await p.canView(ctx.user));
             return projects.map(p => {
                 return {
                     id: p.id as number,
@@ -94,7 +94,7 @@ export const getThingsInternalRouter = router({
                 }]
             });
 
-            projects = projects.filter(async p => await p.canView(ctx.user));
+            projects = await asyncFilter(projects, async p => await p.canView(ctx.user));
             return projects.map(p => {
                 return {
                     id: p.id as number,
@@ -105,7 +105,7 @@ export const getThingsInternalRouter = router({
         }),
     // #endregion
     // #region approvalQueue
-    approvalQueueVersions: anyGameProcedure({ hasAllOf: [UserPermissions.Mods_ViewAll, UserPermissions.Mods_Approval] })
+    approvalQueueVersions: gameProcedure({ hasAllOf: [UserPermissions.Mods_ViewAll, UserPermissions.Mods_Approval] })
         .query(async ({ ctx, input }) => {
             let versions = await Version.findAll({
                 where: {

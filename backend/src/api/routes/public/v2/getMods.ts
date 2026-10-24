@@ -3,7 +3,7 @@ import { z } from "zod/v4";
 import { Op, WhereOptions, Sequelize } from "sequelize";
 import { anyProcedure, router } from "../../../trpc.ts";
 import { compare, Range } from "semver";
-import { addCacheHeaders, addTimingHeaders } from "../../../../shared/Tools.ts";
+import { addCacheHeaders, addTimingHeaders, asyncFilter } from "../../../../shared/Tools.ts";
 import { QueryCache } from "../../../../shared/Cache.ts";
 
 const hashLookupSchema = z.string().trim().min(32).max(32).regex(/^[a-fA-F0-9]+$/);
@@ -102,13 +102,13 @@ export const getModsV2Router = router({
                     return a.projectId - b.projectId; // sort by projectId in ascending order
                 }
             }) // sort versions in descending order
-                .filter((v, i, arr) => arr.findIndex(other => other.projectId === v.projectId) === i) // filter to unique projects
-                .filter(async v => await v.canView(ctx.user)))
-                .then(results => {
-                    timingString += `, filterp1;dur=${Date.now() - startTime}`;
-                    startTime = Date.now();
-                    return results;
-                }) // filter to versions the user can view
+            .filter((v, i, arr) => arr.findIndex(other => other.projectId === v.projectId) === i)) // filter to unique projects
+            
+            output = await asyncFilter(output, async v => await v.canView(ctx.user)).then(results => {
+                timingString += `, filterp1;dur=${Date.now() - startTime}`;
+                startTime = Date.now();
+                return results;
+            })
 
             let newOutput = await Promise.all(output.map(async v => {
                 // find all dependencies that match the current version's dependencies
