@@ -12,6 +12,7 @@ import { OAuthApp } from "@octokit/oauth-app";
 import { Op, WhereOptions } from 'sequelize';
 import { Keys } from '../../../shared/database/tables/Keys.ts';
 import { createHash } from 'crypto';
+import { URL } from 'url';
 
 export function loadAuthConfig() {
     if (!EnvConfig.auth.discord.clientSecret || !EnvConfig.auth.discord.clientId) {
@@ -24,6 +25,14 @@ let validStates: { stateId: string, ip: string, redirectUrl: URL, userId: number
 
 function prepAuth(ip: string, redirectUrl: string, userId?: number, minsToTimeout = 5): string | null {
     let state = createRandomString(32);
+    let redirect = new URL(redirectUrl);
+    if (
+        redirect.host !== new URL(EnvConfig.server.frontendUrl).host ||
+        redirect.host !== new URL(EnvConfig.server.backendUrl).host
+    ) {
+        return null;
+    };
+
     if (userId) {
         validStates.push({ stateId: state, ip: ip, redirectUrl: new URL(redirectUrl), userId });
     } else {
@@ -34,6 +43,8 @@ function prepAuth(ip: string, redirectUrl: string, userId?: number, minsToTimeou
     }, 1000 * 60 * minsToTimeout);
     return state;
 }
+
+const errorStr = `<head><meta http-equiv="refresh" content="0; url=${EnvConfig.server.frontendUrl}" /></head><body style="background-color: black;"><a style="color:white;" href="${EnvConfig.server.frontendUrl}">An error occurred during login. Click here if you are not redirected...</a></body>`;
 
 export const authRouter = router({
     // #region Discord Login
@@ -72,9 +83,15 @@ export const authRouter = router({
         .input(z.object({
             code: z.string(),
             state: z.string(),
-        }))
+        }).partial().optional())
         .output(z.void())
         .query(async ({ input, ctx }) => {
+            if (!input || !input.code || !input.state) {
+                Logger.debug(`Login error, missing input`);
+                ctx.res.send(errorStr);
+                return;
+            }
+
             let stateObj = validStates.find((s) => s.stateId === input.state && s.ip === ctx.req.ip);
             if (!stateObj) {
                 throw new TRPCError({ code: 'BAD_REQUEST', message: `Invalid state.` });
@@ -127,11 +144,6 @@ export const authRouter = router({
                     Logger.info(`Assigning special permissions to user ${userInfo.username} (${userInfo.id})`);
                     roles.sitewide.push(UserPermissions.C_Developer);
                 }
-                if (bsmgInfo) {
-                    if (bsmgInfo.roles.includes(`441806759062011905`)) roles.sitewide.push(UserPermissions.C_Modder);
-                    if (bsmgInfo.roles.includes(`457373773499203590`)) roles.sitewide.push(UserPermissions.C_Modeler);
-                    if (bsmgInfo.roles.includes(`466449484759564309`)) roles.sitewide.push(UserPermissions.C_BSMG_Staff);
-                }
 
                 dbUser = await User.create({
                     discordId: userInfo.id,
@@ -143,9 +155,20 @@ export const authRouter = router({
                 });
                 Logger.info(`New user created: ${dbUser.username} (${dbUser.id})`);
             } else {
+                let rolesToAdd = [];
+                if (bsmgInfo) {
+                    if (bsmgInfo.roles.includes(`441806759062011905`)) rolesToAdd.push(UserPermissions.C_Modder);
+                    if (bsmgInfo.roles.includes(`457373773499203590`)) rolesToAdd.push(UserPermissions.C_Modeler);
+                    if (bsmgInfo.roles.includes(`466449484759564309`)) rolesToAdd.push(UserPermissions.C_BSMG_Staff);
+                }
+
                 await dbUser.update({
                     username: userInfo.username,
                     displayName: userInfo.global_name || userInfo.username,
+                    permissions: {
+                        sitewide: Array.from(new Set([...dbUser.permissions.sitewide, ...rolesToAdd])),
+                        perGame: dbUser.permissions.perGame
+                    },
                     avatarUrl: userInfo.avatar ? `https://cdn.discordapp.com/avatars/${userInfo.id}/${userInfo.avatar}.png` : `https://cdn.discordapp.com/embed/avatars/${Number(userInfo.id) % 6}.png`,
                 });
             }
@@ -198,11 +221,17 @@ export const authRouter = router({
         .input(z.object({
             code: z.string(),
             state: z.string(),
-        }))
+        }).partial().optional())
         .output(z.void())
         .query(async ({ input, ctx }) => {
             if (!EnvConfig.auth.github) {
                 throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: `GitHub authentication is not configured on this server.` });
+            }
+
+            if (!input || !input.code || !input.state) {
+                Logger.debug(`Login error, missing input`);
+                ctx.res.send(errorStr);
+                return;
             }
 
             let stateObj = validStates.find((s) => s.stateId === input.state && s.ip === ctx.req.ip);
@@ -327,9 +356,14 @@ export const authRouter = router({
         .input(z.object({
             code: z.string(),
             state: z.string(),
-        }))
+        }).partial().optional())
         .output(z.void())
         .query(async ({ input, ctx }) => {
+            if (!input || !input.code || !input.state) {
+                Logger.debug(`Login error, missing input`);
+                ctx.res.send(errorStr);
+                return;
+            }
             let stateObj = validStates.find((s) => s.stateId === input.state && s.ip === ctx.req.ip);
             if (!stateObj) {
                 throw new TRPCError({ code: 'BAD_REQUEST', message: `Invalid state.` });
@@ -371,11 +405,13 @@ export const authRouter = router({
                 throw new TRPCError({ code: 'CONFLICT', message: `Your account is already linked to a different GitHub account.` });
             }
 
-            let existingUserWithGitHub = await User.findOne({ where: { 
-                id: { [Op.ne]: dbUser.id },
-                githubId: githubUser.id.toString(), 
-                discordId: null
-            } });
+            let existingUserWithGitHub = await User.findOne({
+                where: {
+                    id: { [Op.ne]: dbUser.id },
+                    githubId: githubUser.id.toString(),
+                    discordId: null
+                }
+            });
 
             if (existingUserWithGitHub) {
                 Logger.info(`Merging user ${existingUserWithGitHub.username} (${existingUserWithGitHub.id}) into ${dbUser.username} (${dbUser.id}) due to GitHub account linking.`);
@@ -394,14 +430,14 @@ export const authRouter = router({
             await dbUser.update({
                 githubId: githubUser.id.toString(),
             });
-            
+
 
             if (ctx.res) {
                 ctx.res.send(`<head><meta http-equiv="refresh" content="0; url=${stateObj.redirectUrl.href}" /></head><body style="background-color: black;"><a style="color:white;" href="${stateObj.redirectUrl.href}">Click here if you are not redirected...</a></body>`);
             }
             return;
         }),
-        // #endregion
+    // #endregion
     // #region Discord -> GitHub Account Linking
     linkDiscordToAccount: loggedInProcedure()
         .input(z.object({
@@ -438,9 +474,15 @@ export const authRouter = router({
         .input(z.object({
             code: z.string(),
             state: z.string(),
-        }))
+        }).partial().optional())
         .output(z.void())
         .query(async ({ input, ctx }) => {
+            if (!input || !input.code || !input.state) {
+                Logger.debug(`Login error, missing input`);
+                ctx.res.send(errorStr);
+                return;
+            }
+
             let stateObj = validStates.find((s) => s.stateId === input.state && s.ip === ctx.req.ip);
             if (!stateObj) {
                 throw new TRPCError({ code: 'BAD_REQUEST', message: `Invalid state.` });
@@ -471,11 +513,13 @@ export const authRouter = router({
                 throw new TRPCError({ code: 'CONFLICT', message: `Your account is already linked to a different Discord account.` });
             }
 
-            let existingUserWithDiscord = await User.findOne({ where: { 
-                id: { [Op.ne]: dbUser.id },
-                discordId: userInfo.id, 
-                githubId: null
-            } });
+            let existingUserWithDiscord = await User.findOne({
+                where: {
+                    id: { [Op.ne]: dbUser.id },
+                    discordId: userInfo.id,
+                    githubId: null
+                }
+            });
 
             if (existingUserWithDiscord) {
                 Logger.warn(`Merging user ${existingUserWithDiscord.username} (${existingUserWithDiscord.id}) into ${dbUser.username} (${dbUser.id}) due to Discord account linking.`);
@@ -499,8 +543,8 @@ export const authRouter = router({
                 ctx.res.send(`<head><meta http-equiv="refresh" content="0; url=${stateObj.redirectUrl.href}" /></head><body style="background-color: black;"><a style="color:white;" href="${stateObj.redirectUrl.href}">Click here if you are not redirected...</a></body>`);
             }
             return;
-        }), 
-        // #endregion
+        }),
+    // #endregion
     logout: loggedInProcedure()
         .mutation(async ({ ctx }) => {
             return new Promise<{ message: string }>((resolve, reject) => {
@@ -540,7 +584,7 @@ export const authRouter = router({
                 where: { userId: ctx.user.id },
                 attributes: ['name', 'createdAt', 'updatedAt'],
             });
-            
+
             return keys.map((key) => ({
                 name: key.name,
                 createdAt: key.createdAt,
