@@ -57,30 +57,30 @@ export const DEFAULT_CONFIG = {
 
 export class EnvConfig {
     public static auth: {
-            [key: string]: {
-                autoAdminIds?: string[];
-                clientId: string;
-                clientSecret: string;
-                token: string | null;
-            };
-        } = DEFAULT_CONFIG.auth;
+        [key: string]: {
+            autoAdminIds?: string[];
+            clientId: string;
+            clientSecret: string;
+            token: string | null;
+        };
+    } = DEFAULT_CONFIG.auth;
     public static server: {
-            port: number;
-            frontendUrl: string;
-            backendUrl: string;
-            corsOrigin: string | string[];
-            corsAllowCredentials: boolean;
-            apiRoute: string;
-            fileRoute: string;
-            trustProxy: boolean;
-            storeSessions: boolean;
-            storedSessionTimeout: number;
-            sessionCookieName: string;
-            sessionCookieSameSite: `strict` | `lax` | `none` | boolean;
-            sessionCookieSecret: string;
-            authBypass: number;
-            hideFullQueryInLogs: boolean;
-        } = DEFAULT_CONFIG.server;
+        port: number;
+        frontendUrl: string;
+        backendUrl: string;
+        corsOrigin: string | string[];
+        corsAllowCredentials: boolean;
+        apiRoute: string;
+        fileRoute: string;
+        trustProxy: boolean;
+        storeSessions: boolean;
+        storedSessionTimeout: number;
+        sessionCookieName: string;
+        sessionCookieSameSite: `strict` | `lax` | `none` | boolean;
+        sessionCookieSecret: string;
+        authBypass: number;
+        hideFullQueryInLogs: boolean;
+    } = DEFAULT_CONFIG.server;
     public static storage: typeof DEFAULT_CONFIG.storage = DEFAULT_CONFIG.storage;
     public static database: typeof DEFAULT_CONFIG.database = DEFAULT_CONFIG.database;
     public static gaf: typeof DEFAULT_CONFIG.gaf = DEFAULT_CONFIG.gaf;
@@ -127,7 +127,7 @@ export class EnvConfig {
                 process.env.NODE_ENV = `development`;
                 break;
         }
-        
+
         if (fs.existsSync(`${process.env.NODE_ENV}.env`)) {
             dotenv.config({ path: `.${process.env.NODE_ENV}.env`, quiet: true });
             console.log(`Loading environment configuration from .${process.env.NODE_ENV}.env`);
@@ -169,7 +169,12 @@ export class EnvConfig {
         console.log(`Using CORS Origin: ${EnvConfig.server.corsOrigin}`);
         if (EnvConfig.server.corsOrigin === `default` || (Array.isArray(EnvConfig.server.corsOrigin) && EnvConfig.server.corsOrigin[0] == `default`)) {
             console.log(`CORS origin is set to 'default'. This may cause issues in production. Please set CORS_ORIGIN in your environment variables.`);
-            EnvConfig.server.corsOrigin = [EnvConfig.server.frontendUrl, EnvConfig.server.backendUrl];
+            const bases = [EnvConfig.server.frontendUrl, EnvConfig.server.backendUrl];
+            EnvConfig.server.corsOrigin = [...new Set(bases.flatMap((url) => {
+                const { host } = new URL(url);
+                return [`http://${host}`, `https://${host}`];
+            }))];
+            
             console.log(`CORS origin set to frontend and backend URLs: ${EnvConfig.server.corsOrigin}`);
         }
 

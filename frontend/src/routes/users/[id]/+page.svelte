@@ -8,6 +8,7 @@
   import { toast } from "svelte-sonner";
   import { handleTrpcErrorWithToast, handleTrpcSuccessWithToast, parseErrorMessage } from "$lib/scripts/utils/api.js";
   import { navigating } from "$app/state";
+  import { browser } from "$app/environment";
   import { PlatformType, UserPermissions, type UserApiV3 } from "$lib/scripts/from_backend/DBExtras.js";
   import { checkRoles } from "$lib/scripts/utils/checkRoles.js";
   import { Button } from "$lib/shadcn/components/ui/button/index.js";
@@ -26,7 +27,7 @@
 
   
   const { data: _internal } = $props();
-  const { pageData, trpc, user } = $derived(_internal);
+  const { pageData, trpc, user, fetch } = $derived(_internal);
   const pdUser = $derived(pageData.user);
   const assets = $derived(pageData.assets);
   const mods = $derived(pageData.mods);
@@ -116,7 +117,7 @@
         <div class="flex flex-col w-64 max-w-64">
           <div class="flex flex-row flex-wrap gap-2">
             <!-- Sponsor buttons & user linked ids section -->
-            {#if pdUser.githubId}
+            {#if pdUser.githubId && browser}
               {#await fetch(`https://api.github.com/user/${pdUser.githubId}`).then(res => res.json()) then githubUser}
                 <SponsorButton class="w-full" type="profile_github" username={githubUser.login} />
               {/await}
@@ -278,7 +279,7 @@
             </div>
             <Label for="apiKeys">{m[`users.apiKeys`]()}</Label>
             <div class="flex flex-col justify-center items-center gap-4 mt-4">
-              {#await trpc.internal.auth.listApiKeys.query()}
+              {#await browser ? trpc.internal.auth.listApiKeys.query() : new Promise<never>(() => {})}
                 <Spinner />
               {:then apiKeys}
                 {#each apiKeys as apiKey}

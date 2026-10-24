@@ -33,13 +33,15 @@ export const handleFetch: HandleFetch = async ({ request, fetch: svelteFetch, ev
       hasWarnedAboutCORS = true;
     }
 
-    modifiedRequest = new Request(url, {
-      headers: {
-        ...request.headers,
-        "user-agent": `BMS-SvelteKit-Server`,
-        origin: event.url.origin
-      }
-    });
+    const headers = new Headers(request.headers);
+    headers.set("user-agent", "BMS-SvelteKit-Server");
+    headers.set("origin", event.url.origin);
+    modifiedRequest = new Request(url, { 
+      method: request.method, 
+      headers, 
+      body: request.body, 
+      duplex: "half" 
+    } as RequestInit);
 
     //fetchToUse = fetch;
   }
