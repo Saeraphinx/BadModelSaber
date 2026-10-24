@@ -347,7 +347,7 @@
 {#snippet buttons(center = mobileView.current)}
   <div class={cn("flex flex-row gap-2 flex-wrap items-center", center ? "justify-center" : "justify-start")}>
     {#if !isEditing}
-      <DownloadButton downloadType="asset" status={pageData.status} variant="default" href={getAssetDownloadUrl(pageData)} download>
+      <DownloadButton downloadType="asset" status={pageData.status} variant="default" href={getAssetDownloadUrl(pageData)}>
         <DownloadIcon />
         {m[`common.buttons.download`]()}
       </DownloadButton>
