@@ -25,7 +25,7 @@
     <Button variant="outline" size="icon" onclick={() => (currentPage > 1 ? currentPage-- : null)} disabled={currentPage <= 1}>
       <ChevronLeft class="h-4 w-4" />
     </Button>
-      <span class="text-sm whitespace-nowrap mx-2">{pageString}</span>
+      <span class="text-sm text-center whitespace-normal min-w-0 mx-2">{pageString}</span>
     <Button variant="outline" size="icon" onclick={() => currentPage++} disabled={currentPage * selectedPageSize >= totalCount}>
       <ChevronRight class="h-4 w-4" />
     </Button>
