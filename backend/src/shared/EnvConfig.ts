@@ -34,6 +34,7 @@ export const DEFAULT_CONFIG = {
         sessionCookieSecret: `supersecretkey`, // the secret for the session cookie
         authBypass: -1, // whether to bypass authentication for the API (useful for development. always false in production)
         hideFullQueryInLogs: true, // whether to hide the full query in http logs
+        enableApiKeys: false
     },
     storage: {
         uploads: `./storage/uploads`, // the directory where uploads are stored
@@ -80,6 +81,7 @@ export class EnvConfig {
         sessionCookieSecret: string;
         authBypass: number;
         hideFullQueryInLogs: boolean;
+        enableApiKeys: boolean;
     } = DEFAULT_CONFIG.server;
     public static storage: typeof DEFAULT_CONFIG.storage = DEFAULT_CONFIG.storage;
     public static database: typeof DEFAULT_CONFIG.database = DEFAULT_CONFIG.database;
@@ -164,6 +166,7 @@ export class EnvConfig {
             sessionCookieSecret: process.env.SESSION_SECRET || DEFAULT_CONFIG.server.sessionCookieSecret,
             authBypass: EnvConfig.isDevMode ? parseInt(process.env.AUTH_BYPASS || `-1`) : -1,
             hideFullQueryInLogs: process.env.HIDE_FULL_QUERY_IN_LOGS === `true` || DEFAULT_CONFIG.server.hideFullQueryInLogs,
+            enableApiKeys: process.env.ENABLE_API_KEYS === `true` || DEFAULT_CONFIG.server.enableApiKeys,
         };
 
         if (EnvConfig.server.storeSessions && EnvConfig.server.sessionCookieSecret == DEFAULT_CONFIG.server.sessionCookieSecret) {

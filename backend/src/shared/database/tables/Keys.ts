@@ -2,6 +2,7 @@ import { CreationOptional, InferAttributes, InferCreationAttributes } from "sequ
 import { AllowNull, Column, CreatedAt, DataType, Model, PrimaryKey, Table, UpdatedAt } from "sequelize-typescript";
 import { createRandomString } from "../../Tools.ts";
 import { createHash, timingSafeEqual } from "crypto";
+import { EnvConfig } from "../../EnvConfig.ts";
 
 @Table({
     tableName: "keys",
@@ -34,6 +35,7 @@ export class Keys extends Model<InferAttributes<Keys>, InferCreationAttributes<K
     }
 
     public static async checkKey(key: string): Promise<number | null> {
+        if (!EnvConfig.server.enableApiKeys) return null;
         let splitKey = key.split('.');
         if (splitKey.length !== 3 || splitKey[0] !== 'bbmat') {
             return null;
