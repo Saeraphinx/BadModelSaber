@@ -64,7 +64,10 @@ export const uploadStuff = router({
         icon_5: zfd.file().refine((file) => Validator.validateThumbnail(file), { message: "Invalid icon file format" }).optional(),
     }).refine((data) => {
         return Validator.validateAssetFile(data.asset, data.data.type);
-    }, { message: "Invalid asset file format for the specified type" }))
+    }, { message: "Invalid asset file format for the specified type" }
+    ).refine((data) => {
+        return Validator.validateAssetFileData(data.asset, data.data.type)
+    }, { message: "Invalid asset file data" }))
 //    .output(assetApiV3Schema)
     .mutation(async ({ ctx, input }) => {
         let defaultGame = await Game.defaultGame;
@@ -213,7 +216,7 @@ export const uploadStuff = router({
             throw new TRPCError({ code: 'FORBIDDEN', message: 'You do not have permission to upload versions.' });
         }
 
-        if (!project.canUploadVersion(ctx.user)) {
+        if (!await project.canUploadVersion(ctx.user)) {
             throw new TRPCError({ code: 'FORBIDDEN', message: 'You do not have permission to upload versions for this project.' });
         }
 
