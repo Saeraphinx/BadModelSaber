@@ -27,7 +27,7 @@ function prepAuth(ip: string, redirectUrl: string, userId?: number, minsToTimeou
     let state = createRandomString(32);
     let redirect = new URL(redirectUrl);
     if (
-        redirect.host !== new URL(EnvConfig.server.frontendUrl).host ||
+        redirect.host !== new URL(EnvConfig.server.frontendUrl).host &&
         redirect.host !== new URL(EnvConfig.server.backendUrl).host
     ) {
         return null;
