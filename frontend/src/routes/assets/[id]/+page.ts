@@ -31,6 +31,10 @@ export const load = (async ({ fetch, params, url, parent }) => {
     id
   }).catch(handleTrpcError());
 
+  if (asset.id !== id) {
+    throw redirect(307, `/assets/${asset.id}`);
+  }
+
   return {
     pageMetadata: {
       title: `${asset.name || `Error`}`,
