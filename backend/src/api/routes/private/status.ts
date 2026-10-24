@@ -45,7 +45,7 @@ export const statusRouter = router({
     }).query(async ({ ctx }) => {
         let dbConnectionOK = await User.sequelize?.authenticate().then(() => `Connected`).catch(() => `Error`);
         let serverTime = new Date().toISOString();
-        let isDocker = process.env.DOCKER === `true`;
+        let isDocker = process.env.IS_DOCKER === `true`;
         let environment = process.env.NODE_ENV || `unknown`;
         let version = getGitVersion();
         let discordTokenUser = await new REST({ version: `10` }).setToken(process.env.DISCORD_TOKEN || ``).get(`/users/@me`).then(discordUser => {

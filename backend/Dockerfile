@@ -28,6 +28,7 @@ RUN yarn workspaces focus --production
 # final build
 FROM node:24-alpine
 WORKDIR /app
+ENV IS_DOCKER=true
 ENV NODE_ENV=production
 COPY --from=builder /app/build ./build
 COPY --from=builder /app/node_modules ./node_modules

@@ -26,7 +26,6 @@ services:
     container_name: bms-fe
     environment:
       - PUBLIC_BASE_URL=http://localhost:3000
-      - LOCAL_API_URL=http://localhost:6001
       - PUBLIC_API_URL=http://localhost:6001/api
       - PUBLIC_FILE_URL=http://localhost:6001/files
     ports:
