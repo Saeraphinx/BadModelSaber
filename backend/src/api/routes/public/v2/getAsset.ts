@@ -1,7 +1,7 @@
 import { LegacyValidator } from "../../../../shared/LegacyValidator.ts";
 import { Asset, AssetFileFormat, AssetInfer, assetPublicAPIv2Schema, Status } from "../../../../shared/Database.ts";
 import { z } from "zod/v4";
-import { Op, WhereOptions } from "sequelize";
+import { Op, Sequelize, WhereOptions } from "sequelize";
 import { anyProcedure, router } from "../../../trpc.ts";
 import { addCacheHeaders } from "../../../../shared/Tools.ts";
 import { QueryCache } from "../../../../shared/Cache.ts";
@@ -158,19 +158,18 @@ function convertToWhereOptions(filterType: string, value: {
             }
             break;
         case `name`:
-            if (isBoth) {
-                return {
-                    [Op.or]: [
-                        { name: { [Op.like]: `%${includeMerge.join(`%`)}%` } },
-                        { name: { [Op.notLike]: `%${excludeMerge.join(`%`)}%` } }
-                    ]
-                };
-            } else if (isInclude) {
-                return { name: { [Op.like]: `%${includeMerge.join(`%`)}%` } };
-            } else if (isExclude) {
-                return { name: { [Op.notLike]: `%${excludeMerge.join(`%`)}%` } };
-            }
+            return {
+                [Op.or]: [
+                    ...includeMerge.map(str => {
+                        return { name: { [Op.like]: `%${str}%` } }
+                    }),
+                    ...excludeMerge.map(str => {
+                        return { name: { [Op.notLike]: `%${str}%` } }
+                    })
+                ]
+            };
             break;
+        // any checks because tags are typed
         case `tag`:
             if (isBoth) {
                 return {
