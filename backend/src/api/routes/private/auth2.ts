@@ -449,7 +449,6 @@ export const auth2Router = router({
                         return user;
                     })
 
-                    const redirect = ctx.req.session.oauth?.redirect ?? EnvConfig.server.frontendUrl;
                     await regenerateSession(ctx);
                     ctx.req.session.userId = dbUser.id;
                     await saveSession(ctx);
