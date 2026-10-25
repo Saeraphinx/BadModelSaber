@@ -68,9 +68,10 @@ export const loadExpressMiddleware = createExpressMiddleware({
 export const loadOpenApiMiddleware = createOpenApiExpressMiddleware({
     router: appRouter,
     createContext,
-    responseMeta: undefined,
-    onError: undefined,
-    maxBodySize: undefined
+    onError: ({ error }) => {
+        Logger.error(`OpenAPI Error: ${error}`);
+    },
+    maxBodySize: 1024 * 1024 * 8
 });
 export const generateOpenAPIDoc = generateOpenApiDocument(appRouter, {
   title: 'tRPC OpenAPI',

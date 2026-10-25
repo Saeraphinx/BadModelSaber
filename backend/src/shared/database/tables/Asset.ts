@@ -181,8 +181,8 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
     }
     // #endregion
 
-    private static readonly invalidFileNameChars = /[<>:"/\\|?*\x00-\x1F]/gi;
-    private static readonly invalidFileNameWin = /^(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(\..*)?$/gi;
+    private static readonly invalidFileNameChars = /[<>:"/\\|?*\x00-\x1F]/i;
+    private static readonly invalidFileNameWin = /^(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(\..*)?$/i;
 
     // #region Validators
     public static validator = z.object({
@@ -294,10 +294,9 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
         }
 
         if (this.uploaderId === user.id) {
-            return user.checkRoles([UserPermissions.Asset_Edit]);
+            return user.checkRoles([UserPermissions.Asset_Edit], this.gameName);
         }
 
-        // Users can edit their own assets
         return user.checkRoles([UserPermissions.Asset_EditAll], this.gameName);
     }
     // #endregion
