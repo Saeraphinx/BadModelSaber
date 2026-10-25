@@ -213,7 +213,7 @@ export const auth2Router = router({
                 finalizeStage.delete(input.token);
                 if (stage.expiresAt < new Date() || stage.platform !== 'discord' || !stage.user) return;
 
-                const user = stage.user;
+                const stageUser = stage.user;
                 const state = ctx.req.session.oauth?.state;
                 const redirect = ctx.req.session.oauth?.redirect;
                 if (!state) return;
@@ -232,21 +232,23 @@ export const auth2Router = router({
                     });
 
                     const dbUser = await User.findOrCreate({
-                        where: { discordId: user.data.id },
+                        where: { discordId: stageUser.data.id },
                         defaults: {
-                            discordId: user.data.id,
+                            discordId: stageUser.data.id,
                             githubId: null,
-                            username: user.data.username,
-                            displayName: user.data.global_name ?? user.data.username,
+                            username: stageUser.data.username,
+                            displayName: stageUser.data.global_name ?? stageUser.data.username,
                             permissions: {
-                                sitewide: [...defaultSitewidePermissions, ...user.roles],
+                                sitewide: [...defaultSitewidePermissions, ...stageUser.roles],
                                 perGame: gamePerms
                             },
-                            avatarUrl: user.data.avatar ? `https://cdn.discordapp.com/avatars/${user.data.id}/${user.data.avatar}.png` : `https://cdn.discordapp.com/embed/avatars/${Number(user.data.id) % 6}.png`
+                            avatarUrl: stageUser.data.avatar ? `https://cdn.discordapp.com/avatars/${stageUser.data.id}/${stageUser.data.avatar}.png` : `https://cdn.discordapp.com/embed/avatars/${Number(stageUser.data.id) % 6}.png`
                         }
                     }).then(async ([user, created]) => {
                         if (created) {
                             Logger.info(`Created new user ${user.id}`);
+                        } else {
+                            user.update({ avatarUrl: stageUser.data.avatar ? `https://cdn.discordapp.com/avatars/${stageUser.data.id}/${stageUser.data.avatar}.png` : `https://cdn.discordapp.com/embed/avatars/${Number(stageUser.data.id) % 6}.png` }).catch(() => Logger.error(`Failed to update ${user.id}'s avatar`));
                         }
                         return user;
                     })
@@ -265,7 +267,7 @@ export const auth2Router = router({
                     await User.findOne({
                         where: {
                             id: { [Op.ne]: dbUser.id },
-                            discordId: user.data.id,
+                            discordId: stageUser.data.id,
                             githubId: null
                         }
                     }).then(async exU => {
@@ -284,8 +286,8 @@ export const auth2Router = router({
                         throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
                     });
 
-                    await dbUser.update({ discordId: user.data.id });
-                    Logger.info(`Linked Discord ${user.data.id} to user ${dbUser.id}`);
+                    await dbUser.update({ discordId: stageUser.data.id });
+                    Logger.info(`Linked Discord ${stageUser.data.id} to user ${dbUser.id}`);
                 }
 
                 if (ctx.res) {
@@ -411,7 +413,7 @@ export const auth2Router = router({
                 finalizeStage.delete(input.token);
                 if (stage.expiresAt < new Date() || stage.platform !== 'github' || !stage.user) return;
 
-                const user = stage.user;
+                const stageUser = stage.user;
                 const state = ctx.req.session.oauth?.state;
                 const redirect = ctx.req.session.oauth?.redirect;
                 if (!state) return;
@@ -430,21 +432,23 @@ export const auth2Router = router({
                     });
 
                     const dbUser = await User.findOrCreate({
-                        where: { githubId: user.data.id.toString() },
+                        where: { githubId: stageUser.data.id.toString() },
                         defaults: {
-                            githubId: user.data.id.toString(),
+                            githubId: stageUser.data.id.toString(),
                             discordId: null,
-                            username: user.data.login,
-                            displayName: user.data.name ?? user.data.login,
+                            username: stageUser.data.login,
+                            displayName: stageUser.data.name ?? stageUser.data.login,
                             permissions: {
                                 sitewide: [...defaultSitewidePermissions],
                                 perGame: gamePerms
                             },
-                            avatarUrl: user.data.avatar_url
+                            avatarUrl: stageUser.data.avatar_url
                         }
                     }).then(async ([user, created]) => {
                         if (created) {
                             Logger.info(`Created new user ${user.id}`);
+                        } else {
+                            user.update({ avatarUrl: stageUser.data.avatar_url }).catch(() => Logger.error(`Failed to update ${user.id}'s avatar`));
                         }
                         return user;
                     })
@@ -462,7 +466,7 @@ export const auth2Router = router({
                     await User.findOne({
                         where: {
                             id: { [Op.ne]: dbUser.id },
-                            githubId: user.data.id.toString(),
+                            githubId: stageUser.data.id.toString(),
                             discordId: null
                         }
                     }).then(async exU => {
@@ -481,8 +485,8 @@ export const auth2Router = router({
                         throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
                     });
 
-                    await dbUser.update({ githubId: user.data.id.toString() });
-                    Logger.info(`Linked GitHub ${user.data.id} to user ${dbUser.id}`);
+                    await dbUser.update({ githubId: stageUser.data.id.toString() });
+                    Logger.info(`Linked GitHub ${stageUser.data.id} to user ${dbUser.id}`);
                 }
 
                 if (ctx.res) {
