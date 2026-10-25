@@ -13,8 +13,9 @@ export const gameRouter = router({
         if (!ctx.user || !ctx.user.checkRoles([UserPermissions.Game_ViewExtras], `any`)) {
             throw new TRPCError({ code: "FORBIDDEN", message: "You do not have permission to view extra details" });
         }
+    } else {
+      addCacheHeaders(ctx);
     }
-    addCacheHeaders(ctx);
     return games.map(game => game.toApiV3(input));
   }),
   getGameVersions: anyProcedure().input(z.object({ gameName: z.string(), includeExtras: z.boolean().default(false) })).query(async ({ input, ctx }) => {
@@ -33,7 +34,7 @@ export const gameRouter = router({
     }
 
     gameVersions.sort((b, a) => compare(a.version, b.version, { loose: true }));
-    addCacheHeaders(ctx)
+    if (!input.includeExtras) addCacheHeaders(ctx);
     return {
         game: game.toApiV3(),
         gameVersions: gameVersions.map(version => input.includeExtras ? version.toApiV3_full() : version.toApiV3())
