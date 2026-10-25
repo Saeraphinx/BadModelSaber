@@ -220,6 +220,17 @@ export const auth2Router = router({
                 if (!safeEqual(state, stage.state)) return;
 
                 if (stage.action === 'login') {
+                    const gamePerms = await Game.findAll().then(games => {
+                        let obj: { [key: string]: UserPermissions[] } = {};
+                        for (let game of games) {
+                            obj[game.name] = defaultGamePermissions;
+                        }
+                        return obj;
+                    }).catch((err) => {
+                        Logger.error(`Error fetching games from database: ${parseErrorMessage(err)}`);
+                        throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: `Internal server error.` });
+                    });
+
                     const dbUser = await User.findOrCreate({
                         where: { discordId: user.data.id },
                         defaults: {
@@ -229,24 +240,13 @@ export const auth2Router = router({
                             displayName: user.data.global_name ?? user.data.username,
                             permissions: {
                                 sitewide: [...defaultSitewidePermissions, ...user.roles],
-                                perGame: {}
+                                perGame: gamePerms
                             },
                             avatarUrl: user.data.avatar ? `https://cdn.discordapp.com/avatars/${user.data.id}/${user.data.avatar}.png` : `https://cdn.discordapp.com/embed/avatars/${Number(user.data.id) % 6}.png`
                         }
                     }).then(async ([user, created]) => {
                         if (created) {
                             Logger.info(`Created new user ${user.id}`);
-                            let gamePerms = await Game.findAll().then(games => {
-                                let obj: { [key: string]: UserPermissions[] } = {};
-                                for (let game of games) {
-                                    obj[game.id] = defaultGamePermissions;
-                                }
-                                return obj;
-                            }).catch((err) => {
-                                Logger.error(`Error fetching games from database: ${parseErrorMessage(err)}`);
-                                throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: `Internal server error.` });
-                            });
-                            await user.update({ permissions: { ...user.permissions, perGame: gamePerms } });
                         }
                         return user;
                     })
@@ -418,6 +418,17 @@ export const auth2Router = router({
                 if (!safeEqual(state, stage.state)) return;
 
                 if (stage.action === `login`) {
+                    let gamePerms = await Game.findAll().then(games => {
+                        let obj: { [key: string]: UserPermissions[] } = {};
+                        for (let game of games) {
+                            obj[game.name] = defaultGamePermissions;
+                        }
+                        return obj;
+                    }).catch((err) => {
+                        Logger.error(`Error fetching games from database: ${parseErrorMessage(err)}`);
+                        throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: `Internal server error.` });
+                    });
+
                     const dbUser = await User.findOrCreate({
                         where: { githubId: user.data.id.toString() },
                         defaults: {
@@ -427,24 +438,13 @@ export const auth2Router = router({
                             displayName: user.data.name ?? user.data.login,
                             permissions: {
                                 sitewide: [...defaultSitewidePermissions],
-                                perGame: {}
+                                perGame: gamePerms
                             },
                             avatarUrl: user.data.avatar_url
                         }
                     }).then(async ([user, created]) => {
                         if (created) {
                             Logger.info(`Created new user ${user.id}`);
-                            let gamePerms = await Game.findAll().then(games => {
-                                let obj: { [key: string]: UserPermissions[] } = {};
-                                for (let game of games) {
-                                    obj[game.id] = defaultGamePermissions;
-                                }
-                                return obj;
-                            }).catch((err) => {
-                                Logger.error(`Error fetching games from database: ${parseErrorMessage(err)}`);
-                                throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: `Internal server error.` });
-                            });
-                            await user.update({ permissions: { ...user.permissions, perGame: gamePerms } });
                         }
                         return user;
                     })
