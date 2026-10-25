@@ -208,6 +208,10 @@ export async function init(overrideDbName?: string) {
             Logger.error(`Error running automatic status check: ${err}`);
         }
     }, EnvConfig.gaf.howOftenToRunStatusCheck);
+
+    let handeRejection = process.on(`unhandledRejection`, (err) => {
+        Logger.error(`Unhandled rejection: ${err}`);
+    });
     
     return {
         app, server, db, stop: async () => {

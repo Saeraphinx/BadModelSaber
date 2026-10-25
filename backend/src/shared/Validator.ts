@@ -5,113 +5,165 @@ import z from "zod/v4";
 import { EnvConfig } from "./EnvConfig.ts";
 
 export class Validator {
-    public static validateThumbnail(file: File) {
-        let isAcceptableImage =
-            ((file.type === `image/png` && file.name.endsWith(`.png`)) ||
-                (file.type === `image/jpeg` && file.name.endsWith(`.jpg`)) ||
-                (file.type === `image/gif` && file.name.endsWith(`.gif`)) ||
-                (file.type === `image/webp` && file.name.endsWith(`.webp`)));
+  public static validateThumbnail(file: File) {
+    let isAcceptableImage =
+      ((file.type === `image/png` && file.name.endsWith(`.png`)) ||
+        (file.type === `image/jpeg` && file.name.endsWith(`.jpg`)) ||
+        (file.type === `image/gif` && file.name.endsWith(`.gif`)) ||
+        (file.type === `image/webp` && file.name.endsWith(`.webp`)));
 
-        return isAcceptableImage && (file.size <= 8 * 1024 * 1024 || EnvConfig.isDevMode); // 8MB limit
+    return isAcceptableImage && (file.size <= 8 * 1024 * 1024 || EnvConfig.isDevMode); // 8MB limit
+  }
+
+  public static validateAssetFile(file: File, type: AssetFileFormat): boolean {
+    let typeFileExtension = type.split(`_`)[1].toLowerCase();
+    switch (type) {
+      // PC assets
+      case AssetFileFormat.Saber_Saber:
+      case AssetFileFormat.Avatar_Avatar:
+      case AssetFileFormat.Platform_Plat:
+      case AssetFileFormat.Note_Bloq:
+      case AssetFileFormat.Wall_Pixie:
+      case AssetFileFormat.HealthBar_Energy:
+        return file.type === `application/octet-stream` && file.name.endsWith(`.${typeFileExtension}`);
+      // Quest/PC assets
+      case AssetFileFormat.Saber_Whacker:
+      case AssetFileFormat.Note_Cyoob:
+      case AssetFileFormat.Wall_Box:
+        return (file.type === `application/zip` || file.type === `application/x-zip-compressed`) && file.name.endsWith(`.${typeFileExtension}`);
+      // Sound assets
+      case AssetFileFormat.Sound_Ogg:
+        return file.type === `audio/ogg` && file.name.endsWith(`.${typeFileExtension}`);
+      case AssetFileFormat.Sound_Mp3:
+        return file.type === `audio/mpeg` && file.name.endsWith(`.${typeFileExtension}`);
+      // Banner assets
+      case AssetFileFormat.Banner_Png:
+        return file.type === `image/png` && file.name.endsWith(`.${typeFileExtension}`);
+      // JSON assets
+      case AssetFileFormat.ChromaEnv_JSON:
+      case AssetFileFormat.CountersPlusConfig_JSON:
+      case AssetFileFormat.HSVConfig_JSON:
+      case AssetFileFormat.Camera2Config_JSON:
+        return file.type === `application/json` && file.name.endsWith(`.${typeFileExtension}`);
+      default:
+        return false; // Invalid asset type
     }
+  }
 
-    public static validateAssetFile(file: File, type: AssetFileFormat): boolean {
-        let typeFileExtension = type.split(`_`)[1].toLowerCase();
-        switch (type) {
-            // PC assets
-            case AssetFileFormat.Saber_Saber:
-            case AssetFileFormat.Avatar_Avatar:
-            case AssetFileFormat.Platform_Plat:
-            case AssetFileFormat.Note_Bloq:
-            case AssetFileFormat.Wall_Pixie:
-            case AssetFileFormat.HealthBar_Energy:
-                return file.type === `application/octet-stream` && file.name.endsWith(`.${typeFileExtension}`);
-            // Quest/PC assets
-            case AssetFileFormat.Saber_Whacker:
-            case AssetFileFormat.Note_Cyoob:
-            case AssetFileFormat.Wall_Box:
-                return (file.type === `application/zip` || file.type === `application/x-zip-compressed`) && file.name.endsWith(`.${typeFileExtension}`);
-            // Sound assets
-            case AssetFileFormat.Sound_Ogg:
-                return file.type === `audio/ogg` && file.name.endsWith(`.${typeFileExtension}`);
-            case AssetFileFormat.Sound_Mp3:
-                return file.type === `audio/mpeg` && file.name.endsWith(`.${typeFileExtension}`);
-            // Banner assets
-            case AssetFileFormat.Banner_Png:
-                return file.type === `image/png` && file.name.endsWith(`.${typeFileExtension}`);
-            // JSON assets
-            case AssetFileFormat.ChromaEnv_JSON:
-            case AssetFileFormat.CountersPlusConfig_JSON:
-            case AssetFileFormat.HSVConfig_JSON:
-            case AssetFileFormat.Camera2Config_JSON:
-                return file.type === `application/json` && file.name.endsWith(`.${typeFileExtension}`);
-            default:
-                return false; // Invalid asset type
+  public static async validateAssetFileData(file: File, type: AssetFileFormat): Promise<{ valid: boolean; reason?: string; }> {
+    switch (type) {
+      // Unity asset format files
+      case AssetFileFormat.Saber_Saber:
+      case AssetFileFormat.Avatar_Avatar:
+      case AssetFileFormat.Platform_Plat:
+      case AssetFileFormat.Note_Bloq:
+      case AssetFileFormat.Wall_Pixie:
+      case AssetFileFormat.HealthBar_Energy:
+        // check that the first 6 bytes match the Unity asset bundle file signature "UnityFS"
+        if (file.size > 6 && new Uint8Array(await file.slice(0, 6).arrayBuffer()).every((byte, index) => byte === "UnityFS".charCodeAt(index))) {
+          return { valid: true };
+        } else {
+          return { valid: false, reason: "Invalid Unity asset bundle file." };
         }
-    }
-
-    public static async validateAssetFileData(file: File, type: AssetFileFormat): Promise<{ valid: boolean; reason?: string; }> {
-        switch (type) {
-            // Unity asset format files
-            case AssetFileFormat.Saber_Saber:
-            case AssetFileFormat.Avatar_Avatar:
-            case AssetFileFormat.Platform_Plat:
-            case AssetFileFormat.Note_Bloq:
-            case AssetFileFormat.Wall_Pixie:
-            case AssetFileFormat.HealthBar_Energy:
-                // check that the first 6 bytes match the Unity asset bundle file signature "UnityFS"
-                if (file.size > 6 && new Uint8Array(await file.slice(0, 6).arrayBuffer()).every((byte, index) => byte === "UnityFS".charCodeAt(index))) {
-                    return { valid: true };
-                } else {
-                    return { valid: false, reason: "Invalid Unity asset bundle file." };
-                }
-            // Zip files
-            case AssetFileFormat.Saber_Whacker:
-            case AssetFileFormat.Note_Cyoob:
-            case AssetFileFormat.Wall_Box:
-                // open the file as a zip and check the manifest file exists
-                try {
-                    const zip = await jszip.loadAsync(await file.arrayBuffer());
-                    let manifest = zip.file("package.json");
-                    if (!manifest) {
-                        return { valid: false, reason: `Missing package.json`}; // package.json not found in zip folder
-                    }
-                    let result = await manifest.async("string").then((data) => {
-                        let parsedData = z.looseObject({
-                            androidFileName: z.string(),
-                            pcFileName: z.string(),
-                            descriptor: z.object({
-                                objectName: z.string(),
-                                author: z.string(),
-                                description: z.string(),
-                                coverImage: z.string()
-                            }),
-                        }).safeParse(JSON.parse(data));
-                        if (!parsedData.success) {
-                            return parseErrorMessage(parsedData.error); // manifest.json invalid
-                        } else {
-                            return true; // manifest.json valid
-                        }
-                    });
-                    if (result === true) {
-                        return { valid: false, reason: `${result}` }; // manifest.json invalid
-                    }
-                } catch {
-                    return { valid: false, reason: "Invalid file." };
-                }
-            case AssetFileFormat.Sound_Ogg:
-            case AssetFileFormat.Sound_Mp3:
-            case AssetFileFormat.Banner_Png:
-            case AssetFileFormat.ChromaEnv_JSON:
-            case AssetFileFormat.CountersPlusConfig_JSON:
-            case AssetFileFormat.HSVConfig_JSON:
-            case AssetFileFormat.Camera2Config_JSON:
-                return { valid: true }; // No additional validation for these types
-            default:
-                return { valid: false, reason: `File format not supported.` }; // No additional validation for other types
-
+      // Zip files
+      case AssetFileFormat.Saber_Whacker:
+      case AssetFileFormat.Note_Cyoob:
+      case AssetFileFormat.Wall_Box:
+        // open the file as a zip and check the manifest file exists
+        try {
+          const zip = await jszip.loadAsync(await file.arrayBuffer());
+          let manifest = zip.file("package.json");
+          if (!manifest) {
+            return { valid: false, reason: `Missing package.json` }; // package.json not found in zip folder
+          }
+          let result = await manifest.async("string").then((data) => {
+            let parsedData = z.looseObject({
+              androidFileName: z.string(),
+              pcFileName: z.string(),
+              descriptor: z.object({
+                objectName: z.string(),
+                author: z.string(),
+                description: z.string(),
+                coverImage: z.string()
+              }),
+            }).safeParse(JSON.parse(data));
+            if (!parsedData.success) {
+              return parseErrorMessage(parsedData.error); // manifest.json invalid
+            } else {
+              return true; // manifest.json valid
+            }
+          });
+          if (result !== true) {
+            return { valid: false, reason: `${result}` }; // manifest.json invalid
+          }
+        } catch {
+          return { valid: false, reason: "Invalid file." };
         }
+      case AssetFileFormat.Sound_Ogg:
+        if (!(await Validator.startsWith(file, [0x4F, 0x67, 0x67, 0x53]))) {
+          return { valid: false, reason: "Invalid OGG file." };
+        }
+        return { valid: true };
+      case AssetFileFormat.Sound_Mp3:
+        if (!(await Validator.isMp3(file))) {
+          return { valid: false, reason: "Invalid MP3 file." };
+        }
+        return { valid: true };
+      case AssetFileFormat.Banner_Png:
+        if (!(await Validator.startsWith(file, [0x89, 0x50, 0x4E, 0x47]))) {
+          return { valid: false, reason: "Invalid PNG file." };
+        }
+        return { valid: true };
+      case AssetFileFormat.ChromaEnv_JSON:
+      case AssetFileFormat.CountersPlusConfig_JSON:
+      case AssetFileFormat.HSVConfig_JSON:
+      case AssetFileFormat.Camera2Config_JSON:
+        //check size is below 5mb
+        if (file.size > 5 * 1024 * 1024) return { valid: false, reason: "File too large." };
+        try {
+          const data = JSON.parse(await file.text());
+          if (!data) return { valid: false };
+          if (typeof data !== "object") return { valid: false };
+
+          let result = null;
+          if (type === AssetFileFormat.CountersPlusConfig_JSON) {
+            result = CountersPlusSchema.safeParse(data);
+          } else if (type === AssetFileFormat.HSVConfig_JSON) {
+            result = HitScoreVisualizerSchema.safeParse(data);
+          } else if (type === AssetFileFormat.Camera2Config_JSON) {
+            return { valid: true };
+          } else {
+            result = ChromaUserEnvironmentSchema.safeParse(data)
+          }
+
+          if (result && !result.success) return { valid: false, reason: result.error?.message };
+          if (!result) return { valid: false };
+
+          return { valid: true };
+          
+        } catch (e) {
+          return { valid: false, reason: "Invalid JSON." };
+        }
+      default:
+        return { valid: false, reason: `File format not supported.` }; // No additional validation for other types
+
     }
+  }
+
+  private static async startsWith(file: File, signature: number[], offset = 0): Promise<boolean> {
+    if (file.size < offset + signature.length) return false;
+    const bytes = new Uint8Array(await file.slice(offset, offset + signature.length).arrayBuffer());
+    return signature.every((b, i) => bytes[i] === b);
+  }
+
+  private static async isMp3(file: File): Promise<boolean> {
+    if (file.size < 3) return false;
+    // "ID3" tag header
+    if (await Validator.startsWith(file, [0x49, 0x44, 0x33])) return true;
+    // Raw MPEG frame sync: 11 set bits (0xFF, then 0b111xxxxx)
+    const head = new Uint8Array(await file.slice(0, 2).arrayBuffer());
+    return head[0] === 0xFF && (head[1] & 0xE0) === 0xE0;
+  }
 }
 
 //#region HitScoreVisualizer
@@ -160,7 +212,7 @@ export const CountersPlusCounterSchema = z.object({
   Distance: z.number(),
   CanvasID: z.number()
 })
-  
+
 export const CountersPlusSchema = z.object({
   Enabled: z.boolean(),
   HideCombo: z.boolean(),
