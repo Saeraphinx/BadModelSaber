@@ -139,7 +139,7 @@ export const getModsV2Router = router({
             }
         })
         .input(z.object({
-            hash: z.union([hashLookupSchema, z.array(hashLookupSchema)]),
+            hash: z.union([hashLookupSchema, z.array(hashLookupSchema).max(50)]),
             status: z.enum(Status).optional()
         }))
         .output(z.object({
@@ -183,7 +183,7 @@ export const getModsV2Router = router({
             }
         })
         .input(z.object({
-            hashes: z.union([hashLookupSchema, z.array(hashLookupSchema)]),
+            hashes: z.union([hashLookupSchema, z.array(hashLookupSchema).max(50)]),
             status: z.enum(Status).optional()
         }))
         .output(z.object({

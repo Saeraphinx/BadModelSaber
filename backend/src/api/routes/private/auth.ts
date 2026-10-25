@@ -92,6 +92,10 @@ export const authRouter = router({
                 return;
             }
 
+            if (!EnvConfig.auth.discord) {
+                throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: `GitHub authentication is not configured on this server.` });
+            }
+
             let stateObj = validStates.find((s) => s.stateId === input.state && s.ip === ctx.req.ip);
             if (!stateObj) {
                 throw new TRPCError({ code: 'BAD_REQUEST', message: `Invalid state.` });
@@ -99,7 +103,8 @@ export const authRouter = router({
             validStates = validStates.filter((s) => s.stateId !== input.state);
 
             let RESTClient = new REST({ version: '10' });
-            let tokenResponse = await (new OAuth2API(RESTClient)).tokenExchange({
+            let oauth2 = new OAuth2API(RESTClient);
+            let tokenResponse = await oauth2.tokenExchange({
                 code: input.code,
                 grant_type: 'authorization_code',
                 client_id: EnvConfig.auth.discord.clientId,
@@ -116,6 +121,9 @@ export const authRouter = router({
                 Logger.error(`Error fetching BSMG guild member info: ${parseErrorMessage(err)}`);
                 return null;
             });
+
+            // revoke token after use
+            await oauth2.revokeToken(EnvConfig.auth.discord.clientId, EnvConfig.auth.discord.clientSecret, { token: tokenResponse.access_token });
 
             let dbUser = await User.findOne({ where: { discordId: userInfo.id } });
             if (!dbUser) {
@@ -171,6 +179,7 @@ export const authRouter = router({
             }
 
             ctx.req.session.userId = dbUser.id;
+            ctx.req.session.regenerate(() => {});
             ctx.req.session.save((err) => {
                 if (err) {
                     Logger.error(`Error saving session: ${parseErrorMessage(err)}`);
@@ -302,6 +311,7 @@ export const authRouter = router({
             }
 
             ctx.req.session.userId = dbUser.id;
+            ctx.req.session.regenerate(() => {});
             ctx.req.session.save((err) => {
                 if (err) {
                     Logger.error(`Error saving session: ${parseErrorMessage(err)}`);
@@ -561,6 +571,10 @@ export const authRouter = router({
                 throw new TRPCError({ code: 'FORBIDDEN', message: `API keys cannot generate new API keys.` });
             }
 
+            if (!EnvConfig.server.enableApiKeys) {
+                throw new TRPCError({ code: 'FORBIDDEN', message: `API keys are disabled.` });
+            }
+
             const { key, hash } = Keys.generateKey(ctx.user.id);
 
             await Keys.create({
@@ -575,6 +589,10 @@ export const authRouter = router({
         }),
     listApiKeys: loggedInProcedure()
         .query(async ({ ctx }) => {
+            if (!EnvConfig.server.enableApiKeys) {
+                throw new TRPCError({ code: 'FORBIDDEN', message: `API keys are disabled.` });
+            }
+
             const keys = await Keys.findAll({
                 where: { userId: ctx.user.id },
                 attributes: ['name', 'createdAt', 'updatedAt'],

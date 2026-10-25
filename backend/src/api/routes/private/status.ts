@@ -26,7 +26,7 @@ export const statusRouter = router({
             return {
                 message: `Server is running`,
                 timestamp: new Date().toISOString(),
-                isDocker: process.env.DOCKER === `true`,
+                isDocker: process.env.IS_DOCKER === `true`,
                 environment: process.env.NODE_ENV || `unknown`,
                 version: getGitVersion(),
             };

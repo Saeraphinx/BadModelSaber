@@ -73,7 +73,7 @@ export const getThingsInternalRouter = router({
         }),
     // #endregion
     // #region searchProjectsByNameId
-    searchProjectsByNameId: anyProcedure()
+    searchProjectsByNameId: loggedInProcedure()
         .input(z.object({
             nameIds: z.array(z.string()),
             gameName: z.string()

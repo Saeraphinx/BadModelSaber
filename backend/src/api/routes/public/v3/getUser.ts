@@ -98,7 +98,7 @@ export const userRouterV3 = router({
         });
         
         addCacheHeaders(ctx);
-        
-        return (await asyncFilter(projects, async p => await p.canView(ctx.user))).map(p => p.toApiV3());
+        let output = await asyncFilter(projects, async p => await p.canView(ctx.user));
+        return await Promise.all(output.map(async p => await p.toApiV3()));
     })
 });

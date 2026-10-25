@@ -208,7 +208,8 @@ export const updateThingsRouter = router({
         })  
     },
     user: {
-        updateUser: loggedInProcedure([UserPermissions.Users_EditSelf]).input(z.object({
+        updateUser: loggedInProcedure([UserPermissions.Users_EditSelf, UserPermissions.Users_EditAll]).input(z.object({
+            id: User.validator.shape.id.optional(),
             displayName: User.validator.shape.displayName.optional(),
             bio: User.validator.shape.bio.optional(),
             userPlatforms: User.validator.shape.userPlatforms.optional(),
@@ -216,9 +217,12 @@ export const updateThingsRouter = router({
             hideGithubId: User.validator.shape.hideGithubId.optional(),
         })).mutation(async ({ input, ctx }) => {
             const user = ctx.user;
-            if (!user) {
-                throw new TRPCError({ code: 'NOT_FOUND', message: `User not found` });
+            if (input.id && input.id !== user.id) {
+                if (!ctx.user.checkRoles([UserPermissions.Users_EditAll])) {
+                    throw new TRPCError({ code: 'FORBIDDEN' });
+                }
             }
+
             if (input.displayName !== undefined) {
                 user.displayName = input.displayName;
             }

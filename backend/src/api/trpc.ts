@@ -15,6 +15,11 @@ import { EnvConfig } from '../shared/EnvConfig.ts';
 declare module 'express-session' {
     export interface Session {
         userId?: number;
+        oauth?: {
+            redirect: string;
+            state: string;
+            linkUserId?: number;
+        }
     }
 }
 

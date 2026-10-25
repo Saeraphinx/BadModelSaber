@@ -212,7 +212,7 @@ export const GetModsV3 = router({
             }
         })
         .input(z.object({
-            hash: z.union([hashLookupSchema, z.array(hashLookupSchema)]),
+            hash: z.union([hashLookupSchema, z.array(hashLookupSchema).max(50)]),
             status: z.enum(Status).optional()
         }))
         .output(z.record(z.string(), z.object({

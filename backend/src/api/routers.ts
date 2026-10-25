@@ -8,6 +8,7 @@ import { AdminRouter } from './routes/private/admin.ts';
 import { createExpressMiddleware } from '@trpc/server/adapters/express';
 import { createOpenApiExpressMiddleware, generateOpenApiDocument } from 'trpc-to-openapi';
 import { authRouter } from './routes/private/auth.ts';
+import { auth2Router } from './routes/private/auth2.ts';
 import { Logger } from '../shared/Logger.ts';
 import { uploadStuff } from './routes/public/v3/upload.js';
 import { parseErrorMessage } from '../shared/Tools.ts';
@@ -29,7 +30,7 @@ const appRouter = router({
         requests: RequestRouter,
         getThings: getThingsInternalRouter,
         updateThings: updateThingsRouter,
-        auth: authRouter,
+        auth: auth2Router,
         status: statusRouter,
         translation: getEditTranslationsRouter,
     },
@@ -55,6 +56,7 @@ export type AppRouter = typeof appRouter;
 export const loadExpressMiddleware = createExpressMiddleware({
     router: appRouter,
     createContext,
+    maxBodySize: 1024 * 1024 * 50,
     onError: ({ error, type, path, input, ctx }) => {
         //if (EnvConfig.isDevMode) {
             if (path == `v3.user.getMe` && ctx?.userId == undefined && error.code === `UNAUTHORIZED`) {

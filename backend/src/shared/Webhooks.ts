@@ -113,6 +113,7 @@ export class WebhookPayloadGenerator {
                     text: `${capitalizeWords(type)} ID: ${thing.id}`
                 },
             }],
+            allowedMentions: { parse: [] }
         };
 
         return payload;
@@ -149,6 +150,7 @@ export class WebhookPayloadGenerator {
                     text: `${capitalizeWords(thingType)} ID: ${thing.id} | Approved by: ${verifiedBy.displayName} | Status: ${capitalizeWords(thing.status)}`
                 },
             }],
+            allowedMentions: { parse: [] }
         }
     }
 
@@ -173,6 +175,7 @@ export class WebhookPayloadGenerator {
                     text: `${capitalizeWords(type)} ID: ${thing.id}`
                 },
             }],
+            allowedMentions: { parse: [] }
         };
 
         return payload;
@@ -222,6 +225,7 @@ export class WebhookPayloadGenerator {
                 },
                 timestamp: new Date(version.createdAt).toISOString(),
             }],
+            allowedMentions: { parse: [] }
         };
 
         return payload;
@@ -255,6 +259,7 @@ export class WebhookPayloadGenerator {
                 },
                 timestamp: new Date(request.createdAt).toISOString(),
             }],
+            allowedMentions: { parse: [] }
         }
     }
 
@@ -263,6 +268,7 @@ export class WebhookPayloadGenerator {
         let thingType = thing instanceof Asset ? 'asset' : 'project';
         return {
             content: `The ${translation.language} translation of ${thingType} **[${thing.name}](${EnvConfig.server.frontendUrl}/${thingType}s/${thing.id})'s ${translation.contentType}** (ID: ${thing.id}) has been marked as out of date and in need of review.`,
+            allowedMentions: { parse: [] }
         }
     }
 
@@ -282,12 +288,14 @@ export class WebhookPayloadGenerator {
         if (thing instanceof Translation) {
             return {
                 content: `The ${thing.language} Translation for [${thing.parentId}](${EnvConfig.server.frontendUrl}/${thingType.replace(" ", "-")}s/${thing.parentId})'s **${thing.contentType}** (ID: ${thing.parentId}) has been edited by **[${editor.displayName}](${EnvConfig.server.frontendUrl}/users/${editor.id})** (ID# **${editor.id}**).`,
+                allowedMentions: { parse: [] }
             }
         }
 
         if (thing instanceof Version) {
             return {
                 content: `Version **[${(await thing.project)?.name} ${thing.semver.raw}](${EnvConfig.server.frontendUrl}/projects/${parentId})** has been edited by **[${editor.displayName}](${EnvConfig.server.frontendUrl}/users/${editor.id})** (ID# **${editor.id}**).`,
+                allowedMentions: { parse: [] }
             }
         }
 
@@ -296,11 +304,13 @@ export class WebhookPayloadGenerator {
 
             return {
                 content: `**${capitalizeWords(thingType)} **${name}${thing instanceof GameVersion ? ` ${thing.version}` : ``}** has been edited by **[${editor.displayName}](${EnvConfig.server.frontendUrl}/users/${editor.id})** (ID# **${editor.id}**).`,
+                allowedMentions: { parse: [] }
             }
         }
 
         return {
             content: `**${capitalizeWords(thingType)} [${thing.name}](${EnvConfig.server.frontendUrl}/${thingType}s/${thing.id})** has been edited by **[${editor.displayName}](${editor.displayName}](${EnvConfig.server.frontendUrl}/users/${editor.id}) (ID# ${editor.id})**.`,
+            allowedMentions: { parse: [] }
         }
     }
 
@@ -313,6 +323,7 @@ export class WebhookPayloadGenerator {
         
         return {
             content: `The status of ${capitalizeWords(thingType)} **[${thing instanceof Version ? (await thing.project)?.name + " v" + thing.semver.raw : thing.name}](${EnvConfig.server.frontendUrl}/${thing instanceof Version ? `project` : thingType}s/${thing.id})** has been updated from **${oldStatus}** to **${newStatus}** by **[${userPreformingAction.displayName}](${EnvConfig.server.frontendUrl}/users/${userPreformingAction.id})** (ID# ${userPreformingAction.id}).\n**Reason:**\n${reason}`,
+            allowedMentions: { parse: [] }
         }
     }
 }

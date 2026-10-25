@@ -29,9 +29,10 @@ export class Keys extends Model<InferAttributes<Keys>, InferCreationAttributes<K
     declare updatedAt: CreationOptional<Date>;
 
     public static generateKey(userId: number): { key: string, hash: string } {
-        const hash = createRandomString(32);
-        const key = `bbmat.${userId.toString(16)}.${createHash('sha256').update(hash).digest(`base64url`)}`;
-        return { key, hash };
+        const key = createRandomString(43);
+        const hash = createHash('sha256').update(key).digest(`base64url`)
+        const fullKey = `bbmat.${userId.toString(16)}.${key}`;
+        return { key: fullKey, hash };
     }
 
     public static async checkKey(key: string): Promise<number | null> {

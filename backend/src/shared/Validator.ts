@@ -5,12 +5,12 @@ import z from "zod/v4";
 import { EnvConfig } from "./EnvConfig.ts";
 
 export class Validator {
-  public static validateThumbnail(file: File) {
+  public static async validateThumbnail(file: File) {
     let isAcceptableImage =
-      ((file.type === `image/png` && file.name.endsWith(`.png`)) ||
-        (file.type === `image/jpeg` && file.name.endsWith(`.jpg`)) ||
-        (file.type === `image/gif` && file.name.endsWith(`.gif`)) ||
-        (file.type === `image/webp` && file.name.endsWith(`.webp`)));
+      ((file.type === `image/png` && file.name.endsWith(`.png`) && await Validator.isPng(file)) ||
+        (file.type === `image/jpeg` && file.name.endsWith(`.jpg`) && await Validator.isJpg(file)) ||
+        (file.type === `image/gif` && file.name.endsWith(`.gif`) && await Validator.isGif(file)) ||
+        (file.type === `image/webp` && file.name.endsWith(`.webp`) && await Validator.isWebp(file)));
 
     return isAcceptableImage && (file.size <= 8 * 1024 * 1024 || EnvConfig.isDevMode); // 8MB limit
   }
@@ -110,7 +110,7 @@ export class Validator {
         }
         return { valid: true };
       case AssetFileFormat.Banner_Png:
-        if (!(await Validator.startsWith(file, [0x89, 0x50, 0x4E, 0x47]))) {
+        if (!(await Validator.isPng(file))) {
           return { valid: false, reason: "Invalid PNG file." };
         }
         return { valid: true };
@@ -163,6 +163,22 @@ export class Validator {
     // Raw MPEG frame sync: 11 set bits (0xFF, then 0b111xxxxx)
     const head = new Uint8Array(await file.slice(0, 2).arrayBuffer());
     return head[0] === 0xFF && (head[1] & 0xE0) === 0xE0;
+  }
+
+  private static async isPng(file: File): Promise<boolean> {
+    return Validator.startsWith(file, [0x89, 0x50, 0x4E, 0x47]);
+  }
+
+  private static async isJpg(file: File): Promise<boolean> {
+    return Validator.startsWith(file, [0xFF, 0xD8, 0xFF]);
+  }
+
+  private static async isGif(file: File): Promise<boolean> {
+    return Validator.startsWith(file, [0x47, 0x49, 0x46, 0x38]);
+  }
+
+  private static async isWebp(file: File): Promise<boolean> {
+    return Validator.startsWith(file, [0x52, 0x49, 0x46, 0x46]);
   }
 }
 

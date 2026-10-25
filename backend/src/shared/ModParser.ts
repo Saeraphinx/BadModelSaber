@@ -10,7 +10,7 @@ interface ILog {
 
 export function getManifestFromString(str: string, doLogs: ILog | null = console): Manifest | null {
   //console.log(str);
-  let discoveredJsonStrings = Array.from(str.matchAll(/{[\w\d\s\t\n\r\!-~]{10,}}/gmi)).map((match) => match[0]);
+  let discoveredJsonStrings = extractJsonStrings(str, 30).map((match) => match[0]);
   //console.log(discoveredJsonStrings);
 
   if (!discoveredJsonStrings || discoveredJsonStrings.length <= 0) {
@@ -116,3 +116,55 @@ const zManfiest =  z.looseObject({
   links: z.unknown(),
   misc: z.unknown(),
 });
+
+function extractJsonStrings(str: string, minLength = 10) {
+  const discoveredJsonStrings = [];
+  const len = str.length;
+  
+  let i = 0;
+  while (i < len) {
+    if (str[i] === '{') {
+      let braceDepth = 0;
+      let inString = false;
+      let isEscaped = false;
+      let startIdx = i;
+      
+      while (i < len) {
+        const char = str[i];
+        
+        if (inString) {
+          if (isEscaped) {
+            isEscaped = false;
+          } else if (char === '\\') {
+            isEscaped = true;
+          } else if (char === '"') {
+            inString = false; //done
+          }
+        } else {
+          if (char === '"') {
+            inString = true; // start
+          } else if (char === '{') {
+            braceDepth++;
+          } else if (char === '}') {
+            braceDepth--;
+            
+
+            if (braceDepth === 0) {
+              const potentialJson = str.substring(startIdx, i + 1);
+              
+              // make sure its reasonable
+              if (potentialJson.length >= minLength) {
+                discoveredJsonStrings.push(potentialJson);
+              }
+              break;
+            }
+          }
+        }
+        i++;
+      }
+    }
+    i++;
+  }
+  
+  return discoveredJsonStrings;
+}

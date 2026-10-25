@@ -99,7 +99,7 @@ export const RequestRouter = router({
         }
         return await thingRequest.toApiV3();
     }),
-    addMessage: loggedInProcedure().input(z.object({
+    addMessage: loggedInProcedure({ denied: [UserPermissions.C_Banned]}).input(z.object({
         id: dbId,
         message: z.string().min(1).max(2048)
     })).mutation(async ({ input, ctx }) => {

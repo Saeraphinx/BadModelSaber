@@ -147,7 +147,7 @@ export const uploadStuff = router({
                 gitUrl: true,
                 summary: true,
             })),
-            icon_1: zfd.file().refine((file) => Validator.validateThumbnail(file), { message: "Invalid icon file format" }),
+            icon_1: zfd.file().refine(async (file) => await Validator.validateThumbnail(file), { message: "Invalid icon file format" }),
         }))
         .output(projectApiV3Schema)
         .mutation(async ({ ctx, input }) => {
@@ -250,9 +250,14 @@ export const uploadStuff = router({
 
             let hashes: ContentHash[] = [];
             let manifestJson: Manifest | null = null;
+            let fileCount = 0
+            let totalSize = 0;
             for (let filePath in zip.files) {
                 const file = zip.files[filePath];
                 if (file.dir) continue; // skip directories
+                fileCount++;
+
+                if (fileCount > 100) throw new TRPCError({ code: 'BAD_REQUEST', message: 'Too many files in zip.' });
 
                 const keepData = path.basename(filePath).toLowerCase() === "manifest.json"
                     || path.extname(filePath).toLowerCase() === ".dll";
@@ -268,6 +273,8 @@ export const uploadStuff = router({
                             if (size > 50 * 1024 * 1024) { // 50 MB limit
                                 stream.pause(); // halts the inflate worker
                                 return reject(new TRPCError({ code: 'BAD_REQUEST', message: 'A file in the uploaded zip archive exceeds the 50 MB limit.' }));
+                            } else {
+                                totalSize += chunk.length;
                             }
                             md5.update(chunk);
                             if (keepData) {

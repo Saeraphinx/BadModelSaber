@@ -501,7 +501,7 @@
           {:else}
             <button
               onclick={async () => {
-                let url = await trpc.internal.auth.discordAuthInit.query({
+                let url = await trpc.internal.auth.discord.login.init.query({
                   redirect: `${env.PUBLIC_BASE_URL}${page.url.pathname}`,
                 });
                 window.location.href = url.url;
@@ -513,7 +513,7 @@
             </button>
             <button
               onclick={async () => {
-                let url = await trpc.internal.auth.githubAuthInit.query({
+                let url = await trpc.internal.auth.github.login.init.query({
                   redirect: `${env.PUBLIC_BASE_URL}${page.url.pathname}`,
                 });
                 window.location.href = url.url;

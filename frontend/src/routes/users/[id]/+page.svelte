@@ -267,12 +267,12 @@
             <Label for="linkAccounts">{m[`users.linkAccounts`]()}</Label>
             <div class="grid grid-cols-2 gap-4">
               <Button variant="outline" disabled={user?.githubId !== null} onclick={() => {
-                trpc.internal.auth.linkGitHubToaccount.query({}).then(({ url }) => {
+                trpc.internal.auth.github.link.init.query().then(({ url }) => {
                   window.open(url, "_blank");
                 }).catch(handleTrpcErrorWithToast())
               }}>{m[`users.linkToGithub`]()}</Button>
               <Button variant="outline" disabled={user?.discordId !== null} onclick={() => {
-                trpc.internal.auth.linkDiscordToAccount.query({}).then(({ url }) => {
+                trpc.internal.auth.discord.link.init.query().then(({ url }) => {
                   window.open(url, "_blank");
                 }).catch(handleTrpcErrorWithToast());
               }}>{m[`users.linkToDiscord`]()}</Button>

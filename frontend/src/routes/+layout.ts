@@ -16,13 +16,14 @@ export const load: LayoutLoad = async ({ fetch }) => {
     fetch: fetch,
   } satisfies Awaited<ReturnType<LayoutLoad>>;
   let userRes = await trpc.v3.user.getMe.query().catch((err) => {
-    let error = handleTrpcError(false)(err);
-    if (error.httpCode !== 401) {
+    let error = handleTrpcError(false, `none`)(err);
+    if (error.httpCode !== 401 && error.httpCode !== 400) {
       pendingToasts.push({
         type: 'error',
         title: `Unable to fetch user data`,
         description: `${error.message}`,
       });
+      console.log(error);
     }
   });
 

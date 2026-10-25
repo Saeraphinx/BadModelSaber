@@ -46,7 +46,7 @@ export const AdminRouter = router({
                 if (!targetUser) {
                     throw new TRPCError({ code: 'NOT_FOUND', message: `User not found` });
                 }
-                if (targetUser.permissions.sitewide.includes(UserPermissions.Users_EditAllRoles)) {
+                if (targetUser.canUserBeBanned()) {
                     throw new TRPCError({ code: 'FORBIDDEN', message: `Cannot ban this user` });
                 }
                 if (input.ban) {
@@ -275,7 +275,7 @@ export const AdminRouter = router({
         }),
     },
     version: {
-        startDecompile: loggedInVersionProcedure({ hasOneOf: [UserPermissions.Mods_Approval] }).mutation(async ({ ctx }) => {
+        startDecompile: loggedInVersionProcedure([UserPermissions.Mods_Approval]).mutation(async ({ ctx }) => {
             await ctx.version.dotnetDecompile().catch(handleCatch(`starting decompile for version`));
         }),
     },
