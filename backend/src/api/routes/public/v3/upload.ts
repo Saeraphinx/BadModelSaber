@@ -65,8 +65,8 @@ export const uploadStuff = router({
     }).refine((data) => {
         return Validator.validateAssetFile(data.asset, data.data.type);
     }, { message: "Invalid asset file format for the specified type" }
-    ).refine((data) => {
-        return Validator.validateAssetFileData(data.asset, data.data.type)
+    ).refine(async (data) => {
+        return (await Validator.validateAssetFileData(data.asset, data.data.type)).valid
     }, { message: "Invalid asset file data" }))
 //    .output(assetApiV3Schema)
     .mutation(async ({ ctx, input }) => {

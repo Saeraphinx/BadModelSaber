@@ -23,8 +23,9 @@ export const updateThingsRouter = router({
             if (!asset.canEdit(ctx.user)) {
                 throw new TRPCError({ code: 'FORBIDDEN', message: `You are not allowed to edit this asset` });
             }
-            asset.updateAsset(input.data, ctx.user).then(updatedAsset => {
-                return updatedAsset.toApiV3();
+            
+            await asset.updateAsset(input.data, ctx.user).then(async updatedAsset => {
+                return await updatedAsset.toApiV3();
             }).catch(err => {
                 throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: `Error updating asset: ${parseErrorMessage(err)}` });
             });

@@ -28,7 +28,7 @@ export const AdminRouter = router({
                 }
 
                 targetUser.permissions = input.permissions;
-                targetUser.save().then((u) => {
+                return await targetUser.save().then((u) => {
                     Logger.log(`Successfully saved roles for user ${targetUser.id}: ${JSON.stringify(targetUser.permissions)}`);
                     return { message: `User roles updated successfully`, user: u };
                 }).catch((e) => {
@@ -45,6 +45,9 @@ export const AdminRouter = router({
                 let targetUser = await User.findByPk(input.userId);
                 if (!targetUser) {
                     throw new TRPCError({ code: 'NOT_FOUND', message: `User not found` });
+                }
+                if (targetUser.permissions.sitewide.includes(UserPermissions.Users_EditAllRoles)) {
+                    throw new TRPCError({ code: 'FORBIDDEN', message: `Cannot ban this user` });
                 }
                 if (input.ban) {
                     targetUser.permissions = {
@@ -66,8 +69,13 @@ export const AdminRouter = router({
                         perGame: targetUser.permissions.perGame
                     }
                 }
-                targetUser.save();
-                Logger.log(`User ${ctx.userId} ${input.ban ? `banned` : `unbanned`} user ${targetUser.id}`);
+
+                return await targetUser.save().then(() => {
+                    Logger.log(`User ${ctx.userId} ${input.ban ? `banned` : `unbanned`} user ${targetUser.id}`);
+                    return { message: `User ${input.ban ? `banned` : `unbanned`}` };
+                }).catch(err => {
+                    throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: `Error saving user: ${parseErrorMessage(err)}` });
+                });
             }),
         searchUsers: loggedInProcedure([UserPermissions.Users_EditAll, UserPermissions.Users_Ban, UserPermissions.Users_EditAllRoles]).input(z.object({
             query: z.string().min(1).max(16)
@@ -229,7 +237,7 @@ export const AdminRouter = router({
                 throw new TRPCError({ code: "NOT_FOUND", message: `Version with id ${input.versionId} not found for game ${ctx.game.name}.` });
             }
             Logger.log(`Setting version ${version.version} as default for game ${ctx.game.name} by admin user ${ctx.userId}`);
-            version.setDefault().catch(handleCatch(`setting default version`));
+            await version.setDefault().catch(handleCatch(`setting default version`));
             return version.toApiV3_full();
         }),
         setVersionDeprecated: gameProcedure([UserPermissions.Game_EditVersions]).input(z.object({
