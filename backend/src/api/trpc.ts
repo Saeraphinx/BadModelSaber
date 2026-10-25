@@ -322,6 +322,7 @@ async function roleCheckLogic(ctx: Context, roles?: UserPermissions[] | { hasAll
                 throw new TRPCError({ code: 'FORBIDDEN', message: 'You do not have the required permissions.' });
             };
         } catch (error) {
+            if (error instanceof TRPCError) throw error;
             throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: parseErrorMessage(error) });
         }
     } else {
