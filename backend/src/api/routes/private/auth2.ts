@@ -398,7 +398,7 @@ export const auth2Router = router({
                     return;
                 }),
         },
-        finalize: notLoggedInProcedure()
+        finalize: anyProcedure()
             .meta({ openapi: { method: 'GET', path: '/auth/github/final', tags: ['Authentication'] } })
             .input(z.object({
                 token: z.string()
