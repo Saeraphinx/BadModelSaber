@@ -17,6 +17,7 @@ export class Validator {
 
   public static validateAssetFile(file: File, type: AssetFileFormat): boolean {
     let typeFileExtension = type.split(`_`)[1].toLowerCase();
+    // removed mime type check since it doesn't seem to be accurate
     switch (type) {
       // PC assets
       case AssetFileFormat.Saber_Saber:
@@ -25,26 +26,26 @@ export class Validator {
       case AssetFileFormat.Note_Bloq:
       case AssetFileFormat.Wall_Pixie:
       case AssetFileFormat.HealthBar_Energy:
-        return file.type === `application/octet-stream` && file.name.endsWith(`.${typeFileExtension}`);
+        return /*file.type === `application/octet-stream` && */ file.name.endsWith(`.${typeFileExtension}`);
       // Quest/PC assets
       case AssetFileFormat.Saber_Whacker:
       case AssetFileFormat.Note_Cyoob:
       case AssetFileFormat.Wall_Box:
-        return (file.type === `application/zip` || file.type === `application/x-zip-compressed`) && file.name.endsWith(`.${typeFileExtension}`);
+        return /*(file.type === `application/zip` || file.type === `application/x-zip-compressed` || file.type === `application/octet-stream`) &&*/ file.name.endsWith(`.${typeFileExtension}`);
       // Sound assets
       case AssetFileFormat.Sound_Ogg:
-        return file.type === `audio/ogg` && file.name.endsWith(`.${typeFileExtension}`);
+        return /* file.type === `audio/ogg` && */ file.name.endsWith(`.${typeFileExtension}`);
       case AssetFileFormat.Sound_Mp3:
-        return file.type === `audio/mpeg` && file.name.endsWith(`.${typeFileExtension}`);
+        return /* file.type === `audio/mpeg` && */ file.name.endsWith(`.${typeFileExtension}`);
       // Banner assets
       case AssetFileFormat.Banner_Png:
-        return file.type === `image/png` && file.name.endsWith(`.${typeFileExtension}`);
+        return/*  file.type === `image/png` && */ file.name.endsWith(`.${typeFileExtension}`);
       // JSON assets
-      case AssetFileFormat.ChromaEnv_JSON:
+      case AssetFileFormat.ChromaEnv_DAT:
       case AssetFileFormat.CountersPlusConfig_JSON:
       case AssetFileFormat.HSVConfig_JSON:
       case AssetFileFormat.Camera2Config_JSON:
-        return file.type === `application/json` && file.name.endsWith(`.${typeFileExtension}`);
+        return /* file.type === `application/json` && */ file.name.endsWith(`.${typeFileExtension}`);
       default:
         return false; // Invalid asset type
     }
@@ -93,7 +94,9 @@ export class Validator {
               return true; // manifest.json valid
             }
           });
-          if (result !== true) {
+          if (result) {
+            return { valid: true };
+          } else {
             return { valid: false, reason: `${result}` }; // manifest.json invalid
           }
         } catch {
@@ -114,7 +117,7 @@ export class Validator {
           return { valid: false, reason: "Invalid PNG file." };
         }
         return { valid: true };
-      case AssetFileFormat.ChromaEnv_JSON:
+      case AssetFileFormat.ChromaEnv_DAT:
       case AssetFileFormat.CountersPlusConfig_JSON:
       case AssetFileFormat.HSVConfig_JSON:
       case AssetFileFormat.Camera2Config_JSON:
@@ -372,7 +375,7 @@ export const ChromaUserEnvironmentSchema = z.object({
   environmentName: z.string(),
   description: z.string(),
   features: z.object(),
-  environment: z.object(),
+  environment: z.array(z.object()),
   materials: z.object(),
 })
 

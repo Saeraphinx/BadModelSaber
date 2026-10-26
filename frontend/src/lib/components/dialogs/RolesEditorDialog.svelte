@@ -14,6 +14,13 @@
   let roleAddGameDialogOpen = $state(false);
   let user: UserApiV3 | null = $state(null);
   let availableGameNames: { name: string; displayName: string }[] = $state([]);
+  let perGameRoles = Object.values(UserPermissions).filter((i) => 
+    !i.startsWith(`cos_`) && 
+    !i.startsWith(`secret`) && 
+    i !== `game_create` && 
+    !i.includes(`user`) && 
+    !i.includes(`admin`)
+  );
   let permObj: {
     sitewide: UserPermissions[];
     perGame: Record<string, UserPermissions[]>;
@@ -55,7 +62,7 @@
       <div class="flex flex-row flex-wrap gap-2 m-2">
         {#each rolesCategories as items}
           <div class="flex flex-col w-full gap-1">
-            <p class="text-sm text-muted-foreground capitalize">{items[0]}</p>
+            <p class="text-sm text-muted-foreground capitalize">{items[0]}{!isSitewide && items[0] == `asset` ? ` (May not be effective)` : ``}</p>
             <div class="flex flex-row flex-wrap gap-2">
               {#each items[1] as item}
                 <div class="flex flex-row items-center gap-1">
@@ -115,7 +122,7 @@
       <Accordion.Root type="single" class="w-full max-h-96 scrollbar-thin overflow-y-scroll mb-2" value="sw">
         {@render checkboxes(getRolesCategories(), true, "", "sw")}
         {#each Object.keys(permObj.perGame) as game}
-          {@render checkboxes(getRolesCategories(Object.values(UserPermissions).filter((i) => !i.startsWith(`cos_`) && !i.startsWith(`secret`)  && i !== `game_create` && !i.includes(`user`) && !i.includes(`admin`))), false, game, `pg_${game}`)}
+          {@render checkboxes(getRolesCategories(perGameRoles), false, game, `pg_${game}`)}
         {/each}
       </Accordion.Root>
       <DialogFooter>

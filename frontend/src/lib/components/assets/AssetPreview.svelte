@@ -20,7 +20,7 @@
       case AssetFileFormat.HSVConfig_JSON:
         return "hsv";
       case AssetFileFormat.Camera2Config_JSON:
-      case AssetFileFormat.ChromaEnv_JSON:
+      case AssetFileFormat.ChromaEnv_DAT:
       case AssetFileFormat.CountersPlusConfig_JSON:
         return "json";
       default:
@@ -35,7 +35,7 @@
         .then(res => res.text())
         .then(data => {
           isPreviewLoaded = true;
-          return data;
+          return JSON.stringify(JSON.parse(data), null, 2);
         });
     } else {
       isPreviewLoaded = true;

@@ -113,7 +113,7 @@
       searchParams.set("renderingMethod", selectedRenderingMethod);
     }
     if (selectedStatuses.length > 0 && !(selectedStatuses.length === 1 && selectedStatuses[0] === Status.Verified)) {
-      searchParams.set("status", selectedStatuses[0]);
+        searchParams.set("status", selectedStatuses.join(","));
     }
     if (searchQuery.length > 0) {
       searchParams.set("search", searchQuery);

@@ -28,7 +28,7 @@ export async function getDefaultPermissions(): Promise<{
     } = {
         sitewide: defaultSitewidePermissions,
         perGame: {},
-    } 
+    }
     for (const gameName of allGameNames) {
         defaultPermissions.perGame[gameName] = defaultGamePermissions;
     }
@@ -132,12 +132,12 @@ export class User extends Model<InferAttributes<User>, InferCreationAttributes<U
         userPlatforms: z.array(userPlatformSchema),
         avatarUrl: z.url(),
         permissions: z.object({
-            perGame: z.record(z.string(), z.array(z.enum(UserPermissions).exclude(Object.values(UserPermissions).filter((i) => 
-            i.startsWith(`cos_`) && 
-            i.startsWith(`secret`) && 
-            i.includes(`user`) &&
-            i !== `game_create` &&
-            i.includes(`admin`)) as any))),
+            perGame: z.record(z.string(), z.array(z.enum(UserPermissions).exclude(Object.values(UserPermissions).filter((i) =>
+                i.startsWith(`cos_`) &&
+                i.startsWith(`secret`) &&
+                i.includes(`user`) &&
+                i !== `game_create` &&
+                i.includes(`admin`)) as any))),
             sitewide: z.array(z.enum(UserPermissions))
         }),
         shouldDmAlerts: z.boolean(),
@@ -286,36 +286,22 @@ export class User extends Model<InferAttributes<User>, InferCreationAttributes<U
         denied?: UserPermissions[]
     }, gameName?: string): boolean;
     public checkRoles(roles: UserPermissions[] | { hasAllOf?: UserPermissions[], hasOneOf?: UserPermissions[], denied?: UserPermissions[] }, gameName?: string): boolean {
-        if (Array.isArray(roles)) {
+        const { hasAllOf, hasOneOf, denied } = Array.isArray(roles) ? { hasOneOf: roles } : roles;
+        const has = (role: UserPermissions): boolean => {
+            if (this.permissions.sitewide.includes(role)) return true;
             if (gameName === `any`) {
-                return roles.some(role => this.permissions.sitewide.includes(role) || Object.values(this.permissions.perGame).some(gameRoles => gameRoles.includes(role)));
+                return Object.values(this.permissions.perGame).some(gameRoles => gameRoles.includes(role));
             }
-            else if (gameName) {
-                return roles.some(role => (this.permissions.sitewide.includes(role) || (this.permissions.perGame[gameName] && this.permissions.perGame[gameName].includes(role))));
-            } else {
-                return roles.some(role => this.permissions.sitewide.includes(role));
+            if (gameName) {
+                return this.permissions.perGame[gameName]?.includes(role) ?? false;
             }
-        } else {
-            const sitewideCheck = (roles.hasAllOf ? roles.hasAllOf.every(role => this.permissions.sitewide.includes(role)) : true) &&
-                (roles.hasOneOf ? roles.hasOneOf.some(role => this.permissions.sitewide.includes(role)) : true) &&
-                (roles.denied ? roles.denied.every(role => !this.permissions.sitewide.includes(role)) : true);
+            return false;
+        };
 
-            if (gameName === `any`) {
-                const perGameCheck = 
-                    (roles.hasAllOf ? roles.hasAllOf.every(role => this.permissions.sitewide.includes(role) || Object.values(this.permissions.perGame).some(gameRoles => gameRoles.includes(role))) : true) &&
-                    (roles.hasOneOf ? roles.hasOneOf.some(role => this.permissions.sitewide.includes(role) || Object.values(this.permissions.perGame).some(gameRoles => gameRoles.includes(role))) : true) &&
-                    (roles.denied ? roles.denied.every(role => !this.permissions.sitewide.includes(role) && Object.values(this.permissions.perGame).every(gameRoles => !gameRoles.includes(role))) : true);
-                return sitewideCheck && perGameCheck;
-            } else if (gameName) {
-                const perGameCheck = 
-                    (roles.hasAllOf ? roles.hasAllOf.every(role => this.permissions.perGame[gameName]?.includes(role) ?? false) : true) &&
-                    (roles.hasOneOf ? roles.hasOneOf.some(role => this.permissions.perGame[gameName]?.includes(role) ?? false) : true) &&
-                    (roles.denied ? roles.denied.every(role => !(this.permissions.perGame[gameName]?.includes(role) ?? false)) : true);
-                return sitewideCheck && perGameCheck;
-            } else {
-                return sitewideCheck;
-            }
-        }
+        return (hasAllOf ? hasAllOf.every(has) : true) &&
+            (hasOneOf ? hasOneOf.some(has) : true) &&
+            (denied ? denied.every(role => !has(role)) : true);
+
     }
     // #endregion
     // #region Get Valid Reports Types for User
@@ -500,7 +486,7 @@ export class User extends Model<InferAttributes<User>, InferCreationAttributes<U
             avatarUrl: this.avatarUrl,
         };
     }
-    
+
     public toApiV2(): UserPublicApiV2 {
         return {
             id: this.id,

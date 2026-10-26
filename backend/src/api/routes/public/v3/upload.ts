@@ -62,12 +62,16 @@ export const uploadStuff = router({
             icon_3: zfd.file().refine((file) => Validator.validateThumbnail(file), { message: "Invalid icon file format" }).optional(),
             icon_4: zfd.file().refine((file) => Validator.validateThumbnail(file), { message: "Invalid icon file format" }).optional(),
             icon_5: zfd.file().refine((file) => Validator.validateThumbnail(file), { message: "Invalid icon file format" }).optional(),
-        }).refine((data) => {
-            return Validator.validateAssetFile(data.asset, data.data.type);
-        }, { message: "Invalid asset file format for the specified type" }
-        ).refine(async (data) => {
-            return (await Validator.validateAssetFileData(data.asset, data.data.type)).valid
-        }, { message: "Invalid asset file data" }))
+        }).superRefine(async (data, ctx) => {
+            if (!Validator.validateAssetFile(data.asset, data.data.type)) {
+                ctx.addIssue({ code: "custom", message: "Invalid asset file" });
+            }
+
+            let validationData = await Validator.validateAssetFileData(data.asset, data.data.type);
+            if (!validationData.valid) {
+                ctx.addIssue({ code: "custom", message: validationData.reason });
+            }
+        }))
         //    .output(assetApiV3Schema)
         .mutation(async ({ ctx, input }) => {
             let defaultGame = await Game.defaultGame;

@@ -1,4 +1,4 @@
-import { Asset, AssetInfer, User } from "../../../../shared/Database.ts";
+import { Asset, AssetInfer, Game, User } from "../../../../shared/Database.ts";
 import { Op, WhereOptions } from "sequelize";
 import { assetFileFormatSchema, AssetApiV3, assetApiV3Schema, statusSchema, Tags } from "../../../../shared/database/DBExtras.ts";
 import { anyProcedure, router } from "../../../trpc.ts";
@@ -37,7 +37,11 @@ export const assetsRouterV3 = router({
             page: z.number().nullable()
         }))
         .query(async ({ input, ctx }) => {
-            let allowedStatuses = ctx.user ? ctx.user.getAllowedStatuses(`asset`) : User.getAllowedStatuses();
+            let defaultGame = await Game.defaultGame;
+            if (!defaultGame) {
+                throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Default game not found. Please contact a site administrator.' });
+            }
+            let allowedStatuses = User.getAllowedStatuses(ctx.user, `asset`, defaultGame.name);
             if (input.status && !allowedStatuses.includes(input.status)) {
                 return { assets: [], total: 0, page: null };
             }

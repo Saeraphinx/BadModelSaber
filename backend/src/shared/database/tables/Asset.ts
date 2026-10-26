@@ -181,8 +181,8 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
     }
     // #endregion
 
-    private static readonly invalidFileNameChars = /[<>:"/\\|?*\x00-\x1F]/i;
-    private static readonly invalidFileNameWin = /^(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(\..*)?$/i;
+    private static readonly invalidFileNameChars = /[<>:"/\\|?*\x00-\x1F]/gi;
+    private static readonly invalidFileNameWin = /^(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(\..*)?$/gi;
 
     // #region Validators
     public static validator = z.object({

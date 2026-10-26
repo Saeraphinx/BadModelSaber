@@ -35,7 +35,7 @@
     return Boolean(
       zAsset.shape.name.safeParse(name).success &&
         zAsset.shape.description.safeParse(description).success &&
-        zAsset.shape.licenseUrl.safeParse(customLicense).success &&
+        (license !== `custom` || zAsset.shape.licenseUrl.safeParse(customLicense).success) &&
         !!asset &&
         asset.length > 0 &&
         !!thumbnails &&
@@ -54,7 +54,7 @@
         name,
         description,
         license: license,
-        licenseUrl: !customLicense || customLicense.length == 0 ? null : customLicense,
+        licenseUrl: license === `custom` && customLicense.length > 0 ? customLicense : null,
         sourceUrl: null,
         tags,
         credits,
@@ -218,9 +218,7 @@
         class=""
         type="file"
         id="asset"
-        accept={Object.values(AssetFileFormat)
-          .map((f) => f.split(`_`)[1])
-          .join(`,.`)} />
+        accept=".{type.split(`_`)[1]}" />
       <p class="text-sm text-muted-foreground mt-2 pl-1">{m[`assets.upload.ensureRights`]()}</p>
     </div>
     <div class="flex flex-col justify-center w-full max-w-md p-4 bg-card rounded-lg shadow-md mt-4">

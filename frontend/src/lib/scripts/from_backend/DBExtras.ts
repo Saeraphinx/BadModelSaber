@@ -86,7 +86,7 @@ export enum AssetFileFormat {
 
   Banner_Png = 'banner_png',
 
-  ChromaEnv_JSON = 'chroma-environment_json',
+  ChromaEnv_DAT = 'chroma-environment_dat',
   Camera2Config_JSON = 'camera2-config_json',
   CountersPlusConfig_JSON = 'counters-plus-config_json',
   HSVConfig_JSON = 'hitscorevisualizer-config_json',
