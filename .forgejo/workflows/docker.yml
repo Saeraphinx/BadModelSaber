@@ -32,3 +32,5 @@ jobs:
           image-name: badmodelsaber-backend
           aud: u:3:6340a61f-2f6a-42da-9756-c2cd24520bc4
           context: ./backend
+          build-args: |
+            GIT_SHA=${{ github.sha }}

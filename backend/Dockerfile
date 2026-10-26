@@ -29,6 +29,8 @@ RUN yarn workspaces focus --production
 FROM node:24-alpine
 WORKDIR /app
 ENV IS_DOCKER=true
+ARG GIT_SHA=unknown
+ENV GIT_SHA=$GIT_SHA
 ENV NODE_ENV=production
 COPY --from=builder /app/build ./build
 COPY --from=builder /app/node_modules ./node_modules

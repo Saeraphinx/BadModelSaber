@@ -75,9 +75,9 @@ export function addTimingHeaders(ctx: { res: Context['res'], user: User|null}, t
 
 export function getGitVersion(): string {
     let gitVersion = `Version not found.`;
-    if (fs.existsSync(`../.git/HEAD`) || process.env.GIT_VERSION) {
-        if (process.env.GIT_VERSION) {
-            gitVersion = `${process.env.GIT_VERSION.substring(0, 7)}`;
+    if (fs.existsSync(`../.git/HEAD`) || process.env.GIT_SHA) {
+        if (process.env.GIT_SHA) {
+            gitVersion = `${process.env.GIT_SHA.substring(0, 7)}`;
         } else {
             let gitId = fs.readFileSync(`../.git/HEAD`, `utf8`);
             if (gitId.indexOf(`:`) !== -1) {
