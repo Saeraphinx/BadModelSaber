@@ -109,32 +109,20 @@ export function checkRoles(userPermObj: UserPermObj | undefined, roles: UserPerm
     return false;
   }
 
-  if (Array.isArray(roles)) {
+  const { hasAllOf, hasOneOf, denied } = Array.isArray(roles) ? { hasOneOf: roles } : roles;
+  const has = (role: UserPermissions): boolean => {
+    if (userPermObj.permissions.sitewide.includes(role)) return true;
     if (gameName === `any`) {
-      return roles.some(role => userPermObj.permissions.sitewide.includes(role) || Object.values(userPermObj.permissions.perGame).some(gameRoles => gameRoles.includes(role)));
-    } else if (gameName) {
-      return roles.some(role => (userPermObj.permissions.sitewide.includes(role) || (userPermObj.permissions.perGame[gameName] && userPermObj.permissions.perGame[gameName].includes(role))));
-    } else {
-      return roles.some(role => userPermObj.permissions.sitewide.includes(role));
+      return Object.values(userPermObj.permissions.perGame).some(gameRoles => gameRoles.includes(role));
     }
-  } else {
-    const sitewideCheck = (roles.hasAllOf ? roles.hasAllOf.every(role => userPermObj.permissions.sitewide.includes(role)) : true) &&
-      (roles.hasOneOf ? roles.hasOneOf.some(role => userPermObj.permissions.sitewide.includes(role)) : true) &&
-      (roles.denied ? roles.denied.every(role => !userPermObj.permissions.sitewide.includes(role)) : true);
+    if (gameName) {
+      return userPermObj.permissions.perGame[gameName]?.includes(role) ?? false;
+    }
+    return false;
+  };
 
-    if (gameName === `any`) {
-      const anyGameCheck = (roles.hasAllOf ? Object.values(userPermObj.permissions.perGame).some(gameRoles => roles.hasAllOf?.every(role => gameRoles.includes(role))) : true) &&
-        (roles.hasOneOf ? Object.values(userPermObj.permissions.perGame).some(gameRoles => roles.hasOneOf?.some(role => gameRoles.includes(role))) : true) &&
-        (roles.denied ? Object.values(userPermObj.permissions.perGame).every(gameRoles => roles.denied?.every(role => !gameRoles.includes(role))) : true);
-      return sitewideCheck || anyGameCheck;
-    } else if (gameName) {
-      const perGameCheck = (roles.hasAllOf ? roles.hasAllOf.every(role => userPermObj.permissions.perGame[gameName]?.includes(role) ?? false) : true) &&
-        (roles.hasOneOf ? roles.hasOneOf.some(role => userPermObj.permissions.perGame[gameName]?.includes(role) ?? false) : true) &&
-        (roles.denied ? roles.denied.every(role => !(userPermObj.permissions.perGame[gameName]?.includes(role) ?? false)) : true);
-      return sitewideCheck || perGameCheck;
-    } else {
-      return sitewideCheck;
-    }
-  }
+  return (hasAllOf ? hasAllOf.every(has) : true) &&
+    (hasOneOf ? hasOneOf.some(has) : true) &&
+    (denied ? denied.every(role => !has(role)) : true);
 }
 // #endregion
