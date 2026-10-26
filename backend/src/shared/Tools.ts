@@ -167,3 +167,5 @@ export function getHashFromFile(file: File | { path: string }): Promise<string> 
 export function asyncFilter<T>(arr: T[], predicate: (item: T) => Promise<boolean>) {
     return Promise.all(arr.map(async (item) => (await predicate(item)) ? item : null)).then(res => res.filter(Boolean) as T[]);
 }
+
+export const escapeLike = (s: string) => s.replace(/[\\%_]/g, '\\$&');

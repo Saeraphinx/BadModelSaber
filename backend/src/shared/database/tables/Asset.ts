@@ -56,12 +56,12 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
         foreignKey: `uploaderId`,
     })
     private declare _uploader?: NonAttribute<Promise<User | null>>;
-    
+
     @AllowNull(false)
     @Default([])
     @Column(DataType.ARRAY(DataType.INTEGER))
     declare collaboratorIds: CreationOptional<number[]>; // credits for the asset, e.g. "Model by John Doe, Textures by Jane Smith"
-    
+
     @AllowNull(false)
     @Column(DataType.TEXT)
     declare name: string;
@@ -74,21 +74,21 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
     @AllowNull(false)
     @Column(DataType.STRING)
     declare license: License; // e.g. CC-BY, CC0, etc. or 'custom'
-    
+
     @AllowNull(true)
     @Default(null)
     @Column(DataType.STRING)
     declare licenseUrl: CreationOptional<string | null>; // URL to the license, if applicable (e.g. custom is set for license)
-    
+
     @AllowNull(true)
     @Default(null)
     @Column(DataType.STRING)
     declare sourceUrl: CreationOptional<string | null>; // URL to the source of the asset, if applicable;
-    
+
     @AllowNull(false)
     @Column(DataType.STRING)
     declare fileSafeName: string; // file-safe version of the asset name
-    
+
     @AllowNull(false)
     @Unique
     @Column(DataType.STRING)
@@ -97,12 +97,12 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
     @AllowNull(false)
     @Column(DataType.INTEGER)
     declare fileSize: number;
-    
+
     @AllowNull(false)
     @Default([])
     @Column(DataType.ARRAY(DataType.STRING))
     declare iconNames: CreationOptional<string[]>; // names of the icons associated with the asset, e.g. ["icon1.png", "icon2.png"]
-    
+
     @AllowNull(false)
     @Default(Status.Private)
     @Column(DataType.STRING)
@@ -181,8 +181,9 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
     }
     // #endregion
 
-    private static readonly invalidFileNameChars = /[<>:"/\\|?*\x00-\x1F]/gi;
-    private static readonly invalidFileNameWin = /^(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(\..*)?$/gi;
+    private static readonly invalidFileNameChars = /[<>:"/\\|?*\x00-\x1F]/g;
+    private static readonly invalidFileNameWin = /^(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(\..*)?$/i;
+    private static readonly hasInvalidFileNameChars = /[<>:"/\\|?*\x00-\x1F]/;
 
     // #region Validators
     public static validator = z.object({
@@ -202,7 +203,10 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
         license: z.enum(Object.values(License)),
         licenseUrl: z.url().nullable(),
         sourceUrl: z.url().nullable(),
-        fileSafeName: z.string().min(1).max(128).refine(str => !Asset.invalidFileNameChars.test(str), `Invalid charecters`).refine(str => !Asset.invalidFileNameWin.test(str), "File name is a reserved Windows name"),
+        fileSafeName: z.string().min(1).max(128)
+            .refine(str => !Asset.hasInvalidFileNameChars.test(str), `Invalid charecters`)
+            .refine(str => !Asset.invalidFileNameWin.test(str), `File name is a reserved Windows name`)
+            .refine(str => str !== `.` && str !== `..` && !/[. ]$/.test(str), `File name cannot be a dot-only name or end with a dot or space`),
         // unique by db
         fileHash: z.string().min(1).max(64),
         fileSize: z.number().int().positive(),
@@ -538,7 +542,7 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
     public async setStatus(newStatus: AssetValidStatuses, user: User, reason: string, sendAlert: boolean = true, shouldSendWebhooks: boolean = true): Promise<Asset> {
         let previousStatus = this.status;
         this.status = newStatus;
-        
+
         this.statusHistory = [...this.statusHistory, {
             status: newStatus,
             reason: reason,
@@ -588,7 +592,7 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
                     type: AlertType.ThingGood,
                     ...AlertTemplates.setFirstApproval(`asset`, thingName, false),
                 });
-            // order is specific here to trigger correct alerts
+                // order is specific here to trigger correct alerts
             } else if (wasRemoved) {
                 await this.alertUploader({
                     type: AlertType.ThingBad,
@@ -618,7 +622,7 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
 
         let existingRequests = await ThingRequest.findAll({
             where: {
-                requestResponseBy: this.uploaderId,
+                requesterId: reportedBy.id,
                 refrencedId: this.id,
                 requestType: RequestType.Asset_Report,
                 refrencedGameName: this.gameName
@@ -650,14 +654,15 @@ export class Asset extends Model<InferAttributes<Asset>, InferCreationAttributes
     // #region Misc
     public static convertNameToFileSafe(name: string, fallbackName?: string): string {
         name = name.trim();
-        if (name.length === 0) {
-            name = fallbackName ?? 'invalid_name';
-        }
         if (name.length > 120) {
             name = name.substring(0, 120);
         }
         name = name.replaceAll(this.invalidFileNameChars, '_');
-        name = name.replaceAll(this.invalidFileNameWin, '');
+        name = name.replace(this.invalidFileNameWin, '');
+        name = name.replace(/[. ]+$/, '');
+        if (name.length === 0) {
+            name = fallbackName ?? 'invalid_name';
+        }
         return name;
     }
 

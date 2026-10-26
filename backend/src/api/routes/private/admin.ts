@@ -1,7 +1,7 @@
 import { Alert, Asset, AssetValidStatusesArray, dbId, defaultGamePermissions, defaultSitewidePermissions, Game, GameVersion, Project, ProjectValidStatusesArray, Status, User, UserPermissions, userPermissionsSchema, Version, VersionValidStatusesArray, WebhookLogType } from "../../../shared/Database.ts";
 import { Validator } from "../../../shared/Validator.ts";
 import z from "zod/v4";
-import { dedupeArray, handleCatch, parseErrorMessage } from "../../../shared/Tools.ts";
+import { dedupeArray, escapeLike, handleCatch, parseErrorMessage } from "../../../shared/Tools.ts";
 import { gameProcedure, loggedInAssetProcedure, loggedInGameVersionProcedure, loggedInProcedure, loggedInProjectProcedure, loggedInVersionProcedure, router } from "../../trpc.ts";
 import { Logger, LogLevel } from "../../../shared/Logger.ts";
 import { TRPCError } from "@trpc/server";
@@ -29,7 +29,7 @@ export const AdminRouter = router({
 
                 targetUser.permissions = input.permissions;
                 return await targetUser.save().then((u) => {
-                    Logger.log(`Successfully saved roles for user ${targetUser.id}: ${JSON.stringify(targetUser.permissions)}`);
+                    Logger.log(`User ${ctx.user.id} successfully updated roles for user ${targetUser.id}: ${JSON.stringify(targetUser.permissions)}`);
                     return { message: `User roles updated successfully`, user: u };
                 }).catch((e) => {
                     Logger.error(`Error saving user roles for user ${targetUser.id}: ${e}`);
@@ -84,16 +84,16 @@ export const AdminRouter = router({
                 where: {
                     [Op.or]: {
                         displayName: {
-                            [Op.iLike]: `%${input.query}%`
+                            [Op.iLike]: `%${escapeLike(input.query)}%`
                         },
                         username: {
-                            [Op.iLike]: `%${input.query}%`
+                            [Op.iLike]: `%${escapeLike(input.query)}%`
                         },
                         discordId: {
-                            [Op.iLike]: `%${input.query}%`
+                            [Op.iLike]: `%${escapeLike(input.query)}%`
                         },
                         githubId: {
-                            [Op.iLike]: `%${input.query}%`
+                            [Op.iLike]: `%${escapeLike(input.query)}%`
                         },
                     }
                 },

@@ -521,9 +521,10 @@ export class Project extends Model<InferAttributes<Project>, InferCreationAttrib
     public async report(reportedBy: User, reason: string): Promise<ThingRequest> {
         let existingRequests = await ThingRequest.findAll({
             where: {
-                requestResponseBy: this.lastUpdatedById,
+                requesterId: reportedBy.id,
                 refrencedId: this.id,
-                requestType: RequestType.Project_Report
+                requestType: RequestType.Project_Report,
+                refrencedGameName: this.gameName
             }
         });
 

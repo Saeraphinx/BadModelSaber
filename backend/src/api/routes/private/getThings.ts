@@ -6,7 +6,7 @@ import { anyGameProcedure, anyProcedure, gameProcedure, loggedInProcedure, route
 import fs from "fs";
 import { createPatch, diffLines, lineDiff } from "diff";
 import { Sequelize } from "sequelize-typescript";
-import { asyncFilter, parseErrorMessage } from "../../../shared/Tools.ts";
+import { asyncFilter, escapeLike, parseErrorMessage } from "../../../shared/Tools.ts";
 
 export const getThingsInternalRouter = router({
     // #region getProject
@@ -51,7 +51,7 @@ export const getThingsInternalRouter = router({
             let projects = await Project.findAll({
                 where: {
                     name: {
-                        [Op.iLike]: `%${input.query}%`
+                        [Op.iLike]: `%${escapeLike(input.query)}%`
                     },
                     gameName: input.gameName
                 },

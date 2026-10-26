@@ -202,8 +202,9 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
     private static validatorTypeTest2: VersionInfer = ({} as z.infer<typeof Version.validator>); // asset has property validator doesn't
     */
 
-    private static readonly invalidFileNameChars = /[<>:"/\\|?*\x00-\x1F]/gi;
-    private static readonly invalidFileNameWin = /^(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(\..*)?$/gi;
+    private static readonly invalidFileNameChars = /[<>:"/\\|?*\x00-\x1F]/g;
+    private static readonly invalidFileNameWin = /^(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(\..*)?$/i;
+    private static readonly hasInvalidFileNameChars = /[<>:"/\\|?*\x00-\x1F]/;
 
     public static validator = z.object({
         id: z.number().int().positive(),
@@ -219,7 +220,10 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
         lastUpdatedById: z.number(),
         fileSize: z.number(),
         statusHistory: z.array(statusHistorySchema),
-        baseFileName: z.string().min(1).max(128).refine(str => !Version.invalidFileNameChars.test(str), `Invalid charecters`).refine(str => !Version.invalidFileNameWin.test(str), "File name is a reserved Windows name"),
+        baseFileName: z.string().min(1).max(128)
+            .refine(str => !Version.hasInvalidFileNameChars.test(str), `Invalid charecters`)
+            .refine(str => !Version.invalidFileNameWin.test(str), `File name is a reserved Windows name`)
+            .refine(str => str !== `.` && str !== `..` && !/[. ]$/.test(str), `File name cannot be a dot-only name or end with a dot or space`),
         nextStatusChangeTime: z.date().nullable(),
         createdAt: z.date(),
         updatedAt: z.date(),
@@ -283,7 +287,14 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
         if (!version.isNewRecord) {
             return;
         }
-        version.baseFileName = `${(await version.project)?.name.replaceAll(Version.invalidFileNameChars, ``).replace(Version.invalidFileNameWin, ``)}_${version.platform}_v${version.semver.raw}`;
+        let baseFileName = `${(await version.project)?.name.replaceAll(Version.invalidFileNameChars, ``).replace(Version.invalidFileNameWin, ``)}_${version.platform}_v${version.semver.raw}`;
+        baseFileName = baseFileName.replaceAll(this.invalidFileNameChars, '_');
+        baseFileName = baseFileName.replace(this.invalidFileNameWin, '');
+        baseFileName = baseFileName.replace(/[. ]+$/, '');
+        if (baseFileName.length === 0) {
+            baseFileName = 'invalid_name';
+        }
+        version.baseFileName = baseFileName;
     }
     // #endregion
 
@@ -323,7 +334,7 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
         }
 
         let prjView = await prj.canView(user);
-        if (prjView && user) { 
+        if (prjView && user) {
             // this has to be done because a project can be viewable but the version can still be private
             if (user.getAllowedStatuses(`mod`, prj.gameName).includes(this.status)) {
                 return true;
@@ -571,7 +582,7 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
         Logger.debug(`Decompiling dll for version id ${this.id} at path ${dllFilePath} (prep ${startTime - Date.now()}ms)...`);
         await decompile({ assemblyPath: dllFilePath }, path.join(this.versionFolderPath, `decompiled`));
         Logger.info(`Decompilation completed for version id ${this.id}. Decompiled files saved to ${path.join(this.versionFolderPath, `decompiled`)}. Total Time: ${(Date.now() - startTime) / 1000}s`);
-        
+
         fs.unlinkSync(dllFilePath); // delete dll after decompilation
     }
     // #endregion
@@ -583,9 +594,10 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
         }
         let existingRequests = await ThingRequest.findAll({
             where: {
-                requestResponseBy: this.lastUpdatedById,
+                requesterId: reportedBy.id,
                 refrencedId: this.id,
-                requestType: RequestType.Version_Report
+                requestType: RequestType.Version_Report,
+                refrencedGameName: project.gameName
             }
         });
 

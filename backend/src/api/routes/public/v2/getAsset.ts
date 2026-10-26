@@ -3,7 +3,7 @@ import { Asset, AssetFileFormat, AssetInfer, assetPublicAPIv2Schema, Status } fr
 import { z } from "zod/v4";
 import { Op, Sequelize, WhereOptions } from "sequelize";
 import { anyProcedure, router } from "../../../trpc.ts";
-import { addCacheHeaders } from "../../../../shared/Tools.ts";
+import { addCacheHeaders, escapeLike } from "../../../../shared/Tools.ts";
 import { QueryCache } from "../../../../shared/Cache.ts";
 
 export const GetAssetV2Router = router({
@@ -60,7 +60,7 @@ export const GetAssetV2Router = router({
                 for (let i = 0; i < values.length; i++) {
                     repsonse[assets[i].id] = values[i];
                 }
-                QueryCache.assetV2Cache.set(JSON.stringify(filterOptions), repsonse);
+                QueryCache.assetV2Cache.set(JSON.stringify(input), repsonse);
                 return repsonse;
             });
         })
@@ -161,10 +161,10 @@ function convertToWhereOptions(filterType: string, value: {
             return {
                 [Op.or]: [
                     ...includeMerge.map(str => {
-                        return { name: { [Op.like]: `%${str}%` } }
+                        return { name: { [Op.like]: `%${escapeLike(str)}%` } }
                     }),
                     ...excludeMerge.map(str => {
-                        return { name: { [Op.notLike]: `%${str}%` } }
+                        return { name: { [Op.notLike]: `%${escapeLike(str)}%` } }
                     })
                 ]
             };

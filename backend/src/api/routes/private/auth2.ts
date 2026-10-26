@@ -56,12 +56,11 @@ function prepAuth(type: `discord` | `github`, redirect?: string) {
 
     let urlProper = null;
     if (redirect) {
-        urlProper = new URL(redirect);
-        if (!urlProper.protocol.startsWith('http')) urlProper = new URL(EnvConfig.server.frontendUrl);
-        if (urlProper.host !== new URL(EnvConfig.server.frontendUrl).host || urlProper.host !== new URL(EnvConfig.server.backendUrl).host) {
+        urlProper = URL.parse(redirect);
+        if (!urlProper) urlProper = new URL(EnvConfig.server.frontendUrl);
+        if (!(urlProper.protocol.startsWith('http:') || urlProper.protocol.startsWith('https:'))) urlProper = new URL(EnvConfig.server.frontendUrl);
+        if (urlProper.host !== new URL(EnvConfig.server.frontendUrl).host && urlProper.host !== new URL(EnvConfig.server.backendUrl).host) {
             urlProper = new URL(EnvConfig.server.frontendUrl);
-        } else {
-            urlProper = urlProper;
         }
     } else {
         urlProper = new URL(EnvConfig.server.frontendUrl);
@@ -82,9 +81,15 @@ function getDiscordSetupObj(state: string, url: string): RESTOAuth2Authorization
     }
 }
 
-function successfulHtmlString(redirect?: string) {
+function sendSuccessfulHtmlString(ctx: Context, redirect?: string) {
     if (!redirect) redirect = EnvConfig.server.frontendUrl;
-    return `<head><meta http-equiv="refresh" content="0; url=${redirect}" /></head><body style="background-color: black;"><a style="color:white;" href="${redirect}">Click here if you are not redirected...</a></body>`;
+    if (!(redirect?.startsWith('http:') || redirect?.startsWith('https:'))) redirect = EnvConfig.server.frontendUrl;
+    redirect.replaceAll(`&`, `&amp;`).replaceAll(`<`, `&lt;`).replaceAll(`>`, `&gt;`).replaceAll(`"`, `&quot;`).replaceAll(`'`, `&#39;`); // just in case
+
+    ctx.res.setHeader('Content-Security-Policy', `default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'`);
+    ctx.res.setHeader('X-Content-Type-Options', 'nosniff');
+    ctx.res.setHeader('Referrer-Policy', 'no-referrer');
+    ctx.res.send(`<head><meta http-equiv="refresh" content="0; url=${redirect}" /></head><body style="background-color: black;"><a style="color:white;" href="${redirect}">Click here if you are not redirected...</a></body>`);
 }
 
 
@@ -150,7 +155,7 @@ export const auth2Router = router({
 
                     const finalizeUrl = `${EnvConfig.server.backendUrl}/api/auth/discord/final?token=${token}`;
                     Logger.info(`Discord login stage 2 completed by ${userInfo.data.id}`);
-                    ctx.res.send(successfulHtmlString(finalizeUrl));
+                    sendSuccessfulHtmlString(ctx, finalizeUrl);
                     return;
                 }),
         },
@@ -196,7 +201,7 @@ export const auth2Router = router({
 
                     const finalizeUrl = `${EnvConfig.server.backendUrl}/api/auth/discord/final?token=${token}`;
                     Logger.info(`Discord login stage 2 completed by ${userInfo.data.id}`);
-                    ctx.res.send(successfulHtmlString(finalizeUrl));
+                    sendSuccessfulHtmlString(ctx, finalizeUrl);
                     return;
                 }),
         },
@@ -291,7 +296,7 @@ export const auth2Router = router({
                 }
 
                 if (ctx.res) {
-                    ctx.res.send(successfulHtmlString(redirect));
+                    sendSuccessfulHtmlString(ctx, redirect);
                 }
                 return;
             })
@@ -346,7 +351,7 @@ export const auth2Router = router({
 
                     const finalizeUrl = `${EnvConfig.server.backendUrl}/api/auth/github/final?token=${token}`;
                     Logger.info(`Github login stage 2 completed by ${userInfo.data.id}`);
-                    ctx.res.send(successfulHtmlString(finalizeUrl));
+                    sendSuccessfulHtmlString(ctx, finalizeUrl);
                     return;
                 }),
         },
@@ -396,7 +401,7 @@ export const auth2Router = router({
 
                     const finalizeUrl = `${EnvConfig.server.backendUrl}/api/auth/github/final?token=${token}`;
                     Logger.info(`Github login stage 2 completed by ${userInfo.data.id}`);
-                    ctx.res.send(successfulHtmlString(finalizeUrl));
+                    sendSuccessfulHtmlString(ctx, finalizeUrl);
                     return;
                 }),
         },
@@ -490,7 +495,7 @@ export const auth2Router = router({
                 }
 
                 if (ctx.res) {
-                    ctx.res.send(successfulHtmlString(redirect));
+                    sendSuccessfulHtmlString(ctx, redirect);
                 }
                 return;
             })

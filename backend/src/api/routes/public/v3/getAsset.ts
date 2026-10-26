@@ -4,7 +4,7 @@ import { assetFileFormatSchema, AssetApiV3, assetApiV3Schema, statusSchema, Tags
 import { anyProcedure, router } from "../../../trpc.ts";
 import { TRPCError } from "@trpc/server";
 import z from "zod/v4";
-import { addCacheHeaders } from "../../../../shared/Tools.ts";
+import { addCacheHeaders, escapeLike } from "../../../../shared/Tools.ts";
 import { QueryCache } from "../../../../shared/Cache.ts";
 
 export const assetsRouterV3 = router({
@@ -17,20 +17,20 @@ export const assetsRouterV3 = router({
             }
         })
         .input(z.object({
-                name: z.string().min(1).max(100).optional(),
-                type: assetFileFormatSchema.optional(),
-                status: statusSchema.optional(),
-                tags: z.array(z.enum(Tags)).optional(),
-                page: z.coerce.number().int().min(1).optional(),
-                limit: z.coerce.number().int().min(1).max(100).optional(),
-            }).refine((data) => {
-                if (data.page || data.limit) {
-                    if (!data.page || !data.limit) {
-                        return false; // If one is provided, both must be provided
-                    }
+            name: z.string().min(1).max(100).optional(),
+            type: assetFileFormatSchema.optional(),
+            status: statusSchema.optional(),
+            tags: z.array(z.enum(Tags)).optional(),
+            page: z.coerce.number().int().min(1).optional(),
+            limit: z.coerce.number().int().min(1).max(100).optional(),
+        }).refine((data) => {
+            if (data.page || data.limit) {
+                if (!data.page || !data.limit) {
+                    return false; // If one is provided, both must be provided
                 }
-                return true; // Valid if both are provided or neither is provided
-            }, `Both page and limit must be provided together.`))
+            }
+            return true; // Valid if both are provided or neither is provided
+        }, `Both page and limit must be provided together.`))
         .output(z.object({
             assets: z.array(assetApiV3Schema),
             total: z.number(),
@@ -48,7 +48,7 @@ export const assetsRouterV3 = router({
             let whereOptions: WhereOptions<AssetInfer> = {};
             whereOptions.status = input.status ? input.status : allowedStatuses;
             if (input.name) {
-                whereOptions.name = { [Op.iLike]: `%${input.name}%` };
+                whereOptions.name = { [Op.iLike]: `%${escapeLike(input.name)}%` };
             }
             if (input.type) {
                 whereOptions.type = input.type;
@@ -57,8 +57,15 @@ export const assetsRouterV3 = router({
                 whereOptions.tags = { [Op.contains]: input.tags };
             }
 
+            const cacheKey = JSON.stringify({
+                name: input.name ?? null,
+                type: input.type ?? null,
+                tags: input.tags ? [...input.tags].sort() : null,
+                status: whereOptions.status,
+            });
+
             if (!input.limit) {
-                const assetCache = QueryCache.assetV3Cache.get(JSON.stringify(whereOptions));
+                const assetCache = QueryCache.assetV3Cache.get(cacheKey);
                 if (assetCache) {
                     addCacheHeaders(ctx);
                     return assetCache;
@@ -77,7 +84,7 @@ export const assetsRouterV3 = router({
             addCacheHeaders(ctx);
             const responseObject = { assets: response, total: await assetCount, page: input.page ?? null };
             if (!input.limit) {
-                QueryCache.assetV3Cache.set(JSON.stringify(whereOptions), responseObject);
+                QueryCache.assetV3Cache.set(cacheKey, responseObject);
             }
             return responseObject;
         }),
@@ -101,12 +108,12 @@ export const assetsRouterV3 = router({
                     include: { all: true }
                 });
                 if (!asset) {
-                    throw new TRPCError({code: `NOT_FOUND`, message: `Asset not found.`} );
+                    throw new TRPCError({ code: `NOT_FOUND`, message: `Asset not found.` });
                 }
             }
 
             if (!asset.canView(ctx.user)) {
-                throw new TRPCError({code: `FORBIDDEN`, message: `You are not allowed to view this asset.`} );
+                throw new TRPCError({ code: `FORBIDDEN`, message: `You are not allowed to view this asset.` });
             }
             addCacheHeaders(ctx);
             return await asset.toApiV3();

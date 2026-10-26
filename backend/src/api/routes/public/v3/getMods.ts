@@ -6,7 +6,7 @@ import { TRPCError } from "@trpc/server";
 import { Op, WhereOptions } from "sequelize";
 import { compare } from "semver";
 import { Sequelize } from "sequelize-typescript";
-import { addCacheHeaders, addTimingHeaders, asyncFilter } from "../../../../shared/Tools.ts";
+import { addCacheHeaders, addTimingHeaders, asyncFilter, escapeLike } from "../../../../shared/Tools.ts";
 import { QueryCache } from "../../../../shared/Cache.ts";
 
 const hashLookupSchema = z.string().trim().min(32).max(32).regex(/^[a-fA-F0-9]+$/);
@@ -62,7 +62,7 @@ export const GetModsV3 = router({
             if (input.name) {
                 projectFilters = {
                     name: {
-                        [Op.iLike]: `%${input.name}%`
+                        [Op.iLike]: `%${escapeLike(input.name)}%`
                     }
                 }
             }
@@ -89,12 +89,14 @@ export const GetModsV3 = router({
             timingString = `start;dur=${Date.now() - startTime}`;
             startTime = Date.now();
 
-            const alreadyCached = QueryCache.modV3Cache.get(JSON.stringify(input));
-            if (alreadyCached) {
-                timingString += `, cache;dur=${Date.now() - startTime}`
-                addTimingHeaders(ctx, timingString);
-                addCacheHeaders(ctx);
-                return alreadyCached;
+            if (!ctx.user) {
+                const alreadyCached = QueryCache.modV3Cache.get(JSON.stringify(input));
+                if (alreadyCached) {
+                    timingString += `, cache;dur=${Date.now() - startTime}`
+                    addTimingHeaders(ctx, timingString);
+                    addCacheHeaders(ctx);
+                    return alreadyCached;
+                }
             }
             
             let versions = await Version.findAll({
@@ -153,7 +155,7 @@ export const GetModsV3 = router({
 
             addTimingHeaders(ctx, timingString);
             addCacheHeaders(ctx);
-            QueryCache.modV3Cache.set(JSON.stringify(input), outputApi);
+            if (!ctx.user) QueryCache.modV3Cache.set(JSON.stringify(input), outputApi);
             return outputApi;
         }),
     // #endregion
