@@ -221,7 +221,7 @@ export const HitScoreVisualizerSchema = z.object({
   missDisplays: z.array(
     z.object({ text: z.string(), color: z.array(z.number()) })
   )
-})
+}).partial()
 //#endregion
 
 //#region CountersPlus
