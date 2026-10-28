@@ -26,7 +26,7 @@ export const load: PageLoad = async ({ parent, params }) => {
 
   return {
     pageMetadata: {
-      title: `${pnv.project.name} - ${games.game.displayName} ${m[`common.mod`]}`,
+      title: `${pnv.project.name} - ${games.game.displayName} ${m[`common.mod`]()}`,
       description: `${pnv.project.summary || m[`mods.noSummary`]()}`,
       imageUrl: getProjectThumbnailUrl(pnv.project),
     },
