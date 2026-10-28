@@ -458,14 +458,14 @@
         {/if}
       </Tabs.Content>
       <Tabs.Content value="preview">
-        <Markdown markdown={editDescription || m[`common.noDescription`]()} class="text-lg text-gray-500 dark:text-gray-400 whitespace-pre-line text-wrap wrap-anywhere" />
+        <Markdown markdown={editDescription || m[`common.noDescription`]()} class="text-lg text-gray-500 dark:text-gray-400 text-wrap wrap-anywhere" />
       </Tabs.Content>
     </Tabs.Root>
   {:else}
     {#if pageData.status === Status.Verified}
-      <Markdown markdown={pageData.description || m[`common.noDescription`]()} class="text-lg text-gray-500 dark:text-gray-400 whitespace-pre-line text-wrap wrap-anywhere" />
+      <Markdown markdown={pageData.description || m[`common.noDescription`]()} class="text-lg text-gray-500 dark:text-gray-400 text-wrap wrap-anywhere" />
     {:else}
-      <span class="text-lg text-gray-500 dark:text-gray-400 whitespace-pre-line text-wrap wrap-anywhere">{pageData.description || m[`common.noDescription`]()}</span>
+      <span class="text-lg text-gray-500 dark:text-gray-400 text-wrap wrap-anywhere">{pageData.description || m[`common.noDescription`]()}</span>
     {/if}
   {/if}
 {/snippet}
