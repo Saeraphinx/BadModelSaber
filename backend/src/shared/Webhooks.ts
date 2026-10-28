@@ -20,16 +20,17 @@ export class Webhooks {
 
 
     // #region Webhook Management
-    public static testWebhook(url: string): boolean {
+    public static testWebhook(url: string, sendMessage = false): boolean {
         try {
             let testClient = new WebhookClient({ url: url });
+            if (sendMessage) testClient.send("Test message from BeatMods");
             return true;
         } catch (error) {
             return false;
         }
     }
 
-    public static async registerWebhooks() {
+    public static async registerAllWebhooks() {
         let games = await Game.findAll();
 
         for (let game of games) {

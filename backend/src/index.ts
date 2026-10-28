@@ -12,6 +12,7 @@ import swaggerUi from "swagger-ui-express";
 import { OpenAPIUploadDocs } from "./api/routes/public/v3/upload.ts";
 import { createContext, manualCreateContext } from "./api/trpc.ts";
 import { existsSync, renameSync } from "fs";
+import { Webhooks } from "./shared/Webhooks.ts";
 
 // eslint-disable-next-line quotes
 declare module 'express-serve-static-core' {
@@ -208,6 +209,9 @@ export async function init(overrideDbName?: string) {
             Logger.error(`Error running automatic status check: ${err}`);
         }
     }, EnvConfig.gaf.howOftenToRunStatusCheck);
+
+    // Register webhooks from all games
+    await Webhooks.registerAllWebhooks();
 
     let handeRejection = process.on(`unhandledRejection`, (err) => {
         Logger.error(`Unhandled rejection: ${err}`);

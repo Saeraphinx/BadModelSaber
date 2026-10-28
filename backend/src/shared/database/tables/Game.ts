@@ -190,12 +190,18 @@ export class Game extends Model<InferAttributes<Game>, InferCreationAttributes<G
     public async removeWebhook(webhookId: string): Promise<Game> {
         if (this.webhookConfig) {
             let newWebhooks = this.webhookConfig.filter((w) => w.id !== webhookId);
-            return await this.update({ webhookConfig: newWebhooks }).then((game) => {
+            if (newWebhooks.length >= 1) {
+                return await this.update({ webhookConfig: newWebhooks }).then((game) => {
                 Webhooks.registerWebhook(game);
                 return game;
             });
+            } else {
+                throw new Error(`Webhook with ID ${webhookId} does not exist.`);
+            }
+           
+        } else {
+            throw new Error(`No webhooks configured.`);
         }
-        throw new Error(`Webhook with ID ${webhookId} does not exist.`);
     }
 
     /** Set the full webhook config to the game's config */

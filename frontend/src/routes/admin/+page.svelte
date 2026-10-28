@@ -701,7 +701,7 @@
                     <td>{webhook.types.join(", ")}</td>
                     <td>{webhook.url}</td>
                     <td>
-                      <Button variant="outline" size="icon">
+                      <Button variant="outline" size="icon" disabled>
                         <PencilLine />
                       </Button>
                       <Button
