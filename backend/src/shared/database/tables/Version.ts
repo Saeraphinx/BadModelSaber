@@ -574,7 +574,7 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
         }
         Logger.debug(`Extracting dll file from zip for version id ${this.id}...`);
         let dllData = await (zipDllFile as JSZip.JSZipObject).async(`nodebuffer`);
-        // write dll to file for decompilation & future diffing
+        // write dll to file for decompilation
         let dllFilePath = this.dllFilePath;
         fs.writeFileSync(dllFilePath, dllData);
 

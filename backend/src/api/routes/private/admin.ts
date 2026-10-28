@@ -276,7 +276,11 @@ export const AdminRouter = router({
     },
     version: {
         startDecompile: loggedInVersionProcedure([UserPermissions.Mods_Approval]).mutation(async ({ ctx }) => {
-            await ctx.version.dotnetDecompile().catch(handleCatch(`starting decompile for version`));
+            return await ctx.version.dotnetDecompile().then(() => {
+                return `Success`
+            }).catch((err) => {
+                return parseErrorMessage(err);
+            });
         }),
     },
     dev: {

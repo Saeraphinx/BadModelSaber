@@ -36,7 +36,7 @@
     showCopy = allowCopy;
     codeUrlhref = codeUrl;
     decompileId = startDecompileId;
-    shouldDisable = decompileId === undefined || (!string.startsWith(`<`) && !string.startsWith(`Failed to fetch code`));
+    shouldDisable = decompileId === undefined || string.length <= 0 || (!string.startsWith(`<`) && !string.startsWith(`Failed to fetch code`));
     open = true;
   }
 </script>
