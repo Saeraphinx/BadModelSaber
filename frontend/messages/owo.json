@@ -193,6 +193,8 @@
   "assets.selectType": "Sewect a type...",
   "assets.searchTypes": "Seawch types...",
   "assets.noTypeFound": "No asset type found.",
+  "assets.pcOnly": "PC Onwy",
+  "assets.questOnly": "Quest Onwy",
   "assets.license.select": "Sewect a wicense...",
   "assets.license.custom": "Custom...",
   "assets.license.heading": "Cweative Commons Wicense Sewection",

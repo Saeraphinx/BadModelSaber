@@ -19,6 +19,7 @@
   import * as Drawer from "../../lib/shadcn/components/ui/drawer";
   import { replaceState } from "$app/navigation";
   import { page } from "$app/state";
+  import { Separator } from "../../lib/shadcn/components/ui/separator";
 
   const { data: _internal } = $props();
   const { pageData: {games, query, startingGame}, trpc, user } = $derived(_internal);
@@ -260,6 +261,7 @@
   </div>
   {#if tooSmall.current}
     <div class="flex flex-col justify-center items-center w-full gap-2">
+      <Separator />
       <MiniPagination bind:totalCount={totalSize} bind:selectedPageSize={pageSize} bind:currentPage={currentPage} />
     </div>
   {/if}

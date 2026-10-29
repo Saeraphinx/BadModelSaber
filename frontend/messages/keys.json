@@ -193,6 +193,8 @@
   "assets.selectType": "assets.selectType",
   "assets.searchTypes": "assets.searchTypes",
   "assets.noTypeFound": "assets.noTypeFound",
+  "assets.pcOnly": "assets.pcOnly",
+  "assets.questOnly": "assets.questOnly",
   "assets.license.select": "assets.license.select",
   "assets.license.custom": "assets.license.custom",
   "assets.license.heading": "assets.license.heading",

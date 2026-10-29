@@ -277,7 +277,7 @@
 
 {#snippet navbar_main(orientation = "vertical")}
   <NavigationMenu.Root viewport={orientation === "horizontal"}>
-    <NavigationMenu.List class="flex justify-center-safe items-center-safe {orientation === 'vertical' ? 'flex-col' : 'flex-row'}">
+    <NavigationMenu.List class="flex justify-center-safe items-center-safe {orientation === 'vertical' ? 'flex-col min-w-60' : 'flex-row'}">
       {#each links as link}
         <NavigationMenu.Item>
           {#if link.children}
@@ -347,7 +347,7 @@
       </div>
     </a>
     <!-- Navigation Bar -->
-    <div class="flex p-4 pt-3 justify-center">
+    <div class="flex p-4 pt-3 justify-center items-center">
       {#if showFullBar.current}
         {@render navbar_main("horizontal")}
       {/if}
