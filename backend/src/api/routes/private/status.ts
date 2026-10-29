@@ -17,18 +17,10 @@ export const statusRouter = router({
         .input(z.void())
         .output(z.object({
             message: z.string(),
-            timestamp: z.string(),
-            isDocker: z.boolean(),
-            environment: z.string(),
-            version: z.string(),
         }))
         .query(() => {
             return {
                 message: `Server is running`,
-                timestamp: new Date().toISOString(),
-                isDocker: process.env.IS_DOCKER === `true`,
-                environment: process.env.NODE_ENV || `unknown`,
-                version: getGitVersion(),
             };
         }),
     adminStatus: loggedInProcedure({
@@ -42,7 +34,7 @@ export const statusRouter = router({
             UserPermissions.Users_Ban,
             UserPermissions.Users_EditAllRoles
         ]
-    }).query(async ({ ctx }) => {
+    }, true).query(async ({ ctx }) => {
         let dbConnectionOK = await User.sequelize?.authenticate().then(() => `Connected`).catch(() => `Error`);
         let serverTime = new Date().toISOString();
         let isDocker = process.env.IS_DOCKER === `true`;

@@ -173,9 +173,9 @@ export function notLoggedInProcedure() {
     });
 }
 
-export function loggedInProcedure(roles?: UserPermissions[] | { hasAllOf?: UserPermissions[], hasOneOf?: UserPermissions[], denied?: UserPermissions[] }): ReturnType<typeof dummyLoggedIn> {
+export function loggedInProcedure(roles?: UserPermissions[] | { hasAllOf?: UserPermissions[], hasOneOf?: UserPermissions[], denied?: UserPermissions[] }, anyGame = false): ReturnType<typeof dummyLoggedIn> {
     return t.procedure.use(async ({ ctx, next }) => {
-        let user = await roleCheckLogic(ctx, roles);
+        let user = await roleCheckLogic(ctx, roles, anyGame ? 'any' : undefined);
         return next({
             ctx: {
                 ...ctx,

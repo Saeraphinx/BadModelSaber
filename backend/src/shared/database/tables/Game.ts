@@ -1,20 +1,13 @@
 import { CreationOptional, InferAttributes, InferCreationAttributes, NonAttribute } from "sequelize";
 import { AfterCreate, AfterValidate, AllowNull, Column, CreatedAt, DataType, Default, DeletedAt, Model, PrimaryKey, Table, UpdatedAt } from "sequelize-typescript";
-import { WebhookLogType } from "../DBExtras.ts";
+import { GameApiV3, GameWebhookConfigSchema, WebhookLogType } from "../DBExtras.ts";
 import { createRandomString } from "../../Tools.ts";
 import { APIMessage, MessagePayload, WebhookMessageCreateOptions } from "discord.js";
 import { Webhooks } from "../../Webhooks.ts";
 import z from "zod/v4";
 import { defaultGamePermissions, User } from "./User.ts";
 
-
-export type GameWebhookConfig = {
-    id: string;
-    url: string;
-    isAssetWebhook: boolean
-    types: WebhookLogType[];
-};
-
+export type GameWebhookConfig = z.infer<typeof GameWebhookConfigSchema>;
 export type GameInfer = InferAttributes<Game>;
 @Table({
     tableName: `games`,
@@ -259,7 +252,7 @@ export class Game extends Model<InferAttributes<Game>, InferCreationAttributes<G
     }
     // #endregion
 
-    public toApiV3(includeWebhooks = false) {
+    public toApiV3(includeWebhooks = false): GameApiV3 {
         return {
             name: this.name,
             displayName: this.displayName,

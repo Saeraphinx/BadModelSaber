@@ -76,7 +76,7 @@ export const loadOpenApiMiddleware = createOpenApiExpressMiddleware({
     maxBodySize: 1024 * 1024 * 8
 });
 export const generateOpenAPIDoc = generateOpenApiDocument(appRouter, {
-  title: 'tRPC OpenAPI',
-  version: '0.0.1',
-  baseUrl: 'http://localhost:3000'
+  title: 'BeatMods OpenAPI Documentation',
+  version: '3.1.0',
+  baseUrl: 'https://beatmods.com'
 });

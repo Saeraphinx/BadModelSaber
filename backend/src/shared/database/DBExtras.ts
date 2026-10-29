@@ -1,5 +1,6 @@
 import { validRange } from "semver";
 import z from "zod/v4";
+import ca from "zod/v4/locales/ca.cjs";
 
 export type ElementType<T> = T extends (infer U)[] ? U : T;
 
@@ -538,19 +539,21 @@ export const ModVersionsApiv2Schema = z.object({
 export type ModVersionsApiv2 = z.infer<typeof ModVersionsApiv2Schema>;
 // #endregion
 // #region API v3 Schemas
-let GameVersionApiV3Schema = z.object({
+export type GameVersionApiV3 = z.infer<typeof GameVersionApiV3Schema>;
+export type GameVersionApiV3_full = z.infer<typeof GameVersionApiV3_fullSchema>;
+export const GameVersionApiV3Schema = z.object({
   id: z.number().int().positive(),
   gameName: z.string(),
   version: z.string(),
 });
-export type GameVersionApiV3 = z.infer<typeof GameVersionApiV3Schema>;
-export type GameVersionApiV3_full = GameVersionApiV3 & {
-  isDefault: boolean,
-  isDeprecated: boolean,
-  groupName: string | null,
-  createdAt: Date,
-  updatedAt: Date,
-}
+export const GameVersionApiV3_fullSchema = GameVersionApiV3Schema.extend({
+  isDefault: z.boolean(),
+  isDeprecated: z.boolean(),
+  groupName: z.string().nullable(),
+  createdAt: z.date(),
+  updatedAt: z.date()
+});
+
 
 export type UserApiV3 = z.infer<typeof userApiV3Schema>;
 export const userApiV3Schema = z.object({
@@ -671,4 +674,21 @@ export const thingRequestApiV3Schema = z.object({
   createdAt: z.date(),
   updatedAt: z.date()
 })
+
+export const GameWebhookConfigSchema = z.object({
+  id: z.string(),
+  url: z.string(),
+  isAssetWebhook: z.boolean(),
+  types: z.array(z.enum(WebhookLogType))
+});
+
+export type GameApiV3 = z.infer<typeof GameApiV3Schema>;
+export const GameApiV3Schema = z.object({
+  name: z.string(),
+  displayName: z.string(),
+  categories: z.array(z.string()),
+  platforms: z.array(z.string()),
+  webhooks: z.array(GameWebhookConfigSchema).nullable(),
+  isDefault: z.boolean()
+});
 // #endregion
