@@ -246,6 +246,8 @@
     "selectType": "Select a type...",
     "searchTypes": "Search types...",
     "noTypeFound": "No asset type found.",
+    "pcOnly": "PC Only",
+    "questOnly": "Quest Only",
     "license": {
       "select": "Select a license...",
       "custom": "Custom...",

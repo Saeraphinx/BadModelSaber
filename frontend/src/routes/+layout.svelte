@@ -30,7 +30,7 @@
   const { data: _internal, children } = $props();
   const { user, alertCount, pendingToasts, trpc } = $derived(_internal);
   
-  let showFullBar = new MediaQuery("min-width: 769px");
+  let showFullBar = new MediaQuery("min-width: 850px");
   let showDevbar = new MediaQuery(`min-height: 550px`);
   let isLoggedIn = $derived(!!(user && user.id));
 
@@ -335,7 +335,7 @@
   {/if}
   <div class="flex w-auto flex-row text-base justify-between">
     <!-- Logo -->
-    <a href="/" class="flex items-center justify-start md:w-32 h-16 md:ml-16 ml-4 md:p-4 gap-0.5">
+    <a href="/" class="flex items-center justify-start md:w-32 h-16 lg:ml-16 ml-4 md:p-4 gap-0.5">
       <img src="/modelsaber-logo-web.svg" alt="ModelSaber Logo" class="h-8 w-8 mr-2" />
       <div class="flex flex-col items-center justify-center">
         <span class="text-xl font-bold">{m[`name`]()}</span>
@@ -352,7 +352,7 @@
         {@render navbar_main("horizontal")}
       {/if}
     </div>
-    <div class="flex items-center justify-end md:w-32 h-16 md:mr-16 mr-4 md:p-4 gap-0.5">
+    <div class="flex items-center justify-end md:w-32 h-16 lg:mr-16 mr-4 md:p-4 gap-0.5">
       <!-- Hamburger menu for Small Screens -->
       {#if !showFullBar.current}
         <Popover.Root>

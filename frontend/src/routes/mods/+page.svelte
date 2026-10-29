@@ -259,8 +259,8 @@
     {/if}
   </div>
   {#if tooSmall.current}
-    <div class="flex flex-col w-full gap-2">
-      {@render searchFilter()}
+    <div class="flex flex-col justify-center items-center w-full gap-2">
+      <MiniPagination bind:totalCount={totalSize} bind:selectedPageSize={pageSize} bind:currentPage={currentPage} />
     </div>
   {/if}
 </div>

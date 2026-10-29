@@ -169,7 +169,7 @@ export class EnvConfig {
             enableApiKeys: process.env.ENABLE_API_KEYS === `true` || DEFAULT_CONFIG.server.enableApiKeys,
         };
 
-        if (EnvConfig.server.storeSessions && EnvConfig.server.sessionCookieSecret == DEFAULT_CONFIG.server.sessionCookieSecret) {
+        if (this.isProduction && EnvConfig.server.storeSessions && EnvConfig.server.sessionCookieSecret == DEFAULT_CONFIG.server.sessionCookieSecret) {
             throw new Error(`Session secret must be set.`);
         }
 

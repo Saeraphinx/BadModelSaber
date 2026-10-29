@@ -21,10 +21,11 @@
   import BigPagination from "$lib/components/generic/BigPagination.svelte";
   import { checkAllowApproval, checkRoles, getAllowedAssetStatuses } from "$lib/scripts/utils/checkRoles.js";
   import * as Drawer from "$shadcn/components/ui/drawer";
-  import { handleTrpcErrorWithToast, parseErrorMessage } from "../../lib/scripts/utils/api.js";
-  import * as RadioGroup from "../../lib/shadcn/components/ui/radio-group";
+  import { handleTrpcErrorWithToast, parseErrorMessage } from "$lib/scripts/utils/api.js";
+  import * as RadioGroup from "$lib/shadcn/components/ui/radio-group";
   import { navigating, page } from "$app/state";
   import { replaceState } from "$app/navigation";
+  import { Badge } from "$lib/shadcn/components/ui/badge";
 
   const { data: _internal } = $props();
   // svelte-ignore state_referenced_locally
@@ -120,12 +121,14 @@
     }
     untrack(() => tick().then(() =>replaceState(`${location.pathname}${searchParams.size > 0 ? `?${searchParams.toString()}` : ""}`, page.state)));
   });
+
+  // TODO: Clean up filter styling since the badges overflow
 </script>
 
 {#snippet filters()}
   <!-- File Type Filter -->
   <Collapsible.Root bind:open={filterFileFormatVisible}>
-    <div class="flex flex-col bg-card rounded-2xl min-w-62 w-full py-2 px-4">
+    <div class="flex flex-col bg-card rounded-2xl min-w-80 w-full py-2 px-4">
       <Collapsible.Trigger class="flex items-center justify-between w-full">
         <span class="text-lg font-semibold">{m[`common.dataTable.type`]()}</span>
         <ChevronRight class="h-4 w-4 transition-transform {filterFileFormatVisible ? `rotate-90` : ``}" />
@@ -150,9 +153,19 @@
                   value={format.rawString}
                   id={format.rawString} />
                 {#if type[0] == m[`enums.assetTypes.plurals.config`]() || type[0] == m[`enums.assetTypes.plurals.other`]()}
-                  <Label for={format.rawString}>{format.combinedString}</Label>
+                  <Label for={format.rawString}>
+                    {format.combinedString}
+                    {#if format.isPCOnly}
+                      <Badge variant="outline" class="my-0 py-0 px-1.5 text-blue-200 border-blue-400 bg-blue-900/20">{m[`assets.pcOnly`]()}</Badge>
+                    {/if}
+                  </Label>
                 {:else}
-                  <Label for={format.rawString}>{format.formatString}</Label>
+                  <Label for={format.rawString}>
+                    {format.formatString}
+                    {#if format.isPCOnly}
+                      <Badge variant="outline" class="my-0 py-0 text-blue-200 border-blue-400 bg-blue-900/20">{m[`assets.pcOnly`]()}</Badge>
+                    {/if}
+                  </Label>
                 {/if}
               </div>
             {/each}
@@ -163,7 +176,7 @@
   </Collapsible.Root>
   <!-- render mode Filter -->
   <Collapsible.Root bind:open={filterRenderingMethodVisible} class="mt-4">
-    <div class="flex flex-col bg-card rounded-2xl min-w-62 w-full py-2 px-4">
+    <div class="flex flex-col bg-card rounded-2xl min-w-80 w-full py-2 px-4">
       <Collapsible.Trigger class="flex items-center justify-between w-full">
         <span class="text-lg font-semibold">{m[`common.dataTable.renderingMethod`]()}</span>
         <ChevronRight class="h-4 w-4 transition-transform {filterRenderingMethodVisible ? `rotate-90` : ``}" />
@@ -196,7 +209,7 @@
   {#if assetStatuses.length > 1}
     <!-- Only show status filter if there are multiple statuses available for filtering -->
     <Collapsible.Root bind:open={filterStatusVisible} class="mt-4">
-      <div class="flex flex-col bg-card rounded-2xl min-w-62 w-full py-2 px-4">
+      <div class="flex flex-col bg-card rounded-2xl min-w-80 w-full py-2 px-4">
         <Collapsible.Trigger class="flex items-center justify-between w-full">
           <span class="text-lg font-semibold">{m[`common.dataTable.status`]()}</span>
           <ChevronRight class="h-4 w-4 transition-transform {filterStatusVisible ? `rotate-90` : ``}" />
@@ -226,7 +239,7 @@
 {/snippet}
 
 {#snippet search(full = false)}
-  <div class="flex flex-col bg-card rounded-2xl {full ? `max-w-md w-full` : `w-62`} p-4 mb-4 gap-2">
+  <div class="flex flex-col bg-card rounded-2xl {full ? `max-w-md w-full` : `w-80`} p-4 mb-4 gap-2">
     <div class="flex flex-row w-full gap-2">
       <Label for="asset-search" class="sr-only">{m[`search.title`]()}</Label>
       <Input type="text" placeholder={m[`search.searchAssets`]()} id="asset-search" bind:value={searchQuery} />
@@ -243,7 +256,7 @@
         <Select.Root allowDeselect={false} bind:value={selectedPageSizeString} type="single" onValueChange={(value) => (currentPage = 1)}>
           <Select.Trigger id="per-page-select" class="w-full">{m[`search.pagination.perPage`]({ count: Number(selectedPageSizeString) })}</Select.Trigger>
           <Select.Content>
-            {#each [24, 48, 72] as amount}
+            {#each [24, 48, 80] as amount}
               <Select.Item value={amount.toString()}>
                 {m[`search.pagination.perPage`]({ count: amount })}
               </Select.Item>

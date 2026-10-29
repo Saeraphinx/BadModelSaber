@@ -120,6 +120,7 @@ export function getAssetTypeData(format: AssetFileFormat): {
   rawString: AssetFileFormat;
   formatString: string;
   typeString: string;
+  isPCOnly: boolean;
   translatedType: string;
   combinedString: string;
 } {
@@ -140,6 +141,7 @@ export function getAssetTypeData(format: AssetFileFormat): {
         rawString: format,
         formatString: fileFormat,
         typeString: type,
+        isPCOnly: false,
         translatedType: "HitScoreVisualizer",
         combinedString: `HSV (${fileFormat})`,
       };
@@ -148,6 +150,7 @@ export function getAssetTypeData(format: AssetFileFormat): {
         rawString: format,
         formatString: fileFormat,
         typeString: type,
+        isPCOnly: [AssetFileFormat.Avatar_Avatar, AssetFileFormat.Saber_Saber, AssetFileFormat.Platform_Plat, AssetFileFormat.Note_Bloq, AssetFileFormat.Wall_Pixie, AssetFileFormat.HealthBar_Energy, AssetFileFormat.Camera2Config_JSON, AssetFileFormat.ChromaEnv_DAT].includes(format),
         translatedType: translatedType,
         combinedString: `${translatedType} (${fileFormat})`,
       };
@@ -190,21 +193,25 @@ export function getAssetTypeCategories(): Map<string, ReturnType<typeof getAsset
   let sabers = categories.get('saber');
   if (sabers) {
     categories.delete('saber');
+    sabers.sort((a, b) => a.isPCOnly ? -1 : 1);
     categories.set(m[`enums.assetTypes.plurals.saber`](), sabers);
   }
   let notes = categories.get('note');
   if (notes) {
     categories.delete('note');
+    notes.sort((a, b) => a.isPCOnly ? -1 : 1);
     categories.set(m[`enums.assetTypes.plurals.note`](), notes);
   }
   let walls = categories.get('wall');
   if (walls) {
     categories.delete('wall');
+    walls.sort((a, b) => a.isPCOnly ? -1 : 1);
     categories.set(m[`enums.assetTypes.plurals.wall`](), walls);
   }
   let configs = categories.get('config');
   if (configs) {
     categories.delete('config');
+    configs.sort((a, b) => a.isPCOnly ? -1 : 1);
     categories.set(m[`enums.assetTypes.plurals.config`](), configs);
   }
   let other = categories.get('other');

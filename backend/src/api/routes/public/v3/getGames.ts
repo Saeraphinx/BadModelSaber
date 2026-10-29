@@ -14,7 +14,7 @@ export const gameRouter = router({
                 path: '/v3/games',
             }
         })
-        .input(z.boolean().default(false))
+        .input(z.object({ includeExtras: z.boolean().default(false) }).optional())
         .output(z.array(GameApiV3Schema))
         .query(async ({ input, ctx }) => {
             let games = await Game.findAll();
