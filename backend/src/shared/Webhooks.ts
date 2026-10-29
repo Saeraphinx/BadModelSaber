@@ -108,7 +108,7 @@ export class WebhookPayloadGenerator {
                 title: `${capitalizeWords(type)} Status Updated`,
                 url: `${EnvConfig.server.frontendUrl}/${thing}s/${thing.id}`,
                 thumbnail: { url: thingIconUrl as string },
-                description: `The status of the ${type} **${thing instanceof Version ? parentIfVersion?.name : thing.name}** (ID: ${thing.id}) has been updated from **${oldStatus}** to **${newStatus}**.\n\n**Reason:**\n${reason}`,
+                description: `The status of the ${type} **${thing instanceof Version ? parentIfVersion?.name : thing.name}** (ID: ${thing.id}) has been updated from **${oldStatus}** to **${newStatus}**.\n\n**Reason:** ${reason}`,
                 color: color,
                 footer: {
                     text: `${capitalizeWords(type)} ID: ${thing.id}`
@@ -133,7 +133,7 @@ export class WebhookPayloadGenerator {
             throw uploader;
         }
 
-        let color: ColorResolvable = thing.status === Status.Verified ?  Colors.Green : Colors.Yellow;
+        let color: ColorResolvable = thing.status === Status.Verified ? Colors.Green : Colors.Yellow;
 
         return {
             embeds: [{
@@ -268,7 +268,7 @@ export class WebhookPayloadGenerator {
     public static async generateTranslationOutOfDateWebhookPayload(translation: Translation, thing: Asset | Project): Promise<WebhookMessageCreateOptions> {
         let thingType = thing instanceof Asset ? 'asset' : 'project';
         return {
-            content: `The ${translation.language} translation of ${thingType} **[${thing.name}](${EnvConfig.server.frontendUrl}/${thingType}s/${thing.id})'s ${translation.contentType}** (ID: ${thing.id}) has been marked as out of date and in need of review.`,
+            content: `The ${translation.language} translation of ${thingType} **${this.getMarkdownUrl(thing)}'s ${translation.contentType}** (ID: ${thing.id}) has been marked as out of date and in need of review.`,
             allowedMentions: { parse: [] }
         }
     }
@@ -288,14 +288,15 @@ export class WebhookPayloadGenerator {
 
         if (thing instanceof Translation) {
             return {
-                content: `The ${thing.language} Translation for [${thing.parentId}](${EnvConfig.server.frontendUrl}/${thingType.replace(" ", "-")}s/${thing.parentId})'s **${thing.contentType}** (ID: ${thing.parentId}) has been edited by **[${editor.displayName}](${EnvConfig.server.frontendUrl}/users/${editor.id})** (ID# **${editor.id}**).`,
+                content: `The ${thing.language} Translation for [${thing.parentId}](${EnvConfig.server.frontendUrl}/${thingType.replace(" ", "-")}s/${thing.parentId})'s **${thing.contentType}** (ID: ${thing.parentId}) has been edited by **${this.getMarkdownUrl(editor)}** (ID# **${editor.id}**).`,
                 allowedMentions: { parse: [] }
             }
         }
 
         if (thing instanceof Version) {
+            let thingDisplayName = (await thing.project)?.name + " v" + thing.semver.raw;
             return {
-                content: `Version **[${(await thing.project)?.name} ${thing.semver.raw}](${EnvConfig.server.frontendUrl}/projects/${parentId})** has been edited by **[${editor.displayName}](${EnvConfig.server.frontendUrl}/users/${editor.id})** (ID# **${editor.id}**).`,
+                content: `Version **${this.getMarkdownUrl(thing, thingDisplayName)}** has been edited by **${this.getMarkdownUrl(editor)}** (ID# **${editor.id}**).`,
                 allowedMentions: { parse: [] }
             }
         }
@@ -304,13 +305,13 @@ export class WebhookPayloadGenerator {
             let name = thing instanceof GameVersion ? thing.gameName : thing.name;
 
             return {
-                content: `**${capitalizeWords(thingType)} **${name}${thing instanceof GameVersion ? ` ${thing.version}` : ``}** has been edited by **[${editor.displayName}](${EnvConfig.server.frontendUrl}/users/${editor.id})** (ID# **${editor.id}**).`,
+                content: `**${capitalizeWords(thingType)} **${name}${thing instanceof GameVersion ? ` ${thing.version}` : ``}** has been edited by **${this.getMarkdownUrl(editor)}** (ID# **${editor.id}**).`,
                 allowedMentions: { parse: [] }
             }
         }
 
         return {
-            content: `**${capitalizeWords(thingType)} [${thing.name}](${EnvConfig.server.frontendUrl}/${thingType}s/${thing.id})** has been edited by **[${editor.displayName}](${editor.displayName}](${EnvConfig.server.frontendUrl}/users/${editor.id}) (ID# ${editor.id})**.`,
+            content: `**${capitalizeWords(thingType)} ${this.getMarkdownUrl(thing)}** has been edited by **${this.getMarkdownUrl(editor)}** (ID# ${editor.id}).`,
             allowedMentions: { parse: [] }
         }
     }
@@ -321,10 +322,36 @@ export class WebhookPayloadGenerator {
         else if (thing instanceof Project) thingType = 'project';
         else if (thing instanceof Version) thingType = 'version';
         else thingType = 'thing';
-        
+
+        let thingDisplayName = thing instanceof Version ? (await thing.project)?.name + " v" + thing.semver.raw : thing.name;
+
         return {
-            content: `The status of ${capitalizeWords(thingType)} **[${thing instanceof Version ? (await thing.project)?.name + " v" + thing.semver.raw : thing.name}](${EnvConfig.server.frontendUrl}/${thing instanceof Version ? `project` : thingType}s/${thing.id})** has been updated from **${oldStatus}** to **${newStatus}** by **[${userPreformingAction.displayName}](${EnvConfig.server.frontendUrl}/users/${userPreformingAction.id})** (ID# ${userPreformingAction.id}).\n**Reason:**\n${reason}`,
+            content: `The status of ${capitalizeWords(thingType)} **${this.getMarkdownUrl(thing, thingDisplayName)}** has been updated from **${oldStatus}** to **${newStatus}** by **${this.getMarkdownUrl(userPreformingAction)}** (ID# ${userPreformingAction.id}).\n**Reason:** ${reason}`,
             allowedMentions: { parse: [] }
+        }
+    }
+
+    private static getMarkdownUrl(obj: Version | Project | Asset | User, displayStr?: string) {
+        if (displayStr) {
+            if (obj instanceof User) {
+                return `[${displayStr}](<${EnvConfig.server.frontendUrl}/users/${obj.id}>)`
+            } else if (obj instanceof Version) {
+                return `[${displayStr}](<${EnvConfig.server.frontendUrl}/projects/${obj.projectId}>#${obj.id})`
+            } else if (obj instanceof Project) {
+                return `[${displayStr}](<${EnvConfig.server.frontendUrl}/projects/${obj.id}>)`
+            } else if (obj instanceof Asset) {
+                return `[${displayStr}](<${EnvConfig.server.frontendUrl}/assets/${obj.id}>)`
+            }
+        } else {
+            if (obj instanceof User) {
+                return `[${obj.displayName}](<${EnvConfig.server.frontendUrl}/users/${obj.id}>)`
+            } else if (obj instanceof Project) {
+                return `[${obj.name}](<${EnvConfig.server.frontendUrl}/projects/${obj.id}>)`
+            } else if (obj instanceof Asset) {
+                return `[${obj.name}](<${EnvConfig.server.frontendUrl}/assets/${obj.id}>)`
+            } else if (obj instanceof Version) {
+                return `[${obj.semver.raw}](<${EnvConfig.server.frontendUrl}/projects/${obj.projectId}>#${obj.id})`
+            } 
         }
     }
 }
