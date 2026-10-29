@@ -69,7 +69,7 @@ export const getModsV1Router = router({
         .meta({
             openapi: {
                 method: 'GET',
-                path: '/v1/mods',
+                path: '/v1/mod',
                 tags: ['Mods'],
                 deprecated: true,
             }

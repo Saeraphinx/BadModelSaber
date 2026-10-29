@@ -143,6 +143,18 @@ export async function init(overrideDbName?: string) {
             req.url = req.url.replace(`/multi/hashlookup`, `/v2/multi/hashlookup`);
             return next();
         }
+        if (req.url.startsWith(`/beatmods/mod`)) {
+            req.url = req.url.replace(`/beatmods/mod`, `/v1/mod`);
+            return next();
+        }
+        if (req.url.startsWith(`/beatmods/versions`)) {
+            req.url = req.url.replace(`/beatmods/versions`, `/versions.json`);
+            return next();
+        }
+        if (req.url.startsWith(`/beatmods/aliases`)) {
+            req.url = req.url.replace(`/beatmods/aliases`, `/aliases.json`);
+            return next();
+        }
 
         // handle public v3 upload routes that are a bit scuffed because of openapi and tRPC not playing nice with multipart/form-data. 
         let caller: Promise<any> | null = null;
