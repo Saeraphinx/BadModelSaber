@@ -121,8 +121,6 @@
     }
     untrack(() => tick().then(() =>replaceState(`${location.pathname}${searchParams.size > 0 ? `?${searchParams.toString()}` : ""}`, page.state)));
   });
-
-  // TODO: Clean up filter styling since the badges overflow
 </script>
 
 {#snippet filters()}
