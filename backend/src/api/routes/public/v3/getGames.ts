@@ -21,7 +21,7 @@ export const gameRouter = router({
         .query(async ({ input, ctx }) => {
             let games = await Game.findAll();
             let allowedExtras = [];
-            if (input) {
+            if (input?.includeExtras) {
                 for (let game of games) {
                     if (ctx.user && ctx.user.checkRoles([UserPermissions.Game_ViewExtras], `any`)) {
                         allowedExtras.push(game.name);
