@@ -542,7 +542,8 @@
       "reasonWillBeVisible": "This reason will be visible to the author(s) of {{name}}.",
       "reasonPlaceholder": "Enter reason for status change (optional)",
       "presetReasons": "Preset Reasons",
-      "autosetProject": "Autoset Project"
+      "autosetProject": "Autoset Project",
+      "sendAlert": "Send Alert"
     },
     "download": {
       "assetTitle": "Download Non-Verified Asset?",

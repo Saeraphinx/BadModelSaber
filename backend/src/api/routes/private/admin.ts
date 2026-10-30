@@ -111,9 +111,10 @@ export const AdminRouter = router({
     approval: {
         setStatusAsset: loggedInAssetProcedure([UserPermissions.Asset_Approval]).input(z.object({
             status: z.enum(AssetValidStatusesArray),
-            reason: z.string().max(1000).optional()
+            reason: z.string().max(1000).optional(),
+            sendAlert: z.boolean().default(true)
         })).mutation(async ({ input, ctx }) => {
-            await ctx.asset.setStatus(input.status, ctx.user, input.reason ?? `No reason given.`).then(asset => {
+            await ctx.asset.setStatus(input.status, ctx.user, input.reason ?? `No reason given.`, input.sendAlert).then(asset => {
                 return asset.toApiV3();
             }).catch(err => {
                 throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: `Error updating asset status: ${parseErrorMessage(err)}` });
@@ -121,9 +122,10 @@ export const AdminRouter = router({
         }),
         setStatusProject: loggedInProjectProcedure([UserPermissions.Mods_Approval]).input(z.object({
             status: z.enum(ProjectValidStatusesArray),
-            reason: z.string().max(1000).optional()
+            reason: z.string().max(1000).optional(),
+            sendAlert: z.boolean().default(true)
         })).mutation(async ({ input, ctx }) => {
-            await ctx.project.setStatus(input.status, ctx.user, input.reason ?? `No reason given.`).then(project => {
+            await ctx.project.setStatus(input.status, ctx.user, input.reason ?? `No reason given.`, input.sendAlert).then(project => {
                 return project.toApiV3();
             }).catch(err => {
                 throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: `Error updating project status: ${parseErrorMessage(err)}` });
@@ -132,9 +134,10 @@ export const AdminRouter = router({
         setStatusVersion: loggedInVersionProcedure([UserPermissions.Mods_Approval]).input(z.object({
             status: z.enum(VersionValidStatusesArray),
             reason: z.string().max(1000).optional(),
-            autosetProject: z.boolean().default(true)
+            autosetProject: z.boolean().default(true),
+            sendAlert: z.boolean().default(true)
         })).mutation(async ({ input, ctx }) => {
-            await ctx.version.setStatus(input.status, ctx.user, input.reason ?? `No reason given.`).then(async version => {
+            await ctx.version.setStatus(input.status, ctx.user, input.reason ?? `No reason given.`, input.sendAlert).then(async version => {
                 if (input.autosetProject && input.status === Status.Verified && ctx.project.status !== Status.Public) {
                     await ctx.project.setStatus(Status.Public, ctx.user, `Automatically setting project verified because a version was verified.`);
                 }

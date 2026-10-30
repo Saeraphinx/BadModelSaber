@@ -39,6 +39,7 @@
   let visible = $state<boolean>(false);
   let type = $state<`asset` | `project` | `version`>("asset");
   let autosetProject = $state<boolean>(true);
+  let sendAlert = $state<boolean>(true);
 
   export function showDialog(p_id: number, p_name: string, thingType: `asset` | `project` | `version`, currentStatus: Status = Status.Private) {
     reason = "";
@@ -48,6 +49,7 @@
     type = thingType;
     visible = true;
     autosetProject = true;
+    sendAlert = true;
   }
 
   function handleSubmit() {
@@ -58,12 +60,14 @@
         id: id,
         status: selectedStatus as unknown as any,
         reason: reason,
+        sendAlert: sendAlert
       });
     } else if (type === `project`) {
       res = trpc.internal.admin.approval.setStatusProject.mutate({
         id: id,
         status: selectedStatus as unknown as any,
         reason: reason,
+        sendAlert: sendAlert
       });
     } else {
       res = trpc.internal.admin.approval.setStatusVersion.mutate({
@@ -71,6 +75,7 @@
         status: selectedStatus as unknown as any,
         reason: reason,
         autosetProject: autosetProject,
+        sendAlert: sendAlert
       });
     }
     res
@@ -115,6 +120,10 @@
       </div>
     </div>
     <Dialog.Footer>
+      <div class="flex items-center space-x-2">
+          <Switch id="sendAlert" bind:checked={sendAlert} />
+          <Label for="sendAlert">{m[`dialogs.approval.sendAlert`]()}</Label>
+        </div>
       {#if type === `version`}
         <div class="flex items-center space-x-2">
           <Switch id="autosetProject" bind:checked={autosetProject} />
