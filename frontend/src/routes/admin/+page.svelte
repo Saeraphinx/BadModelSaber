@@ -828,7 +828,7 @@
           <Select.Trigger class="w-[180px]">{aqSelectedGameVersionString ?? `Select a version...`}</Select.Trigger>
           <Select.Content>
             <Select.Item value="All Versions">All Versions</Select.Item>
-            {#each Array.from(new Set([...aqModsInApprovalQueue.map((mod) => mod.version.supportedGameVersions.map((v) => v.version)).flat()])).sort((a, b) => new SemVer(a).compare(b)) as version}
+            {#each Array.from(new Set([...aqModsInApprovalQueue.map((mod) => mod.version.supportedGameVersions.map((v) => v.version)).flat()])).sort((a, b) => new SemVer(b).compare(a)) as version}
               <Select.Item value={version}>{version}</Select.Item>
             {/each}
           </Select.Content>
