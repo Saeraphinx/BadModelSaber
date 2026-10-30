@@ -70,8 +70,8 @@ export const loadExpressMiddleware = createExpressMiddleware({
 export const loadOpenApiMiddleware = createOpenApiExpressMiddleware({
     router: appRouter,
     createContext,
-    onError: ({ error }) => {
-        Logger.error(`OpenAPI Error: ${error}`);
+    onError: ({ error, path, req }) => {
+        Logger.error(`OpenAPI Error at ${req.path}: ${error}`);
     },
     maxBodySize: 1024 * 1024 * 8
 });
