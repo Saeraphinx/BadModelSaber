@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Status, Tags, UserPermissions, type AssetApiV3 } from "$lib/scripts/from_backend/DBExtras.js";
+  import { LinkedAssetLinkType, Status, Tags, UserPermissions, type AssetApiV3 } from "$lib/scripts/from_backend/DBExtras.js";
   import AssetCard from "$lib/components/assets/AssetCard.svelte";
   import Badge from "$shadcn/components/ui/badge/badge.svelte";
   import Button from "$shadcn/components/ui/button/button.svelte";
@@ -24,7 +24,7 @@
   import ApprovalPopup from "$lib/components/dialogs/ApprovalDialog.svelte";
   import { onMount } from "svelte";
   import { toast } from "svelte-sonner";
-  import { getAssetTypeData, getRenderingMethodString, getRenderingMethodSupportedGV, getStatusString } from "$lib/scripts/utils/stylizer";
+  import { getAssetTypeData, getLinkTypeDetails, getRenderingMethodString, getRenderingMethodSupportedGV, getStatusString } from "$lib/scripts/utils/stylizer";
   import TagBadge from "$lib/components/assets/TagBadge.svelte";
   import Input from "$shadcn/components/ui/input/input.svelte";
   import Textarea from "$shadcn/components/ui/textarea/textarea.svelte";
@@ -115,17 +115,20 @@
 
   // #region Loading
   let isRelatedLoading = $state<boolean>(true);
-  let relatedAssets = $state<AssetApiV3[]>([]);
+  let relatedAssets = $state<(AssetApiV3 & { linkType?: LinkedAssetLinkType})[]>([]);
   let isAuthorLoading = $state<boolean>(true);
   let authorAssets = $state<AssetApiV3[]>([]);
 
-  onMount(async () => {
+  async function fetchRelated() {
+    isRelatedLoading = true;
+    isAuthorLoading = true;
     let pa = Promise.resolve()
     if (pageData.linkedIds.length > 0) {
       pa = trpc.v3.assets.getMultipleAssetsById
         .query({ id: pageData.linkedIds.map((li) => li.id).splice(0, 15) })
         .then((res) => {
-          relatedAssets = res ? Object.values(res) : [];
+          let asserArr = Object.values(res);
+          relatedAssets = asserArr.map(a => ({ ...a, linkType: pageData.linkedIds.find(li => li.id === a.id)?.linkType }));
           isRelatedLoading = false;
         })
         .catch(handleTrpcErrorWithToast(m[`toasts.failedTo.loadAssets`](), () => {
@@ -144,6 +147,10 @@
         isAuthorLoading = false;
       }));
     await Promise.all([pa, pb]);
+  }
+
+  onMount(async () => {
+    fetchRelated();
   });
 
   $effect(() => {
@@ -154,6 +161,7 @@
     editTags = (pageData.tags as Tags[]) || [];
     openTagPicker = false;
     isBlurred = pageData.tags.includes(Tags.NSFW);
+    fetchRelated();
   });
   // #endregion
 </script>
@@ -291,7 +299,7 @@
   </Carousel.Root>
 {/snippet}
 
-{#snippet assetCarousel(assets: AssetApiV3[], isLoading: boolean, apiType: `author` | `related`, title = "Related Assets", ifNoFound = "No related assets found.", guessNumber = 5)}
+{#snippet assetCarousel(assets: (AssetApiV3 & { linkType?: LinkedAssetLinkType })[], isLoading: boolean, apiType: `author` | `related`, title = "Related Assets", ifNoFound = "No related assets found.", guessNumber = 5)}
   <div class="w-full px-2">
     <div class="flex justify-between items-center">
       <span class="text-lg font-semibold">{title}</span>
@@ -328,6 +336,12 @@
             {#each assets as asset}
               <Carousel.Item class="pl-4 basis-auto">
                 <AssetCard {asset} size="normal" />
+                {#if asset.linkType}
+                  {let linkTypeDetails = getLinkTypeDetails(asset.linkType)}
+                  <div class="bg-neutral-900 rounded-b-md -mt-6 pt-7 pb-0.5 text-center">
+                    <Badge variant="outline" class={linkTypeDetails.badgeClass}>{linkTypeDetails.label}</Badge>
+                  </div>
+                {/if}
               </Carousel.Item>
             {/each}
           {/if}
@@ -494,9 +508,13 @@
         <span class="text-lg font-semibold">{ m[`assets.preview.header`]()}</span>
         <AssetPreview asset={pageData} />
         <Separator class="my-4 w-full" />
-        {@render assetCarousel(relatedAssets, isRelatedLoading, `related`, m[`assets.carousels.relatedAssets`](), m[`assets.carousels.relatedAssetsNoneFound`]())}
+        {#key relatedAssets}
+          {@render assetCarousel(relatedAssets, isRelatedLoading, `related`, m[`assets.carousels.relatedAssets`](), m[`assets.carousels.relatedAssetsNoneFound`]())}
+        {/key}
         <Separator class="my-4 w-full" />
-        {@render assetCarousel(authorAssets, isAuthorLoading, `author`, m[`assets.carousels.authorAssets`]({ name: pageData.uploader?.displayName ?? ``}), m[`assets.carousels.authorAssetsNoneFound`]({ name: pageData.uploader?.displayName ?? ``}))}
+        {#key authorAssets}
+          {@render assetCarousel(authorAssets, isAuthorLoading, `author`, m[`assets.carousels.authorAssets`]({ name: pageData.uploader?.displayName ?? ``}), m[`assets.carousels.authorAssetsNoneFound`]({ name: pageData.uploader?.displayName ?? ``}))}
+        {/key}
         {#if mobileView.current}
           {@render dataTable()}
         {/if}

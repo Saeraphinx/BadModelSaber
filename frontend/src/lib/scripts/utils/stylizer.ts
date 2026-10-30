@@ -1,6 +1,6 @@
 import { m } from "../../paraglide/messages";
 import { getLocale } from "../../paraglide/runtime";
-import { AssetFileFormat, RenderingModes, Status, UserPermissions } from "../from_backend/DBExtras";
+import { AssetFileFormat, LinkedAssetLinkType, RenderingModes, Status, UserPermissions } from "../from_backend/DBExtras";
 
 // export function capitalizeFirstLetter(str: any): string {
 //   if (!str) return ``; // Handle empty strings
@@ -37,6 +37,16 @@ export function getStatusAvailableThings(status: Status): string[] {
   }
 }
 
+export function getLinkTypeDetails(linkType: LinkedAssetLinkType) {
+  let linkTypes = [
+    { value: LinkedAssetLinkType.AltFormat, label: m[`dialogs.linkAsset.linkTypes.altFormat.title`](), description: m[`dialogs.linkAsset.linkTypes.altFormat.description`](), badgeClass: `bg-blue-500/20 border-blue-400 text-blue-200` },
+    { value: LinkedAssetLinkType.Alternate, label: m[`dialogs.linkAsset.linkTypes.altDesign.title`](), description: m[`dialogs.linkAsset.linkTypes.altDesign.description`](), badgeClass: `bg-purple-500/20 border-purple-400 text-purple-200` },
+    { value: LinkedAssetLinkType.Newer, label: m[`dialogs.linkAsset.linkTypes.newerVersion.title`](), description: m[`dialogs.linkAsset.linkTypes.newerVersion.description`](), badgeClass: `bg-green-500/20 border-green-400 text-green-200` },
+    { value: LinkedAssetLinkType.Older, label: m[`dialogs.linkAsset.linkTypes.olderVersion.title`](), description: m[`dialogs.linkAsset.linkTypes.olderVersion.description`](), badgeClass: `bg-red-500/20 border-red-400 text-red-200` }
+  ]
+  
+  return linkTypes.find(l => l.value === linkType) ?? { value: linkType, label: "", description: "", badgeClass: "" };
+}
 
 export function getRenderingMethodString(method: RenderingModes): string {
   switch (method) {
