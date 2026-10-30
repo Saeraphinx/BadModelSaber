@@ -13,7 +13,7 @@ export const gameRouter = router({
             openapi: {
                 method: 'GET',
                 path: '/v3/games',
-                tags: ['games']
+                tags: ['Mods']
             }
         })
         .input(z.object({ includeExtras: z.stringbool().default(false) }).optional())
@@ -37,7 +37,7 @@ export const gameRouter = router({
             openapi: {
                 method: 'GET',
                 path: '/v3/games/{gameName}',
-                tags: ['games']
+                tags: ['Mods']
             }
         })
         .input(z.object({
