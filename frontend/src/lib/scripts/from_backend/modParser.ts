@@ -10,27 +10,25 @@ interface ILog {
 
 export function getManifestFromString(str: string, doLogs: ILog | null = console): Manifest | null {
   //console.log(str);
-  let discoveredJsonStrings = Array.from(str.matchAll(/{[\w\d\s\t\n\r\!-~]{10,}}/gmi).map((match) => match[0]));
-  //console.log(discoveredJsonStrings);
+  let discoveredJsonStrings = extractJsonString(str);
+  console.log(discoveredJsonStrings);
 
   if (!discoveredJsonStrings || discoveredJsonStrings.length <= 0) {
     doLogs ? doLogs.warn(`No JSON string found in manifest.json for version`) : null;
   }
   let finalManifest: Manifest | null = null;
-  discoveredJsonStrings?.forEach((jsonString) => {
-    try {
-      let parsed = zManfiest.safeParse(JSON.parse(jsonString));
-      //debugger;
-      if (parsed.success) {
-        finalManifest = parsed.data;
-      } else {
-        doLogs ? doLogs.debug(`JSON string found in manifest.json did not match expected schema: ${JSON.stringify(parsed.error.issues)}`) : null;
-      }
-    } catch (err) {
-      // not a valid JSON string, ignore
-      doLogs ? doLogs.debug(`Failed to parse JSON string in manifest: ${err}`) : null;
+  try {
+    let parsed = zManfiest.safeParse(JSON.parse(discoveredJsonStrings));
+
+    if (parsed.success) {
+      finalManifest = parsed.data;
+    } else {
+      doLogs ? doLogs.debug(`JSON string found in manifest.json did not match expected schema: ${JSON.stringify(parsed.error.issues)}`) : null;
     }
-  });
+  } catch (err) {
+    // not a valid JSON string, ignore
+    doLogs ? doLogs.debug(`Failed to parse JSON string in manifest: ${err}`) : null;
+  }
   return finalManifest;
 }
 
@@ -53,6 +51,8 @@ export async function getManifestFromZip(file: File | ArrayBuffer | Buffer<Array
         throw new Error(`Failed to read file ${fileName} from zip archive: ${err.message}`);
       });
 
+      //debugger;
+
       // pull out manifest.json if it exists
       if (file.name === "manifest.json" || file.name.endsWith(".manifest")) {
         manifestJson = getManifestFromString(data, doLogs);
@@ -61,7 +61,7 @@ export async function getManifestFromZip(file: File | ArrayBuffer | Buffer<Array
           doLogs ? doLogs.warn(`File ${fileName} in zip archive is not a valid .dll file, skipping manifest extraction from this file.`) : null;
           continue;
         }
-        
+
         // pull from dll
         let manifestFromDll = getManifestFromString(data, doLogs);
         if (manifestFromDll) {
@@ -76,7 +76,7 @@ export async function getManifestFromZip(file: File | ArrayBuffer | Buffer<Array
 }
 
 export type Manifest = z.infer<typeof zManfiest>;
-const zManfiest =  z.looseObject({
+const zManfiest = z.looseObject({
   $schema: z.string(),
   name: z.string().regex(new RegExp("^(.*)$")).describe("plugin name"),
   id: z
@@ -108,9 +108,39 @@ const zManfiest =  z.looseObject({
     .array(z.string().describe("the plugin id to load after"))
     .describe("plugins to load after this one")
     .optional(),
-  features: z.unknown(),
-  icon: z.unknown(),
-  files: z.unknown(),
-  links: z.unknown(),
-  misc: z.unknown(),
+  features: z.any().optional(),
+  icon: z.any().optional(),
+  files: z.any().optional(),
+  links: z.any().optional(),
+  misc: z.any().optional(),
 });
+
+function extractJsonString(input: string): string {
+  const key = "$schema";
+  let indexOfKey = input.indexOf(key);
+  //debugger;
+  if (indexOfKey === -1) return "";
+
+  let start = indexOfKey;
+  for (let i = 0; i < 10; i++) {
+    let indexLookAt = indexOfKey - i;
+    if (input[indexLookAt] === '{') {
+      start = indexLookAt;
+      break;
+    }
+  }
+
+  let depth = 0;
+  for (let i = start; i < input.length; i++) {
+    if (input[i] === '{') depth++;
+    if (input[i] === '}') depth--;
+    //debugger;
+    if (depth === 0) {
+      //debugger;
+      return input.slice(start, i + 1)
+    };
+
+  }
+
+  return "";
+}
