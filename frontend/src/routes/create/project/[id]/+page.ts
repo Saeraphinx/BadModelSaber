@@ -20,7 +20,7 @@ export const load = (async ({ fetch, params, parent }) => {
   }).catch(handleTrpcError());
   let gameAndVersions = await trpc.v3.games.getGameVersions.query({
     gameName: pnv.project.gameName ?? ``,
-    includeExtras: true,
+    includeExtras: `true`,
   }).catch(handleTrpcError());
 
 

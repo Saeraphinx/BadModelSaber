@@ -74,7 +74,7 @@
     isLoading = true;
     let statusLookup = getAllowedVersionStatuses(user, false, selectedGame.name);
     if (gameVersions.some((v) => v.gameName !== selectedGame.name)) {
-      await trpc.v3.games.getGameVersions.query({ gameName: selectedGame.name, includeExtras: true }).then((versions) => {
+      await trpc.v3.games.getGameVersions.query({ gameName: selectedGame.name, includeExtras: `true` }).then((versions) => {
         gameVersions = versions.gameVersions as GameVersionApiV3_full[];
         selectedGameVersionId = gameVersions.find((v: any) => v.defaultVersion)?.id.toString() || ``;
       });

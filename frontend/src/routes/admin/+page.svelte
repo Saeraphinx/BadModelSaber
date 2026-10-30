@@ -184,12 +184,12 @@
   async function fetchGames() {
     let showExtra = checkRoles(user, [UserPermissions.Game_ViewExtras]);
     return await trpc.v3.games.getGames
-      .query(showExtra)
+      .query({ includeExtras: showExtra.toString()})
       .then(async (fetchedGames) => {
         games = fetchedGames;
         for (const game of games) {
           await trpc.v3.games.getGameVersions
-            .query({ gameName: game.name, includeExtras: true })
+            .query({ gameName: game.name, includeExtras: `true` })
             .then((res) => {
               gameVersions[game.name] = res.gameVersions as GameVersionApiV3_full[];
             })

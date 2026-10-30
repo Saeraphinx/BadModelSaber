@@ -20,7 +20,7 @@ export const load: PageLoad = async ({ fetch, url }) => {
   let gameToQuery = game && games.some(g => g.name === game) ? game : games.find(g => g.isDefault)?.name || games[0]?.name;
   let selectedGame = await trpc.v3.games.getGameVersions.query({
     gameName: gameToQuery,
-    includeExtras: true,
+    includeExtras: `true`,
   });
   // @ts-expect-error trust me
   let selectedGameVersionId: string = gameVersion && selectedGame.gameVersions.some(v => v.id.toString() === gameVersion) ? gameVersion : selectedGame.gameVersions.find(v => v.isDefault)?.id.toString() || selectedGame.gameVersions[0]?.id.toString();

@@ -279,18 +279,18 @@ describe(`v3`, () => {
 
     describe(`games`, () => {
         test(`returns games without extras`, async () => {
-            const response = await anonymousCaller.v3.games.getGames(false);
+            const response = await anonymousCaller.v3.games.getGames({ includeExtras: `false`});
             expect(response.length).toBeGreaterThan(0);
             expect(response.some(g => g.name === `trpcmods`)).toBe(true);
             expect(response.every(g => g.webhooks === null)).toBe(true);
         });
 
         test(`requires Game_ViewExtras permission to include extras`, async () => {
-            await expect(caller.v3.games.getGames(true)).rejects.toThrow(`permission`);
+            await expect(caller.v3.games.getGames({ includeExtras: `true` })).rejects.toThrow(`permission`);
         });
 
         test(`returns game extras for privileged users`, async () => {
-            const response = await privilegedCaller.v3.games.getGames(true);
+            const response = await privilegedCaller.v3.games.getGames({ includeExtras: `true` });
             expect(response.length).toBeGreaterThan(0);
             expect(response.every(g => Array.isArray(g.webhooks))).toBe(true);
         });
@@ -298,7 +298,7 @@ describe(`v3`, () => {
         test(`returns sorted game versions`, async () => {
             const response = await anonymousCaller.v3.games.getGameVersions({
                 gameName: `trpcmods`,
-                includeExtras: false,
+                includeExtras: `false`,
             });
             expect(response.game.name).toBe(`trpcmods`);
             expect(response.gameVersions.length).toBeGreaterThan(1);
@@ -309,7 +309,7 @@ describe(`v3`, () => {
         test(`returns not found for unknown game`, async () => {
             await expect(anonymousCaller.v3.games.getGameVersions({
                 gameName: `does-not-exist`,
-                includeExtras: false,
+                includeExtras: `false`,
             })).rejects.toThrow(`not found`);
         });
     });

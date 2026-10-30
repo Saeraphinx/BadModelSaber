@@ -5,6 +5,7 @@ import z from "zod";
 import { TRPCError } from "@trpc/server";
 import { compare } from "semver";
 import { addCacheHeaders } from "../../../../shared/Tools.ts";
+import { Validator } from "../../../../shared/Validator.ts";
 
 export const gameRouter = router({
     getGames: anyProcedure()
@@ -12,9 +13,10 @@ export const gameRouter = router({
             openapi: {
                 method: 'GET',
                 path: '/v3/games',
+                tags: ['games']
             }
         })
-        .input(z.object({ includeExtras: z.boolean().default(false) }).optional())
+        .input(z.object({ includeExtras: z.stringbool().default(false) }).optional())
         .output(z.array(GameApiV3Schema))
         .query(async ({ input, ctx }) => {
             let games = await Game.findAll();
@@ -35,15 +37,16 @@ export const gameRouter = router({
             openapi: {
                 method: 'GET',
                 path: '/v3/games/{gameName}',
+                tags: ['games']
             }
         })
         .input(z.object({
             gameName: z.string().max(64),
-            includeExtras: z.boolean().default(false)
+            includeExtras: z.stringbool().default(false)
         }))
         .output(z.object({
             game: GameApiV3Schema,
-            gameVersions: z.array(GameVersionApiV3Schema.or(GameVersionApiV3_fullSchema))
+            gameVersions: z.array(GameVersionApiV3_fullSchema).or(z.array(GameVersionApiV3Schema))
         }))
         .query(async ({ input, ctx }) => {
         let game = await Game.findByPk(input.gameName);
