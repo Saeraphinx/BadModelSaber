@@ -11,7 +11,7 @@ interface ILog {
 export function getManifestFromString(str: string, doLogs: ILog | null = console): Manifest | null {
   //console.log(str);
   let discoveredJsonStrings = extractJsonString(str);
-  console.log(discoveredJsonStrings);
+  //console.log(discoveredJsonStrings);
 
   if (!discoveredJsonStrings || discoveredJsonStrings.length <= 0) {
     doLogs ? doLogs.warn(`No JSON string found in manifest.json for version`) : null;
