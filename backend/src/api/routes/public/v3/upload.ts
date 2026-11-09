@@ -113,12 +113,18 @@ export const uploadStuff = router({
                     fs.mkdirSync(asset.folderPath, { recursive: true });
                 } catch (error) {
                     Logger.error(`Error creating asset folder: ${parseErrorMessage(error)}`);
+                    asset.destroy().catch((err) => {
+                        Logger.error(`Error deleting asset after folder creation failure: ${parseErrorMessage(err)}`);
+                    });
                     throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Failed to create asset folder. Please contact a site administrator.' });
                 }
                 await input.asset.arrayBuffer().then(async (buffer) => {
                     fs.writeFileSync(asset.assetFilePath, Buffer.from(buffer));
                 }).catch((err) => {
-                    Logger.error(`Error saving asset file: ${err.message}`)
+                    Logger.error(`Error saving asset file: ${err.message}`);
+                    asset.destroy().catch((err) => {
+                        Logger.error(`Error deleting asset after asset file save failure: ${parseErrorMessage(err)}`);
+                    });
                     throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: `Failed to save asset file. Please contact a site administrator.` });
                 });
 
@@ -129,6 +135,9 @@ export const uploadStuff = router({
                     }).catch((err) => {
                         Logger.error(`Error saving icon file: ${err.message}`)
                         fs.unlinkSync(path.join(EnvConfig.storage.uploads, asset.assetFileName));
+                        asset.destroy().catch((err) => {
+                            Logger.error(`Error deleting asset after icon file save failure: ${parseErrorMessage(err)}`);
+                        });
                         throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: `Failed to save icon file. Please contact a site administrator.` });
                     });
                 }
@@ -190,6 +199,9 @@ export const uploadStuff = router({
                     fs.mkdirSync(project.folderPath, { recursive: true });
                 } catch (error) {
                     Logger.error(`Error creating project folder: ${parseErrorMessage(error)}`);
+                    project.destroy().catch((err) => {
+                        Logger.error(`Error deleting project after folder creation failure: ${parseErrorMessage(err)}`);
+                    });
                     throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Failed to create project folder. Please contact a site administrator.' });
                 }
                 await iconFile.arrayBuffer().then(async (buffer) => {
@@ -345,6 +357,9 @@ export const uploadStuff = router({
                     fs.mkdirSync(versionFolder, { recursive: true });
                 } catch (error) {
                     Logger.error(`Error creating version folder: ${parseErrorMessage(error)}`);
+                    version.destroy().catch((err) => {
+                        Logger.error(`Error deleting version after folder creation failure: ${parseErrorMessage(err)}`);
+                    });
                     throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Failed to create version folder. Please contact a site administrator.' });
                 }
                 await input.modZip.arrayBuffer().then(async (buffer) => {
@@ -353,7 +368,10 @@ export const uploadStuff = router({
                         fs.writeFileSync(path.join(versionFolder, version.manifestName), JSON.stringify(manifestJson));
                     }
                 }).catch((err) => {
-                    Logger.error(`Error saving version mod file: ${err.message}`)
+                    Logger.error(`Error saving version mod file: ${err.message}`);
+                    version.destroy().catch((err) => {
+                        Logger.error(`Error deleting version after mod file save failure: ${parseErrorMessage(err)}`);
+                    });
                     throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Failed to save version mod file. Please contact a site administrator.' });
                 });
 
