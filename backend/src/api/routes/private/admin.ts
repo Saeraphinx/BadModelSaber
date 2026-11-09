@@ -10,6 +10,7 @@ import { Op } from "sequelize";
 import { on } from "events";
 import { LogEntry } from "winston";
 import * as fs from "fs";
+import path from "path";
 
 export const AdminRouter = router({
     user: {
@@ -324,7 +325,7 @@ export const AdminRouter = router({
         getAdminLogs: loggedInProcedure([UserPermissions.Administrative_Tasks])
             .query(async ({ input, ctx }) => {
                 Logger.log(`User ${ctx.userId} fetching admin logs for the last 5 minutes`);
-                return Logger.getLogs(new Date(Date.now() - 1000 * 60 * 5)); // last 5 minutes
+                return Logger.getLogs(new Date(Date.now() - 1000 * 60 * 15)); // last 15 minutes
             }),
         subscribeAdminLogs: loggedInProcedure([UserPermissions.Administrative_Tasks])
             // .input(z.object({
@@ -424,6 +425,47 @@ export const AdminRouter = router({
             }).catch(handleCatch(`fetching versions for recalculation`));
 
             return { message: `Recalculated automatic status change times successfully` };
+        }),
+        deleteThing: loggedInProcedure([UserPermissions.Administrative_Tasks])
+            .input(z.object({
+                thingType: z.enum(['asset', 'project', 'version']),
+                id: z.string()
+            }))
+            .mutation(async ({ ctx, input }) => {
+            Logger.log(`Deleting ${input.thingType} ${input.id}, by admin user ${ctx.userId}`);
+            try {
+                if (input.thingType === 'asset') {
+                    let asset = await Asset.findByPk(input.id);
+                    if (asset) {
+                        fs.rmSync(path.join(asset.folderPath), { recursive: true, force: true });
+                        await asset.destroy();
+                    }
+                } else if (input.thingType === 'project') {
+                    let project = await Project.findByPk(input.id);
+                    if (project) {
+                        const versions = await Version.findAll({ where: { projectId: project.id } });
+                        for (let version of versions) {
+                            fs.rmSync(path.join(version.versionFolderPath), { recursive: true, force: true });
+                            await version.destroy();
+                        }
+                        fs.rmSync(path.join(project.folderPath), { recursive: true, force: true });
+                        await project.destroy();
+                    }
+                } else if (input.thingType === 'version') {
+                    let version = await Version.findByPk(input.id);
+                    if (version) {
+                        fs.rmSync(path.join(version.versionFolderPath), { recursive: true, force: true });
+                        await version.destroy();
+                    }
+                }
+            } catch (error) {
+                Logger.error(`Error deleting ${input.thingType} ${input.id}: ${parseErrorMessage(error)}`);
+                throw new TRPCError({
+                    code: 'INTERNAL_SERVER_ERROR',
+                    message: `Failed to delete ${input.thingType} ${input.id}: ${parseErrorMessage(error)}`
+                });
+            }
+            return { message: `Deleted thing successfully` };
         })
     }
 });
