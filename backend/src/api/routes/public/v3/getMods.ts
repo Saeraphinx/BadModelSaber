@@ -26,7 +26,7 @@ export const GetModsV3 = router({
             gameVersion: z.string().min(1).max(100).optional(),
             status: z.preprocess(v => typeof v === 'string' ? [v] : v, z.array(z.enum(Status)).max(Object.values(Status).length).optional().default([Status.Verified, Status.Unverified])),
             name: z.string().min(1).max(100).optional(),
-            authors: z.preprocess(v => typeof v === 'string' ? [v] : v, z.array(z.int().min(1).max(20))).optional(),
+            authors: z.preprocess(v => typeof v === 'string' ? [v] : v, z.array(z.int()).min(1).max(20)).optional(),
             platform: z.string().min(1).max(100).optional(),
             language: z.enum(availableBackendLocaleCodes).optional(),
         }))
