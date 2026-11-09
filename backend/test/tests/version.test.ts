@@ -60,6 +60,90 @@ describe("versions", () => {
             version.status = Status.Private;
             expect(await version.canView(createDummyUser(4321, [UserPermissions.Mods_ViewAll]))).toBe(true);
         });
+
+        test(`uses the supplied project instead of loading the version's project`, async () => {
+            version.status = Status.Verified;
+            const projectGetter = vi.spyOn(version, `project`, `get`);
+            try {
+                expect(await version.canView(null, project)).toBe(true);
+                expect(projectGetter).not.toHaveBeenCalled();
+            } finally {
+                projectGetter.mockRestore();
+            }
+        });
+
+        test(`returns false if the parent project cannot be found`, async () => {
+            const projectGetter = vi.spyOn(version, `project`, `get`).mockResolvedValue(null);
+            try {
+                expect(await version.canView(testUser)).toBe(false);
+            } finally {
+                projectGetter.mockRestore();
+            }
+        });
+
+        test(`does not expose a version when its project is not visible`, async () => {
+            const hiddenProject = createDummyProject(`beatsaber`, undefined, { status: Status.Private });
+            hiddenProject.authors = [createDummyUser(54321)];
+            version.status = Status.Verified;
+
+            expect(await version.canView(null, hiddenProject)).toBe(false);
+            expect(await version.canView(testUser, hiddenProject)).toBe(false);
+        });
+
+        test(`allows the uploader to view a private version of a visible project`, async () => {
+            version.status = Status.Private;
+            project.authors = [createDummyUser(54321)];
+            try {
+                expect(await version.canView(testUser, project)).toBe(true);
+            } finally {
+                project.authors = undefined;
+            }
+        });
+
+        test(`checks loaded project authors independently of the uploader`, async () => {
+            const author = createDummyUser(54321);
+            const unrelatedUser = createDummyUser(54322);
+            version.status = Status.Private;
+            project.authors = [author];
+            try {
+                expect(await version.canView(author, project)).toBe(true);
+                expect(await version.canView(unrelatedUser, project)).toBe(false);
+                expect(await version.canView(undefined, project)).toBe(false);
+            } finally {
+                project.authors = undefined;
+            }
+        });
+
+        test(`fetches project authors when they are not loaded or are empty`, async () => {
+            const author = await createDummyUser(54321).save();
+            await project.$set(`authors`, [author]);
+            version.status = Status.Private;
+            try {
+                project.authors = undefined;
+                expect(await version.canView(author, project)).toBe(true);
+                expect(await version.canView(createDummyUser(54322), project)).toBe(false);
+                project.authors = [];
+                expect(await version.canView(author, project)).toBe(true);
+            } finally {
+                project.authors = undefined;
+                await project.$set(`authors`, [testUser]);
+            }
+        });
+
+        test(`applies game-specific Mods_ViewAll permissions`, async () => {
+            const moderator = createDummyUser(54323, {
+                sitewide: [],
+                perGame: { beatsaber: [UserPermissions.Mods_ViewAll] },
+            });
+            const otherGameModerator = createDummyUser(54324, {
+                sitewide: [],
+                perGame: { anothergame: [UserPermissions.Mods_ViewAll] },
+            });
+            version.status = Status.Private;
+
+            expect(await version.canView(moderator, project)).toBe(true);
+            expect(await version.canView(otherGameModerator, project)).toBe(false);
+        });
     });
 
     describe("canEdit", () => {
@@ -75,6 +159,76 @@ describe("versions", () => {
 
         test(`true for users with Mods_EditAll permission`, async () => {
             expect(await version.canEdit(createDummyUser(4321, [UserPermissions.Mods_EditAll]))).toBe(true);
+        });
+
+        test(`uses the supplied project and forwards the user and result`, async () => {
+            const projectGetter = vi.spyOn(version, `project`, `get`);
+            const canEdit = vi.spyOn(project, `canEdit`).mockResolvedValue(false);
+            try {
+                expect(await version.canEdit(testUser, project)).toBe(false);
+                expect(canEdit).toHaveBeenCalledWith(testUser);
+                expect(projectGetter).not.toHaveBeenCalled();
+
+                canEdit.mockResolvedValue(true);
+                expect(await version.canEdit(null, project)).toBe(true);
+                expect(canEdit).toHaveBeenCalledWith(null);
+            } finally {
+                projectGetter.mockRestore();
+                canEdit.mockRestore();
+            }
+        });
+
+        test(`loads the parent project when one is not supplied`, async () => {
+            const projectGetter = vi.spyOn(version, `project`, `get`).mockResolvedValue(project);
+            const canEdit = vi.spyOn(project, `canEdit`).mockResolvedValue(true);
+            try {
+                expect(await version.canEdit(testUser)).toBe(true);
+                expect(projectGetter).toHaveBeenCalled();
+                expect(canEdit).toHaveBeenCalledWith(testUser);
+            } finally {
+                projectGetter.mockRestore();
+                canEdit.mockRestore();
+            }
+        });
+
+        test(`returns false when the parent project is missing`, async () => {
+            const projectGetter = vi.spyOn(version, `project`, `get`).mockResolvedValue(null);
+            try {
+                expect(await version.canEdit(testUser)).toBe(false);
+            } finally {
+                projectGetter.mockRestore();
+            }
+        });
+
+        test(`requires Mods_Edit for project authors`, async () => {
+            const authorWithoutPermission = createDummyUser(54325, []);
+            const authorWithPermission = createDummyUser(54325, [UserPermissions.Mods_Edit]);
+            project.authors = [authorWithoutPermission];
+            try {
+                expect(await version.canEdit(authorWithoutPermission, project)).toBe(false);
+                expect(await version.canEdit(authorWithPermission, project)).toBe(true);
+                expect(await version.canEdit(null, project)).toBe(false);
+            } finally {
+                project.authors = undefined;
+            }
+        });
+
+        test(`applies game-specific Mods_EditAll permissions for non-authors`, async () => {
+            const moderator = createDummyUser(54326, {
+                sitewide: [],
+                perGame: { beatsaber: [UserPermissions.Mods_EditAll] },
+            });
+            const otherGameModerator = createDummyUser(54327, {
+                sitewide: [],
+                perGame: { anothergame: [UserPermissions.Mods_EditAll] },
+            });
+            project.authors = [testUser];
+            try {
+                expect(await version.canEdit(moderator, project)).toBe(true);
+                expect(await version.canEdit(otherGameModerator, project)).toBe(false);
+            } finally {
+                project.authors = undefined;
+            }
         });
     });
 

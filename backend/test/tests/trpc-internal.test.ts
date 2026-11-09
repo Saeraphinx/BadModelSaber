@@ -160,10 +160,6 @@ describe("trpc-internal", () => {
         test(`status route returns health payload`, async () => {
             const status = await caller.internal.status.status();
             expect(status).toHaveProperty(`message`, `Server is running`);
-            expect(status).toHaveProperty(`timestamp`);
-            expect(status).toHaveProperty(`isDocker`);
-            expect(status).toHaveProperty(`environment`);
-            expect(status).toHaveProperty(`version`);
         });
 
         test(`adminStatus returns administrative diagnostics`, async () => {

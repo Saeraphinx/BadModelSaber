@@ -51,6 +51,38 @@ describe("projects", () => {
             project.status = Status.Private;
             expect(await project.canView(createDummyUser(4321, [UserPermissions.Mods_ViewAll]))).toBe(true);
         });
+
+        test(`checks loaded authors and denies unrelated users for private projects`, async () => {
+            const author = createDummyUser(54321, []);
+            project.status = Status.Private;
+            project.authors = [author];
+            try {
+                expect(await project.canView(author)).toBe(true);
+                expect(await project.canView(createDummyUser(54322, []))).toBe(false);
+                expect(await project.canView(undefined)).toBe(false);
+            } finally {
+                project.authors = undefined;
+            }
+        });
+
+        test(`uses game-specific Mods_ViewAll permissions`, async () => {
+            project.status = Status.Private;
+            project.authors = [testUser];
+            const moderator = createDummyUser(54321, {
+                sitewide: [],
+                perGame: { beatsaber: [UserPermissions.Mods_ViewAll] },
+            });
+            const otherGameModerator = createDummyUser(54322, {
+                sitewide: [],
+                perGame: { anothergame: [UserPermissions.Mods_ViewAll] },
+            });
+            try {
+                expect(await project.canView(moderator)).toBe(true);
+                expect(await project.canView(otherGameModerator)).toBe(false);
+            } finally {
+                project.authors = undefined;
+            }
+        });
     });
 
     describe("canEdit", () => {
@@ -69,6 +101,42 @@ describe("projects", () => {
         test(`true for users with Mods_EditAll permission`, async () => {
             expect(await project.canEdit(createDummyUser(4321, [UserPermissions.Mods_EditAll]))).toBe(true);
         });
+
+        test(`requires Mods_Edit for an author even with Mods_EditAll`, async () => {
+            const authorWithoutPermission = createDummyUser(54321, []);
+            project.authors = [authorWithoutPermission];
+            try {
+                expect(await project.canEdit(authorWithoutPermission)).toBe(false);
+                expect(await project.canEdit(createDummyUser(54321, [UserPermissions.Mods_EditAll]))).toBe(false);
+                expect(await project.canEdit(createDummyUser(54321, [UserPermissions.Mods_Edit]))).toBe(true);
+                expect(await project.canEdit(null)).toBe(false);
+            } finally {
+                project.authors = undefined;
+            }
+        });
+
+        test(`uses game-specific edit permissions`, async () => {
+            project.authors = [testUser];
+            const moderator = createDummyUser(54321, {
+                sitewide: [],
+                perGame: { beatsaber: [UserPermissions.Mods_EditAll] },
+            });
+            const otherGameModerator = createDummyUser(54322, {
+                sitewide: [],
+                perGame: { anothergame: [UserPermissions.Mods_EditAll] },
+            });
+            const author = createDummyUser(testUser.id, {
+                sitewide: [],
+                perGame: { beatsaber: [UserPermissions.Mods_Edit] },
+            });
+            try {
+                expect(await project.canEdit(moderator)).toBe(true);
+                expect(await project.canEdit(otherGameModerator)).toBe(false);
+                expect(await project.canEdit(author)).toBe(true);
+            } finally {
+                project.authors = undefined;
+            }
+        });
     });
 
     describe("canUpload", () => {
@@ -84,6 +152,41 @@ describe("projects", () => {
 
         test(`true for users with Mods_UploadAll permission`, async () => {
             expect(await project.canUploadVersion(createDummyUser(4321, [UserPermissions.Mods_UploadAll]))).toBe(true);
+        });
+
+        test(`allows authors and collaborators without special permissions`, async () => {
+            const author = createDummyUser(54321, []);
+            const collaborator = createDummyUser(54322, []);
+            const previousCollaborators = project.collaboratorIds;
+            project.authors = [author];
+            project.collaboratorIds = [collaborator.id];
+            try {
+                expect(await project.canUploadVersion(author)).toBe(true);
+                expect(await project.canUploadVersion(collaborator)).toBe(true);
+                expect(await project.canUploadVersion(createDummyUser(54323, []))).toBe(false);
+                expect(await project.canUploadVersion(null)).toBe(false);
+            } finally {
+                project.authors = undefined;
+                project.collaboratorIds = previousCollaborators;
+            }
+        });
+
+        test(`uses game-specific Mods_UploadAll permissions`, async () => {
+            project.authors = [testUser];
+            const moderator = createDummyUser(54321, {
+                sitewide: [],
+                perGame: { beatsaber: [UserPermissions.Mods_UploadAll] },
+            });
+            const otherGameModerator = createDummyUser(54322, {
+                sitewide: [],
+                perGame: { anothergame: [UserPermissions.Mods_UploadAll] },
+            });
+            try {
+                expect(await project.canUploadVersion(moderator)).toBe(true);
+                expect(await project.canUploadVersion(otherGameModerator)).toBe(false);
+            } finally {
+                project.authors = undefined;
+            }
         });
     });
 
@@ -101,6 +204,44 @@ describe("projects", () => {
         test(`true for users with Mods_TranslateAll permission`, async () => {
             expect(await project.canTranslate(createDummyUser(4321, [UserPermissions.Mods_TranslateAll]))).toBe(true);
         });
+
+        test(`allows authors and collaborators without special permissions`, async () => {
+            const author = createDummyUser(54321, []);
+            const collaborator = createDummyUser(54322, []);
+            const previousCollaborators = project.collaboratorIds;
+            project.authors = [author];
+            project.collaboratorIds = [collaborator.id];
+            try {
+                expect(await project.canTranslate(author)).toBe(true);
+                expect(await project.canTranslate(collaborator)).toBe(true);
+                expect(await project.canTranslate(createDummyUser(54323, []))).toBe(false);
+                expect(await project.canTranslate(null)).toBe(false);
+            } finally {
+                project.authors = undefined;
+                project.collaboratorIds = previousCollaborators;
+            }
+        });
+
+        test.each([UserPermissions.Mods_EditAll, UserPermissions.Mods_TranslateAll])(
+            `uses game-specific %s permission`,
+            async (permission) => {
+                project.authors = [testUser];
+                const moderator = createDummyUser(54321, {
+                    sitewide: [],
+                    perGame: { beatsaber: [permission] },
+                });
+                const otherGameModerator = createDummyUser(54322, {
+                    sitewide: [],
+                    perGame: { anothergame: [permission] },
+                });
+                try {
+                    expect(await project.canTranslate(moderator)).toBe(true);
+                    expect(await project.canTranslate(otherGameModerator)).toBe(false);
+                } finally {
+                    project.authors = undefined;
+                }
+            }
+        );
     });
     // #endregion
     // #region Translation tests

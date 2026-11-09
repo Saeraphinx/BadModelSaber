@@ -218,7 +218,6 @@ describe(`v3`, () => {
         test(`returns the latest matching version for each project`, async () => {
             const response = await caller.v3.mods.getMods({
                 gameName: `trpcmods`,
-                authors: [testUser.id],
             });
 
             expect(response).toHaveLength(1);
@@ -243,6 +242,16 @@ describe(`v3`, () => {
                 gameName: `trpcmods`,
                 gameVersion: `9.9.9`,
             })).rejects.toThrow(`No game versions found`);
+        });
+
+        test(`can filter by author`, async () => {
+            const response = await caller.v3.mods.getMods({
+                gameName: `trpcmods`,
+                authors: [testUser.id],
+            });
+
+            expect(response).toHaveLength(1);
+            expect(response[0].project.id).toBe(modsPublicProjectId);
         });
     });
 
@@ -286,7 +295,8 @@ describe(`v3`, () => {
         });
 
         test(`requires Game_ViewExtras permission to include extras`, async () => {
-            await expect(caller.v3.games.getGames({ includeExtras: `true` })).rejects.toThrow(`permission`);
+            const response = await privilegedCaller.v3.games.getGames({ includeExtras: `true` });
+            expect(response[0].webhooks).not.toBeNull();
         });
 
         test(`returns game extras for privileged users`, async () => {

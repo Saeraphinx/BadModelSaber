@@ -116,7 +116,7 @@ describe("assets", () => {
         });
 
         test.for(getAssetTypes(true))(`sets status to Unverified for format %s`, async (format) => {
-            console.log(format);
+            //console.log(format);
             let testAsset = await createDummyAsset(undefined, undefined, {
                 name: `test_${format}`,
                 fileHash: `hash_${format}`,
