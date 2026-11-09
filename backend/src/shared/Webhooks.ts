@@ -336,9 +336,9 @@ export class WebhookPayloadGenerator {
             if (obj instanceof User) {
                 return `[${displayStr}](<${EnvConfig.server.frontendUrl}/users/${obj.id}>)`
             } else if (obj instanceof Version) {
-                return `[${displayStr}](<${EnvConfig.server.frontendUrl}/projects/${obj.projectId}#${obj.id})`
+                return `[${displayStr}](<${EnvConfig.server.frontendUrl}/mods/${obj.projectId}#${obj.id})`
             } else if (obj instanceof Project) {
-                return `[${displayStr}](<${EnvConfig.server.frontendUrl}/projects/${obj.id}>)`
+                return `[${displayStr}](<${EnvConfig.server.frontendUrl}/mods/${obj.id}>)`
             } else if (obj instanceof Asset) {
                 return `[${displayStr}](<${EnvConfig.server.frontendUrl}/assets/${obj.id}>)`
             }
@@ -346,9 +346,9 @@ export class WebhookPayloadGenerator {
             if (obj instanceof User) {
                 return `[${obj.displayName}](<${EnvConfig.server.frontendUrl}/users/${obj.id}>)`
             } else if (obj instanceof Version) {
-                return `[${obj.semver.raw}](<${EnvConfig.server.frontendUrl}/projects/${obj.projectId}#${obj.id})`
+                return `[${obj.semver.raw}](<${EnvConfig.server.frontendUrl}/mods/${obj.projectId}#${obj.id})`
             } else if (obj instanceof Project) {
-                return `[${obj.name}](<${EnvConfig.server.frontendUrl}/projects/${obj.id}>)`
+                return `[${obj.name}](<${EnvConfig.server.frontendUrl}/mods/${obj.id}>)`
             } else if (obj instanceof Asset) {
                 return `[${obj.name}](<${EnvConfig.server.frontendUrl}/assets/${obj.id}>)`
             }
