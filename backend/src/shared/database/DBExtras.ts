@@ -38,8 +38,8 @@ export const availableLocales: {
     frontend: false,
   },
   {
-    code: "cn",
-    name: "中文", // Chinese (Written)
+    code: "zh-CN",
+    name: "简体中文", // Chinese (Written)
     secret: false,
     frontend: true,
     backend: false,

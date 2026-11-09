@@ -345,9 +345,7 @@ export function getRelativeTimeString(date: Date, lang: string = getLocale()): s
   ];
 
   // map app locale codes to ones Intl understands
-  if (lang === `cn`) {
-    lang = `zh-CN`;
-  } else if (lang === `owo` || lang === `keys`) {
+  if (lang === `owo` || lang === `keys`) {
     lang = `en`;
   }
 
