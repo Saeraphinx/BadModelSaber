@@ -62,7 +62,7 @@
       "lastUpdated": "最后更新",
       "authors": "作者",
       "supportedGameVersions": "支持的游戏版本",
-      "semver": "语义化版本",
+      "semver": "语义化版本（SemVer）",
       "platform": "平台",
       "icon": "图标",
       "dependencies": "依赖",
@@ -103,8 +103,8 @@
     "pagination": {
       "previous": "上一页",
       "next": "下一页",
-      "goToPrevious": "转到上一页",
-      "goToNext": "转到下一页"
+      "goToPrevious": "去上一页",
+      "goToNext": "去下一页"
     }
   },
   "layout": {
@@ -113,7 +113,7 @@
       "mods": {
         "title": "Mods",
         "browseMods": "浏览 Mods",
-        "compareVersions": "比较版本",
+        "compareVersions": "对比版本",
         "beatsaberBeginnersGuide": "Beat Saber 新手指南",
         "moddersGuide": "Mod 开发指南",
         "pcApprovalGuide": "审核准则"
@@ -145,7 +145,7 @@
       "logout": "退出登录",
       "loginDiscord": "使用 Discord 登录",
       "loginGitHub": "使用 GitHub 登录",
-      "modelsaberOpenSource": "BeatMods 是开源的！",
+      "modelsaberOpenSource": "BeatMods 已开源！",
       "apiDocs": "API 文档"
     },
     "alertSidebar": {
@@ -207,13 +207,13 @@
     },
     "preview": {
       "header": "资源预览",
-      "noAudioSupport": "你的浏览器不支持音频元素。",
+      "noAudioSupport": "你的浏览器不支持音频播放。",
       "waitingForData": "正在等待预览数据...",
       "openHSVPreviewer": "在 HitScoreVisualizer 预览器中打开",
       "noPreviewAvailable": "此资源暂无预览。",
       "downloadAndLoadPreview": "下载并加载预览",
-      "textOnlySr": "此预览仅显示文件中的内容。如需阅读，请<a href=\"{{downloadUrl}}\">下载文件</a>并在你的系统中打开。",
-      "failedToLoadError": "加载预览数据失败：{{error}}"
+      "textOnlySr": "此预览仅显示文件中的内容。如需阅读，请<a href=\"{{downloadUrl}}\">下载文件</a>后在本地打开。",
+      "failedToLoadError": "预览数据加载失败：{{error}}"
     },
     "statusHover": {
       "verified": {
@@ -226,7 +226,7 @@
       },
       "queue": {
         "title": "此资源正在等待审核。<span class=\"text-red-600\">请谨慎使用！</span>",
-        "description": "队列中的资源尚未经过审核团队的审查，可能包含恶意软件或与游戏不兼容。下载和使用这些资源时请谨慎。<b>未验证的资源将不会获得支持。</b>"
+        "description": "队列中的资源尚未经过审核团队的审查，可能包含恶意软件或与游戏不兼容。下载和使用这些资源时请谨慎。<b>我们不为未验证的资源提供支持。</b>"
       },
       "private": {
         "title": "此资源为私有。",
@@ -234,7 +234,7 @@
       },
       "removed": {
         "title": "此资源已被移除。",
-        "description": "已移除的资源已被审核团队下架，对公众不可见。"
+        "description": "此资源已被审核团队移除，对公众不可见。"
       }
     },
     "copyFileHash": "复制文件哈希",
@@ -270,7 +270,7 @@
     "makePublic": "设为公开",
     "nameIdExplanation": "Manifest ID 是此项目的唯一标识符，用于你所有版本的 Manifest 中（例如 BSIPA Manifest 中的 \"id\" 字段）。它通常与名称相同。项目创建后无法更改。",
     "deprecatedVersionWarning": "你选择的游戏版本已不再受支持。",
-    "deprecatedVersionWarningDescription": "此版本已不再受社区支持，可能不会再收到 Mod 更新。请考虑将游戏更新到较新的或受支持的版本。",
+    "deprecatedVersionWarningDescription": "此版本已不再受社区支持，可能不会再收到 Mod 更新。建议将游戏更新到较新的受支持版本。",
     "createProject": {
       "title": "创建项目",
       "subtitle": "请填写以下表单以创建新项目。",
@@ -295,7 +295,7 @@
       "importFromOtherVersionDialogTitle": "从其他版本导入依赖",
       "importFromOtherVersionDialogDescription": "选择 {{projectName}} 的另一个版本以导入其依赖。这会将所选版本的所有依赖复制到你正在创建的新版本中。",
       "searchVersion": "搜索版本...",
-      "packingFileIntoZip": "上传时，你的 DLL 文件将被打包进 zip 文件的 Plugins 文件夹中。如果你需要包含其他文件，或者你的 DLL 应放在其他文件夹中，请自行创建具有正确结构的 zip 文件并上传。"
+      "packingFileIntoZip": "上传时，DLL 文件会自动打包到 zip 的 Plugins 文件夹中。如果你需要包含其他文件，或者你的 DLL 应放在其他文件夹中，请自行创建具有正确结构的 zip 文件并上传。"
     },
     "manifestChecks": {
       "manifestData": "Manifest 数据",
@@ -305,7 +305,7 @@
       "manifestProjectNameMismatch": "你的 Manifest 中指定的名称（{{manifestName}}）与你要上传到的项目名称（{{expectedName}}）不一致。请确保 Manifest 中的 'name' 字段与你在 BeatMods 上的项目名称一致。",
       "manifestProjectIdMismatch": "你的 Manifest 中指定的 Manifest ID（{{manifestId}}）与你要上传到的项目的 Manifest ID（{{expectedManifestId}}）不一致。请确保 Manifest 中的 'id' 字段与你在 BeatMods 上的项目的 Manifest ID 一致。",
       "dependencies": {
-        "manifestMissingdependsOn": "你的 Manifest 缺少 'dependsOn' 字段，该字段用于指定你的 Mod 的依赖，是必需的。请将此字段添加到 Manifest 中后重试。",
+        "manifestMissingdependsOn": "你的 Manifest 缺少必需的 'dependsOn' 字段（用于声明 Mod 的依赖）。请添加该字段后重试。",
         "webInvalidRange": "依赖 {{depName}} 指定的游戏版本范围无效：{{sv}}。请确保所有依赖都使用有效的语义化版本范围。",
         "manifestInvalidRange": "依赖 {{depName}} 指定的游戏版本范围无效：{{sv}}。请确保 Manifest 中的所有依赖都使用有效的语义化版本范围。",
         "webDependencyNotFound": "在 Manifest 中未找到依赖 {{depName}}@{{sv}}。请确保列出的所有依赖都包含在 Manifest 文件中。",
@@ -324,19 +324,19 @@
     "statusHover": {
       "verified": {
         "title": "此 Mod 已通过审核团队验证，<span class=\"text-green-600\">可以放心使用！</span>",
-        "description": "已验证的 Mod 是安全的，不应对游戏造成问题。认准绿色徽章！"
+        "description": "已验证的 Mod 可以放心使用，不会给游戏带来问题。认准绿色徽章！"
       },
       "unverified": {
         "title": "此 Mod <b>未</b>经过审核团队验证。<span class=\"text-orange-400\">使用风险自负！</span>",
-        "description": "未验证的 Mod 尚未经过全面的问题和兼容性检查。虽然它们可能没有问题，但下载和使用时请谨慎。<b>未验证的 Mod 将不会获得支持。</b>"
+        "description": "未验证的 Mod 尚未经过全面的问题和兼容性检查。这些 Mod 可能没有问题，但下载和使用时仍请谨慎。<b>我们不为未验证的 Mod 提供支持。</b>"
       },
       "testing": {
         "title": "此 Mod 正在等待审核。",
-        "description": "处于测试阶段的 Mod 已经过审核团队的审查，目前正在测试中。它可能与游戏不兼容或导致其他问题。下载和使用这些 Mod 时请谨慎。<b>这些 Mod 尚未完全验证，不会获得支持。</b>尽管如此，如果你在使用这些 Mod 时遇到任何问题，请告知审核团队。"
+        "description": "处于测试阶段的 Mod 已经过审核团队的审查，目前正在测试中，可能与游戏不兼容或导致其他问题。下载和使用这些 Mod 时请谨慎。<b>这些 Mod 尚未完全验证，我们不为其提供支持。</b>不过，如果你在使用这些 Mod 时遇到任何问题，请告知审核团队。"
       },
       "queue": {
         "title": "此 Mod 正在等待审核。<span class=\"text-red-600\">请谨慎使用！</span>",
-        "description": "队列中的 Mod 尚未经过审核团队的全面审查，可能会导致问题或与游戏不兼容。下载和使用这些 Mod 时请谨慎。<b>未验证的 Mod 将不会获得支持。</b>"
+        "description": "队列中的 Mod 尚未经过审核团队的全面审查，可能会导致问题或与游戏不兼容。下载和使用这些 Mod 时请谨慎。<b>我们不为未验证的 Mod 提供支持。</b>"
       },
       "private": {
         "title": "此 Mod 为私有。",
@@ -344,7 +344,7 @@
       },
       "removed": {
         "title": "此 Mod 已被移除。",
-        "description": "已移除的 Mod 已被审核团队下架，对公众不可见。"
+        "description": "此 Mod 已被审核团队移除，对公众不可见。"
       }
     },
     "noSummary": "未提供简介。",
@@ -356,8 +356,8 @@
     "searchProjects": "搜索项目...",
     "noProjectFound": "未找到项目。",
     "compare": {
-      "title": "比较游戏版本",
-      "fetchError": "获取游戏版本时出错：{{error}}",
+      "title": "对比游戏版本",
+      "fetchError": "游戏版本获取失败：{{error}}",
       "gameVersion1": "游戏版本 1",
       "gameVersion2": "游戏版本 2",
       "modName": "Mod 名称",
@@ -367,10 +367,10 @@
     }
   },
   "requests": {
-    "wouldYouLikeToAcceptOrReject": "你要接受还是拒绝此请求？",
-    "initialMessageCredit": "{{name}} 想将你添加为资源 {{assetName}} 的协作者。",
-    "initialMessageLink": "{{name}} 想将你的资源 {{toLinkAssetName}} 关联到他们的资源 {{assetName}}。",
-    "initialMessageReport": "{{name}} 想要举报“{{assetName}}”。",
+    "wouldYouLikeToAcceptOrReject": "是否接受此请求？",
+    "initialMessageCredit": "{{name}} 邀请你成为资源 {{assetName}} 的协作者。",
+    "initialMessageLink": "{{name}} 请求将你的资源 {{toLinkAssetName}} 关联到 {{assetName}}。",
+    "initialMessageReport": "{{name}} 举报了“{{assetName}}”。",
     "tableTitle": "{{type}}请求",
     "requestID": "请求 ID：{{id}}",
     "status": "请求状态：{{status}}",
@@ -380,10 +380,10 @@
     "createdAt": "创建时间：{{date}}",
     "typeYourMessageHere": "在此输入消息...",
     "noMessagesFound": "此请求暂无消息。",
-    "errorLoadingMessages": "加载消息时出错：{{error}}",
+    "errorLoadingMessages": "消息加载失败：{{error}}",
     "submitMessage": "发送消息",
     "pageTitle": "请求 {{id}}",
-    "noRequests": "你没有任何请求。",
+    "noRequests": "暂无请求。",
     "outgoing": "我发出的请求",
     "incoming": "收到的请求",
     "accepted": "已接受",
@@ -393,15 +393,15 @@
     "linkAccounts": "关联账号",
     "linkToGithub": "关联 GitHub",
     "linkToDiscord": "关联 Discord",
-    "hideGithubId": "对公众隐藏 GitHub",
-    "hideDiscordId": "对公众隐藏 Discord",
+    "hideGithubId": "不公开 GitHub 账号",
+    "hideDiscordId": "不公开 Discord 账号",
     "username": "用户名",
     "displayName": "显示名称",
     "bio": "个人简介",
     "donationLinks": "捐赠链接",
     "apiKeys": "API 密钥",
     "generateApiKey": "生成 API 密钥",
-    "yourNewApiHasBeenGenerated": "你的新 API 密钥已生成。请立即复制，它将不会再次显示。",
+    "yourNewApiHasBeenGenerated": "你的新 API 密钥已生成。请立即复制，关闭后将无法再次查看。",
     "revoke": "撤销",
     "systemUser": "系统用户",
     "selectUser": "选择用户",
@@ -415,7 +415,7 @@
   "enums": {
     "status": {
       "private": "私有",
-      "queue": "队列中",
+      "queue": "待审核",
       "unverified": "未验证",
       "testing": "测试中",
       "non-default-testing": "非支持版本测试",
@@ -431,7 +431,7 @@
       "3dArtist": "3D 美术师",
       "modder": "Modder",
       "system": "系统账号",
-      "unknown": "未知角色"
+      "unknown": "未知身份"
     },
     "tags": {
       "CustomColors": "自定义颜色",
@@ -448,7 +448,7 @@
       "ShaderReplacement": "着色器替换",
       "NSFW": "NSFW",
       "Meme": "梗",
-      "Thin": "细",
+      "Thin": "纤细",
       "Large": "大型",
       "Acc": "Acc",
       "Particles": "粒子",
@@ -539,7 +539,7 @@
     "approval": {
       "title": "更新 {{name}} 的状态",
       "description": "为“{{name}}”选择新状态。点击保存以应用更改。",
-      "reasonWillBeVisible": "{{name}} 的作者将能看到此原因。",
+      "reasonWillBeVisible": "{{name}} 的作者可以看到此原因。",
       "reasonPlaceholder": "输入状态变更的原因（可选）",
       "presetReasons": "预设原因",
       "autosetProject": "自动设置项目",
@@ -549,14 +549,14 @@
       "assetTitle": "下载未验证的资源？",
       "assetDescription": "你要下载的资源尚未经过审核团队验证。未验证的资源可能会导致问题或包含其他有害内容。确定要继续下载吗？",
       "nonVerifiedModTitle": "下载未验证的 Mod？",
-      "nonVerifiedModDescription": "你要下载的 Mod 尚未经过审核团队的完整验证。未验证的 Mod 可能与游戏不兼容或导致其他问题。<b>未验证的 Mod 将无法在 BSMG 获得支持。</b>确定要继续下载吗？",
+      "nonVerifiedModDescription": "你要下载的 Mod 尚未经过审核团队的完整验证。未验证的 Mod 可能与游戏不兼容或导致其他问题。<b>BSMG 不为未验证的 Mod 提供支持。</b>确定要继续下载吗？",
       "testingModTitle": "下载未验证的 Mod？",
-      "testingModDescription": "你要下载的 Mod 目前正在测试中，等待完整验证。未验证的 Mod 可能与游戏不兼容或导致其他问题。<b>这些 Mod 尚未完全验证，不会获得支持。</b>尽管如此，如果你在使用这些 Mod 时遇到任何问题，请告知审核团队。确定要继续下载吗？",
+      "testingModDescription": "你要下载的 Mod 目前正在测试中，等待完整验证。未验证的 Mod 可能与游戏不兼容或导致其他问题。<b>这些 Mod 尚未完全验证，我们不为其提供支持。</b>不过，如果你在使用这些 Mod 时遇到任何问题，请告知审核团队。确定要继续下载吗？",
       "neverShowAgain": "如果你不想再看到此警告，请点击“不再显示”按钮。"
     },
     "report": {
       "title": "举报 {{name}}",
-      "description": "如果你认为此内容违反了我们的规则，请提供举报原因。我们的管理团队将审查举报，并在必要时采取适当措施。",
+      "description": "如果你认为此内容违反了我们的规则，请提供举报原因。管理团队会审核该举报，并在必要时采取相应措施。",
       "reasonPlaceholder": "输入举报原因。"
     },
     "linkAsset": {
@@ -591,8 +591,8 @@
   },
   "toasts": {
     "save": {
-      "success": "已保存更改。",
-      "error": "保存更改失败。"
+      "success": "更改已保存。",
+      "error": "更改保存失败。"
     },
     "success": {
       "assetLink": "资源关联成功。",
@@ -602,7 +602,7 @@
       "generic": "发生错误，请稍后重试。",
       "validation": {
         "title": "验证错误",
-        "invalidUrl": "提供的 URL 无效，请确保其为有效的 URL。",
+        "invalidUrl": "URL 无效，请检查后重试。",
         "missingFields": "请填写所有必填字段。",
         "invalidFile": "所选文件无效，请选择有效的文件。"
       },
@@ -614,32 +614,32 @@
     },
     "secretFeatures": {
       "unlocked": "隐藏功能已解锁！",
-      "unlockedDescription": "启用这些功能后，你将能够访问 BeatMods 上的隐藏内容和功能。BeatMods 不对这些内容造成的任何损害负责，由这些内容引起的问题也不会获得支持。",
+      "unlockedDescription": "启用后，你可以访问 BeatMods 上的隐藏内容和功能。BeatMods 不对这些内容造成的任何损害负责，也不为由此产生的问题提供支持。",
       "enabled": "隐藏功能已启用！",
       "enabledDescription": "你现在可以访问 BeatMods 上的隐藏内容和功能了。请合理使用！",
-      "mustBeLoggedIn": "你必须登录才能激活此功能。",
+      "mustBeLoggedIn": "登录后才能启用此功能。",
       "alreadyEnabled": "你已经激活了隐藏功能。",
       "alreadyEnabledDescription": "如需禁用，请在用户设置中关闭。",
       "disabled": "隐藏功能已禁用！",
       "disabledDescription": "已撤销对隐藏内容和功能的访问权限。"
     },
     "failedTo": {
-      "loadGameData": "加载游戏数据失败，请稍后重试。",
-      "loadAssets": "加载资源失败，请稍后重试。",
-      "loadMods": "加载 Mods 失败，请稍后重试。",
-      "loadAlerts": "加载通知失败，请稍后重试。",
-      "loadRequests": "加载请求失败，请稍后重试。",
+      "loadGameData": "游戏数据加载失败，请稍后重试。",
+      "loadAssets": "资源加载失败，请稍后重试。",
+      "loadMods": "Mods 加载失败，请稍后重试。",
+      "loadAlerts": "通知加载失败，请稍后重试。",
+      "loadRequests": "请求加载失败，请稍后重试。",
       "fetchUserData": "无法获取用户数据"
     }
   },
   "errorPage": {
     "title": "错误 {{status}}",
-    "unauthorized": "你需要登录才能查看此页面。",
+    "unauthorized": "请登录后查看此页面。",
     "forbidden": "你没有权限查看此页面。",
     "notFound": "找不到这个页面 :/",
     "serverError": "我们这边出了点问题。",
     "unexpected": "发生意外错误，请稍后重试。",
-    "profileLoginRequired": "你必须登录才能查看你的个人资料",
+    "profileLoginRequired": "登录后才能查看个人资料",
     "copyDebugInfo": "复制调试信息",
     "debugInfoCopied": "调试信息已复制到剪贴板",
     "debugInfoCopiedDescription": "你可以将其粘贴到 GitHub Issue 或 Discord 中寻求帮助。注意：其中包含当前页面和用户数据的信息。",
