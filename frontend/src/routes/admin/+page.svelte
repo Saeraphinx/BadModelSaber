@@ -343,7 +343,7 @@
       <div class="flex flex-col items-center p-4 bg-accent rounded-lg">
         <div class="flex flex-row gap-2">
           <p class="text-2xl">Admin Logs</p>
-          <Button variant="outline" onclick={fetchAdminLogs} disabled={ALisConnected}>Get Last 5 Minutes</Button>
+          <Button variant="outline" onclick={fetchAdminLogs} disabled={ALisConnected}>Get Last 15 Minutes</Button>
           <Button onclick={ALisConnected ? unsubscribeAdminLogs : subscribeAdminLogs}>
             {ALisConnected ? "Unsubscribe" : "Subscribe"}
           </Button>
@@ -423,34 +423,6 @@
         <div class="flex flex-col items-center p-4 gap-4 bg-accent rounded-lg w-[300px]">
           <p class="text-2xl">One-Shots</p>
           <Button
-            disabled={!isDev}
-            variant="destructive"
-            onclick={() => {
-              trpc.internal.admin.dev.importOldModelSaberData
-                .mutate()
-                .then(() => {
-                  toast.success("Import started.");
-                })
-                .catch((err) => {
-                  console.error(err);
-                  toast.error("Failed to start import.", { description: parseErrorMessage(err) });
-                });
-            }}>Import Old ModelSaber Data</Button>
-          <Button
-            disabled={!isDev}
-            variant="destructive"
-            onclick={() => {
-              trpc.internal.admin.dev.importFromBeatmods
-                .mutate()
-                .then(() => {
-                  toast.success("Import started.");
-                })
-                .catch((err) => {
-                  console.error(err);
-                  toast.error("Failed to start import.", { description: parseErrorMessage(err) });
-                });
-            }}>Import From BadBeatMods</Button>
-          <Button
             variant="destructive"
             disabled={!isDev}
             onclick={() => {
@@ -529,7 +501,7 @@
             {#each userSearchResults as user}
               <tr>
                 <td class="w-12"><img src={user.avatarUrl} alt="Avatar" class="w-8 h-8 rounded-full" /></td>
-                <td>{user.id}</td>
+                <td><a href="/users/{user.id}">{user.id}</a></td>
                 <td>{user.username}</td>
                 <td>{user.displayName}</td>
                 <td>{user.githubId ?? "N/A"}</td>
