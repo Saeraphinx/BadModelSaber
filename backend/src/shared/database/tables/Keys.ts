@@ -1,8 +1,9 @@
 import { CreationOptional, InferAttributes, InferCreationAttributes } from "sequelize";
 import { AllowNull, Column, CreatedAt, DataType, Model, PrimaryKey, Table, UpdatedAt } from "sequelize-typescript";
-import { createRandomString } from "../../Tools.ts";
+import { createRandomString, parseErrorMessage } from "../../Tools.ts";
 import { createHash, timingSafeEqual } from "crypto";
 import { EnvConfig } from "../../EnvConfig.ts";
+import { Logger } from "../../Logger.ts";
 
 @Table({
     tableName: "keys",
@@ -37,29 +38,34 @@ export class Keys extends Model<InferAttributes<Keys>, InferCreationAttributes<K
 
     public static async checkKey(key: string): Promise<number | null> {
         if (!EnvConfig.server.enableApiKeys) return null;
-        let splitKey = key.split('.');
-        if (splitKey.length !== 3 || splitKey[0] !== 'bbmat') {
-            return null;
-        }
 
-        const userId = parseInt(splitKey[1], 16);
-        const hash = splitKey[2];
-        if (isNaN(userId) || hash.length !== 43) {
-            return null;
-        }
+        const match = /^bbmat\.([0-9a-f]+)\.([A-Za-z0-9_-]{58})$/.exec(key);
+        if (!match) return null;
 
-        const keyInstances = await this.findAll({ where: { userId } });
-        const inputHashBuffer = Buffer.from(hash);
+        const userId = Number.parseInt(match[1], 16);
+        if (!Number.isSafeInteger(userId) || userId <= 0) return null;
+
+        const inputHash = createHash("sha256")
+            .update(match[2])
+            .digest("base64url");
+        const inputHashBuffer = Buffer.from(inputHash);
+
+        const keys = await this.findAll({ where: { userId } });
         try {
-            for (const keyInstance of keyInstances) {
-                const dbHashBuffer = Buffer.from(keyInstance.key.split('.')[2]);
-                if (dbHashBuffer.length === inputHashBuffer.length && timingSafeEqual(dbHashBuffer, inputHashBuffer)) {
-                    return keyInstance.userId;
+            for (const storedKey of keys) {
+                const storedHashBuffer = Buffer.from(storedKey.key);
+                if (
+                    storedHashBuffer.length === inputHashBuffer.length &&
+                    timingSafeEqual(storedHashBuffer, inputHashBuffer)
+                ) {
+                    return storedKey.userId;
                 }
             }
         } catch (error) {
+            Logger.error(`Error checking API key: ${parseErrorMessage(error)}`);
             return null;
         }
+
         return null;
     }
 }

@@ -424,6 +424,35 @@ export class User extends Model<InferAttributes<User>, InferCreationAttributes<U
         await Promise.all(migrationPromises);
     }
 
+    public static mergeRoles(p1: {
+        perGame: Record<string, UserPermissions[]>,
+        sitewide: UserPermissions[]
+    }, p2: {
+        perGame: Record<string, UserPermissions[]>,
+        sitewide: UserPermissions[]
+    }): {
+        perGame: Record<string, UserPermissions[]>,
+        sitewide: UserPermissions[]
+    } {
+        const mergedPerGame: Record<string, UserPermissions[]> = {};
+        const mergedSitewide: UserPermissions[] = Array.from(new Set([...p1.sitewide, ...p2.sitewide]));
+
+        for (const game in p1.perGame) {
+            mergedPerGame[game] = Array.from(new Set([...(p1.perGame[game] || []), ...(p2.perGame[game] || [])]));
+        }
+
+        for (const game in p2.perGame) {
+            if (!mergedPerGame[game]) {
+                mergedPerGame[game] = Array.from(new Set(p2.perGame[game]));
+            }
+        }
+
+        return {
+            perGame: mergedPerGame,
+            sitewide: mergedSitewide
+        };
+    }
+
     public canUserBeBanned(): boolean {
         if (this.checkRoles([UserPermissions.C_Banned])) {
             return false;

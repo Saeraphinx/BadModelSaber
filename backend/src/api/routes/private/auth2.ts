@@ -153,7 +153,7 @@ export const auth2Router = router({
                         user: userInfo
                     })
 
-                    const finalizeUrl = `${EnvConfig.server.backendUrl}/api/auth/discord/final?token=${token}`;
+                    const finalizeUrl = `${EnvConfig.server.backendUrl}/api/auth/discord/final?token=${token}&type=login`;
                     Logger.info(`Discord login stage 2 completed by ${userInfo.data.id}`);
                     sendSuccessfulHtmlString(ctx, finalizeUrl);
                     return;
@@ -165,7 +165,7 @@ export const auth2Router = router({
                     const { state, redirect } = prepAuth(`discord`);
                     const RESTClient = new REST({ version: '10' });
                     const oauth2 = new OAuth2API(RESTClient);
-                    let url = oauth2.generateAuthorizationURL(getDiscordSetupObj(state, `${EnvConfig.server.backendUrl}/api/auth/discord/callback`));
+                    let url = oauth2.generateAuthorizationURL(getDiscordSetupObj(state, `${EnvConfig.server.backendUrl}/api/auth/discord/link/callback`));
 
                     ctx.req.session.oauth = { redirect: redirect.toString(), state, linkUserId: ctx.user.id };
                     ctx.req.session.save();
@@ -199,8 +199,8 @@ export const auth2Router = router({
                         user: userInfo
                     })
 
-                    const finalizeUrl = `${EnvConfig.server.backendUrl}/api/auth/discord/final?token=${token}`;
-                    Logger.info(`Discord login stage 2 completed by ${userInfo.data.id}`);
+                    const finalizeUrl = `${EnvConfig.server.backendUrl}/api/auth/discord/final?token=${token}&type=link`;
+                    Logger.info(`Discord link stage 2 completed by ${userInfo.data.id}`);
                     sendSuccessfulHtmlString(ctx, finalizeUrl);
                     return;
                 }),
@@ -209,6 +209,7 @@ export const auth2Router = router({
             .meta({ openapi: { method: 'GET', path: '/auth/discord/final', tags: ['Authentication'] } })
             .input(z.object({
                 token: z.string(),
+                type: z.enum(['login', 'link'])
             }))
             .output(z.void())
             .query(async ({ input, ctx }) => {
@@ -223,6 +224,7 @@ export const auth2Router = router({
                 const redirect = ctx.req.session.oauth?.redirect;
                 if (!state) return;
                 if (!safeEqual(state, stage.state)) return;
+                if (input.type !== stage.action) return;
 
                 if (stage.action === 'login') {
                     const gamePerms = await Game.findAll().then(games => {
@@ -269,6 +271,7 @@ export const auth2Router = router({
                     if (dbUser.discordId) throw new TRPCError({ code: 'CONFLICT' });
                     Logger.info(`Begin linking Discord for user ${dbUser.id}`);
 
+                    let mergedPerms = dbUser.permissions;
                     await User.findOne({
                         where: {
                             id: { [Op.ne]: dbUser.id },
@@ -278,7 +281,7 @@ export const auth2Router = router({
                     }).then(async exU => {
                         if (!exU) return;
                         Logger.warn(`Merging user ${exU.username} (${exU.id}) into ${dbUser.username} (${dbUser.id}) due to Discord account linking.`);
-
+                        mergedPerms = User.mergeRoles(exU.permissions, dbUser.permissions);
                         await exU.migrateUserItems(dbUser).then(async () => {
                             await exU.update({ discordId: null });
                             await exU.destroy();
@@ -291,7 +294,7 @@ export const auth2Router = router({
                         throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
                     });
 
-                    await dbUser.update({ discordId: stageUser.data.id });
+                    await dbUser.update({ discordId: stageUser.data.id, permissions: mergedPerms });
                     Logger.info(`Linked Discord ${stageUser.data.id} to user ${dbUser.id}`);
                 }
 
@@ -349,7 +352,7 @@ export const auth2Router = router({
                         user: userInfo
                     })
 
-                    const finalizeUrl = `${EnvConfig.server.backendUrl}/api/auth/github/final?token=${token}`;
+                    const finalizeUrl = `${EnvConfig.server.backendUrl}/api/auth/github/final?token=${token}&type=login`;
                     Logger.info(`Github login stage 2 completed by ${userInfo.data.id}`);
                     sendSuccessfulHtmlString(ctx, finalizeUrl);
                     return;
@@ -368,7 +371,7 @@ export const auth2Router = router({
                         state,
                         scopes: ["read:user"],
                     }).url;
-                    ctx.req.session.oauth = { redirect: redirect.toString(), state };
+                    ctx.req.session.oauth = { redirect: redirect.toString(), state, linkUserId: ctx.req.session.userId };
                     ctx.req.session.save();
                     return { url }
                 }),
@@ -382,7 +385,7 @@ export const auth2Router = router({
                 .query(async ({ ctx, input }) => {
                     if (!input || !input.code || !input.state) return;
 
-                    const userInfo = await getGithubUser(input.code, `${EnvConfig.server.backendUrl}/api/auth/github/callback`).catch(e => {
+                    const userInfo = await getGithubUser(input.code, `${EnvConfig.server.backendUrl}/api/auth/link/github/callback`).catch(e => {
                         // all errors should be TRPC errors, but just in case
                         if (e instanceof TRPCError) throw e;
                         Logger.error(`Error fetching Github user: ${parseErrorMessage(e)}`);
@@ -399,7 +402,7 @@ export const auth2Router = router({
                         user: userInfo
                     })
 
-                    const finalizeUrl = `${EnvConfig.server.backendUrl}/api/auth/github/final?token=${token}`;
+                    const finalizeUrl = `${EnvConfig.server.backendUrl}/api/auth/github/final?token=${token}&type=link`;
                     Logger.info(`Github login stage 2 completed by ${userInfo.data.id}`);
                     sendSuccessfulHtmlString(ctx, finalizeUrl);
                     return;
@@ -408,7 +411,8 @@ export const auth2Router = router({
         finalize: anyProcedure()
             .meta({ openapi: { method: 'GET', path: '/auth/github/final', tags: ['Authentication'] } })
             .input(z.object({
-                token: z.string()
+                token: z.string(),
+                type: z.enum(['login', 'link'])
             }))
             .output(z.void())
             .query(async ({ input, ctx }) => {
@@ -423,6 +427,7 @@ export const auth2Router = router({
                 const redirect = ctx.req.session.oauth?.redirect;
                 if (!state) return;
                 if (!safeEqual(state, stage.state)) return;
+                if (input.type !== stage.action) return;
 
                 if (stage.action === `login`) {
                     let gamePerms = await Game.findAll().then(games => {
@@ -553,8 +558,11 @@ export const auth2Router = router({
                 whereOptions.name = input.name;
             } else if (input.key) {
                 let key = input.key.split('.')[2];
-                if (!key || key.length !== 43) {
-                    throw new TRPCError({ code: 'BAD_REQUEST', message: `Invalid API key format.` });
+                let keyUserId = await Keys.checkKey(input.key);
+                if (!keyUserId) {
+                    throw new TRPCError({ code: 'BAD_REQUEST', message: `API key not found.` });
+                } else if (keyUserId !== ctx.user.id) {
+                    throw new TRPCError({ code: 'FORBIDDEN', message: `You do not have permission to revoke this API key.` });
                 }
 
                 const hash = createHash('sha256').update(key).digest(`base64url`);
