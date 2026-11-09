@@ -15,6 +15,7 @@
       error: page.error,
       route: page.route,
       params: page.params,
+      time: new Date().toISOString(),
       data: {
         user: {
           id: page.data.user?.id,
