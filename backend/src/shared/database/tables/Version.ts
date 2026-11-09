@@ -17,6 +17,7 @@ import { decompile } from "@umbranoxio/difflux";
 import { WebhookPayloadGenerator, Webhooks } from "../../Webhooks.ts";
 import { Alert, AlertInfer, AlertTemplates } from "./Alert.ts";
 import { ThingRequest } from "./ThingRequest.ts";
+import { getManifestFromZip } from "../../ModParser.ts";
 
 export type VersionInfer = InferAttributes<Version>;
 export type VersionAllowedEdit = Partial<Pick<Version, `semver` | `dependencies`>> & {
@@ -338,12 +339,16 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
         }
 
         let prjView = await prj.canView(user);
-        if (prjView && user) {
-            // this has to be done because a project can be viewable but the version can still be private
-            if (user.getAllowedStatuses(`mod`, prj.gameName).includes(this.status)) {
+        if (prjView) {
+            if (User.getAllowedStatuses(user, `mod`, prj.gameName).includes(this.status)) {
                 return true;
-            } else {
-                // allow all authors of the project to view the version even if they don't have the required status
+            }
+
+            if (user &&this.uploaderId === user.id) {
+                return true;
+            }
+
+            if (user) {
                 if (prj.authors === undefined || prj.authors.length === 0) {
                     return await prj.$get(`authors`).then(authors => {
                         return (authors ?? []).some(author => author.id === user.id);
@@ -352,11 +357,8 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
                     return (prj.authors ?? []).some(author => author.id === user.id);
                 }
             }
-        } else if (prjView) {
-            return User.getAllowedStatuses(user, `mod`, prj.gameName).includes(this.status);
-        } else {
-            return false
         }
+        return false;
     }
     public async canEdit(user: User | null | undefined, project?: Project): Promise<boolean> {
         let prj: Project | null | undefined = project;
@@ -548,6 +550,47 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
     }
     // #endregion
     // #region Decompiler
+    public async pullDllOutOfZip(): Promise<boolean> {
+        let zipFile = fs.readFileSync(this.zipFilePath);
+        let zip = await JSZip.loadAsync(zipFile);
+        let zipDllFile: JSZip.JSZipObject | null = null;
+        let foundOneAlready = false;
+        try {
+            zip.folder(`Plugins`)?.forEach((relativePath, file) => {
+                if (relativePath.endsWith(`.dll`)) {
+                    if (foundOneAlready) {
+                        throw new Error(`Multiple dll files found in zip for version id ${this.id}`);
+                    }
+                    foundOneAlready = true;
+                    zipDllFile = file;
+                }
+            });
+            if (!zipDllFile) {
+                zip.folder(`Plugins`)?.forEach((relativePath, file) => {
+                    if (relativePath.endsWith(`.dll`)) {
+                        if (foundOneAlready) {
+                            throw new Error(`Multiple dll files found in zip for version id ${this.id}`);
+                        }
+                        foundOneAlready = true;
+                        zipDllFile = file;
+                    }
+                });
+                if (!zipDllFile) {
+                    throw new Error(`Could not find dll file in zip for version id ${this.id}`);
+                }
+            }
+        } catch (error) {
+            throw new Error(`Failed to read zip file for version id ${this.id}: ${(error as Error).message}`);
+        }
+        if (!zipDllFile) {
+            return false;
+        }
+        let dllData = await (zipDllFile as JSZip.JSZipObject).async(`nodebuffer`);
+        let dllFilePath = this.dllFilePath;
+        fs.writeFileSync(dllFilePath, dllData);
+        return true;
+    }
+
     public async doesDecompiledVersionExist(): Promise<boolean> {
         let decompiledPath = path.join(await this.versionFolderPath, `decompiled`);
         return fs.existsSync(decompiledPath);
@@ -561,27 +604,11 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
         }
         // get dll out of zip
         Logger.debug(`Starting decomp for version id ${this.id}. Extracting dll from zip...`);
-        let zipFile = fs.readFileSync(this.zipFilePath);
-        let zip = await JSZip.loadAsync(zipFile);
-        let zipDllFile: JSZip.JSZipObject | null = null;
-        try {
-            zip.folder(`Plugins`)?.forEach((relativePath, file) => {
-                if (relativePath.endsWith(`.dll`)) {
-                    zipDllFile = file;
-                    Logger.debug(`Found dll file in zip for version id ${this.id} at path ${relativePath}.`);
-                }
-            });
-        } catch (error) {
-            throw new Error(`Failed to read zip file for version id ${this.id}: ${(error as Error).message}`);
+        let dllExtracted = await this.pullDllOutOfZip();
+        if (!dllExtracted) {
+            throw new Error(`Could not extract dll from zip for version id ${this.id}`);
         }
-        if (!zipDllFile) {
-            throw new Error(`Could not find dll file in zip for version id ${this.id}`);
-        }
-        Logger.debug(`Extracting dll file from zip for version id ${this.id}...`);
-        let dllData = await (zipDllFile as JSZip.JSZipObject).async(`nodebuffer`);
-        // write dll to file for decompilation
         let dllFilePath = this.dllFilePath;
-        fs.writeFileSync(dllFilePath, dllData);
 
         // decompile dll with difflux
         Logger.debug(`Decompiling dll for version id ${this.id} at path ${dllFilePath} (prep ${startTime - Date.now()}ms)...`);
@@ -589,6 +616,18 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
         Logger.info(`Decompilation completed for version id ${this.id}. Decompiled files saved to ${path.join(this.versionFolderPath, `decompiled`)}. Total Time: ${(Date.now() - startTime) / 1000}s`);
 
         fs.unlinkSync(dllFilePath); // delete dll after decompilation
+    }
+
+    public async pullManifestOutOfZip(): Promise<boolean> {
+        const zipFile = fs.readFileSync(this.zipFilePath);
+        let manifest = await getManifestFromZip(zipFile);
+        if (!manifest) {
+            return false;
+        }
+
+        fs.writeFileSync(path.join(this.versionFolderPath, `manifest.json`), JSON.stringify(manifest, null, 2));
+
+        return true;
     }
     // #endregion
     // #region Reports
