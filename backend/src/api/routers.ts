@@ -71,7 +71,10 @@ export const loadOpenApiMiddleware = createOpenApiExpressMiddleware({
     router: appRouter,
     createContext,
     onError: ({ error, path, req }) => {
-        Logger.error(`OpenAPI Error at ${req.path}: ${error}`);
+        if (error.cause?.message === `Cannot set headers after they are sent to the client`) {
+            return;
+        }
+        Logger.error(`OpenAPI Error at ${req.path}: ${parseErrorMessage(error)}`);
     },
     maxBodySize: 1024 * 1024 * 8
 });

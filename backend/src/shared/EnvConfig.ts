@@ -211,4 +211,24 @@ export class EnvConfig {
             schema: process.env.DB_SCHEMA || DEFAULT_CONFIG.database.schema,
         };
     }
+
+    public async checkAllFileAccess() {
+        const files = fs.readdirSync(EnvConfig.storage.uploads, { withFileTypes: true, recursive: true });
+        const promises = [];
+        for (const file of files) {
+            promises.push(new Promise((resolve, reject) => {
+                try {
+                    if (file.isDirectory()) {
+                        fs.accessSync(`${EnvConfig.storage.uploads}/${file.name}`, fs.constants.R_OK | fs.constants.W_OK | fs.constants.X_OK);
+                    } else {
+                        fs.accessSync(`${EnvConfig.storage.uploads}/${file.name}`, fs.constants.R_OK | fs.constants.W_OK);
+                    }
+                    resolve(true);
+                } catch (err) {
+                    reject(err);
+                }
+            }));
+        }
+        return await Promise.all(promises);
+    }
 }
