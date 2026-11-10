@@ -155,10 +155,7 @@
         translatedString: stringToUse,
       })
       .then(handleTrpcSuccessWithToast(m[`toasts.save.success`](), false, () => {
-        invalidateAll().then(() => {
-          isTranslating = false;
-          isSaving = false;
-        });
+        isSaving = false;
       }))
       .catch(handleTrpcErrorWithToast(m[`toasts.save.error`](), () => isSaving = false));
   }
@@ -568,7 +565,12 @@
               </Tabs.Content>
             </Tabs.Root>
             <div class="flex flex-row justify-end gap-2">
-              <Button variant="outline" onclick={() => (isTranslating = false)} disabled={isSaving}>{m[`dialogs.cancel`]()}</Button>
+              <Button variant="outline" onclick={() => {
+                invalidateAll().then(() => {
+                  isTranslating = false;
+                  isSaving = false;
+                });
+              }} disabled={isSaving}>{m[`dialogs.cancel`]()}</Button>
               <Button disabled={!translatingLanguage || translatingLanguage.trim() === "" || isSaving} onclick={() => onSaveChangesTranslating(`description`)}>
                 {#if isSaving}
                   {m[`dialogs.saving`]()}
