@@ -21,7 +21,6 @@
   import debounce from "debounce";
   import { invalidateAll, replaceState } from "$app/navigation";
   import { page } from "$app/state";
-  import { Separator } from "$shadcn/components/ui/separator";
   import { SemVer } from "semver";
   import RolesEditorDialog from "../../lib/components/dialogs/RolesEditorDialog.svelte";
 
@@ -37,7 +36,7 @@
     if (tabParam) {
       currentTab = tabParam;
     }
-  })
+  });
 
   $effect(() => {
     if (currentTab === "unpicked") {
@@ -46,35 +45,8 @@
     let searchParams = new URLSearchParams();
     searchParams.set("tab", currentTab);
     //console.log(`Updating URL to reflect current tab: ${currentTab}`);
-    untrack(() => tick().then(() =>replaceState(`${location.pathname}${searchParams.size > 0 ? `?${searchParams.toString()}` : ""}`, page.state)));
-  })
-
-  // #region Alert
-  let alertType = $state(AlertType.Generic);
-  let alertUserId = $state("5");
-  let alertAssetId = $state("");
-  let alertRequestId = $state("");
-  let alertHeader = $state("");
-  let alertMessage = $state("");
-  function sendAdminAlert() {
-    trpc.internal.adminRaw.raw.createAlert
-      .mutate({
-        userId: parseInt(alertUserId),
-        type: alertType,
-        assetId: parseInt(alertAssetId) || null,
-        requestId: parseInt(alertRequestId) || null,
-        header: alertHeader,
-        message: alertMessage,
-      })
-      .then((res) => {
-        toast.success(`Alert sent successfully.`);
-      })
-      .catch((err) => {
-        console.error(err);
-        toast.error(`Failed to send alert.`, { description: parseErrorMessage(err) });
-      });
-  }
-  // #endregion
+    untrack(() => tick().then(() => replaceState(`${location.pathname}${searchParams.size > 0 ? `?${searchParams.toString()}` : ""}`, page.state)));
+  });
 
   // #region Admin Logs
   let adminLogs: { timestamp: Date; level: string; message: string }[] = $state([]);
@@ -108,7 +80,7 @@
       },
       onStopped() {
         ALisConnected = false;
-      },
+      }
     });
   }
 
@@ -137,19 +109,7 @@
   // #endregion
 
   // #region User Management
-  let userSearchQuery = $state("");
-  let userSearchResults: Awaited<ReturnType<typeof searchUsers>> = $state([]);
   let userRoleEditDialog: RolesEditorDialog;
-  async function searchUsers() {
-    if (userSearchQuery.trim().length === 0) {
-      userSearchResults = [];
-      return [];
-    }
-    return await trpc.internal.admin.user.searchUsers.query({ query: userSearchQuery }).then((res) => {
-      userSearchResults = res;
-      return res;
-    });
-  }
   // #endregion
 
   // #region Game Management
@@ -184,7 +144,7 @@
   async function fetchGames() {
     let showExtra = checkRoles(user, [UserPermissions.Game_ViewExtras]);
     return await trpc.v3.games.getGames
-      .query({ includeExtras: showExtra.toString()})
+      .query({ includeExtras: showExtra.toString() })
       .then(async (fetchedGames) => {
         games = fetchedGames;
         for (const game of games) {
@@ -226,7 +186,7 @@
     return await trpc.v3.mods.getMods
       .query({
         gameName: baSelectedGameName,
-        gameVersion: baSelectedGameVersionFrom?.version,
+        gameVersion: baSelectedGameVersionFrom?.version
       })
       .then((res) => {
         modsEligibleForBulkAction = res;
@@ -257,13 +217,13 @@
           .mutate({
             id: modId,
             data: {
-              supportedGameVersionIds: [...gameVersionIds, baSelectedGameVersionTo.id],
-            },
+              supportedGameVersionIds: [...gameVersionIds, baSelectedGameVersionTo.id]
+            }
           })
           .catch((err) => {
             console.error(`Failed to update mod ${modId}:`, err);
             toast.error(`Failed to update mod with ID ${modId}.`, { description: parseErrorMessage(err) });
-          }),
+          })
       );
     }
     toast.promise(Promise.all(promises), {
@@ -271,7 +231,7 @@
       success: (data) => {
         return `Successfully updated ${data.length} mods.`;
       },
-      error: "Failed to update some or all selected mods.",
+      error: "Failed to update some or all selected mods."
     });
   }
   // #endregion
@@ -303,16 +263,191 @@
   // #endregion
 </script>
 
-<div class="flex flex-col gap-4 m-auto p-4 justify-center">
-  <div class="flex flex-col m-auto justify-center text-center">
+{#snippet manualDeleteMenu()}
+  {let deleteUserId = $state("")}
+  {let thingType: "asset" | "project" | "version" | undefined = $state()}
+  <Tabs.Root bind:value={thingType}>
+    <Tabs.List class="m-auto">
+      <Tabs.Trigger value="asset">Asset</Tabs.Trigger>
+      <Tabs.Trigger value="project">Project</Tabs.Trigger>
+      <Tabs.Trigger value="version">Version</Tabs.Trigger>
+    </Tabs.List>
+  </Tabs.Root>
+  <div class="flex flex-col">
+    <Label class="mt-4 mb-2">Target ID</Label>
+    <Input type="number" bind:value={deleteUserId} placeholder="User ID" />
+  </div>
+  <Button
+    onclick={() => {
+      let parsedUserId = parseInt(deleteUserId);
+      if (!parsedUserId || isNaN(parsedUserId)) {
+        toast.error("Please enter a valid ID.");
+        return;
+      }
+      if (!thingType) {
+        toast.error("Please select a type to delete.");
+        return;
+      }
+
+      trpc.internal.admin.dev.deleteThing
+        .mutate({ id: parsedUserId, thingType: thingType })
+        .then(() => {
+          toast.success("Successfully deleted.");
+        })
+        .catch((err) => {
+          console.error(err);
+          toast.error("Failed to delete.", { description: parseErrorMessage(err) });
+        });
+    }}
+    class="mt-4 mb-2 w-full">Delete</Button
+  >
+{/snippet}
+
+{#snippet manualOneShotButtons()}
+  <Button
+    variant="destructive"
+    disabled={!isDev}
+    onclick={() => {
+      trpc.internal.admin.dev.importFakeData
+        .mutate()
+        .then(() => {
+          toast.success("Fake data import started.");
+        })
+        .catch((err) => {
+          console.error(err);
+          toast.error("Failed to start fake data import.", { description: parseErrorMessage(err) });
+        });
+    }}>Import Fake Data</Button
+  >
+  <Button
+    variant="outline"
+    disabled={!isDev}
+    onclick={() => {
+      trpc.internal.admin.dev.impersonateTestUser
+        .mutate()
+        .then(() => {
+          toast.success("Impersonated test user successfully.");
+          invalidateAll();
+        })
+        .catch((err) => {
+          console.error(err);
+          toast.error("Failed to impersonate test user.", { description: parseErrorMessage(err) });
+        });
+    }}>Impersonate Test User</Button
+  >
+  <Button
+    variant="destructive"
+    onclick={() => {
+      trpc.internal.admin.dev.recalcAutomaticStatusChangeTimes
+        .mutate()
+        .then(() => {
+          toast.success("Automatic status change times recalculated successfully.");
+        })
+        .catch((err) => {
+          console.error(err);
+          toast.error("Failed to recalculate automatic status change times.", { description: parseErrorMessage(err) });
+        });
+    }}>Recalc Automatic Status Change Times</Button
+  >
+  <Button
+    variant="outline"
+    onclick={() => {
+      trpc.internal.admin.dev.exportDB
+        .mutate()
+        .then(() => {
+          toast.success("Database export started.");
+        })
+        .catch((err) => {
+          console.error(err);
+          toast.error("Failed to start database export.", { description: parseErrorMessage(err) });
+        });
+    }}>Export Database</Button
+  >
+{/snippet}
+
+{#snippet userSearch()}
+  {let userSearchQuery = $state("")}
+  {let userSearchResults: Awaited<ReturnType<typeof trpc.internal.admin.user.searchUsers.query>> = $state([])}
+  <div class="m-auto flex w-full flex-col items-center gap-4 p-4">
+    <div class="flex w-sm flex-col items-center justify-center rounded-lg bg-accent p-4">
+      <Input
+        placeholder="Search by username or ID..."
+        bind:value={userSearchQuery}
+        class=""
+        oninput={debounce(async () => {
+          if (userSearchQuery.trim().length === 0) {
+            userSearchResults = [];
+            return [];
+          }
+          return await trpc.internal.admin.user.searchUsers.query({ query: userSearchQuery }).then((res) => {
+            userSearchResults = res;
+            return res;
+          });
+        }, 500)}
+      />
+    </div>
+    <table class="w-full table-auto">
+      <thead>
+        <tr>
+          <th></th>
+          <th>User ID</th>
+          <th>Username</th>
+          <th>Display Name</th>
+          <th>GitHub ID</th>
+          <th>Discord ID</th>
+          <th>Roles</th>
+        </tr>
+      </thead>
+      <tbody>
+        {#each userSearchResults as user}
+          <tr>
+            <td class="w-12"><img src={user.avatarUrl} alt="Avatar" class="h-8 w-8 rounded-full" /></td>
+            <td><a href="/users/{user.id}">{user.id}</a></td>
+            <td>{user.username}</td>
+            <td>{user.displayName}</td>
+            <td>{user.githubId ?? "N/A"}</td>
+            <td>{user.discordId ?? "N/A"}</td>
+            <td>
+              <div class="flex flex-row items-center gap-4">
+                <div class="flex max-h-32 w-full scrollbar-thin flex-row flex-wrap gap-1 overflow-y-scroll">
+                  {#each user.permissions.sitewide as perm}
+                    <span class="rounded bg-secondary px-2 py-1">{perm}</span>
+                  {/each}
+                  {#each Object.entries(user.permissions.perGame) as [game, perms]}
+                    {#each perms as perm}
+                      <span class="rounded bg-secondary px-2 py-1">{game}: {perm}</span>
+                    {/each}
+                  {/each}
+                </div>
+                <Button
+                  size="icon"
+                  variant="outline"
+                  onclick={() => {
+                    userRoleEditDialog.showDialog(user, games);
+                  }}
+                >
+                  <PencilLine />
+                </Button>
+              </div>
+            </td>
+          </tr>
+        {/each}
+      </tbody>
+    </table>
+  </div>
+{/snippet}
+
+<div class="m-auto flex flex-col justify-center gap-4 p-4">
+  <div class="m-auto flex flex-col justify-center text-center">
     <div class="text-3xl">Admin Panel</div>
     {#await getAdminStatus()}
       <p class="text-sm text-muted-foreground">Loading Admin Data...</p>
     {:then adminStatus}
       {#if adminStatus}
         <p class="text-sm text-muted-foreground">
-          Database Status: {adminStatus.dbConnectionOK ?? `Unknown`} | Hash: <a target="_blank" href="https://github.com/Saeraphinx/BadModelSaber/commit/{adminStatus.version}">{adminStatus.version}</a> | Signed in as {adminStatus
-            .discordTokenUser?.username}#{adminStatus.discordTokenUser?.discriminator}
+          Database Status: {adminStatus.dbConnectionOK ?? `Unknown`} | Hash:
+          <a target="_blank" href="https://github.com/Saeraphinx/BadModelSaber/commit/{adminStatus.version}">{adminStatus.version}</a>
+          | Signed in as {adminStatus.discordTokenUser?.username}#{adminStatus.discordTokenUser?.discriminator}
         </p>
       {:else}
         <p class="text-sm text-red-500">Unable to fetch admin status.</p>
@@ -340,7 +475,7 @@
     </Tabs.List>
     <!-- Admin Logs Panel -->
     <Tabs.Content value="logs">
-      <div class="flex flex-col items-center p-4 bg-accent rounded-lg">
+      <div class="flex flex-col items-center rounded-lg bg-accent p-4">
         <div class="flex flex-row gap-2">
           <p class="text-2xl">Admin Logs</p>
           <Button variant="outline" onclick={fetchAdminLogs} disabled={ALisConnected}>Get Last 15 Minutes</Button>
@@ -348,21 +483,21 @@
             {ALisConnected ? "Unsubscribe" : "Subscribe"}
           </Button>
         </div>
-        <div class="h-[400px] w-full overflow-y-scroll overflow-x-hidden text-wrap wrap-anywhere bg-background-secondary rounded-lg p-2">
+        <div class="bg-background-secondary h-[400px] w-full overflow-x-hidden overflow-y-scroll rounded-lg p-2 text-wrap wrap-anywhere">
           {#if adminLogs.length >= 1}
             {#each adminLogs as log}
-              <div class="flex flex-row mb-2">
+              <div class="mb-2 flex flex-row">
                 {#if log.level === "error"}
-                  <p class="text-red-500 font-mono"><strong>[{new Date(log.timestamp).toLocaleString()}] [{log.level.toUpperCase()}]</strong> {log.message}</p>
+                  <p class="font-mono text-red-500"><strong>[{new Date(log.timestamp).toLocaleString()}] [{log.level.toUpperCase()}]</strong> {log.message}</p>
                 {:else if log.level === "warn"}
-                  <p class="text-yellow-500 font-mono"><strong>[{new Date(log.timestamp).toLocaleString()}] [{log.level.toUpperCase()}]</strong> {log.message}</p>
+                  <p class="font-mono text-yellow-500"><strong>[{new Date(log.timestamp).toLocaleString()}] [{log.level.toUpperCase()}]</strong> {log.message}</p>
                 {:else}
                   <p class="font-mono"><strong>[{new Date(log.timestamp).toLocaleString()}] [{log.level.toUpperCase()}]</strong> {log.message}</p>
                 {/if}
               </div>
             {/each}
           {:else}
-            <div class="flex flex-col items-center justify-center h-full">
+            <div class="flex h-full flex-col items-center justify-center">
               {#if ALisConnected}
                 <p>Waiting for new logs...</p>
               {:else}
@@ -376,163 +511,30 @@
     <!-- Manual Operations Panel -->
     <Tabs.Content value="manual">
       <div class="flex flex-row flex-wrap justify-center gap-4">
-        <div class="flex flex-col items-center p-4 bg-accent rounded-lg justify-center w-[400px]">
+        <div class="flex w-[400px] flex-col items-center justify-center rounded-lg bg-accent p-4">
           <p class="p-2 text-2xl">Manual Operations</p>
           <Tabs.Root value="roles" class="w-full">
             <Tabs.List class="m-auto">
-              <Tabs.Trigger value="alerts">Alerts</Tabs.Trigger>
-              <Tabs.Trigger value="requests">Requests</Tabs.Trigger>
+              <!-- <Tabs.Trigger disabled value="alerts">Alerts</Tabs.Trigger>
+              <Tabs.Trigger disabled value="requests">Requests</Tabs.Trigger> -->
+              <Tabs.Trigger value="delete">Delete</Tabs.Trigger>
             </Tabs.List>
-            <Tabs.Content value="alerts">
-              <!-- Alert Panel -->
-              <div class="flex flex-row gap-2">
-                <div class="flex flex-col">
-                  <Label class="mt-4 mb-2">Target User</Label>
-                  <Input bind:value={alertUserId} placeholder="User ID" />
-                </div>
-                <div class="flex flex-col">
-                  <Select.Root type="single" bind:value={alertType}>
-                    <Label class="mt-4 mb-2">Alert Type</Label>
-                    <Select.Trigger class="w-[180px]">{alertType}</Select.Trigger>
-                    <Select.Content>
-                      {#each Object.values(AlertType) as item}
-                        <Select.Item value={item}>{item}</Select.Item>
-                      {/each}
-                    </Select.Content>
-                  </Select.Root>
-                </div>
-              </div>
-              <div class="flex flex-row gap-2">
-                <div class="flex flex-col">
-                  <Label class="mt-4 mb-2">Asset ID</Label>
-                  <Input bind:value={alertAssetId} placeholder="1234" />
-                </div>
-                <div class="flex flex-col">
-                  <Label class="mt-4 mb-2">Request ID</Label>
-                  <Input bind:value={alertRequestId} placeholder="1234" />
-                </div>
-              </div>
-              <Label class="mt-4 mb-2">Header</Label>
-              <Input bind:value={alertHeader} placeholder="Test Message" />
-              <Label class="mt-4 mb-2">Message</Label>
-              <Textarea bind:value={alertMessage} placeholder="This is a test message from the admins." />
-              <Button onclick={sendAdminAlert} class="mt-4 mb-2 w-full">Send Alert</Button>
+            <Tabs.Content value="delete">
+              {@render manualDeleteMenu()}
             </Tabs.Content>
           </Tabs.Root>
         </div>
-        <div class="flex flex-col items-center p-4 gap-4 bg-accent rounded-lg w-[300px]">
+        <div class="flex w-[300px] flex-col items-center gap-4 rounded-lg bg-accent p-4">
           <p class="text-2xl">One-Shots</p>
-          <Button
-            variant="destructive"
-            disabled={!isDev}
-            onclick={() => {
-              trpc.internal.admin.dev.importFakeData
-                .mutate()
-                .then(() => {
-                  toast.success("Fake data import started.");
-                })
-                .catch((err) => {
-                  console.error(err);
-                  toast.error("Failed to start fake data import.", { description: parseErrorMessage(err) });
-                });
-            }}>Import Fake Data</Button>
-          <Button
-            variant="outline"
-            disabled={!isDev}
-            onclick={() => {
-              trpc.internal.admin.dev.impersonateTestUser
-                .mutate()
-                .then(() => {
-                  toast.success("Impersonated test user successfully.");
-                  invalidateAll();
-                })
-                .catch((err) => {
-                  console.error(err);
-                  toast.error("Failed to impersonate test user.", { description: parseErrorMessage(err) });
-                });
-            }}>Impersonate Test User</Button>
-          <Button
-            variant="destructive"
-            onclick={() => {
-              trpc.internal.admin.dev.recalcAutomaticStatusChangeTimes
-                .mutate()
-                .then(() => {
-                  toast.success("Automatic status change times recalculated successfully.");
-                })
-                .catch((err) => {
-                  console.error(err);
-                  toast.error("Failed to recalculate automatic status change times.", { description: parseErrorMessage(err) });
-                });
-            }}>Recalc Automatic Status Change Times</Button>
-          <Button
-            variant="outline"
-            onclick={() => {
-              trpc.internal.admin.dev.exportDB
-                .mutate()
-                .then(() => {
-                  toast.success("Database export started.");
-                })
-                .catch((err) => {
-                  console.error(err);
-                  toast.error("Failed to start database export.", { description: parseErrorMessage(err) });
-                });
-            }}>Export Database</Button>
+          {@render manualOneShotButtons()}
         </div>
       </div>
     </Tabs.Content>
     <Tabs.Content value="users">
-      <div class="flex flex-col m-auto w-full items-center gap-4 p-4">
-        <div class="flex flex-col items-center p-4 bg-accent rounded-lg justify-center w-sm">
-          <Input placeholder="Search by username or ID..." bind:value={userSearchQuery} class="" oninput={debounce(searchUsers, 500)} />
-        </div>
-        <table class="table-auto w-full">
-          <thead>
-            <tr>
-              <th></th>
-              <th>User ID</th>
-              <th>Username</th>
-              <th>Display Name</th>
-              <th>GitHub ID</th>
-              <th>Discord ID</th>
-              <th>Roles</th>
-            </tr>
-          </thead>
-          <tbody>
-            {#each userSearchResults as user}
-              <tr>
-                <td class="w-12"><img src={user.avatarUrl} alt="Avatar" class="w-8 h-8 rounded-full" /></td>
-                <td><a href="/users/{user.id}">{user.id}</a></td>
-                <td>{user.username}</td>
-                <td>{user.displayName}</td>
-                <td>{user.githubId ?? "N/A"}</td>
-                <td>{user.discordId ?? "N/A"}</td>
-                <td>
-                  <div class="flex flex-row gap-4 items-center">
-                    <div class="flex flex-row w-full flex-wrap max-h-32 overflow-y-scroll scrollbar-thin gap-1">
-                      {#each user.permissions.sitewide as perm}
-                        <span class="px-2 py-1 bg-secondary rounded">{perm}</span>
-                      {/each}
-                      {#each Object.entries(user.permissions.perGame) as [game, perms]}
-                        {#each perms as perm}
-                          <span class="px-2 py-1 bg-secondary rounded">{game}: {perm}</span>
-                        {/each}
-                      {/each}
-                    </div>
-                    <Button size="icon" variant="outline" onclick={() => {
-                      userRoleEditDialog.showDialog(user, games);
-                    }}>
-                      <PencilLine />
-                    </Button>
-                  </div>
-                </td>
-              </tr>
-            {/each}
-          </tbody>
-        </table>
-      </div>
+      {@render userSearch()}
     </Tabs.Content>
     <Tabs.Content value="games">
-      <div class="flex flex-col m-auto w-[400px] items-center p-4 bg-accent rounded-lg justify-center">
+      <div class="m-auto flex w-[400px] flex-col items-center justify-center rounded-lg bg-accent p-4">
         <p class="p-2 text-2xl">Selected Game</p>
         <div class="flex flex-row gap-1">
           <Select.Root type="single" bind:value={selectedGameName}>
@@ -549,7 +551,8 @@
             onclick={() => {
               fetchGames();
               toast.success("Games fetched.");
-            }}><RefreshCwIcon /></Button>
+            }}><RefreshCwIcon /></Button
+          >
           {#if checkRoles(user, [UserPermissions.Game_Create])}
             <Button variant="default" size="icon" onclick={() => (createGameDialogOpen = true)}><PlusIcon /></Button>
           {/if}
@@ -567,7 +570,7 @@
             {/if}
           </Tabs.List>
           <Tabs.Content value="details">
-            <div class="flex flex-col items-center p-4 bg-accent rounded-lg">
+            <div class="flex flex-col items-center rounded-lg bg-accent p-4">
               <p><strong>Name:</strong> {selectedGame.name}</p>
               <p><strong>Display Name:</strong> {selectedGame.displayName}</p>
               <p><strong>Platforms:</strong> {selectedGame.platforms.join(", ")}</p>
@@ -576,13 +579,13 @@
             </div>
           </Tabs.Content>
           <Tabs.Content value="versions" class="flex flex-col items-center">
-            <div class="flex flex-row mb-4 gap-2">
+            <div class="mb-4 flex flex-row gap-2">
               <Button variant="default" onclick={() => (createVersionDialogOpen = true)}><PlusIcon />Create New Version</Button>
               <Button variant="default" onclick={() => (linkVersionDialogOpen = true)}>
                 <PlusIcon />Link Versions
               </Button>
             </div>
-            <table class="table-auto m-auto w-full">
+            <table class="m-auto w-full table-auto">
               <thead>
                 <tr>
                   <th>Version ID</th>
@@ -614,7 +617,8 @@
                               console.error(err);
                               toast.error(`Failed to set version ${version.version} as default. ${parseErrorMessage(err)}`);
                             });
-                        }}>
+                        }}
+                      >
                         {version.isDefault ? "Default" : "Set as Default"}
                       </Button>
                     </td>
@@ -632,12 +636,13 @@
                               console.error(err);
                               toast.error(`Failed to set version ${version.version} deprecation. ${parseErrorMessage(err)}`);
                             });
-                        }}>
+                        }}
+                      >
                         {version.isDeprecated ? "Deprecated" : "Supported"}
                       </Button>
                     </td>
                     <td>
-                      <div class="flex flex-row justify-center items-center">
+                      <div class="flex flex-row items-center justify-center">
                         {version.groupName ?? "N/A"}<Button
                           size="icon"
                           class="ml-2"
@@ -646,7 +651,8 @@
                             setGroupNameVersionId = version.id;
                             setGroupNameValue = version.groupName ?? "";
                             setGroupNameDialogOpen = true;
-                          }}><PencilLine /></Button>
+                          }}><PencilLine /></Button
+                        >
                       </div>
                     </td>
                     <td>{`${new Date(version.createdAt).toLocaleString()}`}</td>
@@ -658,7 +664,7 @@
           </Tabs.Content>
           <Tabs.Content value="webhooks" class="flex flex-col items-center">
             <Button variant="default" class="mb-4" onclick={() => (createWebhookDialogOpen = true)}><PlusIcon />Create New Webhook</Button>
-            <table class="table-auto m-auto w-full">
+            <table class="m-auto w-full table-auto">
               <thead>
                 <tr>
                   <th>Webhook ID</th>
@@ -690,7 +696,8 @@
                               console.error(err);
                               toast.error("Failed to delete webhook.", { description: parseErrorMessage(err) });
                             });
-                        }}>
+                        }}
+                      >
                         <TrashIcon />
                       </Button>
                     </td>
@@ -703,7 +710,7 @@
       {/if}
     </Tabs.Content>
     <Tabs.Content value="bulkactions">
-      <div class="flex flex-col m-auto gap-2 w-[480px] items-center p-4 bg-accent rounded-lg justify-center">
+      <div class="m-auto flex w-[480px] flex-col items-center justify-center gap-2 rounded-lg bg-accent p-4">
         <!-- Game Selection -->
         <div class="flex flex-row gap-1">
           <Select.Root type="single" bind:value={baSelectedGameName}>
@@ -720,7 +727,8 @@
             onclick={() => {
               fetchGames();
               toast.success("Games fetched.");
-            }}><RefreshCwIcon /></Button>
+            }}><RefreshCwIcon /></Button
+          >
         </div>
         <!-- Version Selection -->
         <div class="flex flex-col gap-2">
@@ -743,22 +751,26 @@
             </Select.Root>
           </div>
           <Button variant="default" onclick={fetchModsEligibleForBulkAction}>Fetch Eligible Mods</Button>
-          <Button disabled={!(baSelectedGameName && baSelectedGameVersionFromId && baSelectedGameVersionToId)} variant="destructive" onclick={baEditSelectedMods}>Mark as Supporting {baSelectedGameVersionTo?.version}</Button>
+          <Button disabled={!(baSelectedGameName && baSelectedGameVersionFromId && baSelectedGameVersionToId)} variant="destructive" onclick={baEditSelectedMods}
+            >Mark as Supporting {baSelectedGameVersionTo?.version}</Button
+          >
           <div class="grid grid-cols-2 gap-2">
             <Button
               disabled={baSelectedVersionIds.length === modsEligibleForBulkAction.length || modsEligibleForBulkAction.length === 0}
               onclick={() => {
                 baSelectedVersionIds = modsEligibleForBulkAction.map((mod) => mod.version.id);
-              }}>Select All</Button>
+              }}>Select All</Button
+            >
             <Button
               disabled={baSelectedVersionIds.length === 0}
               onclick={() => {
                 baSelectedVersionIds = [];
-              }}>Clear Selection</Button>
+              }}>Clear Selection</Button
+            >
           </div>
         </div>
       </div>
-      <div class="mt-4 gap-4 flex flex-row flex-wrap items-center-safe justify-center-safe">
+      <div class="mt-4 flex flex-row flex-wrap items-center-safe justify-center-safe gap-4">
         {#each modsEligibleForBulkAction as mod}
           <ModCard
             project={mod.project}
@@ -771,12 +783,13 @@
               } else {
                 baSelectedVersionIds = [...baSelectedVersionIds, mod.version.id];
               }
-            }} />
+            }}
+          />
         {/each}
       </div>
     </Tabs.Content>
     <Tabs.Content value="approval">
-      <div class="flex flex-col m-auto gap-2 w-[480px] items-center p-4 bg-accent rounded-lg justify-center">
+      <div class="m-auto flex w-[480px] flex-col items-center justify-center gap-2 rounded-lg bg-accent p-4">
         <!-- Game Selection -->
         <div class="flex flex-row gap-1">
           <Select.Root type="single" bind:value={aqSelectedGameName}>
@@ -793,7 +806,8 @@
             onclick={() => {
               fetchGames();
               toast.success("Games fetched.");
-            }}><RefreshCwIcon /></Button>
+            }}><RefreshCwIcon /></Button
+          >
         </div>
         <Button disabled={!aqSelectedGameName} variant="default" onclick={fetchApprovalQueue}>Fetch Approval Queue</Button>
         <Select.Root type="single" bind:value={aqSelectedGameVersionString}>
@@ -806,8 +820,8 @@
           </Select.Content>
         </Select.Root>
       </div>
-      <div class="mt-4 gap-4 flex flex-row flex-wrap items-center-safe justify-center-safe">
-        {#each aqSelectedGameVersionString === "All Versions" ? aqModsInApprovalQueue : aqModsInApprovalQueue.filter((mod) => mod.version.supportedGameVersions.some((v) => v.version === aqSelectedGameVersionString)) as mod}
+      <div class="mt-4 flex flex-row flex-wrap items-center-safe justify-center-safe gap-4">
+        {#each aqSelectedGameVersionString === "All Versions" ? aqModsInApprovalQueue : aqModsInApprovalQueue.filter( (mod) => mod.version.supportedGameVersions.some((v) => v.version === aqSelectedGameVersionString) ) as mod}
           <ModCompactCard
             project={mod.project}
             version={mod.version}
@@ -837,12 +851,13 @@
             }}
             showFileDialog={() => {
               codeDialog?.showDialog(JSON.stringify(mod.version.contentHashes, null, 4), `json`, true);
-            }} />
+            }}
+          />
         {/each}
       </div>
     </Tabs.Content>
     <Tabs.Content value="unpicked">
-      <div class="flex flex-col m-auto items-center p-4 max-w-md w-full bg-accent rounded-lg">
+      <div class="m-auto flex w-full max-w-md flex-col items-center rounded-lg bg-accent p-4">
         <p>Select a tab above.</p>
       </div>
     </Tabs.Content>
@@ -851,10 +866,10 @@
 
 <Dialog bind:open={createGameDialogOpen}>
   <DialogContent>
-    <div class="flex flex-col items-center rounded-lg justify-center">
+    <div class="flex flex-col items-center justify-center rounded-lg">
       <p class="p-2 text-2xl">Create New Game</p>
-      <Input placeholder="Game Name" class="w-full mb-2" bind:value={newGameName} />
-      <Input placeholder="Display Name" class="w-full mb-2" bind:value={newGameDisplayName} />
+      <Input placeholder="Game Name" class="mb-2 w-full" bind:value={newGameName} />
+      <Input placeholder="Display Name" class="mb-2 w-full" bind:value={newGameDisplayName} />
       <Button
         class="w-full"
         onclick={async () => {
@@ -865,7 +880,7 @@
           return await trpc.internal.admin.game.createGame
             .mutate({
               gameName: newGameName,
-              displayName: newGameDisplayName,
+              displayName: newGameDisplayName
             })
             .then((game) => {
               toast.success("Game created.");
@@ -878,16 +893,17 @@
               console.error(err);
               toast.error("Failed to create game.");
             });
-        }}>Create Game</Button>
+        }}>Create Game</Button
+      >
     </div>
   </DialogContent>
 </Dialog>
 
 <Dialog bind:open={createVersionDialogOpen}>
   <DialogContent>
-    <div class="flex flex-col items-center rounded-lg justify-center">
+    <div class="flex flex-col items-center justify-center rounded-lg">
       <p class="p-2 text-2xl">Create New Version for {selectedGame?.displayName}</p>
-      <Input placeholder="Version String" class="w-full mb-2" bind:value={createVersionVersion} />
+      <Input placeholder="Version String" class="mb-2 w-full" bind:value={createVersionVersion} />
       <Button
         class="w-full"
         onclick={() => {
@@ -907,16 +923,17 @@
               console.error(err);
               toast.error("Failed to create version.");
             });
-        }}>Create Version</Button>
+        }}>Create Version</Button
+      >
     </div>
   </DialogContent>
 </Dialog>
 
 <Dialog bind:open={createWebhookDialogOpen}>
   <DialogContent>
-    <div class="flex flex-col items-center rounded-lg justify-center">
+    <div class="flex flex-col items-center justify-center rounded-lg">
       <p class="p-2 text-2xl">Create New Webhook for {selectedGame?.displayName}</p>
-      <Input placeholder="Webhook URL" class="w-full mb-2" bind:value={newWebhookUrl} />
+      <Input placeholder="Webhook URL" class="mb-2 w-full" bind:value={newWebhookUrl} />
       <Select.Root type="multiple" bind:value={newWebhookTypes}>
         <Label class="mb-2">Log Types</Label>
         <Select.Trigger class="w-full">{newWebhookTypes.length > 0 ? newWebhookTypes.join(", ") : "Select log types..."}</Select.Trigger>
@@ -926,12 +943,12 @@
           {/each}
         </Select.Content>
       </Select.Root>
-      <div class="flex flex-row items-center gap-2 mt-2">
+      <div class="mt-2 flex flex-row items-center gap-2">
         <Checkbox bind:checked={newWebhookIsAsset} id="isAsset" />
         <Label for="isAsset">Is Asset Webhook</Label>
       </div>
       <Button
-        class="w-full mt-4"
+        class="mt-4 w-full"
         onclick={() => {
           if (!newWebhookUrl || newWebhookUrl.trim() === "") {
             toast.error("Please enter a webhook URL.");
@@ -955,16 +972,17 @@
               console.error(err);
               toast.error("Failed to create webhook.", { description: parseErrorMessage(err) });
             });
-        }}>Create Webhook</Button>
+        }}>Create Webhook</Button
+      >
     </div>
   </DialogContent>
 </Dialog>
 
 <Dialog bind:open={setGroupNameDialogOpen}>
   <DialogContent>
-    <div class="flex flex-col items-center rounded-lg justify-center">
+    <div class="flex flex-col items-center justify-center rounded-lg">
       <p class="p-2 text-2xl">Set Group Name for {selectedGame?.displayName}</p>
-      <Input placeholder="Group Name" class="w-full mb-2" bind:value={setGroupNameValue} />
+      <Input placeholder="Group Name" class="mb-2 w-full" bind:value={setGroupNameValue} />
       <Button
         class="w-full"
         onclick={() => {
@@ -985,7 +1003,8 @@
               console.error(err);
               toast.error("Failed to set group name.", { description: parseErrorMessage(err) });
             });
-        }}>Set Group Name</Button>
+        }}>Set Group Name</Button
+      >
     </div>
   </DialogContent>
 </Dialog>

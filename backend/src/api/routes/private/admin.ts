@@ -429,7 +429,7 @@ export const AdminRouter = router({
         deleteThing: loggedInProcedure([UserPermissions.Administrative_Tasks])
             .input(z.object({
                 thingType: z.enum(['asset', 'project', 'version']),
-                id: z.string()
+                id: z.number()
             }))
             .mutation(async ({ ctx, input }) => {
             Logger.log(`Deleting ${input.thingType} ${input.id}, by admin user ${ctx.userId}`);
