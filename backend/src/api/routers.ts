@@ -80,6 +80,6 @@ export const loadOpenApiMiddleware = createOpenApiExpressMiddleware({
 });
 export const generateOpenAPIDoc = generateOpenApiDocument(appRouter, {
   title: 'BeatMods OpenAPI Documentation',
-  version: '3.1.0',
+  version: '3.2.0',
   baseUrl: 'https://beatmods.com'
 });

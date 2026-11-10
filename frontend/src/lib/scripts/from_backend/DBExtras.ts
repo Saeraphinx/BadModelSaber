@@ -42,7 +42,7 @@ export const availableLocales: {
     name: "简体中文", // Chinese (Written)
     secret: false,
     frontend: true,
-    backend: false,
+    backend: true,
   },
   {
     code: "owo",
