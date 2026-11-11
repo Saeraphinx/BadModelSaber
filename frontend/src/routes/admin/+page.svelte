@@ -265,7 +265,7 @@
 
 {#snippet manualDeleteMenu()}
   {let deleteUserId = $state("")}
-  {let thingType: "asset" | "project" | "version" | undefined = $state()}
+  {let thingType: "asset" | "project" | "version" = $state(`asset`)}
   <Tabs.Root bind:value={thingType}>
     <Tabs.List class="m-auto">
       <Tabs.Trigger value="asset">Asset</Tabs.Trigger>
