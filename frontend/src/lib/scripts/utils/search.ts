@@ -26,7 +26,7 @@ export function generateAssetSearchEngine(assets: AssetApiV3[]) {
 
 export function generateProjectSearchEngine(mods: {project: ProjectApiV3, version: VersionApiV3}[]) {
   const searchEngine = new Index({
-    tokenize: "reverse"
+    tokenize: "tolerant"
   })
 
   let returnMap = new Map<number, ElementType<typeof mods>>();

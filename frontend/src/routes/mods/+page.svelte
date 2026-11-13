@@ -115,6 +115,10 @@
         searchParams.set("status", selectedStatuses.join(","));
     }
     untrack(() => tick().then(() =>replaceState(`${location.pathname}${searchParams.size > 0 ? `?${searchParams.toString()}` : ""}`, page.state)));
+
+    if (currentPage !== 1 && totalSize < pageSize) {
+      currentPage = 1;
+    }
   });
 </script>
 

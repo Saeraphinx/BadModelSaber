@@ -9,10 +9,10 @@ export function getAllowedVersionStatuses(userPermObj: UserPermObj | undefined, 
   if (userPermObj) {
     statusLookup.push(Status.Unverified);
   }
-  if (checkRoles(userPermObj, { hasOneOf: [UserPermissions.Mods_ViewAll] }, gameName) || allowedToBypass) {
+  if (checkRoles(userPermObj, { hasOneOf: [UserPermissions.Secret_Features] }, gameName) || allowedToBypass) {
     statusLookup.push(Status.Queue, Status.Testing, Status.NonDefault_Testing);
   } 
-  if (checkRoles(userPermObj, { hasOneOf: [UserPermissions.Secret_Features] }, gameName)) {
+  if (checkRoles(userPermObj, { hasOneOf: [UserPermissions.Mods_ViewAll] }, gameName)) {
     statusLookup.push(Status.Queue, Status.Testing, Status.NonDefault_Testing, Status.Removed, Status.Private);
   }
   return Array.from(new Set(statusLookup));
