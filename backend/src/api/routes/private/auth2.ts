@@ -631,6 +631,7 @@ async function getDiscordUser(code: string, redirect: string): Promise<{ data: R
     let rolesToAdd: UserPermissions[] = []
     if (bsmgInfo) {
         if (bsmgInfo.roles.includes(`441806759062011905`)) rolesToAdd.push(UserPermissions.C_Modder);
+        if (bsmgInfo.roles.includes(`441806759062011905`)) rolesToAdd.push(UserPermissions.Mods_UploadUnderModders);
         if (bsmgInfo.roles.includes(`457373773499203590`)) rolesToAdd.push(UserPermissions.C_Modeler);
         if (bsmgInfo.roles.includes(`466449484759564309`)) rolesToAdd.push(UserPermissions.C_BSMG_Staff);
     }

@@ -1,4 +1,4 @@
-import { Alert, Asset, AssetValidStatusesArray, dbId, defaultGamePermissions, defaultSitewidePermissions, Game, GameVersion, Project, ProjectValidStatusesArray, Status, User, UserPermissions, userPermissionsSchema, Version, VersionValidStatusesArray, WebhookLogType } from "../../../shared/Database.ts";
+import { Alert, Asset, AssetValidStatusesArray, dbId, DEFAULT_BSMG_MODDERS_USER_ID, DEFAULT_TEST_USER_ID, defaultGamePermissions, defaultSitewidePermissions, Game, GameVersion, Project, ProjectValidStatusesArray, Status, User, UserPermissions, userPermissionsSchema, Version, VersionValidStatusesArray, WebhookLogType } from "../../../shared/Database.ts";
 import { Validator } from "../../../shared/Validator.ts";
 import z from "zod/v4";
 import { dedupeArray, escapeLike, handleCatch, parseErrorMessage } from "../../../shared/Tools.ts";
@@ -318,10 +318,10 @@ export const AdminRouter = router({
                 }
             }),
         exportDB: loggedInProcedure([UserPermissions.Advanced_Admin_Tasks]).mutation(async ({ ctx }) => {
-                Logger.log(`Starting export of the database by admin user ${ctx.userId}`);
-                let data = await ctx.db.export();
-                fs.writeFileSync(`./storage/database.json`, JSON.stringify(data));
-            }),
+            Logger.log(`Starting export of the database by admin user ${ctx.userId}`);
+            let data = await ctx.db.export();
+            fs.writeFileSync(`./storage/database.json`, JSON.stringify(data));
+        }),
         getAdminLogs: loggedInProcedure([UserPermissions.Administrative_Tasks])
             .query(async ({ input, ctx }) => {
                 Logger.log(`User ${ctx.userId} fetching admin logs for the last 5 minutes`);
@@ -332,7 +332,7 @@ export const AdminRouter = router({
             //     logLevel: z.enum(LogLevel)
             // }))
             .subscription(async function* (opts) {
-                Logger.log(`User ${opts.ctx.userId} subscribed to admin logs`);  
+                Logger.log(`User ${opts.ctx.userId} subscribed to admin logs`);
 
                 opts.signal?.addEventListener('abort', () => {
                     Logger.log(`User ${opts.ctx.userId} unsubscribed from admin logs`);
@@ -362,10 +362,7 @@ export const AdminRouter = router({
             }),
         impersonateTestUser: loggedInProcedure({ hasAllOf: [UserPermissions.Administrative_Tasks, UserPermissions.Users_EditAll] })
             .mutation(async ({ ctx }) => {
-                if (!EnvConfig.isDevMode) {
-                    throw new TRPCError({ code: `FORBIDDEN`, message: `Cannot impersonate test user in a non-development environment.` });
-                }
-                Logger.log(`Impersonating test user by admin user ${ctx.userId}`);
+                Logger.warn(`Admin user ${ctx.userId} started impersonating test user (ID: ${DEFAULT_TEST_USER_ID})`);
 
                 let allGamesPermObject: { [key: string]: UserPermissions[] } = await Game.findAll().then(games => {
                     let obj: { [key: string]: UserPermissions[] } = {};
@@ -382,9 +379,9 @@ export const AdminRouter = router({
                     perGame: allGamesPermObject,
                 };
                 let testUser = await User.findOrCreate({
-                    where: { id: 6 },
+                    where: { id: DEFAULT_TEST_USER_ID },
                     defaults: {
-                        id: 6,
+                        id: DEFAULT_TEST_USER_ID,
                         username: `testuser`,
                         displayName: `Test User`,
                         bio: `Test user for development purposes.`,
@@ -396,6 +393,39 @@ export const AdminRouter = router({
                 ctx.req.session.save();
                 return { message: `Impersonated test user successfully` };
             }),
+        impersonateBSMGModdersUser: loggedInProcedure({ hasAllOf: [UserPermissions.Administrative_Tasks, UserPermissions.Users_EditAll] }).mutation(async ({ ctx }) => {
+            Logger.warn(`Admin user ${ctx.userId} started impersonating BSMG Modders user (ID: ${DEFAULT_BSMG_MODDERS_USER_ID})`);
+
+            let allGamesPermObject: { [key: string]: UserPermissions[] } = await Game.findAll().then(games => {
+                let obj: { [key: string]: UserPermissions[] } = {};
+                for (let game of games) {
+                    obj[game.id] = defaultGamePermissions;
+                }
+                return obj;
+            }).catch((err) => {
+                Logger.error(`Error fetching games from database: ${parseErrorMessage(err)}`);
+                throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: `Internal server error.` });
+            });
+
+            let testUser = await User.findOrCreate({
+                where: { id: DEFAULT_BSMG_MODDERS_USER_ID },
+                defaults: {
+                    id: DEFAULT_BSMG_MODDERS_USER_ID,
+                    username: `bsmgmodders`,
+                    displayName: `BSMG Modders`,
+                    bio: `A user representing the all of the modders in BSMG that make mods for Beat Saber. See the [BSMG Wiki](https://bsmg.wiki/about/modders.html) to see the people who make it possible.`,
+                    avatarUrl: `https://github.com/bsmg.png`,
+                    permissions: {
+                        sitewide: [...defaultSitewidePermissions, UserPermissions.C_System, UserPermissions.C_Modder, UserPermissions.C_BSMG_Staff],
+                        perGame: allGamesPermObject,
+                    },
+                },
+            });
+
+            ctx.req.session.userId = testUser[0].id;
+            ctx.req.session.save();
+            return { message: `Impersonated BSMG Modders user successfully` };
+        }),
         recalcAutomaticStatusChangeTimes: loggedInProcedure([UserPermissions.Administrative_Tasks]).mutation(async ({ ctx }) => {
             Logger.log(`Recalculating automatic status change times by admin user ${ctx.userId}`);
             Version.findAll({
@@ -432,40 +462,40 @@ export const AdminRouter = router({
                 id: z.number()
             }))
             .mutation(async ({ ctx, input }) => {
-            Logger.log(`Deleting ${input.thingType} ${input.id}, by admin user ${ctx.userId}`);
-            try {
-                if (input.thingType === 'asset') {
-                    let asset = await Asset.findByPk(input.id);
-                    if (asset) {
-                        fs.rmSync(path.join(asset.folderPath), { recursive: true, force: true });
-                        await asset.destroy();
-                    }
-                } else if (input.thingType === 'project') {
-                    let project = await Project.findByPk(input.id);
-                    if (project) {
-                        const versions = await Version.findAll({ where: { projectId: project.id } });
-                        for (let version of versions) {
+                Logger.log(`Deleting ${input.thingType} ${input.id}, by admin user ${ctx.userId}`);
+                try {
+                    if (input.thingType === 'asset') {
+                        let asset = await Asset.findByPk(input.id);
+                        if (asset) {
+                            fs.rmSync(path.join(asset.folderPath), { recursive: true, force: true });
+                            await asset.destroy();
+                        }
+                    } else if (input.thingType === 'project') {
+                        let project = await Project.findByPk(input.id);
+                        if (project) {
+                            const versions = await Version.findAll({ where: { projectId: project.id } });
+                            for (let version of versions) {
+                                fs.rmSync(path.join(version.versionFolderPath), { recursive: true, force: true });
+                                await version.destroy();
+                            }
+                            fs.rmSync(path.join(project.folderPath), { recursive: true, force: true });
+                            await project.destroy();
+                        }
+                    } else if (input.thingType === 'version') {
+                        let version = await Version.findByPk(input.id);
+                        if (version) {
                             fs.rmSync(path.join(version.versionFolderPath), { recursive: true, force: true });
                             await version.destroy();
                         }
-                        fs.rmSync(path.join(project.folderPath), { recursive: true, force: true });
-                        await project.destroy();
                     }
-                } else if (input.thingType === 'version') {
-                    let version = await Version.findByPk(input.id);
-                    if (version) {
-                        fs.rmSync(path.join(version.versionFolderPath), { recursive: true, force: true });
-                        await version.destroy();
-                    }
+                } catch (error) {
+                    Logger.error(`Error deleting ${input.thingType} ${input.id}: ${parseErrorMessage(error)}`);
+                    throw new TRPCError({
+                        code: 'INTERNAL_SERVER_ERROR',
+                        message: `Failed to delete ${input.thingType} ${input.id}: ${parseErrorMessage(error)}`
+                    });
                 }
-            } catch (error) {
-                Logger.error(`Error deleting ${input.thingType} ${input.id}: ${parseErrorMessage(error)}`);
-                throw new TRPCError({
-                    code: 'INTERNAL_SERVER_ERROR',
-                    message: `Failed to delete ${input.thingType} ${input.id}: ${parseErrorMessage(error)}`
-                });
-            }
-            return { message: `Deleted thing successfully` };
-        })
+                return { message: `Deleted thing successfully` };
+            })
     }
 });

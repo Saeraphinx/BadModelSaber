@@ -73,6 +73,16 @@ export function checkAllowEdit(user: UserApiV3 | undefined, thing: ProjectApiV3 
   return false;
 }
 
+export function checkAllowUploadVersion(user: UserApiV3 | undefined, project: ProjectApiV3): boolean {
+  if (!user) return false;
+  if (project.authors.some(author => author.id === user.id)) return true;
+  if (checkRoles(user, [UserPermissions.Mods_UploadAll], project.gameName)) return true;
+  if (project.authors.some(author => author.id === 999)) {
+    if (checkRoles(user, [UserPermissions.Mods_UploadUnderModders], project.gameName)) return true;
+  }
+  return false;
+}
+
 export function checkAllowTranslate(user: UserApiV3 | undefined, thing: ProjectApiV3): boolean {
   if (!user) return false;
   if (thing.authors.some(author => author.id === user.id)) return true;

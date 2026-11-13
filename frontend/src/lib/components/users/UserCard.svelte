@@ -20,7 +20,7 @@
 <div class={cn("flex flex-col bg-card p-4 rounded-md", className)} {...restProps} >
   <div class="flex flex-row">
     <div class="flex w-16 min-h-full shrink-0 items-center">
-      {#if user.permissions.sitewide.includes(UserPermissions.C_System)}
+      {#if user.permissions.sitewide.includes(UserPermissions.C_System) && user.id !== 999}
         <img src="/system_pfp.svg" alt={user.displayName} class="w-16 h-16 rounded-full" />
       {:else}
         <img src={user.avatarUrl} alt={user.displayName} class="w-16 h-16 rounded-full" />

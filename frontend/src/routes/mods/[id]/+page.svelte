@@ -5,7 +5,7 @@
   import Markdown from "$lib/components/generic/Markdown.svelte";
   import VersionCard from "$lib/components/mods/VersionCard.svelte";
   import { availableLocales, Status, type UserApiV3, UserPermissions } from "$lib/scripts/from_backend/DBExtras.js";
-  import { checkRoles, getAllowedVersionStatuses, checkAllowApproval, checkAllowStatusHistory, checkAllowEdit, checkAllowTranslate } from "$lib/scripts/utils/checkRoles";
+  import { checkRoles, getAllowedVersionStatuses, checkAllowApproval, checkAllowStatusHistory, checkAllowEdit, checkAllowTranslate, checkAllowUploadVersion } from "$lib/scripts/utils/checkRoles";
   import { getRelativeTimeString, getStatusString } from "$lib/scripts/utils/stylizer.js";
   import { Separator } from "$shadcn/components/ui/separator";
   import * as Tooltip from "$shadcn/components/ui/tooltip/index.js";
@@ -53,6 +53,7 @@
   let shouldAllowStatusHistory = $derived.by(() => checkAllowStatusHistory(user, project, versions));
   let shouldAllowEdit = $derived.by(() => checkAllowEdit(user, project));
   let shouldAllowTranslation = $derived.by(() => checkAllowTranslate(user, project));
+  let shouldAllowUploadVersion = $derived.by(() => checkAllowUploadVersion(user, project));
 
   let isAuthor = $derived.by(() => {
     if (!user) return false;
@@ -275,7 +276,7 @@
   <div class="flex flex-row not-md:flex-col-reverse gap-4">
     <!-- Version List -->
     <div class="w-md md:max-w-sm not-md:max-w-full not-md:w-full">
-      {#if checkRoles(user, [UserPermissions.Mods_UploadAll], project.gameName) || project.authors.some((a) => a.id === user?.id)}
+      {#if shouldAllowUploadVersion}
         <div class="flex flex-row items-center justify-between mx-1">
           <h2 class="text-xl font-bold">{m[`mods.uploadNewVersion`]()}</h2>
           <Button variant="outline" href="/create/project/{project.id}"><UploadIcon />{m[`mods.uploadNewVersionButton`]()}</Button>

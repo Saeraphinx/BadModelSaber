@@ -2,7 +2,7 @@ import { error } from '@sveltejs/kit';
 import type { PageLoad } from './$types';
 import { handleTrpcError, parseTRPCError } from '$lib/scripts/utils/api';
 import { UserPermissions } from '$lib/scripts/from_backend/DBExtras';
-import { checkRoles } from '$lib/scripts/utils/checkRoles';
+import { checkAllowUploadVersion, checkRoles } from '$lib/scripts/utils/checkRoles';
 import { m } from "$lib/paraglide/messages";
 
 export const load = (async ({ fetch, params, parent }) => {
@@ -27,6 +27,10 @@ export const load = (async ({ fetch, params, parent }) => {
   
   if (!checkRoles(user, [UserPermissions.Mods_Create], pnv.project.gameName)) {
     return error(403, { message: 'You do not have permission to view this page' });
+  }
+
+  if (!checkAllowUploadVersion(user, pnv.project)) {
+    return error(403, { message: 'You do not have permission to upload a version for this project' });
   }
 
   return {

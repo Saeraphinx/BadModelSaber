@@ -4,7 +4,7 @@ import { AlertType, dbId, ModApiv2, ProjectApiV3, RequestType, Status, StatusHis
 import z from "zod/v4";
 import { Game } from "./Game.ts";
 import { Logger } from "../../Logger.ts";
-import { User } from "./User.ts";
+import { DEFAULT_BSMG_MODDERS_USER_ID, User } from "./User.ts";
 import { ProjectAuthor } from "./Junctions.ts";
 import { Version } from "./Version.ts";
 import { satisfies } from "semver";
@@ -262,6 +262,12 @@ export class Project extends Model<InferAttributes<Project>, InferCreationAttrib
 
         if (this.collaboratorIds.includes(user.id)) {
             return true;
+        }
+
+        if ((await this.authorIds).includes(DEFAULT_BSMG_MODDERS_USER_ID)) {
+            if (user.checkRoles([UserPermissions.Mods_UploadUnderModders], this.gameName)) {
+                return true;
+            }
         }
 
         return user.checkRoles([UserPermissions.Mods_UploadAll], this.gameName);

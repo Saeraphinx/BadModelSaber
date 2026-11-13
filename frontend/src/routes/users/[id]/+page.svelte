@@ -57,6 +57,7 @@
   });
   let allowEditingConfidentials = $derived.by(() => {
     if (!user) return false;
+    if (pdUser.permissions.sitewide.includes(UserPermissions.C_System)) return false;
     if (pdUser.id === user.id) return true;
     return false;
   });
@@ -124,6 +125,10 @@
             {/if}
             {#if pdUser.discordId}
               <SponsorButton class="w-full" type="profile_discord" username={pdUser.discordId} />
+            {/if}
+            {#if pdUser.permissions.sitewide.includes(UserPermissions.C_System)}
+              <SponsorButton class="w-full" type="profile_discord_guild" username="beatsabermods" />
+              <SponsorButton class="w-full" type="profile_github" username="bsmg" />
             {/if}
             {#each pdUser.userPlatforms as sponsorUrl}
               <SponsorButton class="w-full" type={sponsorUrl.platform} username={sponsorUrl.username} />

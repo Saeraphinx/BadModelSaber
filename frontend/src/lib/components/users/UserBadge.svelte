@@ -36,6 +36,9 @@
 
   let userAvatarUrl = $derived.by(() => {
     if (user.permissions.sitewide.includes(UserPermissions.C_System)) {
+      if (user.id === 999) {
+        return "/users/pfp/bsmg.png"
+      }
       return "/system_pfp.svg";
     } else if (user.avatarUrl.includes("github.com")) {
       return `/users/pfp/${user.avatarUrl.split("/").pop()}`;

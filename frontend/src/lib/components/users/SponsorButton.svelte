@@ -10,7 +10,7 @@
     class: className,
     ...restProps
    } : {
-    type: PlatformType | `profile_discord` | `profile_github`;
+    type: PlatformType | `profile_discord` | `profile_github` | `profile_discord_guild`;
     username: string;
   } & HTMLAttributes<HTMLElement> = $props();
 
@@ -24,6 +24,8 @@
           return `https://www.patreon.com/${username}`;
         case `profile_discord`:
           return `discord://discord.com/users/${username}`;
+        case `profile_discord_guild`:
+          return `https://discord.gg/${username}`;
         case `profile_github`:
           return `https://github.com/${username}`;
         default:
@@ -45,6 +47,9 @@
   {:else if type === `profile_discord`}
     <img src="/discord-light.svg" alt="Discord logo" class="w-5 h-5" />
     <p>{m[`users.sponsor.discordProfile`]()}</p>
+  {:else if type === `profile_discord_guild`}
+    <img src="/discord-light.svg" alt="Discord logo" class="w-5 h-5" />
+    <p>{m[`users.sponsor.discordGuild`]()}</p>
   {:else if type === `profile_github`}
     <img src="/github-light.svg" alt="GitHub logo" class="w-5 h-5" />
     <p>{m[`users.sponsor.githubProfile`]()}</p>

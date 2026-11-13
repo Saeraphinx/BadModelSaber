@@ -3,7 +3,7 @@ import { AfterCreate, AfterUpdate, AfterValidate, AllowNull, BeforeCreate, Befor
 import { AlertType, ContentHash, ContentHashSchema, Dependency, DependencySchema, ModApiV1, ModVersionsApiv2, RequestType, Status, StatusHistory, statusHistorySchema, UserPermissions, VersionApiV3, WebhookLogType } from "../DBExtras.ts";
 import { SemVer, parse } from "semver";
 import { Project } from "./Project.ts";
-import { User } from "./User.ts";
+import { DEFAULT_BSMG_MODDERS_USER_ID, User } from "./User.ts";
 import z from "zod/v4";
 import { Logger } from "../../Logger.ts";
 import { GameVersion } from "./GameVersion.ts";
@@ -344,8 +344,14 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
                 return true;
             }
 
-            if (user &&this.uploaderId === user.id) {
+            if (user && this.uploaderId === user.id) {
                 return true;
+            }
+
+            if (prj.authors?.map(author => author.id).includes(DEFAULT_BSMG_MODDERS_USER_ID)) {
+                if (user && user.checkRoles([UserPermissions.Mods_UploadUnderModders], prj.gameName)) {
+                    return true;
+                }
             }
 
             if (user) {

@@ -10,6 +10,7 @@ import { parseErrorMessage } from "../../Tools.ts";
 import { Project } from "./Project.ts";
 import { Version } from "./Version.ts";
 import { Webhooks } from "../../Webhooks.ts";
+import { DEFAULT_SYSTEM_USER_ID } from "../../Database.ts";
 
 export type ThingRequestInfer = InferAttributes<ThingRequest>;
 @Table({
@@ -336,7 +337,7 @@ export class ThingRequest extends Model<InferAttributes<ThingRequest>, InferCrea
         this.messages = [
             ...this.messages,
             { 
-                userId: 5, 
+                userId: DEFAULT_SYSTEM_USER_ID, 
                 message: `Request accepted by ${acceptedBy.username}`, 
                 timestamp: new Date(Date.now()).toISOString() 
             }
@@ -360,7 +361,7 @@ export class ThingRequest extends Model<InferAttributes<ThingRequest>, InferCrea
         this.messages = [
             ...this.messages,
             { 
-                userId: 5, 
+                userId: DEFAULT_SYSTEM_USER_ID, 
                 message: `Request declined by ${declinedBy.username}`, 
                 timestamp: new Date(Date.now()).toISOString() 
             }

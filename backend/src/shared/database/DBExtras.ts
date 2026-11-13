@@ -215,6 +215,7 @@ export enum UserPermissions {
   Mods_UploadAll = "mods_upload_all", // User can upload new versions for all mods, including those created by other users
   Mods_Approval = "mods_approval", // User can approve/reject pending mods
   Mods_InternalTags = "mods_internal_tags", // User can add/remove the featured flag for mods (e.g. featured mods)
+  Mods_UploadUnderModders = "mods_upload_under_modders", // User can upload new versions that list the Modder's user as a author
 
   Asset_Create = "asset_create", // User can create/upload assets
   Asset_ViewAll = "asset_view_all", // User can view all assets, including private ones

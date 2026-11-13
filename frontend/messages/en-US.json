@@ -410,6 +410,7 @@
     "sponsor": {
       "githubSponsor": "GitHub Sponsor",
       "discordProfile": "Discord Profile",
+      "discordGuild": "Discord Server",
       "githubProfile": "GitHub Profile"
     }
   },

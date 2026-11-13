@@ -2,7 +2,7 @@ import { EnvConfig } from "./EnvConfig.ts";
 import { Logger } from "./Logger.ts";
 import { ModelStatic, Sequelize, DataType } from "sequelize-typescript";
 import { Umzug, SequelizeStorage } from "umzug";
-import { User } from "./database/tables/User.ts";
+import { User, DEFAULT_SYSTEM_USER_ID } from "./database/tables/User.ts";
 import { Asset } from "./database/tables/Asset.ts";
 import { Alert } from "./database/tables/Alert.ts";
 import { ThingRequest } from "./database/tables/ThingRequest.ts";
@@ -125,9 +125,9 @@ export class DatabaseManager {
 
     public async createAdminUserIfNotExists() {
         this.adminUser = await User.findOrCreate({
-            where: { id: 5 },
+            where: { id: DEFAULT_SYSTEM_USER_ID },
             defaults: {
-                id: 5,
+                id: DEFAULT_SYSTEM_USER_ID,
                 githubId: null,
                 discordId: null,
                 username: `system`,

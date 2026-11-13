@@ -15,6 +15,10 @@ import { ProjectAuthor } from "./Junctions.ts";
 import { WebhookPayloadGenerator, Webhooks } from "../../Webhooks.ts";
 import { Game } from "./Game.ts";
 
+export const DEFAULT_SYSTEM_USER_ID = 5;
+export const DEFAULT_TEST_USER_ID = 6;
+export const DEFAULT_BSMG_MODDERS_USER_ID = 999;
+
 export const defaultSitewidePermissions = [UserPermissions.Users_EditSelf];
 export const defaultGamePermissions = [UserPermissions.Asset_Create, UserPermissions.Asset_Edit, UserPermissions.Mods_Create, UserPermissions.Mods_Edit]
 export async function getDefaultPermissions(): Promise<{

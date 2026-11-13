@@ -321,19 +321,35 @@
   >
   <Button
     variant="outline"
-    disabled={!isDev}
+    disabled={!checkRoles(user, { hasAllOf: [UserPermissions.Administrative_Tasks, UserPermissions.Users_EditAll] })}
     onclick={() => {
       trpc.internal.admin.dev.impersonateTestUser
         .mutate()
         .then(() => {
           toast.success("Impersonated test user successfully.");
-          invalidateAll();
+          window.location.reload();
         })
         .catch((err) => {
           console.error(err);
           toast.error("Failed to impersonate test user.", { description: parseErrorMessage(err) });
         });
     }}>Impersonate Test User</Button
+  >
+  <Button
+    variant="outline"
+    disabled={!checkRoles(user, { hasAllOf: [UserPermissions.Administrative_Tasks, UserPermissions.Users_EditAll] })}
+    onclick={() => {
+      trpc.internal.admin.dev.impersonateBSMGModdersUser
+        .mutate()
+        .then(() => {
+          toast.success("Impersonated modder user successfully.");
+          window.location.reload();
+        })
+        .catch((err) => {
+          console.error(err);
+          toast.error("Failed to impersonate modder user.", { description: parseErrorMessage(err) });
+        });
+    }}>Impersonate Modder User</Button
   >
   <Button
     variant="destructive"
