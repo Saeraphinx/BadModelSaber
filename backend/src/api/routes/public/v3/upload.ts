@@ -296,9 +296,9 @@ export const uploadStuff = router({
                     stream
                         .on("data", (chunk: Uint8Array) => {
                             size += chunk.length;
-                            if (size > 50 * 1024 * 1024) { // 50 MB limit
+                            if (size > 125 * 1024 * 1024) { // 125 MB limit
                                 stream.pause(); // halts the inflate worker
-                                return reject(new TRPCError({ code: 'BAD_REQUEST', message: 'A file in the uploaded zip archive exceeds the 50 MB limit.' }));
+                                return reject(new TRPCError({ code: 'BAD_REQUEST', message: 'A file in the uploaded zip archive exceeds the 125 MB limit.' }));
                             } else {
                                 totalSize += chunk.length;
                             }
