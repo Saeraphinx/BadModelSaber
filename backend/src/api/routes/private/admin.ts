@@ -412,7 +412,7 @@ export const AdminRouter = router({
                 defaults: {
                     id: DEFAULT_BSMG_MODDERS_USER_ID,
                     username: `bsmgmodders`,
-                    displayName: `BSMG Modders`,
+                    displayName: `BSMG`,
                     bio: `A user representing the all of the modders in BSMG that make mods for Beat Saber. See the [BSMG Wiki](https://bsmg.wiki/about/modders.html) to see the people who make it possible.`,
                     avatarUrl: `https://github.com/bsmg.png`,
                     permissions: {
