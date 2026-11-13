@@ -217,7 +217,7 @@ export function handleTrpcErrorWithToast(overrideTitle?: LocalizedString | strin
 export function handleTrpcSuccessWithToast<T>(successMessage: LocalizedString | string, shouldInvalidate: boolean = false, additionalCode: (val: T) => void = () => {}) {
   return (returnValue: T) => {
     toast.success(successMessage, {
-      dismissible: !shouldInvalidate,
+      dismissible: true,
       duration: shouldInvalidate ? 10000 : 5000,
       closeButton: true,
     });

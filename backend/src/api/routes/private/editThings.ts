@@ -87,6 +87,20 @@ export const updateThingsRouter = router({
         }),
     },
     project: {
+        makePublic: loggedInProjectProcedure([UserPermissions.Mods_Edit, UserPermissions.Mods_EditAll]).mutation(async ({ input, ctx }) => {
+            const project = ctx.project;
+            if (!(await project.canEdit(ctx.user))) {
+                throw new TRPCError({ code: 'FORBIDDEN', message: `You are not allowed to edit this project` });
+            }
+            
+            if (project.status === Status.Private) {
+                return await project.setStatus(Status.Public, ctx.user, `Project made public`, !project.authors?.some(a => a.id === ctx.user.id)).then(async updatedProject => {
+                    return await updatedProject.toApiV3();
+                });
+            } else {
+                throw new TRPCError({ code: 'BAD_REQUEST', message: `Project is already public` });
+            }
+        }),
         updateProject: loggedInProjectProcedure([UserPermissions.Mods_Edit, UserPermissions.Mods_EditAll]).input(z.object({
             data: Project.validator.pick({
                 description: true,

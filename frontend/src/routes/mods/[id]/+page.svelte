@@ -239,7 +239,13 @@
     </div>
     <div class="grid grid-cols-1 not-md:grid-cols-2 not-md:w-full gap-2 ml-auto">
       {#if project.status === Status.Private && !isEditing && !isTranslating && shouldAllowEdit}
-        <Button variant="outline">{m[`mods.makePublic`]()}</Button>
+        <Button variant="outline" onclick={() => { trpc.internal.updateThings.project.makePublic.mutate({ id: project.id }).then(() => { 
+            toast.success(m[`toasts.save.success`]()); 
+            invalidateAll();
+          }).catch((e) => { 
+            toast.error(m[`toasts.error.generic`](), { description: parseErrorMessage(e) }); 
+          }); 
+        }}>{m[`mods.makePublic`]()}</Button>
       {/if}
       {#if shouldAllowEdit}
         {#if !isEditing && !isTranslating}
