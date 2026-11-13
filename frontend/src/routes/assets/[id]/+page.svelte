@@ -15,6 +15,7 @@
     MegaphoneIcon,
     PlusIcon,
     SquarePenIcon,
+    TrashIcon,
   } from "@lucide/svelte";
   import { MediaQuery } from "svelte/reactivity";
   import { navigating } from "$app/state";
@@ -384,13 +385,14 @@
             onclick={() => {
               trpc.internal.updateThings.asset.submitAssetForApproval
                 .mutate({ id: pageData.id })
-                .then(handleTrpcSuccessWithToast(m[`toasts.submit.success`]()))
+                .then(handleTrpcSuccessWithToast(m[`toasts.submit.success`](), true))
                 .catch(handleTrpcErrorWithToast(m[`toasts.submit.error`]()));
             }}>
             <BadgeAlert />
             {m[`common.buttons.submitForApproval`]()}
           </Button>
         </div>
+        
       {/if}
       {#if user && checkRoles(user, [UserPermissions.Asset_Approval], pageData.gameName)}
         <Button
@@ -402,6 +404,19 @@
           {m[`common.buttons.approvalDialog`]()}
         </Button>
       {/if}
+      {#if user && user.id === pageData.uploaderId && (pageData.status === Status.Public || pageData.status === Status.Unverified || pageData.status === Status.Queue)}
+          <Button
+            variant="destructive"
+            onclick={() => {
+              trpc.internal.updateThings.asset.removeAssetByAuthor
+                .mutate({ id: pageData.id })
+                .then(handleTrpcSuccessWithToast(m[`toasts.save.success`](), true))
+                .catch(handleTrpcErrorWithToast(m[`toasts.save.error`]()));
+            }}>
+            <TrashIcon />
+            {m[`assets.privateAsset`]()}
+          </Button>
+        {/if}
     {/if}
     {#if allowedToEdit}
       {#if isEditing}

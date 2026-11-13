@@ -85,6 +85,20 @@ export const updateThingsRouter = router({
                 throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: `Error adding collaborator: ${parseErrorMessage(err)}` });
             });
         }),
+        removeAssetByAuthor: loggedInAssetProcedure([UserPermissions.Asset_Edit, UserPermissions.Asset_EditAll]).input(z.object({
+            // id: dbId,
+        })).mutation(async ({ input, ctx }) => {
+            const asset = ctx.asset;
+            if (!asset.canEdit(ctx.user)) {
+                throw new TRPCError({ code: 'FORBIDDEN', message: `You are not allowed to edit this asset` });
+            }
+            
+            asset.setStatus(Status.Private, ctx.user, `Asset privated by author`, false).then(() => {
+                return { message: `Asset removed successfully` };
+            }).catch(err => {
+                throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: `Error removing asset: ${parseErrorMessage(err)}` });
+            });
+        }),
     },
     project: {
         makePublic: loggedInProjectProcedure([UserPermissions.Mods_Edit, UserPermissions.Mods_EditAll]).mutation(async ({ input, ctx }) => {

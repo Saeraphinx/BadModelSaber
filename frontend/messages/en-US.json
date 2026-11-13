@@ -185,6 +185,7 @@
   "assets": {
     "noAssetsFound": "No models or assets found.",
     "nsfwWarning": "This asset is marked as NSFW.",
+    "privateAsset": "Private Asset",
     "carousels": {
       "addRelatedAsset": "Add Related Asset",
       "relatedAssets": "Related Assets",
