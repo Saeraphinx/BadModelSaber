@@ -203,7 +203,7 @@ export const GetModsV3 = router({
             versions = await asyncFilter(versions, async v => await v.canView(ctx.user, project));
             
             let outputVersions = await Promise.all(versions.map(async v => await v.toApiV3()));
-            addCacheHeaders(ctx);
+            //addCacheHeaders(ctx);
             return {
                 project: await project.toApiV3(input.language) as ProjectApiV3,
                 versions: outputVersions
