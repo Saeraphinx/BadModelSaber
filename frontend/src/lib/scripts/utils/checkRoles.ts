@@ -9,9 +9,10 @@ export function getAllowedVersionStatuses(userPermObj: UserPermObj | undefined, 
   if (userPermObj) {
     statusLookup.push(Status.Unverified);
   }
-  if (checkRoles(userPermObj, { hasOneOf: [UserPermissions.Secret_Features] }, gameName)) {
+  if (checkRoles(userPermObj, { hasOneOf: [UserPermissions.Mods_ViewAll] }, gameName) || allowedToBypass) {
     statusLookup.push(Status.Queue, Status.Testing, Status.NonDefault_Testing);
-  } else if (checkRoles(userPermObj, { hasOneOf: [UserPermissions.Mods_ViewAll] }, gameName) || allowedToBypass) {
+  } 
+  if (checkRoles(userPermObj, { hasOneOf: [UserPermissions.Secret_Features] }, gameName)) {
     statusLookup.push(Status.Queue, Status.Testing, Status.NonDefault_Testing, Status.Removed, Status.Private);
   }
   return Array.from(new Set(statusLookup));
@@ -24,7 +25,8 @@ export function getAllowedAssetStatuses(userPermObj: UserPermObj | undefined, al
   }
   if (checkRoles(userPermObj, { hasOneOf: [UserPermissions.Secret_Features] }, gameName)) {
     statusLookup.push(Status.Queue);
-  } else if (checkRoles(userPermObj, { hasOneOf: [UserPermissions.Asset_ViewAll] }, gameName) || allowedToBypass) {
+  }
+  if (checkRoles(userPermObj, { hasOneOf: [UserPermissions.Asset_ViewAll] }, gameName) || allowedToBypass) {
     statusLookup.push(Status.Queue, Status.Removed, Status.Private);
   }
   return Array.from(new Set(statusLookup));
