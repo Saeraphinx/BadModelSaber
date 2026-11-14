@@ -72,6 +72,7 @@
   let editedDescription = $state(``);
   let editedCategory = $state(``);
   let editedAuthors = $state<UserApiV3[]>([]);
+  let editedCollaborators = $state<UserApiV3[]>([]);
   let editedGitUrl = $state(``);
   let editedIconFile: FileList | undefined = $state();
 
@@ -89,6 +90,7 @@
     editedCategory = project.category;
     editedAuthors = project.authors;
     editedGitUrl = project.gitUrl;
+    //editedCollaborators // gets loaded below
 
     isTranslating = false;
     translatingLanguage = ``;
@@ -100,6 +102,7 @@
   let isSaving = $state(false);
   function onSaveChangesEditing() {
     let userIds = editedAuthors.map((a) => a.id);
+    let collaboratorIds = editedCollaborators.map((c) => c.id);
     let parsed = zProject
       .pick({
         summary: true,
@@ -107,6 +110,7 @@
         category: true,
         gitUrl: true,
         authorIds: true,
+        collaboratorIds: true,
       })
       .safeParse({
         summary: editedSummary,
@@ -114,6 +118,7 @@
         category: editedCategory,
         gitUrl: editedGitUrl,
         authorIds: userIds,
+        collaboratorIds: collaboratorIds,
       });
 
     if (!parsed.success) {
@@ -442,6 +447,28 @@
                   })}>
                 <PlusIcon class="w-2 h-2" />
               </Button>
+            </div>
+            <Label for="authors">{m[`common.dataTable.collaborators`]()}</Label>
+            <div class="flex flex-row justify-start items-center gap-2" id="collaborators">
+              {#await (async () => {
+                editedCollaborators = await Promise.all(project.collaboratorIds.map((id) => trpc.v3.user.getUserById.query({ id })))
+              })()}
+                <Spinner class="w-4 h-4" />
+              {:then _}
+                {#each editedCollaborators as collaborator, index (collaborator.id)}
+                  <UserBadge user={collaborator} onClick={() => (editedCollaborators = editedCollaborators.filter((_, i) => i !== index))} />
+                {/each}
+                <Button
+                  variant="ghost"
+                  class="rounded-full"
+                  size="sm"
+                  onclick={() =>
+                    userSelectionDialog?.showDialog((selectedUser) => {
+                      editedCollaborators = [...editedCollaborators, selectedUser];
+                    })}>
+                  <PlusIcon class="w-2 h-2" />
+                </Button>
+              {/await}
             </div>
             {#if checkRoles(user, [UserPermissions.Mods_InternalTags], project.gameName)}
               <Label for="internalTags">Is Featured</Label>

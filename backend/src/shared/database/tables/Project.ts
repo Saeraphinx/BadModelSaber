@@ -581,6 +581,7 @@ export class Project extends Model<InferAttributes<Project>, InferCreationAttrib
             gameName: this.gameName,
             category: this.category,
             authors: authors,
+            collaboratorIds: this.collaboratorIds,
             status: this.status,
             iconFileUrl: this.iconUrl,
             gitUrl: this.gitUrl,

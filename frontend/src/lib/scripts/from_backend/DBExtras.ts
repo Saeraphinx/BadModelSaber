@@ -595,6 +595,7 @@ export const projectApiV3Schema = z.object({
   description: z.string(),
   category: z.string(),
   authors: z.array(userApiV3Schema),
+  collaboratorIds: z.array(dbId),
   gameName: z.string(),
   status: z.enum(Status),
   iconFileUrl: z.url(),

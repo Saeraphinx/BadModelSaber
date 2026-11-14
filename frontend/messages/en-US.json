@@ -61,6 +61,7 @@
       "createdAt": "Created At",
       "lastUpdated": "Last Updated",
       "authors": "Authors",
+      "collaborators": "Collaborators",
       "supportedGameVersions": "Supported Game Versions",
       "semver": "Semantic Version",
       "platform": "Platform",
