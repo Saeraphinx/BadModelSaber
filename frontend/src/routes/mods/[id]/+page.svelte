@@ -68,6 +68,7 @@
   // #endregion
   // #region Edit & Translate
   let isEditing = $state(false);
+  let editedName = $state(``);
   let editedSummary = $state(``);
   let editedDescription = $state(``);
   let editedCategory = $state(``);
@@ -85,6 +86,7 @@
   $effect(() => {
     if (!navigating) return;
     isEditing = false;
+    editedName = project.name;
     editedSummary = project.summary;
     editedDescription = project.description;
     editedCategory = project.category;
@@ -105,6 +107,7 @@
     let collaboratorIds = editedCollaborators.map((c) => c.id);
     let parsed = zProject
       .pick({
+        name: true,
         summary: true,
         description: true,
         category: true,
@@ -113,6 +116,7 @@
         collaboratorIds: true,
       })
       .safeParse({
+        name: editedName,
         summary: editedSummary,
         description: editedDescription,
         category: editedCategory,
@@ -386,6 +390,8 @@
                 {m[`mods.uploadAndSaveIcon`]()}
               </Button>
             </div>
+            <Label for="name">{m[`common.dataTable.name`]()}</Label>
+            <Input id="name" bind:value={editedName} />
             {#if checkRoles(user, { hasAllOf:[UserPermissions.Mods_Approval, UserPermissions.Mods_EditAll]}, project.gameName)}
               {let editedNameId = $state(project.nameId);}
               <Label for="nameId">{m[`common.dataTable.nameId`]()}</Label>
@@ -515,12 +521,14 @@
           <Button
             disabled={!zProject
               .pick({
+                name: true,
                 summary: true,
                 description: true,
                 category: true,
                 gitUrl: true,
               })
               .safeParse({
+                name: editedName,
                 summary: editedSummary,
                 description: editedDescription,
                 category: editedCategory,

@@ -117,6 +117,7 @@ export const updateThingsRouter = router({
         }),
         updateProject: loggedInProjectProcedure([UserPermissions.Mods_Edit, UserPermissions.Mods_EditAll]).input(z.object({
             data: Project.validator.pick({
+                name: true,
                 description: true,
                 collaboratorIds: true,
                 category: true,
