@@ -444,7 +444,12 @@ export class Project extends Model<InferAttributes<Project>, InferCreationAttrib
         if (data.authorIds) {
             await this.$set(`authors`, data.authorIds);
         }
-        this.lastUpdatedById = user.id;
+        // Ensure DEFAULT_BSMG_MODDERS_USER_ID is added as a collaborator for Core or Essential projects if not already an author or collaborator
+        if (this.category == `Core` || this.category == `Essential`) {
+            if (this.authors?.every(author => author.id !== DEFAULT_BSMG_MODDERS_USER_ID) && !this.collaboratorIds?.includes(DEFAULT_BSMG_MODDERS_USER_ID)) {
+                this.collaboratorIds = [...(this.collaboratorIds ?? []), DEFAULT_BSMG_MODDERS_USER_ID];
+            }
+        }
         Logger.log(`Project ID ${this.id} updated by user ID ${user.id}`);
         Webhooks.sendWebhookLog(this.gameName, WebhookLogType.Text_Edited, false, WebhookPayloadGenerator.generateEditedThingPayload(this, user));
         return await this.save();

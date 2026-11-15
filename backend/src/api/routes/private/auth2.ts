@@ -255,7 +255,14 @@ export const auth2Router = router({
                         if (created) {
                             Logger.info(`Created new user ${user.id}`);
                         } else {
-                            user.update({ avatarUrl: stageUser.data.avatar ? `https://cdn.discordapp.com/avatars/${stageUser.data.id}/${stageUser.data.avatar}.png` : `https://cdn.discordapp.com/embed/avatars/${Number(stageUser.data.id) % 6}.png` }).catch(() => Logger.error(`Failed to update ${user.id}'s avatar`));
+                            let mergedPermissions = User.mergeRoles(user.permissions, {
+                                sitewide: stageUser.roles,
+                                perGame: {}
+                            });
+                            user.update({ 
+                                avatarUrl: stageUser.data.avatar ? `https://cdn.discordapp.com/avatars/${stageUser.data.id}/${stageUser.data.avatar}.png` : `https://cdn.discordapp.com/embed/avatars/${Number(stageUser.data.id) % 6}.png`,
+                                permissions: mergedPermissions
+                            }).catch(() => Logger.error(`Failed to update ${user.id}'s avatar`));
                         }
                         return user;
                     })
