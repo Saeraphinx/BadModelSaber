@@ -205,6 +205,25 @@ export const AdminRouter = router({
             Logger.log(`Webhook added to game ${ctx.game.name} by admin user ${ctx.userId}`);
             return ctx.game.getAPIWebhooks();
         }),
+        editWebhook: gameProcedure([UserPermissions.Game_Edit]).input(z.object({
+            webhookId: z.string(),
+            types: z.array(z.enum(WebhookLogType)),
+            isAssetWebhook: z.boolean().default(false),
+        })).mutation(async ({ ctx, input }) => {
+            let existingWebhook = ctx.game.webhookConfig.find(w => w.id === input.webhookId);
+            if (!existingWebhook) {
+                throw new TRPCError({ code: "NOT_FOUND", message: `Webhook with id ${input.webhookId} not found.` });
+            }
+            await ctx.game.removeWebhook(input.webhookId).catch(handleCatch(`removing webhook`));
+            await ctx.game.addWebhook({
+                url: existingWebhook.url,
+                types: input.types,
+                isAssetWebhook: input.isAssetWebhook,
+            }).catch(handleCatch(`editing webhook`));
+
+            Logger.log(`Webhook edited for game ${ctx.game.name} by admin user ${ctx.userId}`);
+            return ctx.game.getAPIWebhooks();
+        }),
         removeWebhook: gameProcedure([UserPermissions.Game_Edit]).input(z.object({
             webhookId: z.string(),
         })).mutation(async ({ ctx, input }) => {

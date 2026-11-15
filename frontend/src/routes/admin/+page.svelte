@@ -1,7 +1,7 @@
 <script lang="ts">
   import { AlertType, UserPermissions, WebhookLogType, type GameVersionApiV3_full, type UserApiV3 } from "$lib/scripts/from_backend/DBExtras.js";
   import * as Tabs from "$shadcn/components/ui/tabs/index.js";
-  import * as Select from "$shadcn/components/ui/select/index.js";
+  import * as Select from "$shadcn/components/ui/select";
   import * as Accordion from "$shadcn/components/ui/accordion/index.js";
   import Label from "$shadcn/components/ui/label/label.svelte";
   import Input from "$shadcn/components/ui/input/input.svelte";
@@ -128,14 +128,15 @@
   let createVersionDialogOpen = $state(false);
   let createVersionVersion = $state("");
 
-  let linkVersionDialogOpen = $state(false);
-  let linkVersionSourceId = $state("");
-  let linkVersionTargetId = $state("");
-
   let createWebhookDialogOpen = $state(false);
   let newWebhookUrl = $state("");
   let newWebhookTypes: WebhookLogType[] = $state([]);
   let newWebhookIsAsset = $state(false);
+
+  let editWebhookDialogOpen = $state(false);
+  let editWebhookId = $state("");
+  let editWebhookTypes: WebhookLogType[] = $state([]);
+  let editWebhookIsAsset = $state(false);
 
   let setGroupNameDialogOpen = $state(false);
   let setGroupNameVersionId = $state(-1);
@@ -597,9 +598,6 @@
           <Tabs.Content value="versions" class="flex flex-col items-center">
             <div class="mb-4 flex flex-row gap-2">
               <Button variant="default" onclick={() => (createVersionDialogOpen = true)}><PlusIcon />Create New Version</Button>
-              <Button variant="default" onclick={() => (linkVersionDialogOpen = true)}>
-                <PlusIcon />Link Versions
-              </Button>
             </div>
             <table class="m-auto w-full table-auto">
               <thead>
@@ -695,7 +693,12 @@
                     <td>{webhook.types.join(", ")}</td>
                     <td>{webhook.url}</td>
                     <td>
-                      <Button variant="outline" size="icon" disabled>
+                      <Button variant="outline" size="icon" onclick={() => {
+                        editWebhookId = webhook.id;
+                        editWebhookTypes = webhook.types;
+                        editWebhookIsAsset = webhook.isAssetWebhook;
+                        editWebhookDialogOpen = true;
+                      }}>
                         <PencilLine />
                       </Button>
                       <Button
@@ -952,7 +955,7 @@
       <Input placeholder="Webhook URL" class="mb-2 w-full" bind:value={newWebhookUrl} />
       <Select.Root type="multiple" bind:value={newWebhookTypes}>
         <Label class="mb-2">Log Types</Label>
-        <Select.Trigger class="w-full">{newWebhookTypes.length > 0 ? newWebhookTypes.join(", ") : "Select log types..."}</Select.Trigger>
+        <Select.Trigger class="w-full whitespace-normal wrap-anywhere text-wrap h-fit!">{newWebhookTypes.length > 0 ? newWebhookTypes.join(", ") : "Select log types..."}</Select.Trigger>
         <Select.Content>
           {#each Object.values(WebhookLogType) as item}
             <Select.Item value={item}>{item}</Select.Item>
@@ -989,6 +992,54 @@
               toast.error("Failed to create webhook.", { description: parseErrorMessage(err) });
             });
         }}>Create Webhook</Button
+      >
+    </div>
+  </DialogContent>
+</Dialog>
+
+
+<Dialog bind:open={editWebhookDialogOpen}>
+  <DialogContent>
+    <div class="flex flex-col items-center justify-center rounded-lg">
+      <p class="p-2 text-2xl">Edit Webhook ID {editWebhookId} for {selectedGame?.displayName}</p>
+      <Select.Root type="multiple" bind:value={editWebhookTypes}>
+        <Select.Trigger class="w-full whitespace-normal wrap-anywhere text-wrap h-fit!">{editWebhookTypes.length > 0 ? editWebhookTypes.join(", ") : "Select log types..."}</Select.Trigger>
+        <Select.Content>
+          {#each Object.values(WebhookLogType) as type}
+            <Select.Item value={type}>{type}</Select.Item>
+          {/each}
+        </Select.Content>
+      </Select.Root>
+      <div class="mt-2 flex flex-row items-center gap-2">
+        <Checkbox bind:checked={editWebhookIsAsset} id="editIsAsset" />
+        <Label for="editIsAsset">Is Asset Webhook</Label>
+      </div>
+      <Button
+        class="mt-4 w-full"
+        onclick={() => {
+          // if (!editWebhookUrl || editWebhookUrl.trim() === "") {
+          //   toast.error("Please enter a webhook URL.");
+          //   return;
+          // }
+          if (editWebhookTypes.length === 0) {
+            toast.error("Please select at least one log type.");
+            return;
+          }
+          if (!selectedGame?.name) return;
+          trpc.internal.admin.game.editWebhook
+            .mutate({ gameName: selectedGame.name, webhookId: editWebhookId, types: editWebhookTypes, isAssetWebhook: editWebhookIsAsset })
+            .then(() => {
+              toast.success("Webhook updated.");
+              editWebhookTypes = [];
+              editWebhookIsAsset = false;
+              editWebhookDialogOpen = false;
+              fetchGames();
+            })
+            .catch((err) => {
+              console.error(err);
+              toast.error("Failed to update webhook.", { description: parseErrorMessage(err) });
+            });
+        }}>Edit Webhook</Button
       >
     </div>
   </DialogContent>
