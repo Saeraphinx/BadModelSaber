@@ -21,7 +21,7 @@ import { GameVersion } from "./GameVersion.ts";
 
 
 export type ProjectInfer = InferAttributes<Project>;
-export type ProjectAllowedEdit = Partial<Pick<Project, `summary` | `description` | `category` | `gitUrl` | `collaboratorIds`> & { authorIds: number[] }>;
+export type ProjectAllowedEdit = Partial<Pick<Project, `name` | `summary` | `description` | `category` | `gitUrl` | `collaboratorIds`> & { authorIds: number[] }>;
 export type ProjectWhereOptions = WhereOptions<Project>;
 export type ProjectValidStatuses = Status.Public | Status.Private | Status.Removed;
 export const ProjectValidStatusesArray = [Status.Public, Status.Private, Status.Removed] as const;
@@ -158,7 +158,7 @@ export class Project extends Model<InferAttributes<Project>, InferCreationAttrib
     public static validator = z.object({
         id: dbId,
         nameId: z.string().regex(new RegExp("^(.*)$")).describe("project name for dependency resolution"),
-        name: z.string().max(128),
+        name: z.string().min(1).max(128),
         summary: z.string().max(256),
         description: z.string().max(8192),
         gameName: z.string(),
@@ -412,6 +412,17 @@ export class Project extends Model<InferAttributes<Project>, InferCreationAttrib
     // #endregion
     // #region Edit
     public async updateProject(data: ProjectAllowedEdit, user: User): Promise<Project> {
+        if (data.name && data.name !== this.name) {
+            Translation.findAll({
+                where: {
+                    parentId: this.id,
+                    contentType: `name`,
+                }
+            }).then(t => t.forEach(ti => ti.markOutOfDate(this))).catch(err => {
+                Logger.error(`Failed to mark name translations as out of date for project ID ${this.id}: ${err}`);
+            });
+        }
+
         if (data.description && data.description !== this.description) {
             Translation.findAll({
                 where: {
@@ -435,6 +446,7 @@ export class Project extends Model<InferAttributes<Project>, InferCreationAttrib
         }
 
         Object.assign(this, {
+            name: data.name ?? this.name,
             summary: data.summary ?? this.summary,
             description: data.description ?? this.description,
             category: data.category ?? this.category,

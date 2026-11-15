@@ -56,7 +56,7 @@ export const zAsset = z.object({
 
 export const zProject = z.object({
   id: dbId,
-  name: z.string().max(128),
+  name: z.string().min(1).max(128),
   nameId: z.string().max(128),
   summary: z.string().max(256),
   description: z.string().max(8192),
