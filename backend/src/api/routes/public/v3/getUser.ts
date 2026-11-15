@@ -74,7 +74,7 @@ export const userRouterV3 = router({
             include: { all: true }
         });
         let response = await Promise.all(assets.map(asset => asset.toApiV3()));
-        addCacheHeaders(ctx);
+        //addCacheHeaders(ctx);
         return { assets: response, total: assets.length, page: input.page ?? null};
     }),
     getModsByUserId: anyProcedure().input(z.object({
@@ -97,7 +97,7 @@ export const userRouterV3 = router({
             }]
         });
         
-        addCacheHeaders(ctx);
+        //addCacheHeaders(ctx);
         let output = await asyncFilter(projects, async p => await p.canView(ctx.user));
         return await Promise.all(output.map(async p => await p.toApiV3()));
     })

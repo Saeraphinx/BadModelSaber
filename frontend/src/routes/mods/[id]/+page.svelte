@@ -376,7 +376,7 @@
                     return;
                   }
                   let formData = new FormData();
-                  formData.append("projectId", project.id.toString());
+                  formData.append("id", project.id.toString());
                   formData.append("icon", editedIconFile[0]);
                   trpc.internal.updateThings.project.updateProjectIcon
                     .mutate(formData)
