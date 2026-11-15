@@ -450,7 +450,7 @@ export class Version extends Model<InferAttributes<Version>, InferCreationAttrib
         } else if (newStatus === Status.NonDefault_Testing) {
             // set next status change time for testing status
             this.nextStatusChangeTime = new Date(new Date(Date.now() + EnvConfig.gaf.oldTestingToVerifiedAutomaticTime).setHours(0, 0, 0, 0));
-        } else if (newStatus === Status.Queue && this.supportedGameVersions.every(v => v.isDeprecated)) {
+        } else if (newStatus === Status.Queue && this.supportedGameVersions.every(v => !v.isDeprecated)) {
             // set next status change time for queue if no default game version is present
             this.nextStatusChangeTime = new Date(new Date(Date.now() + EnvConfig.gaf.nonDefaultQueueToTestingAutomaticTime).setHours(0, 0, 0, 0));
         } else {
