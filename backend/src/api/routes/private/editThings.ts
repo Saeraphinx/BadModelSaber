@@ -143,10 +143,11 @@ export const updateThingsRouter = router({
                 return updatedProject.toApiV3();
             });
         }),
-        updateProjectIcon: loggedInProjectProcedure([UserPermissions.Mods_Edit, UserPermissions.Mods_EditAll]).input(zfd.formData({
+        updateProjectIcon: loggedInProcedure().input(zfd.formData({
+            id: zfd.numeric(), // have to do this since this has to be a formData input
             icon: zfd.file().refine((file) => Validator.validateThumbnail(file), { message: "Invalid icon file format" })
         })).mutation(async ({ input, ctx }) => {
-            const project = ctx.project;
+            const project = await Project.findByPk(input.id);
             if (!project) {
                 throw new TRPCError({ code: 'NOT_FOUND', message: `Project not found` });
             }
