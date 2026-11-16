@@ -350,7 +350,7 @@
         <div class="flex flex-col items-center text-center justify-center">
           <p class="text-sm text-gray-500">{m[`common.dataTable.moreInfo`]()}</p>
           <a class="text-base font-bold hover:text-blue-400 transition-colors" href={project.gitUrl} target="_blank" rel="noopener noreferrer"
-            >{project.gitUrl.startsWith("https://github.com") ? m[`common.dataTable.sourceUrl`]() : m[`common.dataTable.websiteUrl`]()}</a>
+            >{[`github.com`, `gitlab.com`, `git.gay`, `codeberg.org`].some(domain => project.gitUrl.includes(domain)) ? m[`common.dataTable.sourceUrl`]() : m[`common.dataTable.websiteUrl`]()}</a>
         </div>
         <div class="flex flex-col items-center text-center justify-center">
           <p class="text-sm text-gray-500">{m[`common.dataTable.created`]()}</p>
